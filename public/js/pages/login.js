@@ -49,11 +49,12 @@ export function renderLoginPage(container) {
       await signInWithGoogle();
       // Auth state change will handle redirect
     } catch (err) {
-      if (err.message === 'UNAUTHORIZED') {
+      if (err.message && err.message.startsWith('UNAUTHORIZED')) {
+        const emailInfo = err.message.split(':')[1] || '';
         showToast({
-          message: 'Tài khoản chưa được cấp quyền. Liên hệ quản trị viên để được thêm vào hệ thống.',
+          message: 'Tài khoản ' + (emailInfo ? `(${emailInfo}) ` : '') + 'chưa được cấp quyền. Liên hệ quản trị viên để thêm chính xác email này vào hệ thống.',
           type: 'error',
-          duration: 5000
+          duration: 6000
         });
       } else if (err.code !== 'auth/popup-closed-by-user') {
         showToast({ message: 'Lỗi đăng nhập: ' + err.message, type: 'error' });

@@ -66,7 +66,7 @@ export async function signInWithGoogle() {
     
     // User not in system and not first user — unauthorized
     await fbSignOut(auth);
-    throw new Error('UNAUTHORIZED');
+    throw new Error('UNAUTHORIZED:' + user.email);
   } finally {
     isLoggingIn = false;
   }
