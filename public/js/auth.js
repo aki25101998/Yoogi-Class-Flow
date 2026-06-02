@@ -1,7 +1,7 @@
 // Authentication module — Google OAuth with Firebase
 import { firebaseConfig } from './firebase-config.js';
 
-const { initializeApp, getAuth, GoogleAuthProvider, signInWithPopup, signOut: fbSignOut, onAuthStateChanged: fbOnAuthStateChanged, getFirestore, doc, getDoc, setDoc, getDocs, collection, Timestamp } = window.firebase;
+const { initializeApp, getAuth, GoogleAuthProvider, signInWithPopup, signOut: fbSignOut, onAuthStateChanged: fbOnAuthStateChanged, getFirestore, doc, getDoc, setDoc, getDocs, collection, Timestamp, query, where } = window.firebase;
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
@@ -25,11 +25,13 @@ export async function signInWithGoogle() {
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
     
-    // Check if this user exists in coaches collection
-    const userDoc = await getDoc(doc(db, 'coaches', user.uid));
+    // Check if this user exists in coaches collection by email
+    const q = query(collection(db, 'coaches'), where('email', '==', user.email.toLowerCase().trim()));
+    const snap = await getDocs(q);
     
-    if (userDoc.exists()) {
-      currentUserData = { id: user.uid, ...userDoc.data() };
+    if (!snap.empty) {
+      const userDoc = snap.docs[0];
+      currentUserData = { id: userDoc.id, ...userDoc.data() };
       return { user, userData: currentUserData };
     }
     
@@ -88,9 +90,12 @@ export function onAuthStateChange(callback) {
       if (isLoggingIn) return; // Skip handling here if signInWithGoogle is doing it
       currentUser = user;
       try {
-        const userDoc = await getDoc(doc(db, 'coaches', user.uid));
-        if (userDoc.exists()) {
-          currentUserData = { id: user.uid, ...userDoc.data() };
+        const q = query(collection(db, 'coaches'), where('email', '==', user.email.toLowerCase().trim()));
+        const snap = await getDocs(q);
+        
+        if (!snap.empty) {
+          const userDoc = snap.docs[0];
+          currentUserData = { id: userDoc.id, ...userDoc.data() };
           callback(user, currentUserData);
         } else {
           // User not in system
