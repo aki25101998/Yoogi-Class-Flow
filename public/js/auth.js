@@ -32,6 +32,10 @@ export async function signInWithGoogle() {
     if (!snap.empty) {
       const userDoc = snap.docs[0];
       currentUserData = { id: userDoc.id, ...userDoc.data() };
+      
+      if (globalAuthCallback) {
+        globalAuthCallback(user, currentUserData);
+      }
       return { user, userData: currentUserData };
     }
     
