@@ -61,8 +61,8 @@
       query, where, orderBy, Timestamp, writeBatch, setDoc
     };
 
-    // Load app after Firebase is ready
-    import('./js/app.js');
+    // Load app after Firebase is ready (with cache busting)
+    import('./js/app.js?v=' + Date.now());
   </script>
 </body>
 </html>
