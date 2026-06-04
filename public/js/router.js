@@ -43,6 +43,8 @@ export function getCurrentRoute() {
   return window.location.hash || '#/login';
 }
 
+import { hasPermission, isAdmin } from './auth.js';
+
 /**
  * Handle route change — called on hashchange
  */
@@ -56,6 +58,16 @@ async function handleRouteChange() {
   }
   
   currentRoute = hash;
+
+  // Check role and permissions
+  if (route.role === 'admin' && !isAdmin()) {
+    console.error('Unauthorized access to admin route');
+    return;
+  }
+  if (route.permission && !hasPermission(route.permission)) {
+    console.error(`Unauthorized: Missing permission ${route.permission}`);
+    return;
+  }
   
   // Get main content container
   const mainEl = document.getElementById('mainContent');

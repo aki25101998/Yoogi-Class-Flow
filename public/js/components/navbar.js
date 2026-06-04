@@ -1,20 +1,21 @@
 // Sidebar navigation component
-import { isAdmin, getCurrentUser, getCurrentUserData, signOutUser } from '../auth.js';
+import { isAdmin, getCurrentUser, getCurrentUserData, signOutUser, hasPermission } from '../auth.js';
 import { navigate } from '../router.js';
 import { showToast } from './toast.js';
 
 const ADMIN_NAV = [
   { section: 'Tổng quan', items: [
-    { icon: 'dashboard', label: 'Dashboard', route: '#/dashboard' }
+    { icon: 'dashboard', label: 'Dashboard', route: '#/dashboard', permission: null }
   ]},
   { section: 'Quản lý', items: [
-    { icon: 'people', label: 'Huấn luyện viên', route: '#/coaches' },
-    { icon: 'location_on', label: 'Địa điểm', route: '#/venues' },
-    { icon: 'calendar_month', label: 'Lịch dạy', route: '#/schedule' }
+    { icon: 'people', label: 'Huấn luyện viên', route: '#/coaches', permission: 'manage_coaches' },
+    { icon: 'school', label: 'Học viên', route: '#/students', permission: 'manage_students' },
+    { icon: 'location_on', label: 'Địa điểm', route: '#/venues', permission: 'manage_venues' },
+    { icon: 'calendar_month', label: 'Lịch dạy', route: '#/schedule', permission: 'manage_schedule' }
   ]},
   { section: 'Chấm công', items: [
-    { icon: 'fact_check', label: 'Điểm danh', route: '#/attendance' },
-    { icon: 'payments', label: 'Bảng lương', route: '#/payroll' }
+    { icon: 'fact_check', label: 'Điểm danh', route: '#/attendance', permission: 'manage_attendance' },
+    { icon: 'payments', label: 'Bảng lương', route: '#/payroll', permission: 'view_payroll' }
   ]}
 ];
 
@@ -35,7 +36,13 @@ export function renderLayout(container) {
   const user = getCurrentUser();
   const userData = getCurrentUserData();
   const admin = isAdmin();
-  const navSections = admin ? ADMIN_NAV : COACH_NAV;
+  const navSections = [
+    ...(admin ? [] : COACH_NAV),
+    ...ADMIN_NAV.map(section => ({
+      ...section,
+      items: section.items.filter(item => !item.permission || hasPermission(item.permission))
+    })).filter(section => section.items.length > 0)
+  ];
 
   const navItemsHtml = navSections.map(section => `
     <div class="nav-section">

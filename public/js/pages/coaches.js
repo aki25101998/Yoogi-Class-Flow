@@ -11,10 +11,13 @@ export async function renderCoaches(container) {
         <h1 class="page-title">Quản Lý HLV</h1>
         <p class="page-subtitle">Thêm, sửa, quản lý huấn luyện viên</p>
       </div>
-      <button class="btn btn-primary" id="btnAddCoach">
-        <span class="material-icons-round">person_add</span>
-        Thêm HLV
-      </button>
+      <div style="display: flex; gap: 8px;">
+        <input type="text" id="coachSearchInput" class="form-input" placeholder="Tìm kiếm HLV..." style="min-width: 200px;">
+        <button class="btn btn-primary" id="btnAddCoach">
+          <span class="material-icons-round">person_add</span>
+          Thêm
+        </button>
+      </div>
     </div>
     <div class="coaches-grid" id="coachesGrid">
       ${Array(3).fill('<div class="skeleton skeleton-card" style="height:200px;"></div>').join('')}
@@ -22,12 +25,31 @@ export async function renderCoaches(container) {
   `;
 
   document.getElementById('btnAddCoach').addEventListener('click', () => showCoachForm());
+  
+  const searchInput = document.getElementById('coachSearchInput');
+  searchInput.addEventListener('input', (e) => filterCoaches(e.target.value.toLowerCase()));
+  
   await loadCoaches();
+}
+
+let allCoachesData = [];
+
+function filterCoaches(query) {
+  const cards = document.querySelectorAll('.coach-card');
+  cards.forEach(card => {
+    const text = card.textContent.toLowerCase();
+    if (text.includes(query)) {
+      card.style.display = '';
+    } else {
+      card.style.display = 'none';
+    }
+  });
 }
 
 async function loadCoaches() {
   try {
     const coaches = await getAllCoaches();
+    allCoachesData = coaches;
     const grid = document.getElementById('coachesGrid');
     
     if (coaches.length === 0) {
@@ -61,6 +83,10 @@ async function loadCoaches() {
           <div class="coach-card-detail">
             <span class="label">SĐT</span>
             <span class="value">${escapeHtml(coach.phone || '—')}</span>
+          </div>
+          <div class="coach-card-detail">
+            <span class="label">Trình độ</span>
+            <span class="value">${escapeHtml(coach.level || '—')}</span>
           </div>
         </div>
         <div class="coach-card-actions">
@@ -112,6 +138,12 @@ async function loadCoaches() {
         await loadCoaches();
       });
     });
+
+    // Re-apply filter if exists
+    const searchInput = document.getElementById('coachSearchInput');
+    if (searchInput && searchInput.value) {
+      filterCoaches(searchInput.value.toLowerCase());
+    }
   } catch (err) {
     showToast({ message: 'Lỗi tải danh sách HLV: ' + err.message, type: 'error' });
   }
@@ -138,11 +170,52 @@ function showCoachForm(coach = null) {
         <input type="tel" class="form-input" id="coachPhone" value="${escapeHtml(coach?.phone || '')}" placeholder="0901234567">
       </div>
       <div class="form-group">
+        <label class="form-label">CCCD</label>
+        <input type="text" class="form-input" id="coachCccd" value="${escapeHtml(coach?.cccd || '')}" placeholder="Số CCCD">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Trình độ</label>
+        <select class="form-select" id="coachLevel">
+          <option value="">Chọn trình độ</option>
+          <option value="Đai trắng" ${coach?.level === 'Đai trắng' ? 'selected' : ''}>Đai trắng</option>
+          <option value="Đai vàng" ${coach?.level === 'Đai vàng' ? 'selected' : ''}>Đai vàng</option>
+          <option value="Đai xanh" ${coach?.level === 'Đai xanh' ? 'selected' : ''}>Đai xanh</option>
+          <option value="Đai đỏ" ${coach?.level === 'Đai đỏ' ? 'selected' : ''}>Đai đỏ</option>
+          <option value="Đai đen 1 đẳng" ${coach?.level === 'Đai đen 1 đẳng' ? 'selected' : ''}>Đai đen 1 đẳng</option>
+          <option value="Đai đen 2 đẳng" ${coach?.level === 'Đai đen 2 đẳng' ? 'selected' : ''}>Đai đen 2 đẳng</option>
+          <option value="Đai đen 3 đẳng" ${coach?.level === 'Đai đen 3 đẳng' ? 'selected' : ''}>Đai đen 3 đẳng</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mã số hội viên</label>
+        <input type="text" class="form-input" id="coachMembershipNumber" value="${escapeHtml(coach?.membershipNumber || '')}" placeholder="Mã số hội viên">
+      </div>
+      <div class="form-group">
         <label class="form-label">Vai trò</label>
-        <select class="form-select" id="coachRole">
+        <select class="form-select" id="coachRole" onchange="document.getElementById('permissionsBlock').style.display = this.value === 'admin' ? 'none' : 'block'">
           <option value="coach" ${coach?.role === 'coach' || !coach ? 'selected' : ''}>Huấn luyện viên</option>
           <option value="admin" ${coach?.role === 'admin' ? 'selected' : ''}>Quản trị viên</option>
         </select>
+      </div>
+      <div class="form-group" id="permissionsBlock" style="display: ${coach?.role === 'admin' ? 'none' : 'block'}; background: var(--bg-page); padding: 12px; border-radius: 8px;">
+        <label class="form-label" style="margin-bottom: 8px;">Phân quyền nâng cao</label>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <label style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="perm_manage_students" ${coach?.permissions?.manage_students ? 'checked' : ''}> Quản lý học viên
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="perm_manage_venues" ${coach?.permissions?.manage_venues ? 'checked' : ''}> Quản lý địa điểm
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="perm_manage_schedule" ${coach?.permissions?.manage_schedule ? 'checked' : ''}> Quản lý lịch dạy
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="perm_manage_attendance" ${coach?.permissions?.manage_attendance ? 'checked' : ''}> Quản lý điểm danh
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="perm_view_payroll" ${coach?.permissions?.view_payroll ? 'checked' : ''}> Xem bảng lương tổng
+          </label>
+        </div>
       </div>
     `,
     onConfirm: async () => {
@@ -150,7 +223,17 @@ function showCoachForm(coach = null) {
         name: document.getElementById('coachName').value.trim(),
         email: document.getElementById('coachEmail').value.trim(),
         phone: document.getElementById('coachPhone').value.trim(),
-        role: document.getElementById('coachRole').value
+        cccd: document.getElementById('coachCccd').value.trim(),
+        level: document.getElementById('coachLevel').value,
+        membershipNumber: document.getElementById('coachMembershipNumber').value.trim(),
+        role: document.getElementById('coachRole').value,
+        permissions: {
+          manage_students: document.getElementById('perm_manage_students').checked,
+          manage_venues: document.getElementById('perm_manage_venues').checked,
+          manage_schedule: document.getElementById('perm_manage_schedule').checked,
+          manage_attendance: document.getElementById('perm_manage_attendance').checked,
+          view_payroll: document.getElementById('perm_view_payroll').checked
+        }
       };
 
       if (!data.name || !data.email) {

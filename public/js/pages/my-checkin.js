@@ -1,5 +1,5 @@
 // My Check-in page (Coach) — uses venueCoaches
-import { getVenuesForCoach, getAttendanceByDate, checkIn } from '../db.js';
+import { getVenuesForCoach, getAttendanceByDate, checkIn, getStudentsByVenue, submitStudentAttendance } from '../db.js';
 import { getCurrentUserData } from '../auth.js';
 import { getTodayStr, getTodayDisplay, getDayOfWeek, formatTime, escapeHtml } from '../utils.js';
 import { showToast } from '../components/toast.js';
@@ -72,7 +72,7 @@ async function loadCheckinData(container) {
       return;
     }
 
-    content.innerHTML = todaySchedules.map(s => {
+    content.innerHTML = await Promise.all(todaySchedules.map(async s => {
       const att = attMap[s.venueCoachId] || attMap[s.scheduleKey];
       const isCheckedIn = !!att;
 
@@ -81,6 +81,33 @@ async function loadCheckinData(container) {
         'approved': { text: 'Đã duyệt ✓', class: 'badge-approved' },
         'rejected': { text: 'Từ chối', class: 'badge-rejected' }
       };
+      
+      let studentsHtml = '';
+      if (!isCheckedIn) {
+        const students = await getStudentsByVenue(s.venueId);
+        if (students.length > 0) {
+          studentsHtml = `
+            <div style="text-align: left; margin: var(--sp-4) 0; padding: var(--sp-3); background: var(--bg-page); border-radius: var(--radius-sm);">
+              <h4 style="margin-bottom: var(--sp-2);">Điểm danh học viên</h4>
+              <div class="student-list" style="max-height: 200px; overflow-y: auto;">
+                ${students.map(student => `
+                  <label style="display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--border-color);">
+                    <input type="checkbox" class="student-check" data-student-id="${student.id}" style="width: 18px; height: 18px;">
+                    <span>${escapeHtml(student.name)}</span>
+                  </label>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        } else {
+          studentsHtml = `
+            <div style="text-align: left; margin: var(--sp-4) 0; padding: var(--sp-3); background: var(--bg-page); border-radius: var(--radius-sm);">
+              <h4 style="margin-bottom: var(--sp-2);">Điểm danh học viên</h4>
+              <p style="color: var(--text-muted); font-size: 0.9rem;">Cơ sở này chưa có học viên nào.</p>
+            </div>
+          `;
+        }
+      }
 
       return `
         <div class="card mb-4" style="text-align:center;">
@@ -89,7 +116,7 @@ async function loadCheckinData(container) {
             <div style="font-size:1.25rem;font-weight:700;color:var(--accent-primary);">${s.startTime} - ${s.endTime}</div>
           </div>
           
-          <div class="checkin-container">
+          <div class="checkin-container" id="checkin-container-${s.scheduleKey}">
             ${isCheckedIn ? `
               <div class="checkin-btn checked" style="cursor:default;">
                 <span class="material-icons-round">${att.status === 'approved' ? 'verified' : 'schedule'}</span>
@@ -104,20 +131,24 @@ async function loadCheckinData(container) {
                 </div>
               ` : ''}
             ` : `
-              <button class="checkin-btn" data-venue-coach="${s.venueCoachId}" data-venue="${s.venueId}" data-schedule-key="${s.scheduleKey}">
+              ${studentsHtml}
+              <button class="checkin-btn" data-venue-coach="${s.venueCoachId}" data-venue="${s.venueId}" data-schedule-key="${s.scheduleKey}" style="width: 100%; border-radius: 8px;">
                 <span class="material-icons-round">fingerprint</span>
-                <span>CHECK-IN</span>
+                <span style="font-size: 1rem;">Xác nhận điểm danh & Chấm công</span>
               </button>
-              <div class="checkin-time">Bấm để điểm danh</div>
             `}
           </div>
         </div>
       `;
-    }).join('');
+    })).then(res => res.join(''));
 
     // Check-in handlers
     content.querySelectorAll('.checkin-btn:not(.checked)').forEach(btn => {
       btn.addEventListener('click', async () => {
+        const container = document.getElementById(`checkin-container-${btn.dataset.scheduleKey}`);
+        const checkboxes = container.querySelectorAll('.student-check');
+        const presentStudentIds = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.dataset.studentId);
+
         btn.disabled = true;
         btn.innerHTML = `
           <div class="loading-spinner" style="width:40px;height:40px;">
@@ -127,6 +158,10 @@ async function loadCheckinData(container) {
         `;
 
         try {
+          if (presentStudentIds.length > 0) {
+            await submitStudentAttendance(presentStudentIds, btn.dataset.venue, today, userData.id);
+          }
+          
           await checkIn({
             coachId: userData.id,
             venueCoachId: btn.dataset.venueCoach,
@@ -135,14 +170,14 @@ async function loadCheckinData(container) {
             date: today,
             checkInBy: userData.id
           });
-          showToast({ message: 'Check-in thành công! Chờ admin duyệt.', type: 'success' });
+          showToast({ message: 'Điểm danh và Check-in thành công!', type: 'success' });
           await loadCheckinData(container);
         } catch (err) {
-          showToast({ message: 'Lỗi check-in: ' + err.message, type: 'error' });
+          showToast({ message: 'Lỗi xử lý: ' + err.message, type: 'error' });
           btn.disabled = false;
           btn.innerHTML = `
             <span class="material-icons-round">fingerprint</span>
-            <span>CHECK-IN</span>
+            <span>Xác nhận điểm danh & Chấm công</span>
           `;
         }
       });

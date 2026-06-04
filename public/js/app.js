@@ -13,15 +13,17 @@ import { renderMySchedule } from './pages/my-schedule.js';
 import { renderMyCheckin } from './pages/my-checkin.js';
 import { renderMyAttendance } from './pages/my-attendance.js';
 import { renderMyEarnings } from './pages/my-earnings.js';
+import { renderStudents } from './pages/students.js';
 
 // Register all routes
-// Admin routes
+// Admin / Granular permission routes
 registerRoute('#/dashboard', renderDashboard, { role: 'admin' });
-registerRoute('#/coaches', renderCoaches, { role: 'admin' });
-registerRoute('#/venues', renderVenues, { role: 'admin' });
-registerRoute('#/schedule', renderSchedule, { role: 'admin' });
-registerRoute('#/attendance', renderAttendance, { role: 'admin' });
-registerRoute('#/payroll', renderPayroll, { role: 'admin' });
+registerRoute('#/coaches', renderCoaches, { permission: 'manage_coaches' });
+registerRoute('#/students', renderStudents, { permission: 'manage_students' });
+registerRoute('#/venues', renderVenues, { permission: 'manage_venues' });
+registerRoute('#/schedule', renderSchedule, { permission: 'manage_schedule' });
+registerRoute('#/attendance', renderAttendance, { permission: 'manage_attendance' });
+registerRoute('#/payroll', renderPayroll, { permission: 'view_payroll' });
 
 // Coach routes
 registerRoute('#/my-schedule', renderMySchedule, { role: 'coach' });

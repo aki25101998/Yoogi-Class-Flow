@@ -157,3 +157,15 @@ export function getDb() {
 export function getAuthInstance() {
   return auth;
 }
+
+/**
+ * Check if current user has a specific permission
+ * Admin always has all permissions
+ * @param {string} permissionName
+ * @returns {boolean}
+ */
+export function hasPermission(permissionName) {
+  if (!currentUserData) return false;
+  if (currentUserData.role === 'admin') return true;
+  return currentUserData.permissions && currentUserData.permissions[permissionName] === true;
+}

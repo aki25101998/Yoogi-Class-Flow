@@ -49,7 +49,11 @@ export async function addCoach(data) {
     name: data.name,
     email: data.email.toLowerCase().trim(),
     phone: data.phone || '',
+    cccd: data.cccd || '',
+    level: data.level || '',
+    membershipNumber: data.membershipNumber || '',
     role: data.role || 'coach',
+    permissions: data.permissions || {},
     status: 'active',
     photoURL: '',
     createdAt: Timestamp.now(),
@@ -663,4 +667,91 @@ export async function calculateCoachPayroll(coachId, yearMonth) {
     records: approved,
     allRecords: attendance
   };
+}
+
+// ============ STUDENTS ============
+
+/**
+ * Get all students
+ */
+export async function getAllStudents() {
+  const db = getDb();
+  const snap = await getDocs(collection(db, 'students'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+/**
+ * Get students by venue
+ */
+export async function getStudentsByVenue(venueId) {
+  const db = getDb();
+  const q = query(collection(db, 'students'), where('venueId', '==', venueId), where('status', '==', 'active'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+/**
+ * Add a student
+ */
+export async function addStudent(data) {
+  const db = getDb();
+  const studentData = {
+    name: data.name,
+    dob: data.dob || '',
+    beltRank: data.beltRank || '',
+    weight: Number(data.weight) || 0,
+    height: Number(data.height) || 0,
+    venueId: data.venueId || '',
+    status: 'active',
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now()
+  };
+  const ref = await addDoc(collection(db, 'students'), studentData);
+  return ref.id;
+}
+
+/**
+ * Update a student
+ */
+export async function updateStudent(id, data) {
+  const db = getDb();
+  await updateDoc(doc(db, 'students', id), {
+    ...data,
+    updatedAt: Timestamp.now()
+  });
+}
+
+/**
+ * Delete a student (soft delete)
+ */
+export async function deleteStudent(id) {
+  await updateStudent(id, { status: 'inactive' });
+}
+
+// ============ STUDENT ATTENDANCE ============
+
+/**
+ * Mark student attendance
+ * @param {Array} studentIds - Array of student IDs present
+ * @param {string} venueId
+ * @param {string} date - YYYY-MM-DD
+ * @param {string} coachId
+ */
+export async function submitStudentAttendance(studentIds, venueId, date, coachId) {
+  const db = getDb();
+  const batch = writeBatch(db);
+  
+  studentIds.forEach(studentId => {
+    const ref = doc(collection(db, 'student_attendance'));
+    batch.set(ref, {
+      studentId,
+      venueId,
+      date,
+      isPresent: true,
+      markedByCoachId: coachId,
+      createdAt: Timestamp.now()
+    });
+  });
+  
+  await batch.commit();
 }
