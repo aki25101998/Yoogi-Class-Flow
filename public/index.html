@@ -52,13 +52,13 @@
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js';
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js';
-    import { getFirestore, collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, query, where, orderBy, Timestamp, writeBatch, setDoc } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js';
+    import { getFirestore, collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, query, where, orderBy, Timestamp, writeBatch, setDoc, collectionGroup } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js';
     
     // Make Firebase available globally
     window.firebase = {
       initializeApp, getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
       getFirestore, collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, 
-      query, where, orderBy, Timestamp, writeBatch, setDoc
+      query, where, orderBy, Timestamp, writeBatch, setDoc, collectionGroup
     };
 
     // Load app after Firebase is ready (with cache busting)
