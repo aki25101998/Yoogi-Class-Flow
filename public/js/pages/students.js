@@ -225,7 +225,7 @@ export async function showStudentForm(student = null, defaultVenueId = null, onS
         <label class="form-label">Cấp đai</label>
         <select class="form-select" id="studentBelt">
           <option value="">Chọn cấp đai</option>
-          ${beltRanks.map(belt => `<option value="${escapeHtml(belt)}" ${student?.beltRank === belt ? 'selected' : ''}>${escapeHtml(belt)}</option>`).join('')}
+          ${currentBeltRanks.map(belt => `<option value="${escapeHtml(belt)}" ${student?.beltRank === belt ? 'selected' : ''}>${escapeHtml(belt)}</option>`).join('')}
         </select>
       </div>
       <div style="display: flex; gap: 16px;">
@@ -254,6 +254,13 @@ export async function showStudentForm(student = null, defaultVenueId = null, onS
         return;
       }
 
+      const confirmBtn = document.getElementById('modalConfirmBtn');
+      const originalText = confirmBtn ? confirmBtn.innerHTML : '';
+      if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<span class="material-icons-round" style="animation: spin 1s linear infinite;">refresh</span> Đang lưu...';
+      }
+
       try {
         if (isEdit) {
           await updateStudent(student.id, data);
@@ -270,6 +277,11 @@ export async function showStudentForm(student = null, defaultVenueId = null, onS
         }
       } catch (err) {
         showToast({ message: 'Lỗi: ' + err.message, type: 'error' });
+      } finally {
+        if (confirmBtn) {
+          confirmBtn.disabled = false;
+          confirmBtn.innerHTML = originalText;
+        }
       }
     }
   });

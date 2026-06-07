@@ -1,5 +1,5 @@
 // Venue Management page (Admin) — Venue-Centric Coach Management
-import { getVenues, addVenue, updateVenue, deleteVenue, getVenueCoaches, addVenueCoach, updateVenueCoach, removeVenueCoach, getCoaches, getStudentsByVenue, addStudent, getSettings } from '../db.js';
+import { getVenues, addVenue, updateVenue, deleteVenue, getVenueCoaches, addVenueCoach, updateVenueCoach, removeVenueCoach, getCoaches, getStudentsByVenue, addStudent, getSettings, deleteStudent, updateStudent } from '../db.js';
 import { showStudentForm } from './students.js';
 import { escapeHtml, formatCurrency, formatDayOfWeek, formatDayShort } from '../utils.js';
 import { showModal, closeModal, confirmDialog } from '../components/modal.js';
@@ -184,6 +184,12 @@ async function loadVenues() {
                     <button class="btn btn-sm btn-secondary" data-edit-student="${student.id}" data-venue="${venue.id}" title="Sửa thông tin học viên">
                       <span class="material-icons-round" style="font-size:0.9rem;">edit</span>
                     </button>
+                    <button class="btn btn-sm btn-secondary" data-transfer-student="${student.id}" data-venue="${venue.id}" title="Chuyển cơ sở">
+                      <span class="material-icons-round" style="font-size:0.9rem;">swap_horiz</span>
+                    </button>
+                    <button class="btn btn-sm btn-ghost" data-remove-student="${student.id}" data-venue="${venue.id}" data-student-name="${escapeHtml(student.name)}" title="Xóa học viên">
+                      <span class="material-icons-round" style="font-size:0.9rem;">person_remove</span>
+                    </button>
                   </div>
                 </div>
               `).join('')}
@@ -271,6 +277,8 @@ async function loadVenues() {
           `Bạn có chắc muốn xóa <strong>${btn.dataset.coachName}</strong> khỏi địa điểm này?`
         );
         if (confirmed) {
+          const item = btn.closest('.venue-coach-item');
+          if (item) item.style.opacity = '0.5';
           await removeVenueCoach(btn.dataset.venue, btn.dataset.removeVc);
           showToast({ message: 'Đã xóa HLV khỏi địa điểm', type: 'success' });
           await loadVenues();
@@ -296,6 +304,39 @@ async function loadVenues() {
         const vd = venueDataList.find(d => d.venue.id === venueId);
         const student = vd?.venueStudents.find(s => s.id === studentId);
         if (student) showStudentForm(student, venueId, loadVenues);
+      });
+    });
+
+    // Transfer student handlers
+    container.querySelectorAll('[data-transfer-student]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const studentId = btn.dataset.transferStudent;
+        const currentVenueId = btn.dataset.venue;
+        showTransferStudentForm(studentId, currentVenueId);
+      });
+    });
+
+    // Remove student handlers
+    container.querySelectorAll('[data-remove-student]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const confirmed = await confirmDialog(
+          'Xóa học viên',
+          `Bạn có chắc muốn xóa học viên <strong>${btn.dataset.studentName}</strong> khỏi cơ sở này?`
+        );
+        if (confirmed) {
+          const item = btn.closest('.venue-coach-item');
+          if (item) item.style.opacity = '0.5';
+          try {
+            await deleteStudent(btn.dataset.removeStudent);
+            showToast({ message: 'Đã xóa học viên', type: 'success' });
+            await loadVenues();
+          } catch (err) {
+            showToast({ message: 'Lỗi: ' + err.message, type: 'error' });
+            if (item) item.style.opacity = '1';
+          }
+        }
       });
     });
 
@@ -331,6 +372,13 @@ function showVenueForm(venue = null) {
         return;
       }
 
+      const confirmBtn = document.getElementById('modalConfirmBtn');
+      const originalText = confirmBtn ? confirmBtn.innerHTML : '';
+      if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<span class="material-icons-round" style="animation: spin 1s linear infinite;">refresh</span> Đang lưu...';
+      }
+
       try {
         if (isEdit) {
           await updateVenue(venue.id, data);
@@ -343,6 +391,11 @@ function showVenueForm(venue = null) {
         await loadVenues();
       } catch (err) {
         showToast({ message: 'Lỗi: ' + err.message, type: 'error' });
+      } finally {
+        if (confirmBtn) {
+          confirmBtn.disabled = false;
+          confirmBtn.innerHTML = originalText;
+        }
       }
     }
   });
@@ -438,6 +491,13 @@ function showVenueCoachForm(venueId, venueName, existingVC = null, existingCoach
         }
       }
 
+      const confirmBtn = document.getElementById('modalConfirmBtn');
+      const originalText = confirmBtn ? confirmBtn.innerHTML : '';
+      if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<span class="material-icons-round" style="animation: spin 1s linear infinite;">refresh</span> Đang lưu...';
+      }
+
       try {
         if (isEdit) {
           await updateVenueCoach(venueId, existingVC.id, data);
@@ -450,6 +510,11 @@ function showVenueCoachForm(venueId, venueName, existingVC = null, existingCoach
         await loadVenues();
       } catch (err) {
         showToast({ message: 'Lỗi: ' + err.message, type: 'error' });
+      } finally {
+        if (confirmBtn) {
+          confirmBtn.disabled = false;
+          confirmBtn.innerHTML = originalText;
+        }
       }
     }
   });
@@ -464,5 +529,53 @@ function showVenueCoachForm(venueId, venueName, existingVC = null, existingCoach
       });
     });
   }, 50);
+}
+
+async function showTransferStudentForm(studentId, currentVenueId) {
+  const venues = await getVenues();
+  const otherVenues = venues.filter(v => v.id !== currentVenueId);
+  
+  if (otherVenues.length === 0) {
+    showToast({ message: 'Không có cơ sở nào khác để chuyển', type: 'warning' });
+    return;
+  }
+  
+  const options = otherVenues.map(v => `<option value="${v.id}">${escapeHtml(v.name)}</option>`).join('');
+  
+  showModal({
+    title: 'Chuyển cơ sở',
+    confirmText: 'Chuyển',
+    content: `
+      <div class="form-group">
+        <label class="form-label">Chọn cơ sở mới</label>
+        <select class="form-select" id="transferVenueId">
+          ${options}
+        </select>
+      </div>
+    `,
+    onConfirm: async () => {
+      const newVenueId = document.getElementById('transferVenueId').value;
+      const confirmBtn = document.getElementById('modalConfirmBtn');
+      const originalText = confirmBtn ? confirmBtn.innerHTML : '';
+      if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<span class="material-icons-round" style="animation: spin 1s linear infinite;">refresh</span> Đang chuyển...';
+      }
+      
+      try {
+        await updateStudent(studentId, { venueId: newVenueId });
+        showToast({ message: 'Đã chuyển cơ sở thành công', type: 'success' });
+        closeModal();
+        await loadVenues();
+      } catch (err) {
+        showToast({ message: 'Lỗi: ' + err.message, type: 'error' });
+      } finally {
+        if (confirmBtn) {
+          confirmBtn.disabled = false;
+          confirmBtn.innerHTML = originalText;
+        }
+      }
+    }
+  });
 }
 
