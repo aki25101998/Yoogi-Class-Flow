@@ -774,6 +774,7 @@ export async function addStudent(data) {
     beltRank: data.beltRank || '',
     weight: Number(data.weight) || 0,
     height: Number(data.height) || 0,
+    parentPhone: data.parentPhone || '',
     venueId: data.venueId || '',
     classId: data.classId || '',
     status: 'active',

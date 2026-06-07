@@ -21,12 +21,46 @@ export async function renderStudents(container) {
         <select id="studentVenueFilter" class="form-select" style="min-width: 150px; flex: 1;">
           <option value="">Tất cả cơ sở</option>
         </select>
+        <button class="btn btn-secondary" id="btnToggleFilters" style="flex-shrink: 0; white-space: nowrap;">
+          <span class="material-icons-round">filter_list</span>
+          Lọc
+        </button>
         <button class="btn btn-primary" id="btnAddStudent" style="flex-shrink: 0; white-space: nowrap;">
           <span class="material-icons-round">person_add</span>
           Thêm
         </button>
       </div>
     </div>
+
+    <div id="advancedFiltersPanel" style="display: none; background: var(--bg-secondary); padding: 16px; border-radius: 8px; margin-bottom: 16px; gap: 16px; flex-wrap: wrap;">
+      <div style="flex: 1; min-width: 150px;">
+        <label class="form-label" style="font-size: 0.8rem; margin-bottom: 4px;">Lịch học (Ca học)</label>
+        <select id="filterClass" class="form-select" style="padding: 4px 8px; min-height: 32px;">
+          <option value="">Tất cả ca học</option>
+        </select>
+      </div>
+      <div style="flex: 1; min-width: 150px;">
+        <label class="form-label" style="font-size: 0.8rem; margin-bottom: 4px;">Cấp đai</label>
+        <select id="filterBelt" class="form-select" style="padding: 4px 8px; min-height: 32px;">
+          <option value="">Tất cả cấp đai</option>
+        </select>
+      </div>
+      <div style="flex: 2; min-width: 250px;">
+        <label class="form-label" style="font-size: 0.8rem; margin-bottom: 4px;">Chiều cao (cm)</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="number" id="filterHeightMin" class="form-input" placeholder="Từ..." style="padding: 4px 8px; min-height: 32px;">
+          <input type="number" id="filterHeightMax" class="form-input" placeholder="Đến..." style="padding: 4px 8px; min-height: 32px;">
+        </div>
+      </div>
+      <div style="flex: 2; min-width: 250px;">
+        <label class="form-label" style="font-size: 0.8rem; margin-bottom: 4px;">Cân nặng (kg)</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="number" id="filterWeightMin" class="form-input" placeholder="Từ..." style="padding: 4px 8px; min-height: 32px;">
+          <input type="number" id="filterWeightMax" class="form-input" placeholder="Đến..." style="padding: 4px 8px; min-height: 32px;">
+        </div>
+      </div>
+    </div>
+
     <div class="coaches-grid" id="studentsGrid">
       ${Array(3).fill('<div class="skeleton skeleton-card" style="height:200px;"></div>').join('')}
     </div>
@@ -34,11 +68,21 @@ export async function renderStudents(container) {
 
   document.getElementById('btnAddStudent').addEventListener('click', () => showStudentForm());
   
-  const searchInput = document.getElementById('studentSearchInput');
-  searchInput.addEventListener('input', applyFilters);
+  document.getElementById('btnToggleFilters').addEventListener('click', () => {
+    const panel = document.getElementById('advancedFiltersPanel');
+    panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+  });
   
-  const venueFilter = document.getElementById('studentVenueFilter');
-  venueFilter.addEventListener('change', applyFilters);
+  const filterInputs = [
+    'studentSearchInput', 'studentVenueFilter', 'filterClass', 'filterBelt',
+    'filterHeightMin', 'filterHeightMax', 'filterWeightMin', 'filterWeightMax'
+  ];
+  filterInputs.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', applyFilters);
+    }
+  });
   
   await loadData();
 }
@@ -65,6 +109,26 @@ async function loadData() {
         venueFilter.appendChild(opt);
       });
     }
+
+    const classFilter = document.getElementById('filterClass');
+    if (classFilter && classFilter.options.length === 1) {
+      classes.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = `${c.name} (${c.startTime}-${c.endTime})`;
+        classFilter.appendChild(opt);
+      });
+    }
+
+    const beltFilter = document.getElementById('filterBelt');
+    if (beltFilter && beltFilter.options.length === 1) {
+      beltRanks.forEach(b => {
+        const opt = document.createElement('option');
+        opt.value = b;
+        opt.textContent = b;
+        beltFilter.appendChild(opt);
+      });
+    }
     
     renderStudentsGrid();
   } catch (err) {
@@ -75,14 +139,28 @@ async function loadData() {
 function applyFilters() {
   const query = (document.getElementById('studentSearchInput')?.value || '').toLowerCase();
   const venueId = document.getElementById('studentVenueFilter')?.value || '';
+  const classId = document.getElementById('filterClass')?.value || '';
+  const belt = document.getElementById('filterBelt')?.value || '';
+  const hMin = parseFloat(document.getElementById('filterHeightMin')?.value) || 0;
+  const hMax = parseFloat(document.getElementById('filterHeightMax')?.value) || Infinity;
+  const wMin = parseFloat(document.getElementById('filterWeightMin')?.value) || 0;
+  const wMax = parseFloat(document.getElementById('filterWeightMax')?.value) || Infinity;
   
   const cards = document.querySelectorAll('.student-card');
   cards.forEach(card => {
     const text = card.textContent.toLowerCase();
     const matchesQuery = text.includes(query);
     const matchesVenue = venueId === '' || card.dataset.venueId === venueId;
+    const matchesClass = classId === '' || card.dataset.classId === classId;
+    const matchesBelt = belt === '' || card.dataset.beltRank === belt;
     
-    if (matchesQuery && matchesVenue) {
+    const height = parseFloat(card.dataset.height) || 0;
+    const matchesHeight = height === 0 || (height >= hMin && height <= hMax);
+    
+    const weight = parseFloat(card.dataset.weight) || 0;
+    const matchesWeight = weight === 0 || (weight >= wMin && weight <= wMax);
+    
+    if (matchesQuery && matchesVenue && matchesClass && matchesBelt && matchesHeight && matchesWeight) {
       card.style.display = '';
     } else {
       card.style.display = 'none';
@@ -109,7 +187,12 @@ function renderStudentsGrid() {
   allVenues.forEach(v => venueMap[v.id] = v.name);
 
   grid.innerHTML = allStudents.map(student => `
-    <div class="coach-card student-card ${student.status === 'inactive' ? 'opacity-50' : ''}" data-venue-id="${student.venueId || ''}">
+    <div class="coach-card student-card ${student.status === 'inactive' ? 'opacity-50' : ''}" 
+         data-venue-id="${student.venueId || ''}"
+         data-class-id="${student.classId || ''}"
+         data-belt-rank="${student.beltRank || ''}"
+         data-height="${student.height || 0}"
+         data-weight="${student.weight || 0}">
       <div class="coach-card-header">
         <div class="user-avatar-placeholder" style="background: var(--primary-color)">${(student.name || 'U').charAt(0).toUpperCase()}</div>
         <div class="coach-card-info">
@@ -136,6 +219,10 @@ function renderStudentsGrid() {
         <div class="coach-card-detail">
           <span class="label">Chiều cao/Cân nặng</span>
           <span class="value">${student.height ? student.height + 'cm' : '—'} / ${student.weight ? student.weight + 'kg' : '—'}</span>
+        </div>
+        <div class="coach-card-detail" style="grid-column: 1/-1; padding-top: 8px; border-top: 1px dashed var(--border-color); margin-top: 4px;">
+          <span class="label"><span class="material-icons-round" style="font-size:12px;vertical-align:middle;">phone</span> SĐT Phụ huynh</span>
+          <span class="value" style="color:var(--primary-color);font-weight:600;">${escapeHtml(student.parentPhone || '—')}</span>
         </div>
       </div>
       <div class="coach-card-actions">
@@ -235,6 +322,10 @@ export async function showStudentForm(student = null, defaultVenueId = null, onS
         <input type="date" class="form-input" id="studentDob" value="${escapeHtml(student?.dob || '')}">
       </div>
       <div class="form-group">
+        <label class="form-label">SĐT Phụ huynh</label>
+        <input type="tel" class="form-input" id="studentParentPhone" value="${escapeHtml(student?.parentPhone || '')}" placeholder="09xxxx...">
+      </div>
+      <div class="form-group">
         <label class="form-label">Cấp đai</label>
         <select class="form-select" id="studentBelt">
           <option value="">Chọn cấp đai</option>
@@ -260,7 +351,8 @@ export async function showStudentForm(student = null, defaultVenueId = null, onS
         dob: document.getElementById('studentDob').value,
         beltRank: document.getElementById('studentBelt').value,
         height: document.getElementById('studentHeight').value,
-        weight: document.getElementById('studentWeight').value
+        weight: document.getElementById('studentWeight').value,
+        parentPhone: document.getElementById('studentParentPhone').value.trim()
       };
 
       if (!data.name) {

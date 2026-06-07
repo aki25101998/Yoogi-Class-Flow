@@ -99,6 +99,56 @@ async function loadVenues() {
         <div class="venue-detail-body" id="venueBody_${venue.id}" style="display:${expandedVenues.has(venue.id) ? 'block' : 'none'};padding-top:var(--sp-4);border-top:1px solid var(--border-color);margin-top:var(--sp-4);">
           <div class="flex items-center justify-between mb-4">
             <h4 style="font-size:0.9rem;color:var(--text-secondary);font-weight:600;">
+              <span class="material-icons-round" style="font-size:1rem;vertical-align:middle;">calendar_today</span>
+              Lịch học tại ${escapeHtml(venue.name)}
+            </h4>
+            <button class="btn btn-sm btn-primary" data-add-class="${venue.id}" data-venue-name="${escapeHtml(venue.name)}">
+              <span class="material-icons-round" style="font-size:0.9rem;">add</span>
+              Thêm lịch học
+            </button>
+          </div>
+
+          ${venueClasses.length === 0 ? `
+            <div style="text-align:center;padding:var(--sp-6);color:var(--text-muted);font-size:0.85rem;">
+              <span class="material-icons-round" style="font-size:2.5rem;display:block;margin-bottom:var(--sp-2);opacity:0.3;">event_busy</span>
+              Chưa có lịch học nào. Bấm "Thêm lịch học" để tạo.
+            </div>
+          ` : `
+            <div class="venue-coaches-list">
+              ${venueClasses.map(vc => {
+                const days = (vc.scheduleDays || []).sort((a,b) => a - b);
+                return `
+                  <div class="venue-coach-item">
+                    <div class="flex items-center gap-3" style="flex:1;min-width:0;">
+                      <div class="user-avatar-placeholder" style="width:36px;height:36px;font-size:0.8rem;flex-shrink:0;background:var(--accent-info);color:white;">
+                        <span class="material-icons-round" style="font-size:1.2rem;">schedule</span>
+                      </div>
+                      <div style="min-width:0;flex:1;">
+                        <div style="font-weight:600;font-size:0.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                          ${escapeHtml(vc.name || 'Không tên')}
+                        </div>
+                        <div style="font-size:0.75rem;color:var(--text-secondary);display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;">
+                          ${days.map(d => `<span class="day-chip">${formatDayShort(d)}</span>`).join('')}
+                          <span style="color:var(--text-muted);">| ${vc.startTime} - ${vc.endTime}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2" style="flex-shrink:0;">
+                      <button class="btn btn-sm btn-secondary" data-edit-class="${vc.id}" data-venue="${venue.id}" title="Sửa">
+                        <span class="material-icons-round" style="font-size:0.9rem;">edit</span>
+                      </button>
+                      <button class="btn btn-sm btn-ghost" data-remove-class="${vc.id}" data-venue="${venue.id}" data-class-name="${escapeHtml(vc.name)}" title="Xóa">
+                        <span class="material-icons-round" style="font-size:0.9rem;">delete</span>
+                      </button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `}
+
+          <div class="flex items-center justify-between mb-4 mt-6">
+            <h4 style="font-size:0.9rem;color:var(--text-secondary);font-weight:600;">
               <span class="material-icons-round" style="font-size:1rem;vertical-align:middle;">people</span>
               Huấn luyện viên tại ${escapeHtml(venue.name)}
             </h4>
@@ -144,56 +194,6 @@ async function loadVenues() {
                       </button>
                       <button class="btn btn-sm btn-ghost" data-remove-vc="${vc.id}" data-venue="${venue.id}" data-coach-name="${escapeHtml(coach?.name || '?')}" title="Xóa">
                         <span class="material-icons-round" style="font-size:0.9rem;">person_remove</span>
-                      </button>
-                    </div>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-          `}
-
-          <div class="flex items-center justify-between mb-4 mt-6">
-            <h4 style="font-size:0.9rem;color:var(--text-secondary);font-weight:600;">
-              <span class="material-icons-round" style="font-size:1rem;vertical-align:middle;">calendar_today</span>
-              Lịch học tại ${escapeHtml(venue.name)}
-            </h4>
-            <button class="btn btn-sm btn-primary" data-add-class="${venue.id}" data-venue-name="${escapeHtml(venue.name)}">
-              <span class="material-icons-round" style="font-size:0.9rem;">add</span>
-              Thêm lịch học
-            </button>
-          </div>
-
-          ${venueClasses.length === 0 ? `
-            <div style="text-align:center;padding:var(--sp-6);color:var(--text-muted);font-size:0.85rem;">
-              <span class="material-icons-round" style="font-size:2.5rem;display:block;margin-bottom:var(--sp-2);opacity:0.3;">event_busy</span>
-              Chưa có lịch học nào. Bấm "Thêm lịch học" để tạo.
-            </div>
-          ` : `
-            <div class="venue-coaches-list">
-              ${venueClasses.map(vc => {
-                const days = (vc.scheduleDays || []).sort((a,b) => a - b);
-                return `
-                  <div class="venue-coach-item">
-                    <div class="flex items-center gap-3" style="flex:1;min-width:0;">
-                      <div class="user-avatar-placeholder" style="width:36px;height:36px;font-size:0.8rem;flex-shrink:0;background:var(--accent-info);color:white;">
-                        <span class="material-icons-round" style="font-size:1.2rem;">schedule</span>
-                      </div>
-                      <div style="min-width:0;flex:1;">
-                        <div style="font-weight:600;font-size:0.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                          ${escapeHtml(vc.name || 'Không tên')}
-                        </div>
-                        <div style="font-size:0.75rem;color:var(--text-secondary);display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;">
-                          ${days.map(d => `<span class="day-chip">${formatDayShort(d)}</span>`).join('')}
-                          <span style="color:var(--text-muted);">| ${vc.startTime} - ${vc.endTime}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="flex items-center gap-2" style="flex-shrink:0;">
-                      <button class="btn btn-sm btn-secondary" data-edit-class="${vc.id}" data-venue="${venue.id}" title="Sửa">
-                        <span class="material-icons-round" style="font-size:0.9rem;">edit</span>
-                      </button>
-                      <button class="btn btn-sm btn-ghost" data-remove-class="${vc.id}" data-venue="${venue.id}" data-class-name="${escapeHtml(vc.name)}" title="Xóa">
-                        <span class="material-icons-round" style="font-size:0.9rem;">delete</span>
                       </button>
                     </div>
                   </div>
