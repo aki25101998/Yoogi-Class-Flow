@@ -6,6 +6,7 @@ import { showModal, closeModal, confirmDialog } from '../components/modal.js';
 import { showToast } from '../components/toast.js';
 
 let coachesCache = [];
+const expandedVenues = new Set();
 
 export async function renderVenues(container) {
   container.innerHTML = `
@@ -86,11 +87,11 @@ async function loadVenues() {
             <button class="btn btn-sm btn-ghost" data-delete-venue="${venue.id}" data-name="${escapeHtml(venue.name)}" title="Xóa địa điểm">
               <span class="material-icons-round" style="font-size:1rem;">delete</span>
             </button>
-            <span class="material-icons-round venue-toggle-icon" data-toggle-icon="${venue.id}" style="transition:transform 0.3s;cursor:pointer;">expand_more</span>
+            <span class="material-icons-round venue-toggle-icon" data-toggle-icon="${venue.id}" style="transition:transform 0.3s;cursor:pointer;${expandedVenues.has(venue.id) ? 'transform:rotate(180deg);' : ''}">expand_more</span>
           </div>
         </div>
 
-        <div class="venue-detail-body" id="venueBody_${venue.id}" style="display:none;padding-top:var(--sp-4);border-top:1px solid var(--border-color);margin-top:var(--sp-4);">
+        <div class="venue-detail-body" id="venueBody_${venue.id}" style="display:${expandedVenues.has(venue.id) ? 'block' : 'none'};padding-top:var(--sp-4);border-top:1px solid var(--border-color);margin-top:var(--sp-4);">
           <div class="flex items-center justify-between mb-3">
             <h4 style="font-size:0.9rem;color:var(--text-secondary);font-weight:600;">
               <span class="material-icons-round" style="font-size:1rem;vertical-align:middle;">people</span>
@@ -202,9 +203,11 @@ async function loadVenues() {
         const icon = document.querySelector(`[data-toggle-icon="${venueId}"]`);
         if (body.style.display === 'none') {
           body.style.display = 'block';
+          expandedVenues.add(venueId);
           if (icon) icon.style.transform = 'rotate(180deg)';
         } else {
           body.style.display = 'none';
+          expandedVenues.delete(venueId);
           if (icon) icon.style.transform = 'rotate(0deg)';
         }
       });
