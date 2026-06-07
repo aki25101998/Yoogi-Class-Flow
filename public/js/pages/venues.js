@@ -1,5 +1,5 @@
 // Venue Management page (Admin) — Venue-Centric Coach Management
-import { getVenues, addVenue, updateVenue, deleteVenue, getVenueCoaches, addVenueCoach, updateVenueCoach, removeVenueCoach, getCoaches, getStudentsByVenue, addStudent, getSettings, deleteStudent, updateStudent } from '../db.js';
+import { getVenues, addVenue, updateVenue, deleteVenue, getVenueCoaches, addVenueCoach, updateVenueCoach, removeVenueCoach, getCoaches, getStudentsByVenue, addStudent, getSettings, deleteStudent, updateStudent, getVenueClasses, addVenueClass, updateVenueClass, removeVenueClass } from '../db.js';
 import { showStudentForm } from './students.js';
 import { escapeHtml, formatCurrency, formatDayOfWeek, formatDayShort } from '../utils.js';
 import { showModal, closeModal, confirmDialog } from '../components/modal.js';
@@ -58,7 +58,8 @@ async function loadVenues() {
     const venueDataPromises = venues.map(async venue => {
       const venueCoaches = await getVenueCoaches(venue.id);
       const venueStudents = await getStudentsByVenue(venue.id);
-      return { venue, venueCoaches, venueStudents };
+      const venueClasses = await getVenueClasses(venue.id);
+      return { venue, venueCoaches, venueStudents, venueClasses };
     });
     const venueDataList = await Promise.all(venueDataPromises);
 
@@ -66,7 +67,11 @@ async function loadVenues() {
     const coachMap = {};
     coachesCache.forEach(c => { coachMap[c.id] = c; });
 
-    container.innerHTML = venueDataList.map(({ venue, venueCoaches, venueStudents }) => `
+    container.innerHTML = venueDataList.map(({ venue, venueCoaches, venueStudents, venueClasses }) => {
+      const classMap = {};
+      venueClasses.forEach(c => classMap[c.id] = c);
+      
+      return `
       <div class="venue-detail-card card mb-6" data-venue-id="${venue.id}">
         <div class="venue-card-header" data-toggle="${venue.id}">
           <div class="flex items-center gap-3" style="flex:1;">
@@ -149,6 +154,56 @@ async function loadVenues() {
 
           <div class="flex items-center justify-between mb-4 mt-6">
             <h4 style="font-size:0.9rem;color:var(--text-secondary);font-weight:600;">
+              <span class="material-icons-round" style="font-size:1rem;vertical-align:middle;">calendar_today</span>
+              Lịch học tại ${escapeHtml(venue.name)}
+            </h4>
+            <button class="btn btn-sm btn-primary" data-add-class="${venue.id}" data-venue-name="${escapeHtml(venue.name)}">
+              <span class="material-icons-round" style="font-size:0.9rem;">add</span>
+              Thêm lịch học
+            </button>
+          </div>
+
+          ${venueClasses.length === 0 ? `
+            <div style="text-align:center;padding:var(--sp-6);color:var(--text-muted);font-size:0.85rem;">
+              <span class="material-icons-round" style="font-size:2.5rem;display:block;margin-bottom:var(--sp-2);opacity:0.3;">event_busy</span>
+              Chưa có lịch học nào. Bấm "Thêm lịch học" để tạo.
+            </div>
+          ` : `
+            <div class="venue-coaches-list">
+              ${venueClasses.map(vc => {
+                const days = (vc.scheduleDays || []).sort((a,b) => a - b);
+                return `
+                  <div class="venue-coach-item">
+                    <div class="flex items-center gap-3" style="flex:1;min-width:0;">
+                      <div class="user-avatar-placeholder" style="width:36px;height:36px;font-size:0.8rem;flex-shrink:0;background:var(--accent-info);color:white;">
+                        <span class="material-icons-round" style="font-size:1.2rem;">schedule</span>
+                      </div>
+                      <div style="min-width:0;flex:1;">
+                        <div style="font-weight:600;font-size:0.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                          ${escapeHtml(vc.name || 'Không tên')}
+                        </div>
+                        <div style="font-size:0.75rem;color:var(--text-secondary);display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;">
+                          ${days.map(d => `<span class="day-chip">${formatDayShort(d)}</span>`).join('')}
+                          <span style="color:var(--text-muted);">| ${vc.startTime} - ${vc.endTime}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2" style="flex-shrink:0;">
+                      <button class="btn btn-sm btn-secondary" data-edit-class="${vc.id}" data-venue="${venue.id}" title="Sửa">
+                        <span class="material-icons-round" style="font-size:0.9rem;">edit</span>
+                      </button>
+                      <button class="btn btn-sm btn-ghost" data-remove-class="${vc.id}" data-venue="${venue.id}" data-class-name="${escapeHtml(vc.name)}" title="Xóa">
+                        <span class="material-icons-round" style="font-size:0.9rem;">delete</span>
+                      </button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `}
+
+          <div class="flex items-center justify-between mb-4 mt-6">
+            <h4 style="font-size:0.9rem;color:var(--text-secondary);font-weight:600;">
               <span class="material-icons-round" style="font-size:1rem;vertical-align:middle;">school</span>
               Học viên tại ${escapeHtml(venue.name)}
             </h4>
@@ -177,6 +232,7 @@ async function loadVenues() {
                       </div>
                       <div style="font-size:0.75rem;color:var(--text-secondary);display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;">
                         ${student.beltRank ? `<span class="badge" style="background:var(--bg-secondary); color:var(--text-primary); font-size: 0.7rem; padding: 2px 6px;">${escapeHtml(student.beltRank)}</span>` : ''}
+                        ${student.classId && classMap[student.classId] ? `<span class="badge" style="background:var(--accent-info); color:white; font-size: 0.7rem; padding: 2px 6px;">${escapeHtml(classMap[student.classId].name)}</span>` : ''}
                       </div>
                     </div>
                   </div>
@@ -197,7 +253,8 @@ async function loadVenues() {
           `}
         </div>
       </div>
-    `).join('');
+    `;
+    }).join('');
 
     // Toggle venue details
     container.querySelectorAll('[data-toggle]').forEach(header => {
@@ -282,6 +339,52 @@ async function loadVenues() {
           await removeVenueCoach(btn.dataset.venue, btn.dataset.removeVc);
           showToast({ message: 'Đã xóa HLV khỏi địa điểm', type: 'success' });
           await loadVenues();
+        }
+      });
+    });
+
+    // Add class handlers
+    container.querySelectorAll('[data-add-class]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const venueId = btn.dataset.addClass;
+        const venue = venues.find(v => v.id === venueId);
+        showVenueClassForm(venueId, venue?.name, null);
+      });
+    });
+
+    // Edit class handlers
+    container.querySelectorAll('[data-edit-class]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const venueId = btn.dataset.venue;
+        const classId = btn.dataset.editClass;
+        const venue = venues.find(v => v.id === venueId);
+        const vd = venueDataList.find(d => d.venue.id === venueId);
+        const vc = vd?.venueClasses.find(c => c.id === classId);
+        if (vc) showVenueClassForm(venueId, venue?.name, vc);
+      });
+    });
+
+    // Remove class handlers
+    container.querySelectorAll('[data-remove-class]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const confirmed = await confirmDialog(
+          'Xóa lịch học',
+          `Bạn có chắc muốn xóa lịch học <strong>${btn.dataset.className}</strong> khỏi địa điểm này?`
+        );
+        if (confirmed) {
+          const item = btn.closest('.venue-coach-item');
+          if (item) item.style.opacity = '0.5';
+          try {
+            await removeVenueClass(btn.dataset.venue, btn.dataset.removeClass);
+            showToast({ message: 'Đã xóa lịch học', type: 'success' });
+            await loadVenues();
+          } catch (err) {
+            showToast({ message: 'Lỗi: ' + err.message, type: 'error' });
+            if (item) item.style.opacity = '1';
+          }
         }
       });
     });
@@ -505,6 +608,97 @@ function showVenueCoachForm(venueId, venueName, existingVC = null, existingCoach
         } else {
           await addVenueCoach(venueId, data);
           showToast({ message: 'Đã thêm HLV vào địa điểm', type: 'success' });
+        }
+        closeModal();
+        await loadVenues();
+      } catch (err) {
+        showToast({ message: 'Lỗi: ' + err.message, type: 'error' });
+      } finally {
+        if (confirmBtn) {
+          confirmBtn.disabled = false;
+          confirmBtn.innerHTML = originalText;
+        }
+      }
+    }
+  });
+
+  // Day picker toggle
+  setTimeout(() => {
+    document.querySelectorAll('.day-picker-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const cb = item.querySelector('input');
+        cb.checked = !cb.checked;
+        item.classList.toggle('selected', cb.checked);
+      });
+    });
+  }, 50);
+}
+
+function showVenueClassForm(venueId, venueName, existingClass = null) {
+  const isEdit = !!existingClass;
+  const selectedDays = existingClass?.scheduleDays || [];
+
+  showModal({
+    title: isEdit ? `Sửa lịch học tại ${escapeHtml(venueName)}` : `Thêm lịch học vào ${escapeHtml(venueName)}`,
+    confirmText: isEdit ? 'Cập nhật' : 'Thêm',
+    content: `
+      <div class="form-group">
+        <label class="form-label">Tên lịch học (Ca học) *</label>
+        <input type="text" class="form-input" id="vClassName" value="${escapeHtml(existingClass?.name || '')}" placeholder="Ca Sáng, Ca Tối...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Ngày học trong tuần</label>
+        <div class="schedule-days-picker" id="vClassDays">
+          ${[1,2,3,4,5,6,7].map(d => `
+            <label class="day-picker-item ${selectedDays.includes(d) ? 'selected' : ''}">
+              <input type="checkbox" value="${d}" ${selectedDays.includes(d) ? 'checked' : ''} style="display:none;">
+              <span>${formatDayShort(d)}</span>
+            </label>
+          `).join('')}
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Giờ bắt đầu</label>
+          <input type="time" class="form-input" id="vClassStart" value="${existingClass?.startTime || '18:00'}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Giờ kết thúc</label>
+          <input type="time" class="form-input" id="vClassEnd" value="${existingClass?.endTime || '20:00'}">
+        </div>
+      </div>
+    `,
+    onConfirm: async () => {
+      const dayCheckboxes = document.querySelectorAll('#vClassDays input[type="checkbox"]');
+      const scheduleDays = [];
+      dayCheckboxes.forEach(cb => { if (cb.checked) scheduleDays.push(Number(cb.value)); });
+
+      const data = {
+        name: document.getElementById('vClassName').value.trim(),
+        scheduleDays,
+        startTime: document.getElementById('vClassStart').value,
+        endTime: document.getElementById('vClassEnd').value,
+      };
+
+      if (!data.name) {
+        showToast({ message: 'Vui lòng nhập tên lịch học', type: 'warning' });
+        return;
+      }
+
+      const confirmBtn = document.getElementById('modalConfirmBtn');
+      const originalText = confirmBtn ? confirmBtn.innerHTML : '';
+      if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<span class="material-icons-round" style="animation: spin 1s linear infinite;">refresh</span> Đang lưu...';
+      }
+
+      try {
+        if (isEdit) {
+          await updateVenueClass(venueId, existingClass.id, data);
+          showToast({ message: 'Đã cập nhật lịch học', type: 'success' });
+        } else {
+          await addVenueClass(venueId, data);
+          showToast({ message: 'Đã thêm lịch học mới', type: 'success' });
         }
         closeModal();
         await loadVenues();

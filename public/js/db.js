@@ -1,7 +1,7 @@
 // Firestore Database Layer — All CRUD operations
 import { getDb } from './auth.js';
 
-const { collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, query, where, orderBy, Timestamp, setDoc } = window.firebase;
+const { collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, query, where, orderBy, Timestamp, setDoc, collectionGroup } = window.firebase;
 
 // ============ COACHES ============
 
@@ -259,6 +259,79 @@ export async function updateVenueCoach(venueId, venueCoachId, data) {
  */
 export async function removeVenueCoach(venueId, venueCoachId) {
   await updateVenueCoach(venueId, venueCoachId, { status: 'inactive' });
+}
+
+// ============ VENUE CLASSES (sub-collection) ============
+
+/**
+ * Get all classes assigned to a venue
+ * @param {string} venueId
+ * @returns {Promise<Array>}
+ */
+export async function getVenueClasses(venueId) {
+  const db = getDb();
+  const q = query(collection(db, 'venues', venueId, 'venueClasses'), where('status', '==', 'active'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, venueId, ...d.data() }));
+}
+
+/**
+ * Get all venue classes across all venues (using collectionGroup)
+ * @returns {Promise<Array>}
+ */
+export async function getAllVenueClasses() {
+  const db = getDb();
+  const q = query(collectionGroup(db, 'venueClasses'), where('status', '==', 'active'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => {
+    // Extract venueId from the reference path: venues/{venueId}/venueClasses/{classId}
+    const venueId = d.ref.parent.parent ? d.ref.parent.parent.id : '';
+    return { id: d.id, venueId, ...d.data() };
+  });
+}
+
+/**
+ * Add a class to a venue
+ * @param {string} venueId
+ * @param {object} data - { name, startTime, endTime, scheduleDays }
+ * @returns {Promise<string>}
+ */
+export async function addVenueClass(venueId, data) {
+  const db = getDb();
+  const classData = {
+    name: data.name || '',
+    startTime: data.startTime || '18:00',
+    endTime: data.endTime || '20:00',
+    scheduleDays: data.scheduleDays || [],
+    status: 'active',
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now()
+  };
+  const ref = await addDoc(collection(db, 'venues', venueId, 'venueClasses'), classData);
+  return ref.id;
+}
+
+/**
+ * Update a venueClass entry
+ * @param {string} venueId
+ * @param {string} classId
+ * @param {object} data
+ */
+export async function updateVenueClass(venueId, classId, data) {
+  const db = getDb();
+  await updateDoc(doc(db, 'venues', venueId, 'venueClasses', classId), {
+    ...data,
+    updatedAt: Timestamp.now()
+  });
+}
+
+/**
+ * Remove a class from a venue (soft delete)
+ * @param {string} venueId
+ * @param {string} classId
+ */
+export async function removeVenueClass(venueId, classId) {
+  await updateVenueClass(venueId, classId, { status: 'inactive' });
 }
 
 /**
@@ -702,6 +775,7 @@ export async function addStudent(data) {
     weight: Number(data.weight) || 0,
     height: Number(data.height) || 0,
     venueId: data.venueId || '',
+    classId: data.classId || '',
     status: 'active',
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now()

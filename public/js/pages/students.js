@@ -1,5 +1,5 @@
 // Student Management page (Admin)
-import { getAllStudents, getVenues, addStudent, updateStudent, deleteStudent, getSettings } from '../db.js';
+import { getAllStudents, getVenues, addStudent, updateStudent, deleteStudent, getSettings, getAllVenueClasses, getVenueClasses } from '../db.js';
 import { escapeHtml } from '../utils.js';
 import { showModal, closeModal, confirmDialog } from '../components/modal.js';
 import { showToast } from '../components/toast.js';
@@ -7,6 +7,7 @@ import { showToast } from '../components/toast.js';
 let allStudents = [];
 let allVenues = [];
 let beltRanks = [];
+let allClasses = [];
 
 export async function renderStudents(container) {
   container.innerHTML = `
@@ -44,13 +45,15 @@ export async function renderStudents(container) {
 
 async function loadData() {
   try {
-    const [students, venues, settings] = await Promise.all([
+    const [students, venues, settings, classes] = await Promise.all([
       getAllStudents(),
       getVenues(),
-      getSettings()
+      getSettings(),
+      getAllVenueClasses()
     ]);
     allStudents = students;
     allVenues = venues;
+    allClasses = classes;
     beltRanks = settings?.beltRanks || ["Đai trắng", "Đai vàng", "Đai xanh", "Đai đỏ", "Đai đen"];
     
     const venueFilter = document.getElementById('studentVenueFilter');
@@ -121,6 +124,10 @@ function renderStudentsGrid() {
         <div class="coach-card-detail">
           <span class="label">Cơ sở</span>
           <span class="value">${escapeHtml(venueMap[student.venueId] || 'Chưa xếp')}</span>
+        </div>
+        <div class="coach-card-detail">
+          <span class="label">Lịch học</span>
+          <span class="value">${student.classId && allClasses.find(c => c.id === student.classId) ? escapeHtml(allClasses.find(c => c.id === student.classId).name) : 'Chưa xếp ca'}</span>
         </div>
         <div class="coach-card-detail">
           <span class="label">Ngày sinh</span>
@@ -218,6 +225,12 @@ export async function showStudentForm(student = null, defaultVenueId = null, onS
         </select>
       </div>
       <div class="form-group">
+        <label class="form-label">Lịch học (Ca học)</label>
+        <select class="form-select" id="studentClass">
+          <option value="">-- Chọn lịch học --</option>
+        </select>
+      </div>
+      <div class="form-group">
         <label class="form-label">Ngày sinh</label>
         <input type="date" class="form-input" id="studentDob" value="${escapeHtml(student?.dob || '')}">
       </div>
@@ -243,6 +256,7 @@ export async function showStudentForm(student = null, defaultVenueId = null, onS
       const data = {
         name: document.getElementById('studentName').value.trim(),
         venueId: document.getElementById('studentVenue').value,
+        classId: document.getElementById('studentClass').value,
         dob: document.getElementById('studentDob').value,
         beltRank: document.getElementById('studentBelt').value,
         height: document.getElementById('studentHeight').value,
@@ -285,4 +299,32 @@ export async function showStudentForm(student = null, defaultVenueId = null, onS
       }
     }
   });
+
+  setTimeout(() => {
+    const venueSelect = document.getElementById('studentVenue');
+    const classSelect = document.getElementById('studentClass');
+    
+    const loadClasses = async (vId) => {
+      if (!vId) {
+        classSelect.innerHTML = '<option value="">-- Chọn lịch học --</option>';
+        return;
+      }
+      classSelect.innerHTML = '<option value="">-- Đang tải... --</option>';
+      try {
+        const classes = await getVenueClasses(vId);
+        classSelect.innerHTML = '<option value="">-- Chọn lịch học --</option>' + 
+          classes.map(c => `<option value="${c.id}" ${c.id === student?.classId ? 'selected' : ''}>${escapeHtml(c.name)} (${c.startTime} - ${c.endTime})</option>`).join('');
+      } catch (e) {
+        classSelect.innerHTML = '<option value="">-- Lỗi tải lịch học --</option>';
+      }
+    };
+
+    if (venueSelect.value) {
+      loadClasses(venueSelect.value);
+    }
+
+    venueSelect.addEventListener('change', (e) => {
+      loadClasses(e.target.value);
+    });
+  }, 50);
 }
