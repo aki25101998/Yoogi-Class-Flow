@@ -15,12 +15,12 @@ export async function renderStudents(container) {
         <h1 class="page-title">Quản Lý Học Viên</h1>
         <p class="page-subtitle">Thêm, sửa, quản lý học viên</p>
       </div>
-      <div style="display: flex; gap: 8px;">
-        <input type="text" id="studentSearchInput" class="form-input" placeholder="Tìm kiếm học viên..." style="min-width: 200px;">
-        <select id="studentVenueFilter" class="form-select" style="min-width: 150px;">
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
+        <input type="text" id="studentSearchInput" class="form-input" placeholder="Tìm kiếm học viên..." style="min-width: 150px; flex: 1;">
+        <select id="studentVenueFilter" class="form-select" style="min-width: 150px; flex: 1;">
           <option value="">Tất cả cơ sở</option>
         </select>
-        <button class="btn btn-primary" id="btnAddStudent">
+        <button class="btn btn-primary" id="btnAddStudent" style="flex-shrink: 0; white-space: nowrap;">
           <span class="material-icons-round">person_add</span>
           Thêm
         </button>
