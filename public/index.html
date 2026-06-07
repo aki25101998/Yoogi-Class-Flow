@@ -62,7 +62,8 @@
     };
 
     // Load app after Firebase is ready (with cache busting)
-    import('./js/app.js?v=' + Date.now());
+    import('./js/app.js?v=' + Date.now()).catch(e => alert('Import error: ' + (e.stack || e)));
+    console.log("Import initiated");
   </script>
 </body>
 </html>

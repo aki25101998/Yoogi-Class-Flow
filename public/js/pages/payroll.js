@@ -62,7 +62,8 @@ async function loadPayrollData() {
     const totalPayroll = payroll.reduce((sum, p) => sum + p.totalEarnings, 0);
     const totalSessions = payroll.reduce((sum, p) => sum + p.totalSessions, 0);
 
-    document.getElementById('payrollStats').innerHTML = `
+    const payrollStats = document.getElementById('payrollStats');
+    if (payrollStats) payrollStats.innerHTML = `
       <div class="stat-card">
         <div class="stat-icon green">
           <span class="material-icons-round">payments</span>
@@ -93,6 +94,7 @@ async function loadPayrollData() {
     `;
 
     const tableEl = document.getElementById('payrollTable');
+    if (!tableEl) return;
 
     if (payroll.length === 0) {
       tableEl.innerHTML = `

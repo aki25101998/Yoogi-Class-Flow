@@ -67,7 +67,9 @@ async function loadDashboardData() {
     const totalPayroll = approvedMonth.reduce((sum, a) => sum + (a.earnings || 0), 0);
 
     // Stats
-    document.getElementById('statsGrid').innerHTML = `
+    const statsGrid = document.getElementById('statsGrid');
+    if (!statsGrid) return;
+    statsGrid.innerHTML = `
       <div class="stat-card">
         <div class="stat-icon purple">
           <span class="material-icons-round">people</span>
@@ -107,15 +109,8 @@ async function loadDashboardData() {
     `;
 
     // Today's schedule
-    if (todaySchedules.length === 0) {
-      document.getElementById('todaySchedule').innerHTML = `
-        <div class="empty-state" style="padding: var(--sp-6);">
-          <span class="material-icons-round empty-state-icon" style="font-size: 2.5rem;">event_busy</span>
-          <p class="empty-state-title">Hôm nay không có lịch dạy</p>
-        </div>
-      `;
-    } else {
-      document.getElementById('todaySchedule').innerHTML = `
+      const todayScheduleEl = document.getElementById('todaySchedule');
+      if (todayScheduleEl) todayScheduleEl.innerHTML = `
         <div class="table-wrapper">
           <table class="table">
             <thead>
@@ -128,7 +123,7 @@ async function loadDashboardData() {
               </tr>
             </thead>
             <tbody>
-              ${todaySchedules.map(s => {
+              ${todaySchedules.length === 0 ? `<tr><td colspan="5" style="text-align:center; padding: 2rem;">Không có lịch dạy</td></tr>` : todaySchedules.map(s => {
                 const coach = coachMap[s.coachId];
                 const venue = venueMap[s.venueId];
                 const att = attMap[`${s.coachId}_${s.id}`];
@@ -192,7 +187,6 @@ async function loadDashboardData() {
           }
         });
       });
-    }
 
     // Monthly summary
     const payrollByCoach = {};
@@ -208,15 +202,8 @@ async function loadDashboardData() {
       .map(([id, data]) => ({ coachId: id, ...data }))
       .sort((a, b) => b.total - a.total);
 
-    if (payrollEntries.length === 0) {
-      document.getElementById('monthSummary').innerHTML = `
-        <div class="empty-state" style="padding: var(--sp-6);">
-          <span class="material-icons-round empty-state-icon" style="font-size: 2.5rem;">payments</span>
-          <p class="empty-state-title">Chưa có dữ liệu lương tháng này</p>
-        </div>
-      `;
-    } else {
-      document.getElementById('monthSummary').innerHTML = `
+      const monthSummaryEl = document.getElementById('monthSummary');
+      if (monthSummaryEl) monthSummaryEl.innerHTML = `
         <div style="padding: var(--sp-4) 0;">
           <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: var(--sp-3); padding: 0 var(--sp-4);">Tổng chi lương tháng</p>
           <p class="payroll-total" style="padding: 0 var(--sp-4); margin-bottom: var(--sp-5);">${formatCurrency(totalPayroll)}</p>
@@ -242,7 +229,6 @@ async function loadDashboardData() {
           </table>
         </div>
       `;
-    }
   } catch (err) {
     console.error('Dashboard error:', err);
     showToast({ message: 'Lỗi tải dữ liệu: ' + err.message, type: 'error' });

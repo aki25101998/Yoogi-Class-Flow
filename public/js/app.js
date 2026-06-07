@@ -14,6 +14,7 @@ import { renderMyCheckin } from './pages/my-checkin.js';
 import { renderMyAttendance } from './pages/my-attendance.js';
 import { renderMyEarnings } from './pages/my-earnings.js';
 import { renderStudents } from './pages/students.js';
+import { renderSettings } from './pages/settings.js';
 
 // Register all routes
 // Admin / Granular permission routes
@@ -24,6 +25,7 @@ registerRoute('#/venues', renderVenues, { permission: 'manage_venues' });
 registerRoute('#/schedule', renderSchedule, { permission: 'manage_schedule' });
 registerRoute('#/attendance', renderAttendance, { permission: 'manage_attendance' });
 registerRoute('#/payroll', renderPayroll, { permission: 'view_payroll' });
+registerRoute('#/settings', renderSettings, { permission: 'manage_settings' });
 
 // Coach routes
 registerRoute('#/my-schedule', renderMySchedule, { role: 'coach' });
@@ -32,6 +34,8 @@ registerRoute('#/my-attendance', renderMyAttendance, { role: 'coach' });
 registerRoute('#/my-earnings', renderMyEarnings, { role: 'coach' });
 
 // Listen for auth state changes
+let isRouterInitialized = false;
+
 onAuthStateChange((user, userData) => {
   const app = document.getElementById('app');
   
@@ -45,7 +49,10 @@ onAuthStateChange((user, userData) => {
   renderLayout(app);
   
   // Initialize router
-  initRouter();
+  if (!isRouterInitialized) {
+    initRouter();
+    isRouterInitialized = true;
+  }
 
   // Navigate to default route based on role
   const currentHash = window.location.hash;

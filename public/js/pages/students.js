@@ -1,11 +1,12 @@
 // Student Management page (Admin)
-import { getAllStudents, getVenues, addStudent, updateStudent, deleteStudent } from '../db.js';
+import { getAllStudents, getVenues, addStudent, updateStudent, deleteStudent, getSettings } from '../db.js';
 import { escapeHtml } from '../utils.js';
 import { showModal, closeModal, confirmDialog } from '../components/modal.js';
 import { showToast } from '../components/toast.js';
 
 let allStudents = [];
 let allVenues = [];
+let beltRanks = [];
 
 export async function renderStudents(container) {
   container.innerHTML = `
@@ -43,12 +44,14 @@ export async function renderStudents(container) {
 
 async function loadData() {
   try {
-    const [students, venues] = await Promise.all([
+    const [students, venues, settings] = await Promise.all([
       getAllStudents(),
-      getVenues()
+      getVenues(),
+      getSettings()
     ]);
     allStudents = students;
     allVenues = venues;
+    beltRanks = settings?.beltRanks || ["Đai trắng", "Đai vàng", "Đai xanh", "Đai đỏ", "Đai đen"];
     
     const venueFilter = document.getElementById('studentVenueFilter');
     if (venueFilter.options.length === 1) {
@@ -86,6 +89,7 @@ function applyFilters() {
 
 function renderStudentsGrid() {
   const grid = document.getElementById('studentsGrid');
+  if (!grid) return;
   
   if (allStudents.length === 0) {
     grid.innerHTML = `
@@ -180,11 +184,22 @@ function renderStudentsGrid() {
   applyFilters();
 }
 
-function showStudentForm(student = null) {
+export async function showStudentForm(student = null, defaultVenueId = null, onSuccess = null) {
   const isEdit = !!student;
   
-  const venueOptions = allVenues.map(v => 
-    `<option value="${v.id}" ${student?.venueId === v.id ? 'selected' : ''}>${escapeHtml(v.name)}</option>`
+  let currentVenues = allVenues;
+  let currentBeltRanks = beltRanks;
+
+  if (!currentVenues || currentVenues.length === 0) {
+    currentVenues = await getVenues();
+  }
+  if (!currentBeltRanks || currentBeltRanks.length === 0) {
+    const settings = await getSettings();
+    currentBeltRanks = settings?.beltRanks || ["Đai trắng", "Đai vàng", "Đai xanh", "Đai đỏ", "Đai đen"];
+  }
+
+  const venueOptions = currentVenues.map(v => 
+    `<option value="${v.id}" ${(student?.venueId || defaultVenueId) === v.id ? 'selected' : ''}>${escapeHtml(v.name)}</option>`
   ).join('');
 
   showModal({
@@ -210,11 +225,7 @@ function showStudentForm(student = null) {
         <label class="form-label">Cấp đai</label>
         <select class="form-select" id="studentBelt">
           <option value="">Chọn cấp đai</option>
-          <option value="Đai trắng" ${student?.beltRank === 'Đai trắng' ? 'selected' : ''}>Đai trắng</option>
-          <option value="Đai vàng" ${student?.beltRank === 'Đai vàng' ? 'selected' : ''}>Đai vàng</option>
-          <option value="Đai xanh" ${student?.beltRank === 'Đai xanh' ? 'selected' : ''}>Đai xanh</option>
-          <option value="Đai đỏ" ${student?.beltRank === 'Đai đỏ' ? 'selected' : ''}>Đai đỏ</option>
-          <option value="Đai đen" ${student?.beltRank === 'Đai đen' ? 'selected' : ''}>Đai đen</option>
+          ${beltRanks.map(belt => `<option value="${escapeHtml(belt)}" ${student?.beltRank === belt ? 'selected' : ''}>${escapeHtml(belt)}</option>`).join('')}
         </select>
       </div>
       <div style="display: flex; gap: 16px;">
@@ -252,7 +263,11 @@ function showStudentForm(student = null) {
           showToast({ message: 'Đã thêm học viên mới', type: 'success' });
         }
         closeModal();
-        await loadData();
+        if (onSuccess) {
+          await onSuccess();
+        } else {
+          await loadData();
+        }
       } catch (err) {
         showToast({ message: 'Lỗi: ' + err.message, type: 'error' });
       }

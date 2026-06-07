@@ -1,5 +1,6 @@
 // Venue Management page (Admin) — Venue-Centric Coach Management
-import { getVenues, addVenue, updateVenue, deleteVenue, getVenueCoaches, addVenueCoach, updateVenueCoach, removeVenueCoach, getCoaches } from '../db.js';
+import { getVenues, addVenue, updateVenue, deleteVenue, getVenueCoaches, addVenueCoach, updateVenueCoach, removeVenueCoach, getCoaches, getStudentsByVenue, addStudent, getSettings } from '../db.js';
+import { showStudentForm } from './students.js';
 import { escapeHtml, formatCurrency, formatDayOfWeek, formatDayShort } from '../utils.js';
 import { showModal, closeModal, confirmDialog } from '../components/modal.js';
 import { showToast } from '../components/toast.js';
@@ -39,6 +40,7 @@ async function loadVenues() {
   try {
     const venues = await getVenues();
     const container = document.getElementById('venuesContainer');
+    if (!container) return;
 
     if (venues.length === 0) {
       container.innerHTML = `
@@ -51,10 +53,11 @@ async function loadVenues() {
       return;
     }
 
-    // Load venue coaches for all venues
+    // Load venue coaches and students for all venues
     const venueDataPromises = venues.map(async venue => {
       const venueCoaches = await getVenueCoaches(venue.id);
-      return { venue, venueCoaches };
+      const venueStudents = await getStudentsByVenue(venue.id);
+      return { venue, venueCoaches, venueStudents };
     });
     const venueDataList = await Promise.all(venueDataPromises);
 
@@ -62,7 +65,7 @@ async function loadVenues() {
     const coachMap = {};
     coachesCache.forEach(c => { coachMap[c.id] = c; });
 
-    container.innerHTML = venueDataList.map(({ venue, venueCoaches }) => `
+    container.innerHTML = venueDataList.map(({ venue, venueCoaches, venueStudents }) => `
       <div class="venue-detail-card card mb-6" data-venue-id="${venue.id}">
         <div class="venue-card-header" data-toggle="${venue.id}">
           <div class="flex items-center gap-3" style="flex:1;">
@@ -76,6 +79,7 @@ async function loadVenues() {
           </div>
           <div class="flex items-center gap-2">
             <span class="badge badge-active" style="font-size:0.7rem;">${venueCoaches.length} HLV</span>
+            <span class="badge badge-pending" style="font-size:0.7rem;">${venueStudents.length} Học viên</span>
             <button class="btn btn-sm btn-secondary" data-edit-venue="${venue.id}" title="Sửa địa điểm">
               <span class="material-icons-round" style="font-size:1rem;">edit</span>
             </button>
@@ -139,6 +143,44 @@ async function loadVenues() {
                   </div>
                 `;
               }).join('')}
+            </div>
+          `}
+
+          <div class="flex items-center justify-between mb-3 mt-5">
+            <h4 style="font-size:0.9rem;color:var(--text-secondary);font-weight:600;">
+              <span class="material-icons-round" style="font-size:1rem;vertical-align:middle;">school</span>
+              Học viên tại ${escapeHtml(venue.name)}
+            </h4>
+            <button class="btn btn-sm btn-primary" data-add-student="${venue.id}" data-venue-name="${escapeHtml(venue.name)}">
+              <span class="material-icons-round" style="font-size:0.9rem;">person_add</span>
+              Thêm học viên
+            </button>
+          </div>
+
+          ${venueStudents.length === 0 ? `
+            <div style="text-align:center;padding:var(--sp-6);color:var(--text-muted);font-size:0.85rem;">
+              <span class="material-icons-round" style="font-size:2.5rem;display:block;margin-bottom:var(--sp-2);opacity:0.3;">person_off</span>
+              Chưa có học viên nào tại địa điểm này.
+            </div>
+          ` : `
+            <div class="venue-coaches-list">
+              ${venueStudents.map(student => `
+                <div class="venue-coach-item">
+                  <div class="flex items-center gap-3" style="flex:1;min-width:0;">
+                    <div class="user-avatar-placeholder" style="width:36px;height:36px;font-size:0.8rem;flex-shrink:0;">
+                      ${(student.name || '?').charAt(0).toUpperCase()}
+                    </div>
+                    <div style="min-width:0;flex:1;">
+                      <div style="font-weight:600;font-size:0.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                        ${escapeHtml(student.name)}
+                      </div>
+                      <div style="font-size:0.75rem;color:var(--text-secondary);display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;">
+                        ${student.beltRank ? `<span class="badge" style="background:var(--bg-secondary); color:var(--text-primary); font-size: 0.7rem; padding: 2px 6px;">${escapeHtml(student.beltRank)}</span>` : ''}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
             </div>
           `}
         </div>
@@ -225,6 +267,15 @@ async function loadVenues() {
           showToast({ message: 'Đã xóa HLV khỏi địa điểm', type: 'success' });
           await loadVenues();
         }
+      });
+    });
+
+    // Add student handlers
+    container.querySelectorAll('[data-add-student]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const venueId = btn.dataset.addStudent;
+        showStudentForm(null, venueId, loadVenues);
       });
     });
 
@@ -394,3 +445,4 @@ function showVenueCoachForm(venueId, venueName, existingVC = null, existingCoach
     });
   }, 50);
 }
+

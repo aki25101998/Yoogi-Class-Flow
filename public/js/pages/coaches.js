@@ -1,5 +1,5 @@
 // Coach Management page (Admin)
-import { getCoaches, getAllCoaches, addCoach, updateCoach, deleteCoach } from '../db.js';
+import { getCoaches, getAllCoaches, addCoach, updateCoach, deleteCoach, getSettings } from '../db.js';
 import { escapeHtml } from '../utils.js';
 import { showModal, closeModal, confirmDialog } from '../components/modal.js';
 import { showToast } from '../components/toast.js';
@@ -33,6 +33,7 @@ export async function renderCoaches(container) {
 }
 
 let allCoachesData = [];
+let beltRanks = [];
 
 function filterCoaches(query) {
   const cards = document.querySelectorAll('.coach-card');
@@ -48,9 +49,14 @@ function filterCoaches(query) {
 
 async function loadCoaches() {
   try {
-    const coaches = await getAllCoaches();
+    const [coaches, settings] = await Promise.all([
+      getAllCoaches(),
+      getSettings()
+    ]);
     allCoachesData = coaches;
+    beltRanks = settings?.beltRanks || ["Đai trắng", "Đai vàng", "Đai xanh", "Đai đỏ", "Đai đen", "Đai đen 1 đẳng", "Đai đen 2 đẳng", "Đai đen 3 đẳng"];
     const grid = document.getElementById('coachesGrid');
+    if (!grid) return;
     
     if (coaches.length === 0) {
       grid.innerHTML = `
@@ -177,13 +183,7 @@ function showCoachForm(coach = null) {
         <label class="form-label">Trình độ</label>
         <select class="form-select" id="coachLevel">
           <option value="">Chọn trình độ</option>
-          <option value="Đai trắng" ${coach?.level === 'Đai trắng' ? 'selected' : ''}>Đai trắng</option>
-          <option value="Đai vàng" ${coach?.level === 'Đai vàng' ? 'selected' : ''}>Đai vàng</option>
-          <option value="Đai xanh" ${coach?.level === 'Đai xanh' ? 'selected' : ''}>Đai xanh</option>
-          <option value="Đai đỏ" ${coach?.level === 'Đai đỏ' ? 'selected' : ''}>Đai đỏ</option>
-          <option value="Đai đen 1 đẳng" ${coach?.level === 'Đai đen 1 đẳng' ? 'selected' : ''}>Đai đen 1 đẳng</option>
-          <option value="Đai đen 2 đẳng" ${coach?.level === 'Đai đen 2 đẳng' ? 'selected' : ''}>Đai đen 2 đẳng</option>
-          <option value="Đai đen 3 đẳng" ${coach?.level === 'Đai đen 3 đẳng' ? 'selected' : ''}>Đai đen 3 đẳng</option>
+          ${beltRanks.map(belt => `<option value="${escapeHtml(belt)}" ${coach?.level === belt ? 'selected' : ''}>${escapeHtml(belt)}</option>`).join('')}
         </select>
       </div>
       <div class="form-group">

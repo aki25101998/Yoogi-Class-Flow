@@ -59,10 +59,11 @@ async function loadAttendanceData() {
     coaches.forEach(c => { coachMap[c.id] = c; });
     const venueMap = {};
     venues.forEach(v => { venueMap[v.id] = v; });
-
+    const records = await getAttendanceByDate(currentDate);
     const tableEl = document.getElementById('attendanceTable');
-
-    if (attendance.length === 0) {
+    if (!tableEl) return;
+    
+    if (records.length === 0) {
       tableEl.innerHTML = `
         <div class="empty-state">
           <span class="material-icons-round empty-state-icon">event_busy</span>

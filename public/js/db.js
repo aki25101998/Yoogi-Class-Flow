@@ -755,3 +755,32 @@ export async function submitStudentAttendance(studentIds, venueId, date, coachId
   
   await batch.commit();
 }
+
+// ============ SETTINGS ============
+
+/**
+ * Get system settings (general)
+ */
+export async function getSettings() {
+  const db = getDb();
+  const d = await getDoc(doc(db, 'settings', 'general'));
+  if (d.exists()) {
+    return d.data();
+  }
+  // Default settings if not exists
+  const defaultSettings = {
+    beltRanks: ["Đai trắng", "Đai vàng", "Đai xanh", "Đai đỏ", "Đai đen", "Đai đen 1 đẳng", "Đai đen 2 đẳng", "Đai đen 3 đẳng"]
+  };
+  // Automatically create default document
+  await setDoc(doc(db, 'settings', 'general'), defaultSettings);
+  return defaultSettings;
+}
+
+/**
+ * Update system settings
+ */
+export async function updateSettings(data) {
+  const db = getDb();
+  await setDoc(doc(db, 'settings', 'general'), data, { merge: true });
+}
+

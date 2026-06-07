@@ -50,7 +50,7 @@ async function loadMyScheduleData() {
     const y = currentMonth.getFullYear();
     const m = currentMonth.getMonth();
     
-    document.getElementById('currentMonthDisplay').textContent = \`Tháng \${m + 1} / \${y}\`;
+    document.getElementById('currentMonthDisplay').textContent = `Tháng ${m + 1} / ${y}`;
     
     const firstDayOfMonth = new Date(y, m, 1);
     const lastDayOfMonth = new Date(y, m + 1, 0);
@@ -81,39 +81,39 @@ async function loadMyScheduleData() {
       calendarDays.push({ date: null });
     }
 
-    content.innerHTML = \`
+    content.innerHTML = `
       <div class="schedule-grid" style="grid-template-rows: auto; grid-auto-rows: minmax(100px, auto);">
-        \${[1,2,3,4,5,6,7].map(day => \`
-          <div class="schedule-day">\${formatDayShort(day)}</div>
-        \`).join('')}
-        \${calendarDays.map(cell => {
+        ${[1,2,3,4,5,6,7].map(day => `
+          <div class="schedule-day">${formatDayShort(day)}</div>
+        `).join('')}
+        ${calendarDays.map(cell => {
           if (!cell.date) {
-            return \`<div class="schedule-cell" style="background: var(--bg-page); border: 1px solid var(--border-color); opacity: 0.5;"></div>\`;
+            return `<div class="schedule-cell" style="background: var(--bg-page); border: 1px solid var(--border-color); opacity: 0.5;"></div>`;
           }
-          return \`
+          return `
             <div class="schedule-cell" style="border: 1px solid var(--border-color); padding: 4px; min-height: 100px; display: flex; flex-direction: column; gap: 4px;">
-              <div style="font-weight: bold; text-align: right; color: var(--text-muted); font-size: 0.8rem;">\${cell.date}</div>
-              \${cell.schedules.map(s => {
-                return \`
+              <div style="font-weight: bold; text-align: right; color: var(--text-muted); font-size: 0.8rem;">${cell.date}</div>
+              ${cell.schedules.map(s => {
+                return `
                   <div class="schedule-item" style="border-left-color: var(--accent-primary); background: rgba(124,106,255,0.1); padding: 4px; margin-bottom: 2px;">
-                    <div class="venue-name" style="font-size: 0.7rem; font-weight: bold; color: var(--text-primary);">\${escapeHtml(s.venue?.name || '?')}</div>
-                    <div class="time-range" style="font-size: 0.65rem; color: var(--text-secondary);">\${s.startTime}</div>
+                    <div class="venue-name" style="font-size: 0.7rem; font-weight: bold; color: var(--text-primary);">${escapeHtml(s.venue?.name || '?')}</div>
+                    <div class="time-range" style="font-size: 0.65rem; color: var(--text-secondary);">${s.startTime}</div>
                   </div>
-                \`;
+                `;
               }).join('')}
             </div>
-          \`;
+          `;
         }).join('')}
       </div>
-    \`;
+    `;
 
   } catch (err) {
-    document.getElementById('myScheduleContent').innerHTML = \`
+    document.getElementById('myScheduleContent').innerHTML = `
       <div class="empty-state">
         <span class="material-icons-round empty-state-icon">error</span>
         <h3 class="empty-state-title">Lỗi tải dữ liệu</h3>
-        <p class="empty-state-text">\${err.message}</p>
+        <p class="empty-state-text">${err.message}</p>
       </div>
-    \`;
+    `;
   }
 }

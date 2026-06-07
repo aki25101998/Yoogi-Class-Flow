@@ -44,7 +44,7 @@ export async function signInWithGoogle() {
     if (coachesSnap.empty) {
       const adminData = {
         name: user.displayName || 'Admin',
-        email: user.email,
+        email: user.email.toLowerCase().trim(),
         phone: '',
         role: 'admin',
         rateType: 'per_session',
