@@ -179,6 +179,11 @@ async function loadVenues() {
                       </div>
                     </div>
                   </div>
+                  <div class="flex items-center gap-2" style="flex-shrink:0;">
+                    <button class="btn btn-sm btn-secondary" data-edit-student="${student.id}" data-venue="${venue.id}" title="Sửa thông tin học viên">
+                      <span class="material-icons-round" style="font-size:0.9rem;">edit</span>
+                    </button>
+                  </div>
                 </div>
               `).join('')}
             </div>
@@ -276,6 +281,18 @@ async function loadVenues() {
         e.stopPropagation();
         const venueId = btn.dataset.addStudent;
         showStudentForm(null, venueId, loadVenues);
+      });
+    });
+
+    // Edit student handlers
+    container.querySelectorAll('[data-edit-student]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const studentId = btn.dataset.editStudent;
+        const venueId = btn.dataset.venue;
+        const vd = venueDataList.find(d => d.venue.id === venueId);
+        const student = vd?.venueStudents.find(s => s.id === studentId);
+        if (student) showStudentForm(student, venueId, loadVenues);
       });
     });
 
