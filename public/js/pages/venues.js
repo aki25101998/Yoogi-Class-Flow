@@ -92,7 +92,7 @@ async function loadVenues() {
         </div>
 
         <div class="venue-detail-body" id="venueBody_${venue.id}" style="display:${expandedVenues.has(venue.id) ? 'block' : 'none'};padding-top:var(--sp-4);border-top:1px solid var(--border-color);margin-top:var(--sp-4);">
-          <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center justify-between mb-4">
             <h4 style="font-size:0.9rem;color:var(--text-secondary);font-weight:600;">
               <span class="material-icons-round" style="font-size:1rem;vertical-align:middle;">people</span>
               Huấn luyện viên tại ${escapeHtml(venue.name)}
@@ -147,7 +147,7 @@ async function loadVenues() {
             </div>
           `}
 
-          <div class="flex items-center justify-between mb-3 mt-5">
+          <div class="flex items-center justify-between mb-4 mt-6">
             <h4 style="font-size:0.9rem;color:var(--text-secondary);font-weight:600;">
               <span class="material-icons-round" style="font-size:1rem;vertical-align:middle;">school</span>
               Học viên tại ${escapeHtml(venue.name)}
