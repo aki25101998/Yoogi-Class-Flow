@@ -16,6 +16,8 @@ import { renderMyAttendance } from './pages/my-attendance.js';
 import { renderMyEarnings } from './pages/my-earnings.js';
 import { renderStudents } from './pages/students.js';
 import { renderSettings } from './pages/settings.js';
+import { renderTuition } from './pages/tuition.js';
+import { renderFinance } from './pages/finance.js';
 
 // Register all routes
 // Admin / Granular permission routes
@@ -27,6 +29,8 @@ registerRoute('#/classes', renderClasses, { permission: 'manage_venues' });
 registerRoute('#/schedule', renderSchedule, { permission: 'manage_schedule' });
 registerRoute('#/attendance', renderAttendance, { permission: 'manage_attendance' });
 registerRoute('#/payroll', renderPayroll, { permission: 'view_payroll' });
+registerRoute('#/tuition', renderTuition, { role: 'admin' });
+registerRoute('#/finance', renderFinance, { role: 'admin' });
 registerRoute('#/settings', renderSettings, { permission: 'manage_settings' });
 
 // Coach routes
