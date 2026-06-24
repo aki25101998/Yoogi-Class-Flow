@@ -1,6 +1,6 @@
 // Admin Dashboard page - V2 Implementation
 import { getCoaches, getClassesV2, getClassSchedules, getTeacherSalarySessionsByDate, calculateMonthlyPayrollV2, checkInV2, approveAttendanceV2, getFinanceTransactions } from '../db.js';
-import { getTodayStr, getTodayDisplay, getDayOfWeek, formatCurrency, getCurrentMonth, escapeHtml, getFirstDayOfMonth } from '../utils.js';
+import { getTodayStr, getTodayDisplay, getDayOfWeek, formatCurrency, getCurrentMonth, escapeHtml } from '../utils.js';
 import { getCurrentUserData } from '../auth.js';
 import { showToast } from '../components/toast.js';
 
@@ -37,7 +37,6 @@ async function loadDashboardData() {
     const today = getTodayStr();
     const dow = getDayOfWeek(today);
     const month = getCurrentMonth();
-    const firstDay = getFirstDayOfMonth();
 
     const [coaches, classes, todaySessions, payroll, financeTransactions] = await Promise.all([
       getCoaches(),
