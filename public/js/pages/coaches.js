@@ -1,5 +1,5 @@
 // Coach Management page (Admin)
-import { getCoaches, getAllCoaches, addCoach, updateCoach, deleteCoach, getSettings } from '../db.js';
+import { getCoaches, getAllCoaches, addCoach, updateCoach, deleteCoach, getSettings, getTeacherSalary, addTeacherSalary, updateTeacherSalary } from '../db.js';
 import { escapeHtml } from '../utils.js';
 import { showModal, closeModal, confirmDialog } from '../components/modal.js';
 import { showToast } from '../components/toast.js';
@@ -96,8 +96,11 @@ async function loadCoaches() {
           </div>
         </div>
         <div class="coach-card-actions">
-          <button class="btn btn-sm btn-secondary" data-edit="${coach.id}" style="flex:1;">
-            <span class="material-icons-round">edit</span> Sửa
+          <button class="btn btn-sm btn-secondary" data-edit="${coach.id}" style="flex:1;" title="Sửa">
+            <span class="material-icons-round">edit</span>
+          </button>
+          <button class="btn btn-sm btn-outline" data-salary="${coach.id}" style="flex:1;" title="Cấu hình lương">
+            <span class="material-icons-round">payments</span>
           </button>
           ${coach.status === 'active' ? `
             <button class="btn btn-sm btn-ghost" data-delete="${coach.id}" style="flex:1;">
@@ -112,11 +115,18 @@ async function loadCoaches() {
       </div>
     `).join('');
 
-    // Edit handlers
     grid.querySelectorAll('[data-edit]').forEach(btn => {
       btn.addEventListener('click', () => {
         const coach = coaches.find(c => c.id === btn.dataset.edit);
         if (coach) showCoachForm(coach);
+      });
+    });
+
+    // Salary config handlers
+    grid.querySelectorAll('[data-salary]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const coach = coaches.find(c => c.id === btn.dataset.salary);
+        if (coach) showSalaryForm(coach);
       });
     });
 
@@ -253,6 +263,69 @@ function showCoachForm(coach = null) {
         await loadCoaches();
       } catch (err) {
         showToast({ message: 'Lỗi: ' + err.message, type: 'error' });
+      }
+    }
+  });
+}
+
+// Salary Form
+async function showSalaryForm(coach) {
+  let salaryData = null;
+  try {
+    salaryData = await getTeacherSalary(coach.id);
+  } catch(e) {
+    console.error(e);
+  }
+
+  const baseSalary = salaryData?.baseSalary || 0;
+  const perSession = salaryData?.perSession || 0;
+  const perStudent = salaryData?.perStudent || 0;
+
+  const content = \`
+    <div style="margin-bottom:var(--sp-4);">
+      <p style="font-size:0.9rem; color:var(--text-secondary);">Thiết lập các mức lương cho HLV <strong>\${escapeHtml(coach.name)}</strong>. Hệ thống sẽ tự động tính toán mỗi khi điểm danh.</p>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Lương cứng (VND/Tháng)</label>
+      <input type="number" id="salBase" class="form-input" value="\${baseSalary}" min="0" placeholder="VD: 5000000">
+      <p class="form-hint">Khoản tiền cố định nhận hàng tháng bất kể số ca dạy.</p>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Lương theo ca (VND/Ca)</label>
+      <input type="number" id="salSession" class="form-input" value="\${perSession}" min="0" placeholder="VD: 200000">
+      <p class="form-hint">Khoản tiền nhận được cho mỗi ca dạy.</p>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Lương theo học viên (VND/Học viên/Ca)</label>
+      <input type="number" id="salStudent" class="form-input" value="\${perStudent}" min="0" placeholder="VD: 10000">
+      <p class="form-hint">Khoản tiền cộng thêm dựa trên sĩ số học viên thực tế đi học của ca đó.</p>
+    </div>
+  \`;
+
+  showModal({
+    title: 'Cấu Hình Lương HLV',
+    content,
+    primaryAction: {
+      label: 'Lưu cấu hình',
+      handler: async () => {
+        const data = {
+          coachId: coach.id,
+          baseSalary: Number(document.getElementById('salBase').value),
+          perSession: Number(document.getElementById('salSession').value),
+          perStudent: Number(document.getElementById('salStudent').value)
+        };
+
+        try {
+          if (salaryData?.id) {
+            await updateTeacherSalary(salaryData.id, data);
+          } else {
+            await addTeacherSalary(data);
+          }
+          closeModal();
+          showToast({ message: 'Lưu cấu hình lương thành công', type: 'success' });
+        } catch(e) {
+          showToast({ message: e.message, type: 'error' });
+        }
       }
     }
   });

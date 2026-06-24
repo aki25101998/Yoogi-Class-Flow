@@ -600,13 +600,101 @@ async function getSchedule(id) {
  * @returns {number}
  */
 function calculateEarnings(schedule) {
-  if (schedule.rateType === 'per_hour') {
-    const [sh, sm] = (schedule.startTime || '0:0').split(':').map(Number);
-    const [eh, em] = (schedule.endTime || '0:0').split(':').map(Number);
-    const hours = (eh * 60 + em - sh * 60 - sm) / 60;
-    return Math.round(schedule.rate * hours);
+  let total = 0;
+  if (schedule.salaryConfig) {
+    if (schedule.salaryConfig.type === 'fixed') total += Number(schedule.salaryConfig.amount || 0);
+    if (schedule.salaryConfig.type === 'per_student') {
+      const studentCount = Array.isArray(schedule.students) ? schedule.students.length : 0;
+      total += studentCount * Number(schedule.salaryConfig.amount || 0);
+    }
   }
-  return schedule.rate || 0;
+  return total;
+}
+
+// ==========================================
+// PHASE 4: V2 SALARY LOGIC
+// ==========================================
+export async function checkInV2({ coachId, classId, date, checkInBy }) {
+  const db = getDb();
+  
+  // Get coach salary config
+  const salaryQuery = await getDocs(query(collection(db, 'teacher_salaries'), where('coachId', '==', coachId)));
+  const salaryConfig = salaryQuery.empty ? null : salaryQuery.docs[0].data();
+  
+  const record = {
+    coachId,
+    classId,
+    date,
+    checkInTime: Timestamp.now(),
+    checkInBy: checkInBy || coachId,
+    status: 'checked_in', // pending approval
+    calculatedSalary: 0,
+    salaryConfigSnapshot: salaryConfig
+  };
+  
+  // If admin checks in, auto-approve
+  if (checkInBy && checkInBy !== coachId) {
+    record.status = 'approved';
+    record.approvedBy = checkInBy;
+    record.approvedAt = Timestamp.now();
+    record.calculatedSalary = await calculateV2Earnings(coachId, classId, date, salaryConfig);
+  }
+  
+  const ref = await addDoc(collection(db, 'teacher_salary_sessions'), record);
+  return ref.id;
+}
+
+export async function approveAttendanceV2(sessionId, adminId) {
+  const db = getDb();
+  const sessionRef = doc(db, 'teacher_salary_sessions', sessionId);
+  const snap = await getDoc(sessionRef);
+  if (!snap.exists()) throw new Error('Session not found');
+  const data = snap.data();
+  
+  const earnings = await calculateV2Earnings(data.coachId, data.classId, data.date, data.salaryConfigSnapshot);
+  
+  await updateDoc(sessionRef, {
+    status: 'approved',
+    approvedBy: adminId,
+    approvedAt: Timestamp.now(),
+    calculatedSalary: earnings
+  });
+}
+
+export async function rejectAttendanceV2(sessionId, adminId) {
+  const db = getDb();
+  await updateDoc(doc(db, 'teacher_salary_sessions', sessionId), {
+    status: 'rejected',
+    rejectedBy: adminId,
+    rejectedAt: Timestamp.now(),
+    calculatedSalary: 0
+  });
+}
+
+async function calculateV2Earnings(coachId, classId, date, salaryConfig) {
+  if (!salaryConfig) return 0;
+  
+  let earnings = 0;
+  // Per session
+  if (salaryConfig.perSession) earnings += Number(salaryConfig.perSession);
+  
+  // Per student
+  if (salaryConfig.perStudent) {
+    const db = getDb();
+    // Count students who attended
+    const attSnap = await getDocs(query(
+      collection(db, 'student_attendance_v2'), 
+      where('classId', '==', classId),
+      where('date', '==', date)
+    ));
+    if (!attSnap.empty) {
+      // Find the specific attendance doc for this date
+      const recordData = attSnap.docs[0].data();
+      const presentCount = recordData.records.filter(r => r.status === 'present').length;
+      earnings += presentCount * Number(salaryConfig.perStudent);
+    }
+  }
+  return earnings;
 }
 
 /**
@@ -1089,10 +1177,23 @@ export async function getTeacherSalaries() {
   const snap = await getDocs(collection(db, 'teacher_salaries'));
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
+export async function getTeacherSalary(coachId) {
+  const db = getDb();
+  const snap = await getDocs(query(collection(db, 'teacher_salaries'), where('coachId', '==', coachId)));
+  if (snap.empty) return null;
+  return { id: snap.docs[0].id, ...snap.docs[0].data() };
+}
 export async function addTeacherSalary(data) {
   const db = getDb();
   const ref = await addDoc(collection(db, 'teacher_salaries'), { ...data, createdAt: Timestamp.now() });
   return ref.id;
+}
+export async function updateTeacherSalary(id, data) {
+  const db = getDb();
+  await updateDoc(doc(db, 'teacher_salaries', id), {
+    ...data,
+    updatedAt: Timestamp.now()
+  });
 }
 
 export async function getTeacherSalarySessions() {
@@ -1100,10 +1201,130 @@ export async function getTeacherSalarySessions() {
   const snap = await getDocs(collection(db, 'teacher_salary_sessions'));
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
+export async function getTeacherSalarySessionsByDate(date) {
+  const db = getDb();
+  const snap = await getDocs(query(collection(db, 'teacher_salary_sessions'), where('date', '==', date)));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
 export async function addTeacherSalarySession(data) {
   const db = getDb();
   const ref = await addDoc(collection(db, 'teacher_salary_sessions'), { ...data, createdAt: Timestamp.now() });
   return ref.id;
+}
+export async function deleteTeacherSalarySession(id) {
+  const db = getDb();
+  await deleteDoc(doc(db, 'teacher_salary_sessions', id));
+}
+export async function getClassesForCoach(coachId) {
+  const db = getDb();
+  const snap = await getDocs(query(collection(db, 'class_teachers'), where('coachId', '==', coachId), where('status', '==', 'active')));
+  const classTeachers = snap.docs.map(d => d.data());
+  const classes = [];
+  for (const ct of classTeachers) {
+    const classDoc = await getDoc(doc(db, 'classes', ct.classId));
+    if (classDoc.exists()) {
+      classes.push({ id: classDoc.id, ...classDoc.data(), role: ct.role });
+    }
+  }
+  return classes;
+}
+
+export async function calculateMonthlyPayrollV2(monthPrefix) {
+  const db = getDb();
+  
+  // Get all approved sessions for this month
+  const sessionsSnap = await getDocs(query(collection(db, 'teacher_salary_sessions'), where('status', '==', 'approved')));
+  const sessions = sessionsSnap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(s => s.date && s.date.startsWith(monthPrefix));
+
+  // Get all coach salaries
+  const salariesSnap = await getDocs(collection(db, 'teacher_salaries'));
+  const salaryMap = {};
+  salariesSnap.docs.forEach(d => {
+    const data = d.data();
+    if (data.coachId) {
+      salaryMap[data.coachId] = data;
+    }
+  });
+
+  // Get all coaches
+  const coachesSnap = await getDocs(collection(db, 'user_accounts'));
+  const coachMap = {};
+  coachesSnap.docs.forEach(d => {
+    if (d.data().role === 'coach' || d.data().role === 'admin') {
+      coachMap[d.id] = { id: d.id, ...d.data() };
+    }
+  });
+
+  // Group by coach
+  const payrollMap = {};
+  for (const s of sessions) {
+    if (!payrollMap[s.coachId]) {
+      payrollMap[s.coachId] = {
+        coachId: s.coachId,
+        coachName: coachMap[s.coachId]?.name || 'Không rõ',
+        coachEmail: coachMap[s.coachId]?.email || '',
+        baseSalary: salaryMap[s.coachId]?.baseSalary || 0,
+        totalSessions: 0,
+        sessionEarnings: 0,
+        records: []
+      };
+    }
+    payrollMap[s.coachId].totalSessions += 1;
+    payrollMap[s.coachId].sessionEarnings += Number(s.calculatedSalary || 0);
+    payrollMap[s.coachId].records.push(s);
+  }
+
+  // Include coaches with base salary but 0 sessions
+  for (const coachId in salaryMap) {
+    const sConf = salaryMap[coachId];
+    if (sConf.baseSalary > 0 && !payrollMap[coachId] && coachMap[coachId]) {
+      payrollMap[coachId] = {
+        coachId,
+        coachName: coachMap[coachId].name || 'Không rõ',
+        coachEmail: coachMap[coachId].email || '',
+        baseSalary: sConf.baseSalary,
+        totalSessions: 0,
+        sessionEarnings: 0,
+        records: []
+      };
+    }
+  }
+
+  // Calculate final
+  return Object.values(payrollMap).map(p => ({
+    ...p,
+    totalEarnings: p.baseSalary + p.sessionEarnings
+  }));
+}
+
+export async function paySalaryTransaction(coachId, coachName, month, amount) {
+  const db = getDb();
+  
+  // Create finance transaction
+  await addDoc(collection(db, 'finance_transactions'), {
+    type: 'expense',
+    amount: amount,
+    category: 'Lương HLV',
+    date: getTodayStr(),
+    description: `Thanh toán lương tháng ${month} cho HLV ${coachName}`,
+    createdAt: Timestamp.now(),
+    coachId: coachId,
+    month: month
+  });
+
+  // Mark sessions as paid
+  const sessionsSnap = await getDocs(query(collection(db, 'teacher_salary_sessions'), where('status', '==', 'approved'), where('coachId', '==', coachId)));
+  for (const docSnap of sessionsSnap.docs) {
+    const data = docSnap.data();
+    if (data.date && data.date.startsWith(month)) {
+      await updateDoc(doc(db, 'teacher_salary_sessions', docSnap.id), {
+        status: 'paid',
+        paidAt: Timestamp.now()
+      });
+    }
+  }
 }
 
 // ==========================================

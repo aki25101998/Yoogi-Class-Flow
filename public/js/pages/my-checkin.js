@@ -1,5 +1,5 @@
-// My Check-in page (Coach) — uses venueCoaches
-import { getVenuesForCoach, getAttendanceByDate, checkIn, getStudentsByVenue, submitStudentAttendance } from '../db.js';
+// My Check-in page (Coach) — V2 implementation
+import { getClassesForCoach, getClassSchedules, getTeacherSalarySessionsByDate, checkInV2, getClassStudents } from '../db.js';
 import { getCurrentUserData } from '../auth.js';
 import { getTodayStr, getTodayDisplay, getDayOfWeek, formatTime, escapeHtml } from '../utils.js';
 import { showToast } from '../components/toast.js';
@@ -8,7 +8,7 @@ export async function renderMyCheckin(container) {
   container.innerHTML = `
     <div class="page-header">
       <div>
-        <h1 class="page-title">Check-in</h1>
+        <h1 class="page-title">Check-in (Chấm công)</h1>
         <p class="page-subtitle">${getTodayDisplay()}</p>
       </div>
     </div>
@@ -26,37 +26,34 @@ async function loadCheckinData(container) {
     const today = getTodayStr();
     const dow = getDayOfWeek(today);
 
-    const [venueAssignments, todayAttendance] = await Promise.all([
-      getVenuesForCoach(userData.id),
-      getAttendanceByDate(today)
+    const [classes, todaySessions] = await Promise.all([
+      getClassesForCoach(userData.id),
+      getTeacherSalarySessionsByDate(today)
     ]);
 
-    // Build today's schedule from venueCoaches
+    // Build today's schedule from classes
     const todaySchedules = [];
-    for (const { venue, venueCoach } of venueAssignments) {
-      const days = venueCoach.scheduleDays || [];
-      if (days.includes(dow)) {
+    for (const cls of classes) {
+      const schedules = await getClassSchedules(cls.id);
+      const todaySch = schedules.filter(s => s.dayOfWeek === dow);
+      for (const sch of todaySch) {
         todaySchedules.push({
-          venue,
-          venueCoach,
-          venueId: venue.id,
-          venueCoachId: venueCoach.id,
-          startTime: venueCoach.startTime,
-          endTime: venueCoach.endTime,
-          // Create a composite key for attendance matching
-          scheduleKey: `${venueCoach.id}_${dow}`
+          class: cls,
+          schedule: sch,
+          classId: cls.id,
+          startTime: sch.startTime,
+          endTime: sch.endTime,
+          scheduleKey: `${cls.id}_${sch.id}`
         });
       }
     }
 
-    // Map attendance by venueCoachId or scheduleId
+    // Map attendance by classId
     const attMap = {};
-    todayAttendance
+    todaySessions
       .filter(a => a.coachId === userData.id)
       .forEach(a => {
-        // Match by venueCoachId or legacy scheduleId
-        if (a.venueCoachId) attMap[a.venueCoachId] = a;
-        if (a.scheduleId) attMap[a.scheduleId] = a;
+        attMap[a.classId] = a;
       });
 
     const content = document.getElementById('checkinContent');
@@ -73,7 +70,7 @@ async function loadCheckinData(container) {
     }
 
     content.innerHTML = await Promise.all(todaySchedules.map(async s => {
-      const att = attMap[s.venueCoachId] || attMap[s.scheduleKey];
+      const att = attMap[s.classId];
       const isCheckedIn = !!att;
 
       const statusMap = {
@@ -84,112 +81,94 @@ async function loadCheckinData(container) {
       
       let studentsHtml = '';
       if (!isCheckedIn) {
-        const students = await getStudentsByVenue(s.venueId);
-        if (students.length > 0) {
-          studentsHtml = `
-            <div style="text-align: left; margin: var(--sp-4) 0; padding: var(--sp-3); background: var(--bg-page); border-radius: var(--radius-sm);">
-              <h4 style="margin-bottom: var(--sp-2);">Điểm danh học viên</h4>
-              <div class="student-list" style="max-height: 200px; overflow-y: auto;">
-                ${students.map(student => `
-                  <label style="display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--border-color);">
-                    <input type="checkbox" class="student-check" data-student-id="${student.id}" style="width: 18px; height: 18px;">
-                    <span>${escapeHtml(student.name)}</span>
-                  </label>
-                `).join('')}
-              </div>
-            </div>
-          `;
-        } else {
-          studentsHtml = `
-            <div style="text-align: left; margin: var(--sp-4) 0; padding: var(--sp-3); background: var(--bg-page); border-radius: var(--radius-sm);">
-              <h4 style="margin-bottom: var(--sp-2);">Điểm danh học viên</h4>
-              <p style="color: var(--text-muted); font-size: 0.9rem;">Cơ sở này chưa có học viên nào.</p>
-            </div>
-          `;
-        }
+        // Point them to use the attendance modal inside classes
+        studentsHtml = `
+          <div style="text-align: left; margin: var(--sp-4) 0; padding: var(--sp-3); background: var(--bg-page); border-radius: var(--radius-sm);">
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom:0;">
+              Lưu ý: Hãy đảm bảo bạn đã điểm danh học viên tại phần <strong>Lớp Học</strong> trước khi bấm Check-in để tính đúng tiền lương (nếu bạn nhận lương theo đầu học viên).
+            </p>
+          </div>
+        `;
       }
 
-      return `
+      return \`
         <div class="card mb-4" style="text-align:center;">
           <div style="margin-bottom:var(--sp-4);">
-            <div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:var(--sp-1);">${escapeHtml(s.venue?.name || '?')}</div>
-            <div style="font-size:1.25rem;font-weight:700;color:var(--accent-primary);">${s.startTime} - ${s.endTime}</div>
+            <div style="font-size:0.9rem;font-weight:600;margin-bottom:var(--sp-1);">\${escapeHtml(s.class.name)}</div>
+            <div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:var(--sp-1);">Vai trò: \${s.class.role === 'main' ? 'Chính' : 'Trợ giảng'}</div>
+            <div style="font-size:1.25rem;font-weight:700;color:var(--accent-primary);">\${s.startTime} - \${s.endTime}</div>
           </div>
           
-          <div class="checkin-container" id="checkin-container-${s.scheduleKey}">
-            ${isCheckedIn ? `
+          <div class="checkin-container" id="checkin-container-\${s.scheduleKey}">
+            \${isCheckedIn ? \`
               <div class="checkin-btn checked" style="cursor:default;">
-                <span class="material-icons-round">${att.status === 'approved' ? 'verified' : 'schedule'}</span>
-                <span>${statusMap[att.status]?.text || att.status}</span>
+                <span class="material-icons-round">\${att.status === 'approved' ? 'verified' : 'schedule'}</span>
+                <span>\${statusMap[att.status]?.text || att.status}</span>
               </div>
               <div class="checkin-time">
-                Check-in lúc ${formatTime(att.checkInTime)}
+                Check-in lúc \${formatTime(att.checkInTime)}
               </div>
-              ${att.status !== 'approved' ? `
+              \${att.status !== 'approved' ? \`
                 <div style="margin-top:var(--sp-3);">
-                  <span class="badge ${statusMap[att.status]?.class || 'badge-pending'}">${statusMap[att.status]?.text || att.status}</span>
+                  <span class="badge \${statusMap[att.status]?.class || 'badge-pending'}">\${statusMap[att.status]?.text || att.status}</span>
                 </div>
-              ` : ''}
-            ` : `
-              ${studentsHtml}
-              <button class="checkin-btn" data-venue-coach="${s.venueCoachId}" data-venue="${s.venueId}" data-schedule-key="${s.scheduleKey}" style="width: 100%; border-radius: 8px;">
+              \` : ''}
+              \${att.status === 'approved' ? \`
+                <div style="margin-top:var(--sp-3); font-weight:600; color:var(--accent-success);">
+                  Lương ca này: \${Number(att.calculatedSalary || 0).toLocaleString('vi-VN')} đ
+                </div>
+              \` : ''}
+            \` : \`
+              \${studentsHtml}
+              <button class="checkin-btn" data-class-id="\${s.classId}" data-schedule-key="\${s.scheduleKey}" style="width: 100%; border-radius: 8px;">
                 <span class="material-icons-round">fingerprint</span>
-                <span style="font-size: 1rem;">Xác nhận điểm danh & Chấm công</span>
+                <span style="font-size: 1rem;">Xác nhận Chấm công</span>
               </button>
-            `}
+            \`}
           </div>
         </div>
-      `;
+      \`;
     })).then(res => res.join(''));
 
     // Check-in handlers
     content.querySelectorAll('.checkin-btn:not(.checked)').forEach(btn => {
       btn.addEventListener('click', async () => {
-        const container = document.getElementById(`checkin-container-${btn.dataset.scheduleKey}`);
-        const checkboxes = container.querySelectorAll('.student-check');
-        const presentStudentIds = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.dataset.studentId);
-
+        const container = document.getElementById(\`checkin-container-\${btn.dataset.scheduleKey}\`);
         btn.disabled = true;
-        btn.innerHTML = `
+        btn.innerHTML = \`
           <div class="loading-spinner" style="width:40px;height:40px;">
             <div class="spinner-ring"></div>
           </div>
           <span>Đang xử lý...</span>
-        `;
+        \`;
 
         try {
-          if (presentStudentIds.length > 0) {
-            await submitStudentAttendance(presentStudentIds, btn.dataset.venue, today, userData.id);
-          }
-          
-          await checkIn({
+          await checkInV2({
             coachId: userData.id,
-            venueCoachId: btn.dataset.venueCoach,
-            scheduleId: btn.dataset.scheduleKey,
-            venueId: btn.dataset.venue,
+            classId: btn.dataset.classId,
             date: today,
             checkInBy: userData.id
           });
-          showToast({ message: 'Điểm danh và Check-in thành công!', type: 'success' });
+          showToast({ message: 'Check-in thành công!', type: 'success' });
           await loadCheckinData(container);
         } catch (err) {
           showToast({ message: 'Lỗi xử lý: ' + err.message, type: 'error' });
           btn.disabled = false;
-          btn.innerHTML = `
+          btn.innerHTML = \`
             <span class="material-icons-round">fingerprint</span>
-            <span>Xác nhận điểm danh & Chấm công</span>
-          `;
+            <span>Xác nhận Chấm công</span>
+          \`;
         }
       });
     });
 
   } catch (err) {
-    document.getElementById('checkinContent').innerHTML = `
+    document.getElementById('checkinContent').innerHTML = \`
       <div class="empty-state">
         <span class="material-icons-round empty-state-icon">error</span>
         <h3 class="empty-state-title">Lỗi</h3>
-        <p class="empty-state-text">${err.message}</p>
+        <p class="empty-state-text">\${err.message}</p>
       </div>
-    `;
+    \`;
   }
 }

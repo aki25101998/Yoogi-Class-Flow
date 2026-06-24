@@ -1,6 +1,6 @@
-// Attendance Review page (Admin)
-import { getAttendanceByDate, getCoaches, getVenues, getSchedulesFromVenueCoaches, approveAttendance, rejectAttendance, deleteAttendanceRecord, checkIn } from '../db.js';
-import { getTodayStr, formatDate, formatTime, formatCurrency, escapeHtml, getDayOfWeek } from '../utils.js';
+// Attendance Review page (Admin) - V2 Implementation
+import { getTeacherSalarySessionsByDate, getCoaches, getClassesV2, approveAttendanceV2, rejectAttendanceV2, deleteTeacherSalarySession, checkInV2 } from '../db.js';
+import { getTodayStr, formatDate, formatTime, escapeHtml } from '../utils.js';
 import { getCurrentUserData } from '../auth.js';
 import { showModal, closeModal, confirmDialog } from '../components/modal.js';
 import { showToast } from '../components/toast.js';
@@ -11,8 +11,8 @@ export async function renderAttendance(container) {
   container.innerHTML = `
     <div class="page-header">
       <div>
-        <h1 class="page-title">Duyệt Điểm Danh</h1>
-        <p class="page-subtitle">Quản lý chấm công hàng ngày</p>
+        <h1 class="page-title">Duyệt Điểm Danh (HLV)</h1>
+        <p class="page-subtitle">Quản lý chấm công và tính lương theo ca</p>
       </div>
       <button class="btn btn-success" id="btnAdminCheckin">
         <span class="material-icons-round">person_pin</span>
@@ -49,28 +49,28 @@ export async function renderAttendance(container) {
 
 async function loadAttendanceData() {
   try {
-    const [attendance, coaches, venues] = await Promise.all([
-      getAttendanceByDate(currentDate),
+    const [attendance, coaches, classes] = await Promise.all([
+      getTeacherSalarySessionsByDate(currentDate),
       getCoaches(),
-      getVenues()
+      getClassesV2()
     ]);
 
     const coachMap = {};
     coaches.forEach(c => { coachMap[c.id] = c; });
-    const venueMap = {};
-    venues.forEach(v => { venueMap[v.id] = v; });
-    const records = await getAttendanceByDate(currentDate);
+    const classMap = {};
+    classes.forEach(c => { classMap[c.id] = c; });
+    
     const tableEl = document.getElementById('attendanceTable');
     if (!tableEl) return;
     
-    if (records.length === 0) {
-      tableEl.innerHTML = `
+    if (attendance.length === 0) {
+      tableEl.innerHTML = \`
         <div class="empty-state">
           <span class="material-icons-round empty-state-icon">event_busy</span>
           <h3 class="empty-state-title">Không có dữ liệu điểm danh</h3>
-          <p class="empty-state-text">Ngày ${formatDate(currentDate)} chưa có ai check-in</p>
+          <p class="empty-state-text">Ngày \${formatDate(currentDate)} chưa có ai check-in</p>
         </div>
-      `;
+      \`;
       return;
     }
 
@@ -81,241 +81,177 @@ async function loadAttendanceData() {
       return 0;
     });
 
-    tableEl.innerHTML = `
+    tableEl.innerHTML = \`
       <div class="table-wrapper">
         <table class="table">
           <thead>
             <tr>
               <th>HLV</th>
-              <th>Địa điểm</th>
+              <th>Lớp học</th>
               <th>Check-in</th>
               <th>Trạng thái</th>
-              <th>Lương</th>
-              <th>Ghi chú</th>
+              <th>Lương tính được</th>
               <th>Hành động</th>
             </tr>
           </thead>
           <tbody>
-            ${attendance.map(att => {
+            \${attendance.map(att => {
               const coach = coachMap[att.coachId];
-              const venue = venueMap[att.venueId];
-              const statusMap = {
-                'checked_in': ['badge-pending', 'Chờ duyệt'],
-                'approved': ['badge-approved', 'Đã duyệt'],
-                'rejected': ['badge-rejected', 'Từ chối'],
-                'absent': ['badge-absent', 'Vắng']
-              };
-              const [badgeClass, badgeText] = statusMap[att.status] || ['badge-absent', att.status];
+              const cls = classMap[att.classId];
               
-              let actionsHtml = '';
-              if (att.status === 'checked_in') {
-                actionsHtml = `
-                  <button class="btn btn-sm btn-success" data-approve="${att.id}" title="Duyệt">
-                    <span class="material-icons-round">check</span>
-                  </button>
-                  <button class="btn btn-sm btn-danger" data-reject="${att.id}" title="Từ chối">
-                    <span class="material-icons-round">close</span>
-                  </button>
-                `;
-              } else {
-                actionsHtml = `
-                  <button class="btn btn-sm btn-ghost" data-delete-att="${att.id}" title="Xóa">
-                    <span class="material-icons-round">delete</span>
-                  </button>
-                `;
-              }
+              const statusMap = {
+                'checked_in': '<span class="badge badge-pending">Chờ duyệt</span>',
+                'approved': '<span class="badge badge-approved">Đã duyệt</span>',
+                'rejected': '<span class="badge badge-rejected">Từ chối</span>'
+              };
 
-              return `
+              return \`
                 <tr>
-                  <td><strong>${escapeHtml(coach?.name || '?')}</strong>${att.isSubstitution ? '<br><span style="font-size:0.7rem;color:var(--accent-warning);">Dạy thế</span>' : ''}</td>
-                  <td>${escapeHtml(venue?.name || '?')}</td>
-                  <td>${formatTime(att.checkInTime)}</td>
-                  <td><span class="badge ${badgeClass}">${badgeText}</span></td>
-                  <td style="font-weight:600;">${att.earnings ? formatCurrency(att.earnings) : '—'}</td>
-                  <td style="font-size:0.8rem;color:var(--text-secondary);">${escapeHtml(att.note || '')}</td>
-                  <td class="table-actions">${actionsHtml}</td>
+                  <td>
+                    <div style="font-weight:500;">\${escapeHtml(coach?.name || 'Không rõ')}</div>
+                    <div style="font-size:0.8rem;color:var(--text-secondary);">\${escapeHtml(coach?.phone || '')}</div>
+                  </td>
+                  <td>\${escapeHtml(cls?.name || 'Không rõ')}</td>
+                  <td>\${formatTime(att.checkInTime)}</td>
+                  <td>\${statusMap[att.status] || att.status}</td>
+                  <td style="font-weight:600; color:var(--accent-success);">\${att.calculatedSalary ? Number(att.calculatedSalary).toLocaleString('vi-VN') + ' đ' : 'Chưa tính'}</td>
+                  <td>
+                    <div class="flex gap-2">
+                      \${att.status === 'checked_in' ? \`
+                        <button class="btn btn-sm btn-success" data-approve="\${att.id}" title="Duyệt">
+                          <span class="material-icons-round" style="font-size:18px;">check</span>
+                        </button>
+                        <button class="btn btn-sm btn-danger" data-reject="\${att.id}" title="Từ chối">
+                          <span class="material-icons-round" style="font-size:18px;">close</span>
+                        </button>
+                      \` : \`
+                        <button class="btn btn-sm btn-ghost" data-delete="\${att.id}" title="Xóa">
+                          <span class="material-icons-round" style="font-size:18px;">delete</span>
+                        </button>
+                      \`}
+                    </div>
+                  </td>
                 </tr>
-              `;
+              \`;
             }).join('')}
           </tbody>
         </table>
       </div>
-    `;
+    \`;
 
-    // Approve handlers
     tableEl.querySelectorAll('[data-approve]').forEach(btn => {
       btn.addEventListener('click', async () => {
         const admin = getCurrentUserData();
-        btn.disabled = true;
-        try {
-          await approveAttendance(btn.dataset.approve, admin.id);
-          showToast({ message: 'Đã duyệt!', type: 'success' });
-          await loadAttendanceData();
-        } catch (err) {
-          showToast({ message: 'Lỗi: ' + err.message, type: 'error' });
-          btn.disabled = false;
-        }
+        await approveAttendanceV2(btn.dataset.approve, admin.id);
+        showToast({ message: 'Đã duyệt', type: 'success' });
+        loadAttendanceData();
       });
     });
 
-    // Reject handlers
     tableEl.querySelectorAll('[data-reject]').forEach(btn => {
       btn.addEventListener('click', async () => {
-        showModal({
-          title: 'Từ chối điểm danh',
-          content: `
-            <div class="form-group">
-              <label class="form-label">Lý do từ chối</label>
-              <textarea class="form-textarea" id="rejectReason" placeholder="Nhập lý do..."></textarea>
-            </div>
-          `,
-          confirmText: 'Từ chối',
-          confirmClass: 'btn-danger',
-          onConfirm: async () => {
-            const reason = document.getElementById('rejectReason').value.trim();
-            const admin = getCurrentUserData();
-            try {
-              await rejectAttendance(btn.dataset.reject, admin.id, reason);
-              showToast({ message: 'Đã từ chối', type: 'info' });
-              closeModal();
-              await loadAttendanceData();
-            } catch (err) {
-              showToast({ message: 'Lỗi: ' + err.message, type: 'error' });
-            }
-          }
-        });
+        const admin = getCurrentUserData();
+        await rejectAttendanceV2(btn.dataset.reject, admin.id);
+        showToast({ message: 'Đã từ chối', type: 'warning' });
+        loadAttendanceData();
       });
     });
 
-    // Delete handlers
-    tableEl.querySelectorAll('[data-delete-att]').forEach(btn => {
+    tableEl.querySelectorAll('[data-delete]').forEach(btn => {
       btn.addEventListener('click', async () => {
-        const confirmed = await confirmDialog('Xóa bản ghi', 'Bạn có chắc muốn xóa bản ghi điểm danh này?');
+        const confirmed = await confirmDialog('Xóa điểm danh', 'Bạn có chắc chắn muốn xóa bản ghi này?');
         if (confirmed) {
-          await deleteAttendanceRecord(btn.dataset.deleteAtt);
+          await deleteTeacherSalarySession(btn.dataset.delete);
           showToast({ message: 'Đã xóa', type: 'success' });
-          await loadAttendanceData();
+          loadAttendanceData();
         }
       });
     });
 
   } catch (err) {
-    showToast({ message: 'Lỗi: ' + err.message, type: 'error' });
+    console.error(err);
+    document.getElementById('attendanceTable').innerHTML = \`
+      <div class="error-text">Lỗi: \${err.message}</div>
+    \`;
   }
 }
 
 async function bulkApprove() {
   try {
-    const attendance = await getAttendanceByDate(currentDate);
-    const pending = attendance.filter(a => a.status === 'checked_in');
+    const records = await getTeacherSalarySessionsByDate(currentDate);
+    const pending = records.filter(r => r.status === 'checked_in');
     if (pending.length === 0) {
-      showToast({ message: 'Không có bản ghi nào chờ duyệt', type: 'info' });
-      return;
+      return showToast({ message: 'Không có bản ghi nào chờ duyệt', type: 'info' });
     }
+    
     const admin = getCurrentUserData();
-    for (const att of pending) {
-      await approveAttendance(att.id, admin.id);
+    for (const r of pending) {
+      await approveAttendanceV2(r.id, admin.id);
     }
-    showToast({ message: `Đã duyệt ${pending.length} bản ghi!`, type: 'success' });
-    await loadAttendanceData();
+    showToast({ message: \`Đã duyệt \${pending.length} bản ghi\`, type: 'success' });
+    loadAttendanceData();
   } catch (err) {
     showToast({ message: 'Lỗi: ' + err.message, type: 'error' });
   }
 }
 
 async function showAdminCheckinForm() {
-  const [coaches, venues, schedules] = await Promise.all([
-    getCoaches(),
-    getVenues(),
-    getSchedulesFromVenueCoaches({ dayOfWeek: getDayOfWeek(currentDate) })
-  ]);
+  let coaches = [];
+  let classes = [];
+  try {
+    [coaches, classes] = await Promise.all([
+      getCoaches(),
+      getClassesV2()
+    ]);
+  } catch (e) {
+    return showToast({ message: 'Lỗi tải dữ liệu', type: 'error' });
+  }
 
-  const coachOptions = coaches.map(c => 
-    `<option value="${c.id}">${escapeHtml(c.name)}</option>`
-  ).join('');
-
-  const venueOptions = venues.map(v => 
-    `<option value="${v.id}">${escapeHtml(v.name)}</option>`
-  ).join('');
+  const content = \`
+    <div class="form-group">
+      <label class="form-label">Chọn HLV</label>
+      <select class="form-select" id="acCoach" required>
+        <option value="">-- Chọn HLV --</option>
+        \${coaches.map(c => \`<option value="\${c.id}">\${escapeHtml(c.name)}</option>\`).join('')}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Chọn Lớp học</label>
+      <select class="form-select" id="acClass" required>
+        <option value="">-- Chọn Lớp --</option>
+        \${classes.map(c => \`<option value="\${c.id}">\${escapeHtml(c.name)}</option>\`).join('')}
+      </select>
+    </div>
+    <p class="form-hint">Admin check-in giùm sẽ được tự động duyệt ngay lập tức và tính lương.</p>
+  \`;
 
   showModal({
-    title: 'Check-in giùm HLV',
-    confirmText: 'Check-in & Duyệt',
-    confirmClass: 'btn-success',
-    content: `
-      <div class="form-group">
-        <label class="form-label">Huấn luyện viên *</label>
-        <select class="form-select" id="ciCoach">${coachOptions}</select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Địa điểm *</label>
-        <select class="form-select" id="ciVenue">${venueOptions}</select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Ca dạy</label>
-        <select class="form-select" id="ciSchedule">
-          <option value="">-- Chọn ca (tùy chọn) --</option>
-          ${schedules.map(s => {
-            const coach = coaches.find(c => c.id === s.coachId);
-            const venue = venues.find(v => v.id === s.venueId);
-            return `<option value="${s.id}" data-coach="${s.coachId}" data-venue="${s.venueId}" data-venue-coach="${s.venueCoachId}">${escapeHtml(coach?.name || '?')} - ${escapeHtml(venue?.name || '?')} (${s.startTime}-${s.endTime})</option>`;
-          }).join('')}
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Ghi chú</label>
-        <textarea class="form-textarea" id="ciNote" placeholder="VD: Dạy thế HLV B"></textarea>
-      </div>
-    `,
-    onConfirm: async () => {
-      const coachId = document.getElementById('ciCoach').value;
-      const venueId = document.getElementById('ciVenue').value;
-      const schedSelect = document.getElementById('ciSchedule');
-      const scheduleId = schedSelect.value;
-      let venueCoachId = '';
-      if (schedSelect.selectedIndex > 0) {
-        venueCoachId = schedSelect.options[schedSelect.selectedIndex].dataset.venueCoach || '';
-      }
-      const note = document.getElementById('ciNote').value.trim();
-      const admin = getCurrentUserData();
-
-      if (!coachId || !venueId) {
-        showToast({ message: 'Vui lòng chọn HLV và địa điểm', type: 'warning' });
-        return;
-      }
-
-      try {
-        await checkIn({
-          coachId,
-          venueCoachId,
-          scheduleId: scheduleId || '',
-          venueId,
-          date: currentDate,
-          checkInBy: admin.id,
-          note
-        });
-        showToast({ message: 'Đã check-in và duyệt thành công!', type: 'success' });
-        closeModal();
-        await loadAttendanceData();
-      } catch (err) {
-        showToast({ message: 'Lỗi: ' + err.message, type: 'error' });
+    title: 'Check-in Giùm HLV',
+    content,
+    primaryAction: {
+      label: 'Check-in',
+      handler: async () => {
+        const coachId = document.getElementById('acCoach').value;
+        const classId = document.getElementById('acClass').value;
+        if (!coachId || !classId) {
+          return showToast({ message: 'Vui lòng chọn HLV và Lớp học', type: 'warning' });
+        }
+        
+        try {
+          const admin = getCurrentUserData();
+          await checkInV2({
+            coachId,
+            classId,
+            date: currentDate,
+            checkInBy: admin.id
+          });
+          closeModal();
+          showToast({ message: 'Đã check-in thành công', type: 'success' });
+          loadAttendanceData();
+        } catch(e) {
+          showToast({ message: e.message, type: 'error' });
+        }
       }
     }
   });
-
-  // Auto-fill when selecting a schedule
-  setTimeout(() => {
-    const schedSelect = document.getElementById('ciSchedule');
-    if (schedSelect) {
-      schedSelect.addEventListener('change', () => {
-        const selected = schedSelect.options[schedSelect.selectedIndex];
-        if (selected.dataset.coach) {
-          document.getElementById('ciCoach').value = selected.dataset.coach;
-        }
-        if (selected.dataset.venue) {
-          document.getElementById('ciVenue').value = selected.dataset.venue;
-        }
-      });
-    }
-  }, 100);
 }
