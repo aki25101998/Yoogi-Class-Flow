@@ -859,3 +859,308 @@ export async function updateSettings(data) {
   await setDoc(doc(db, 'settings', 'general'), data, { merge: true });
 }
 
+// ==========================================
+// V2 SCHEMA (CENTER MANAGEMENT SYSTEM)
+// ==========================================
+
+// ============ USER ACCOUNTS ============
+export async function getUserAccounts() {
+  const db = getDb();
+  const snap = await getDocs(collection(db, 'user_accounts'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function addUserAccount(data) {
+  const db = getDb();
+  const accountData = {
+    ...data,
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now()
+  };
+  const ref = await addDoc(collection(db, 'user_accounts'), accountData);
+  return ref.id;
+}
+
+// ============ CLASSES (Top Level) ============
+export async function getClassesV2() {
+  const db = getDb();
+  const snap = await getDocs(query(collection(db, 'classes'), where('status', '==', 'active')));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function addClassV2(data) {
+  const db = getDb();
+  const classData = {
+    ...data,
+    status: 'active',
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now()
+  };
+  const ref = await addDoc(collection(db, 'classes'), classData);
+  return ref.id;
+}
+
+export async function updateClassV2(id, data) {
+  const db = getDb();
+  await updateDoc(doc(db, 'classes', id), {
+    ...data,
+    updatedAt: Timestamp.now()
+  });
+}
+
+// ============ SHIFTS (Ca học) ============
+export async function getShifts() {
+  const db = getDb();
+  const snap = await getDocs(query(collection(db, 'shifts'), where('status', '==', 'active')));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function addShift(data) {
+  const db = getDb();
+  const shiftData = {
+    ...data,
+    status: 'active',
+    createdAt: Timestamp.now()
+  };
+  const ref = await addDoc(collection(db, 'shifts'), shiftData);
+  return ref.id;
+}
+
+// ============ CLASS SCHEDULES ============
+export async function getClassSchedules(classId) {
+  const db = getDb();
+  const snap = await getDocs(query(collection(db, 'class_schedules'), where('classId', '==', classId)));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function addClassSchedule(data) {
+  const db = getDb();
+  const ref = await addDoc(collection(db, 'class_schedules'), { ...data, createdAt: Timestamp.now() });
+  return ref.id;
+}
+
+// ============ CLASS TEACHERS ============
+export async function getClassTeachers(classId) {
+  const db = getDb();
+  const snap = await getDocs(query(collection(db, 'class_teachers'), where('classId', '==', classId), where('status', '==', 'active')));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function addClassTeacher(data) {
+  const db = getDb();
+  const ref = await addDoc(collection(db, 'class_teachers'), { ...data, status: 'active', createdAt: Timestamp.now() });
+  return ref.id;
+}
+
+// ============ CLASS STUDENTS ============
+export async function getClassStudents(classId) {
+  const db = getDb();
+  const snap = await getDocs(query(collection(db, 'class_students'), where('classId', '==', classId), where('status', '==', 'active')));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function addClassStudent(data) {
+  const db = getDb();
+  const ref = await addDoc(collection(db, 'class_students'), { ...data, status: 'active', createdAt: Timestamp.now() });
+  return ref.id;
+}
+
+// ============ CLASS HOLIDAYS ============
+export async function getClassHolidays(classId) {
+  const db = getDb();
+  const snap = await getDocs(query(collection(db, 'class_holidays'), where('classId', '==', classId)));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+// ==========================================
+// PHASE 2 SCHEMA (LEARNING TRACKING)
+// ==========================================
+
+// ============ STUDENT ATTENDANCE (V2) ============
+export async function getStudentAttendanceV2(classId, date) {
+  const db = getDb();
+  let q = query(collection(db, 'student_attendance_v2'), where('classId', '==', classId));
+  if (date) {
+    q = query(collection(db, 'student_attendance_v2'), where('classId', '==', classId), where('date', '==', date));
+  }
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function addStudentAttendanceV2(data) {
+  const db = getDb();
+  const ref = await addDoc(collection(db, 'student_attendance_v2'), { ...data, createdAt: Timestamp.now() });
+  return ref.id;
+}
+
+// ============ STUDENT EVALUATIONS ============
+export async function getStudentEvaluations(studentId) {
+  const db = getDb();
+  const snap = await getDocs(query(collection(db, 'student_evaluations'), where('studentId', '==', studentId)));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function addStudentEvaluation(data) {
+  const db = getDb();
+  const ref = await addDoc(collection(db, 'student_evaluations'), { ...data, createdAt: Timestamp.now() });
+  return ref.id;
+}
+
+// ============ CLASS TESTS ============
+export async function getClassTests(classId) {
+  const db = getDb();
+  const snap = await getDocs(query(collection(db, 'class_tests'), where('classId', '==', classId)));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function addClassTest(data) {
+  const db = getDb();
+  const ref = await addDoc(collection(db, 'class_tests'), { ...data, createdAt: Timestamp.now() });
+  return ref.id;
+}
+
+// ============ STUDENT TEST GRADES ============
+export async function getStudentTestGrades(testId) {
+  const db = getDb();
+  const snap = await getDocs(query(collection(db, 'student_test_grades'), where('testId', '==', testId)));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function addStudentTestGrade(data) {
+  const db = getDb();
+  const ref = await addDoc(collection(db, 'student_test_grades'), { ...data, createdAt: Timestamp.now() });
+  return ref.id;
+}
+
+// ==========================================
+// PHASE 3 SCHEMA (FINANCE)
+// ==========================================
+
+export async function getTuitionPayments() {
+  const db = getDb();
+  const snap = await getDocs(collection(db, 'tuition_payments'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+export async function addTuitionPayment(data) {
+  const db = getDb();
+  const ref = await addDoc(collection(db, 'tuition_payments'), { ...data, createdAt: Timestamp.now() });
+  return ref.id;
+}
+
+export async function getTuitionAdjustments() {
+  const db = getDb();
+  const snap = await getDocs(collection(db, 'tuition_adjustments'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+export async function addTuitionAdjustment(data) {
+  const db = getDb();
+  const ref = await addDoc(collection(db, 'tuition_adjustments'), { ...data, createdAt: Timestamp.now() });
+  return ref.id;
+}
+
+export async function getFinanceCategories() {
+  const db = getDb();
+  const snap = await getDocs(collection(db, 'finance_categories'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+export async function addFinanceCategory(data) {
+  const db = getDb();
+  const ref = await addDoc(collection(db, 'finance_categories'), { ...data, createdAt: Timestamp.now() });
+  return ref.id;
+}
+
+export async function getFinanceTransactions() {
+  const db = getDb();
+  const snap = await getDocs(collection(db, 'finance_transactions'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+export async function addFinanceTransaction(data) {
+  const db = getDb();
+  const ref = await addDoc(collection(db, 'finance_transactions'), { ...data, createdAt: Timestamp.now() });
+  return ref.id;
+}
+
+// ==========================================
+// PHASE 4 SCHEMA (TEACHER & SALARY)
+// ==========================================
+
+export async function getTeacherSalaries() {
+  const db = getDb();
+  const snap = await getDocs(collection(db, 'teacher_salaries'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+export async function addTeacherSalary(data) {
+  const db = getDb();
+  const ref = await addDoc(collection(db, 'teacher_salaries'), { ...data, createdAt: Timestamp.now() });
+  return ref.id;
+}
+
+export async function getTeacherSalarySessions() {
+  const db = getDb();
+  const snap = await getDocs(collection(db, 'teacher_salary_sessions'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+export async function addTeacherSalarySession(data) {
+  const db = getDb();
+  const ref = await addDoc(collection(db, 'teacher_salary_sessions'), { ...data, createdAt: Timestamp.now() });
+  return ref.id;
+}
+
+// ==========================================
+// PHASE 5 SCHEMA (LIBRARY & LECTURES)
+// ==========================================
+
+export async function getLibraryItems() {
+  const db = getDb();
+  const snap = await getDocs(collection(db, 'library_items'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+export async function addLibraryItem(data) {
+  const db = getDb();
+  const ref = await addDoc(collection(db, 'library_items'), { ...data, createdAt: Timestamp.now() });
+  return ref.id;
+}
+
+export async function getLectureCourses() {
+  const db = getDb();
+  const snap = await getDocs(collection(db, 'lecture_courses'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+export async function addLectureCourse(data) {
+  const db = getDb();
+  const ref = await addDoc(collection(db, 'lecture_courses'), { ...data, createdAt: Timestamp.now() });
+  return ref.id;
+}
+
+export async function getLectureLessons(courseId) {
+  const db = getDb();
+  const snap = await getDocs(query(collection(db, 'lecture_lessons'), where('courseId', '==', courseId)));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+export async function addLectureLesson(data) {
+  const db = getDb();
+  const ref = await addDoc(collection(db, 'lecture_lessons'), { ...data, createdAt: Timestamp.now() });
+  return ref.id;
+}
+
+export async function getClassLectureCourses(classId) {
+  const db = getDb();
+  const snap = await getDocs(query(collection(db, 'class_lecture_courses'), where('classId', '==', classId)));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+export async function addClassLectureCourse(data) {
+  const db = getDb();
+  const ref = await addDoc(collection(db, 'class_lecture_courses'), { ...data, createdAt: Timestamp.now() });
+  return ref.id;
+}
+
+export async function getClassLectureLessons(classId) {
+  const db = getDb();
+  const snap = await getDocs(query(collection(db, 'class_lecture_lessons'), where('classId', '==', classId)));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+export async function addClassLectureLesson(data) {
+  const db = getDb();
+  const ref = await addDoc(collection(db, 'class_lecture_lessons'), { ...data, createdAt: Timestamp.now() });
+  return ref.id;
+}
