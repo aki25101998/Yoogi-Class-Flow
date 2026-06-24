@@ -11,6 +11,7 @@ const ADMIN_NAV = [
     { icon: 'people', label: 'Huấn luyện viên', route: '#/coaches', permission: 'manage_coaches' },
     { icon: 'school', label: 'Học viên', route: '#/students', permission: 'manage_students' },
     { icon: 'location_on', label: 'Địa điểm', route: '#/venues', permission: 'manage_venues' },
+    { icon: 'class', label: 'Lớp học', route: '#/classes', permission: 'manage_venues' },
     { icon: 'calendar_month', label: 'Lịch dạy', route: '#/schedule', permission: 'manage_schedule' },
     { icon: 'settings', label: 'Cài đặt', route: '#/settings', permission: 'manage_settings' }
   ]},
