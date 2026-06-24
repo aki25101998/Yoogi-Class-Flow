@@ -1,345 +1,224 @@
-// Firestore Database Layer — All CRUD operations
 import { getDb } from './auth.js';
 
-const { collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, query, where, orderBy, Timestamp, setDoc, collectionGroup } = window.firebase;
+const supabase = getDb(); // Actually returns supabaseClient now
+
+// Helper to handle errors uniformly
+function handleDbError(error, context) {
+  if (error) {
+    console.error(`DB Error in ${context}:`, error);
+    throw error;
+  }
+}
 
 // ============ COACHES ============
 
-/**
- * Get all active coaches
- * @returns {Promise<Array>}
- */
 export async function getCoaches() {
-  const db = getDb();
-  const q = query(collection(db, 'coaches'), where('status', '==', 'active'));
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data, error } = await supabase.from('coaches').select('*').eq('status', 'active');
+  handleDbError(error, 'getCoaches');
+  return data || [];
 }
 
-/**
- * Get all coaches (including inactive)
- * @returns {Promise<Array>}
- */
 export async function getAllCoaches() {
-  const db = getDb();
-  const snap = await getDocs(collection(db, 'coaches'));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data, error } = await supabase.from('coaches').select('*');
+  handleDbError(error, 'getAllCoaches');
+  return data || [];
 }
 
-/**
- * Get a single coach by ID
- * @param {string} id
- * @returns {Promise<object|null>}
- */
 export async function getCoach(id) {
-  const db = getDb();
-  const d = await getDoc(doc(db, 'coaches', id));
-  return d.exists() ? { id: d.id, ...d.data() } : null;
+  const { data, error } = await supabase.from('coaches').select('*').eq('id', id).single();
+  if (error && error.code === 'PGRST116') return null; // Not found
+  handleDbError(error, 'getCoach');
+  return data;
 }
 
-/**
- * Add a new coach (document ID will be auto-generated, NOT tied to auth UID until they log in)
- * We store the email so when they log in with Google, we can look them up
- * @param {object} data
- * @returns {Promise<string>} - the new document ID
- */
 export async function addCoach(data) {
-  const db = getDb();
   const coachData = {
     name: data.name,
     email: data.email.toLowerCase().trim(),
     phone: data.phone || '',
     cccd: data.cccd || '',
     level: data.level || '',
-    membershipNumber: data.membershipNumber || '',
+    membership_number: data.membershipNumber || '',
     role: data.role || 'coach',
     permissions: data.permissions || {},
     status: 'active',
-    photoURL: '',
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now()
+    photo_url: ''
   };
-  const ref = await addDoc(collection(db, 'coaches'), coachData);
-  return ref.id;
+  const { data: newDoc, error } = await supabase.from('coaches').insert([coachData]).select('id').single();
+  handleDbError(error, 'addCoach');
+  return newDoc.id;
 }
 
-/**
- * Update a coach
- * @param {string} id
- * @param {object} data
- */
 export async function updateCoach(id, data) {
-  const db = getDb();
-  await updateDoc(doc(db, 'coaches', id), {
-    ...data,
-    updatedAt: Timestamp.now()
-  });
+  const updateData = { ...data, updated_at: new Date().toISOString() };
+  if (updateData.membershipNumber) {
+    updateData.membership_number = updateData.membershipNumber;
+    delete updateData.membershipNumber;
+  }
+  const { error } = await supabase.from('coaches').update(updateData).eq('id', id);
+  handleDbError(error, 'updateCoach');
 }
 
-/**
- * Soft delete a coach (set status to inactive)
- * @param {string} id
- */
 export async function deleteCoach(id) {
   await updateCoach(id, { status: 'inactive' });
 }
 
-/**
- * Find coach by email
- * @param {string} email
- * @returns {Promise<object|null>}
- */
 export async function findCoachByEmail(email) {
-  const db = getDb();
-  const q = query(collection(db, 'coaches'), where('email', '==', email.toLowerCase().trim()));
-  const snap = await getDocs(q);
-  if (snap.empty) return null;
-  const d = snap.docs[0];
-  return { id: d.id, ...d.data() };
+  const { data, error } = await supabase.from('coaches').select('*').eq('email', email.toLowerCase().trim());
+  handleDbError(error, 'findCoachByEmail');
+  return (data && data.length > 0) ? data[0] : null;
 }
 
 // ============ VENUES ============
 
-/**
- * Get all active venues
- * @returns {Promise<Array>}
- */
 export async function getVenues() {
-  const db = getDb();
-  const q = query(collection(db, 'venues'), where('status', '==', 'active'));
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data, error } = await supabase.from('venues').select('*').eq('status', 'active');
+  handleDbError(error, 'getVenues');
+  return data || [];
 }
 
-/**
- * Get a single venue
- * @param {string} id
- * @returns {Promise<object|null>}
- */
 export async function getVenue(id) {
-  const db = getDb();
-  const d = await getDoc(doc(db, 'venues', id));
-  return d.exists() ? { id: d.id, ...d.data() } : null;
+  const { data, error } = await supabase.from('venues').select('*').eq('id', id).single();
+  if (error && error.code === 'PGRST116') return null;
+  handleDbError(error, 'getVenue');
+  return data;
 }
 
-/**
- * Add a new venue
- * @param {object} data
- * @returns {Promise<string>}
- */
 export async function addVenue(data) {
-  const db = getDb();
   const venueData = {
     name: data.name,
     address: data.address || '',
-    status: 'active',
-    createdAt: Timestamp.now()
+    status: 'active'
   };
-  const ref = await addDoc(collection(db, 'venues'), venueData);
-  return ref.id;
+  const { data: newDoc, error } = await supabase.from('venues').insert([venueData]).select('id').single();
+  handleDbError(error, 'addVenue');
+  return newDoc.id;
 }
 
-/**
- * Update a venue
- * @param {string} id
- * @param {object} data
- */
 export async function updateVenue(id, data) {
-  const db = getDb();
-  await updateDoc(doc(db, 'venues', id), data);
+  const { error } = await supabase.from('venues').update(data).eq('id', id);
+  handleDbError(error, 'updateVenue');
 }
 
-/**
- * Soft delete a venue
- * @param {string} id
- */
 export async function deleteVenue(id) {
   await updateVenue(id, { status: 'inactive' });
 }
 
 // ============ VENUE COACHES (sub-collection) ============
 
-/**
- * Get all coaches assigned to a venue
- * @param {string} venueId
- * @returns {Promise<Array>}
- */
 export async function getVenueCoaches(venueId) {
-  const db = getDb();
-  const q = query(collection(db, 'venues', venueId, 'venueCoaches'), where('status', '==', 'active'));
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, venueId, ...d.data() }));
+  const { data, error } = await supabase.from('venue_coaches').select('*').eq('venue_id', venueId).eq('status', 'active');
+  handleDbError(error, 'getVenueCoaches');
+  return (data || []).map(d => ({ ...d, venueId: d.venue_id, coachId: d.coach_id, rateType: d.rate_type, scheduleDays: d.schedule_days, startTime: d.start_time, endTime: d.end_time }));
 }
 
-/**
- * Get all venueCoach entries (across all venues)
- * @returns {Promise<Array>}
- */
 export async function getAllVenueCoaches() {
-  const db = getDb();
-  const venues = await getVenues();
-  const allEntries = [];
-  for (const venue of venues) {
-    const entries = await getVenueCoaches(venue.id);
-    allEntries.push(...entries);
-  }
-  return allEntries;
+  const { data, error } = await supabase.from('venue_coaches').select('*');
+  handleDbError(error, 'getAllVenueCoaches');
+  return (data || []).map(d => ({ ...d, venueId: d.venue_id, coachId: d.coach_id, rateType: d.rate_type, scheduleDays: d.schedule_days, startTime: d.start_time, endTime: d.end_time }));
 }
 
-/**
- * Get all venues a coach is assigned to
- * @param {string} coachId
- * @returns {Promise<Array>} - array of { venueId, venue, venueCoach } objects
- */
 export async function getVenuesForCoach(coachId) {
   const venues = await getVenues();
+  const { data, error } = await supabase.from('venue_coaches').select('*').eq('coach_id', coachId);
+  handleDbError(error, 'getVenuesForCoach');
+  
   const results = [];
   for (const venue of venues) {
-    const entries = await getVenueCoaches(venue.id);
-    const match = entries.find(e => e.coachId === coachId);
+    const match = data?.find(e => e.venue_id === venue.id);
     if (match) {
-      results.push({ venueId: venue.id, venue, venueCoach: match });
+      const vc = { ...match, venueId: match.venue_id, coachId: match.coach_id, rateType: match.rate_type, scheduleDays: match.schedule_days, startTime: match.start_time, endTime: match.end_time };
+      results.push({ venueId: venue.id, venue, venueCoach: vc });
     }
   }
   return results;
 }
 
-/**
- * Get a specific venueCoach entry by coachId within a venue
- * @param {string} venueId
- * @param {string} coachId
- * @returns {Promise<object|null>}
- */
 export async function getVenueCoachByCoachId(venueId, coachId) {
-  const entries = await getVenueCoaches(venueId);
-  return entries.find(e => e.coachId === coachId) || null;
+  const { data, error } = await supabase.from('venue_coaches').select('*').eq('venue_id', venueId).eq('coach_id', coachId);
+  handleDbError(error, 'getVenueCoachByCoachId');
+  if (!data || data.length === 0) return null;
+  const match = data[0];
+  return { ...match, venueId: match.venue_id, coachId: match.coach_id, rateType: match.rate_type, scheduleDays: match.schedule_days, startTime: match.start_time, endTime: match.end_time };
 }
 
-/**
- * Add a coach to a venue with salary and schedule
- * @param {string} venueId
- * @param {object} data - { coachId, rateType, rate, scheduleDays, startTime, endTime }
- * @returns {Promise<string>}
- */
 export async function addVenueCoach(venueId, data) {
-  const db = getDb();
   const vcData = {
-    coachId: data.coachId,
-    rateType: data.rateType || 'per_session',
+    venue_id: venueId,
+    coach_id: data.coachId,
+    rate_type: data.rateType || 'per_session',
     rate: Number(data.rate) || 0,
-    scheduleDays: data.scheduleDays || [],
-    startTime: data.startTime || '18:00',
-    endTime: data.endTime || '20:00',
-    status: 'active',
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now()
+    schedule_days: data.scheduleDays || [],
+    start_time: data.startTime || '18:00',
+    end_time: data.endTime || '20:00',
+    status: 'active'
   };
-  const ref = await addDoc(collection(db, 'venues', venueId, 'venueCoaches'), vcData);
-  return ref.id;
+  const { data: newDoc, error } = await supabase.from('venue_coaches').insert([vcData]).select('id').single();
+  handleDbError(error, 'addVenueCoach');
+  return newDoc.id;
 }
 
-/**
- * Update a venueCoach entry
- * @param {string} venueId
- * @param {string} venueCoachId
- * @param {object} data
- */
 export async function updateVenueCoach(venueId, venueCoachId, data) {
-  const db = getDb();
-  await updateDoc(doc(db, 'venues', venueId, 'venueCoaches', venueCoachId), {
-    ...data,
-    updatedAt: Timestamp.now()
-  });
+  const updateData = { updated_at: new Date().toISOString() };
+  if (data.rateType !== undefined) updateData.rate_type = data.rateType;
+  if (data.rate !== undefined) updateData.rate = data.rate;
+  if (data.scheduleDays !== undefined) updateData.schedule_days = data.scheduleDays;
+  if (data.startTime !== undefined) updateData.start_time = data.startTime;
+  if (data.endTime !== undefined) updateData.end_time = data.endTime;
+  if (data.status !== undefined) updateData.status = data.status;
+  
+  const { error } = await supabase.from('venue_coaches').update(updateData).eq('id', venueCoachId);
+  handleDbError(error, 'updateVenueCoach');
 }
 
-/**
- * Remove a coach from a venue (soft delete)
- * @param {string} venueId
- * @param {string} venueCoachId
- */
 export async function removeVenueCoach(venueId, venueCoachId) {
   await updateVenueCoach(venueId, venueCoachId, { status: 'inactive' });
 }
 
 // ============ VENUE CLASSES (sub-collection) ============
 
-/**
- * Get all classes assigned to a venue
- * @param {string} venueId
- * @returns {Promise<Array>}
- */
 export async function getVenueClasses(venueId) {
-  const db = getDb();
-  const q = query(collection(db, 'venues', venueId, 'venueClasses'), where('status', '==', 'active'));
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, venueId, ...d.data() }));
+  const { data, error } = await supabase.from('venue_classes').select('*').eq('venue_id', venueId).eq('status', 'active');
+  handleDbError(error, 'getVenueClasses');
+  return (data || []).map(d => ({ ...d, venueId: d.venue_id, scheduleDays: d.schedule_days, startTime: d.start_time, endTime: d.end_time }));
 }
 
-/**
- * Get all venue classes across all venues (using collectionGroup)
- * @returns {Promise<Array>}
- */
 export async function getAllVenueClasses() {
-  const db = getDb();
-  const q = query(collectionGroup(db, 'venueClasses'), where('status', '==', 'active'));
-  const snap = await getDocs(q);
-  return snap.docs.map(d => {
-    // Extract venueId from the reference path: venues/{venueId}/venueClasses/{classId}
-    const venueId = d.ref.parent.parent ? d.ref.parent.parent.id : '';
-    return { id: d.id, venueId, ...d.data() };
-  });
+  const { data, error } = await supabase.from('venue_classes').select('*').eq('status', 'active');
+  handleDbError(error, 'getAllVenueClasses');
+  return (data || []).map(d => ({ ...d, venueId: d.venue_id, scheduleDays: d.schedule_days, startTime: d.start_time, endTime: d.end_time }));
 }
 
-/**
- * Add a class to a venue
- * @param {string} venueId
- * @param {object} data - { name, startTime, endTime, scheduleDays }
- * @returns {Promise<string>}
- */
 export async function addVenueClass(venueId, data) {
-  const db = getDb();
   const classData = {
+    venue_id: venueId,
     name: data.name || '',
-    startTime: data.startTime || '18:00',
-    endTime: data.endTime || '20:00',
-    scheduleDays: data.scheduleDays || [],
-    status: 'active',
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now()
+    start_time: data.startTime || '18:00',
+    end_time: data.endTime || '20:00',
+    schedule_days: data.scheduleDays || [],
+    status: 'active'
   };
-  const ref = await addDoc(collection(db, 'venues', venueId, 'venueClasses'), classData);
-  return ref.id;
+  const { data: newDoc, error } = await supabase.from('venue_classes').insert([classData]).select('id').single();
+  handleDbError(error, 'addVenueClass');
+  return newDoc.id;
 }
 
-/**
- * Update a venueClass entry
- * @param {string} venueId
- * @param {string} classId
- * @param {object} data
- */
 export async function updateVenueClass(venueId, classId, data) {
-  const db = getDb();
-  await updateDoc(doc(db, 'venues', venueId, 'venueClasses', classId), {
-    ...data,
-    updatedAt: Timestamp.now()
-  });
+  const updateData = { updated_at: new Date().toISOString() };
+  if (data.name !== undefined) updateData.name = data.name;
+  if (data.startTime !== undefined) updateData.start_time = data.startTime;
+  if (data.endTime !== undefined) updateData.end_time = data.endTime;
+  if (data.scheduleDays !== undefined) updateData.schedule_days = data.scheduleDays;
+  if (data.status !== undefined) updateData.status = data.status;
+  
+  const { error } = await supabase.from('venue_classes').update(updateData).eq('id', classId);
+  handleDbError(error, 'updateVenueClass');
 }
 
-/**
- * Remove a class from a venue (soft delete)
- * @param {string} venueId
- * @param {string} classId
- */
 export async function removeVenueClass(venueId, classId) {
   await updateVenueClass(venueId, classId, { status: 'inactive' });
 }
 
-/**
- * Get schedules derived from venueCoaches (replacement for old schedules collection)
- * Returns schedule-like objects compatible with existing UI
- * @param {object} filters - optional { coachId, venueId, dayOfWeek }
- * @returns {Promise<Array>}
- */
 export async function getSchedulesFromVenueCoaches(filters = {}) {
   let allVC;
   if (filters.venueId) {
@@ -352,7 +231,6 @@ export async function getSchedulesFromVenueCoaches(filters = {}) {
     allVC = allVC.filter(vc => vc.coachId === filters.coachId);
   }
 
-  // Expand scheduleDays into individual schedule-like entries
   const schedules = [];
   for (const vc of allVC) {
     const days = vc.scheduleDays || [];
@@ -375,409 +253,266 @@ export async function getSchedulesFromVenueCoaches(filters = {}) {
   return schedules;
 }
 
-/**
- * Get schedules for a specific coach (from venueCoaches)
- * @param {string} coachId
- * @returns {Promise<Array>}
- */
 export async function getSchedulesByCoachVC(coachId) {
   return getSchedulesFromVenueCoaches({ coachId });
 }
 
 // ============ SCHEDULES (legacy) ============
 
-/**
- * Get all active schedules
- * @param {object} filters - optional { coachId, venueId, dayOfWeek }
- * @returns {Promise<Array>}
- */
 export async function getSchedules(filters = {}) {
-  const db = getDb();
-  let q = query(collection(db, 'schedules'), where('status', '==', 'active'));
-  const snap = await getDocs(q);
-  let results = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  let query = supabase.from('schedules').select('*').eq('status', 'active');
+  if (filters.coachId) query = query.eq('coach_id', filters.coachId);
+  if (filters.venueId) query = query.eq('venue_id', filters.venueId);
+  if (filters.dayOfWeek) query = query.eq('day_of_week', filters.dayOfWeek);
   
-  // Client-side filtering (Firestore limits compound queries)
-  if (filters.coachId) results = results.filter(s => s.coachId === filters.coachId);
-  if (filters.venueId) results = results.filter(s => s.venueId === filters.venueId);
-  if (filters.dayOfWeek) results = results.filter(s => s.dayOfWeek === filters.dayOfWeek);
-  
-  return results;
+  const { data, error } = await query;
+  handleDbError(error, 'getSchedules');
+  return (data || []).map(d => ({ ...d, coachId: d.coach_id, venueId: d.venue_id, dayOfWeek: d.day_of_week, startTime: d.start_time, endTime: d.end_time, rateType: d.rate_type }));
 }
 
-/**
- * Get schedules for a specific coach
- * @param {string} coachId
- * @returns {Promise<Array>}
- */
 export async function getSchedulesByCoach(coachId) {
   return getSchedules({ coachId });
 }
 
-/**
- * Get schedules for a specific day of week
- * @param {number} dayOfWeek - 1-7
- * @returns {Promise<Array>}
- */
 export async function getSchedulesByDay(dayOfWeek) {
   return getSchedules({ dayOfWeek });
 }
 
-/**
- * Add a new schedule
- * @param {object} data
- * @returns {Promise<string>}
- */
 export async function addSchedule(data) {
-  const db = getDb();
   const scheduleData = {
-    coachId: data.coachId,
-    venueId: data.venueId,
-    dayOfWeek: Number(data.dayOfWeek),
-    startTime: data.startTime,
-    endTime: data.endTime,
-    rateType: data.rateType || 'per_session',
+    coach_id: data.coachId,
+    venue_id: data.venueId,
+    day_of_week: Number(data.dayOfWeek),
+    start_time: data.startTime,
+    end_time: data.endTime,
+    rate_type: data.rateType || 'per_session',
     rate: Number(data.rate) || 0,
-    status: 'active',
-    createdAt: Timestamp.now()
+    status: 'active'
   };
-  const ref = await addDoc(collection(db, 'schedules'), scheduleData);
-  return ref.id;
+  const { data: newDoc, error } = await supabase.from('schedules').insert([scheduleData]).select('id').single();
+  handleDbError(error, 'addSchedule');
+  return newDoc.id;
 }
 
-/**
- * Update a schedule
- * @param {string} id
- * @param {object} data
- */
 export async function updateSchedule(id, data) {
-  const db = getDb();
-  const updateData = { ...data };
-  if (updateData.dayOfWeek) updateData.dayOfWeek = Number(updateData.dayOfWeek);
-  if (updateData.rate) updateData.rate = Number(updateData.rate);
-  await updateDoc(doc(db, 'schedules', id), updateData);
+  const updateData = {};
+  if (data.dayOfWeek !== undefined) updateData.day_of_week = Number(data.dayOfWeek);
+  if (data.rate !== undefined) updateData.rate = Number(data.rate);
+  if (data.startTime !== undefined) updateData.start_time = data.startTime;
+  if (data.endTime !== undefined) updateData.end_time = data.endTime;
+  if (data.rateType !== undefined) updateData.rate_type = data.rateType;
+  if (data.status !== undefined) updateData.status = data.status;
+  
+  const { error } = await supabase.from('schedules').update(updateData).eq('id', id);
+  handleDbError(error, 'updateSchedule');
 }
 
-/**
- * Delete a schedule
- * @param {string} id
- */
 export async function deleteSchedule(id) {
   await updateSchedule(id, { status: 'inactive' });
 }
 
 // ============ ATTENDANCE ============
 
-/**
- * Get attendance records for a specific date
- * @param {string} date - "YYYY-MM-DD"
- * @returns {Promise<Array>}
- */
 export async function getAttendanceByDate(date) {
-  const db = getDb();
-  const q = query(collection(db, 'attendance'), where('date', '==', date));
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data, error } = await supabase.from('attendance').select('*').eq('date', date);
+  handleDbError(error, 'getAttendanceByDate');
+  return (data || []).map(d => ({ ...d, coachId: d.coach_id, scheduleId: d.schedule_id, venueCoachId: d.venue_coach_id, venueId: d.venue_id, checkInTime: d.check_in_time, checkInBy: d.check_in_by, approvedBy: d.approved_by, approvedAt: d.approved_at, isSubstitution: d.is_substitution, originalCoachId: d.original_coach_id }));
 }
 
-/**
- * Get attendance for a coach in a specific month
- * @param {string} coachId
- * @param {string} yearMonth - "YYYY-MM"
- * @returns {Promise<Array>}
- */
 export async function getAttendanceByCoachMonth(coachId, yearMonth) {
-  const db = getDb();
   const startDate = `${yearMonth}-01`;
   const [y, m] = yearMonth.split('-').map(Number);
   const lastDay = new Date(y, m, 0).getDate();
   const endDate = `${yearMonth}-${String(lastDay).padStart(2, '0')}`;
   
-  const q = query(
-    collection(db, 'attendance'),
-    where('coachId', '==', coachId),
-    where('date', '>=', startDate),
-    where('date', '<=', endDate)
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data, error } = await supabase.from('attendance')
+    .select('*')
+    .eq('coach_id', coachId)
+    .gte('date', startDate)
+    .lte('date', endDate);
+    
+  handleDbError(error, 'getAttendanceByCoachMonth');
+  return (data || []).map(d => ({ ...d, coachId: d.coach_id, scheduleId: d.schedule_id, venueCoachId: d.venue_coach_id, venueId: d.venue_id, checkInTime: d.check_in_time, checkInBy: d.check_in_by, approvedBy: d.approved_by, approvedAt: d.approved_at, isSubstitution: d.is_substitution, originalCoachId: d.original_coach_id }));
 }
 
-/**
- * Get all attendance for a month
- * @param {string} yearMonth - "YYYY-MM"
- * @returns {Promise<Array>}
- */
 export async function getAttendanceByMonth(yearMonth) {
-  const db = getDb();
   const startDate = `${yearMonth}-01`;
   const [y, m] = yearMonth.split('-').map(Number);
   const lastDay = new Date(y, m, 0).getDate();
   const endDate = `${yearMonth}-${String(lastDay).padStart(2, '0')}`;
   
-  const q = query(
-    collection(db, 'attendance'),
-    where('date', '>=', startDate),
-    where('date', '<=', endDate)
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data, error } = await supabase.from('attendance')
+    .select('*')
+    .gte('date', startDate)
+    .lte('date', endDate);
+    
+  handleDbError(error, 'getAttendanceByMonth');
+  return (data || []).map(d => ({ ...d, coachId: d.coach_id, scheduleId: d.schedule_id, venueCoachId: d.venue_coach_id, venueId: d.venue_id, checkInTime: d.check_in_time, checkInBy: d.check_in_by, approvedBy: d.approved_by, approvedAt: d.approved_at, isSubstitution: d.is_substitution, originalCoachId: d.original_coach_id }));
 }
 
-/**
- * Create a check-in record
- * @param {object} data
- * @returns {Promise<string>}
- */
 export async function checkIn({ coachId, scheduleId, venueId, venueCoachId, date, checkInBy, note = '', isSubstitution = false, originalCoachId = '' }) {
-  const db = getDb();
   const record = {
-    coachId,
-    scheduleId: scheduleId || '',
-    venueCoachId: venueCoachId || '',
-    venueId,
+    coach_id: coachId,
+    schedule_id: scheduleId || null,
+    venue_coach_id: venueCoachId || null,
+    venue_id: venueId || null,
     date,
-    checkInTime: Timestamp.now(),
-    checkInBy: checkInBy || coachId,
+    check_in_by: checkInBy || coachId,
     status: 'checked_in',
-    approvedBy: '',
-    approvedAt: null,
     earnings: 0,
     note: note || '',
-    isSubstitution: isSubstitution || false,
-    originalCoachId: originalCoachId || '',
-    createdAt: Timestamp.now()
+    is_substitution: isSubstitution || false,
+    original_coach_id: originalCoachId || null
   };
   
-  // If admin checks in, auto-approve
   if (checkInBy && checkInBy !== coachId) {
     record.status = 'approved';
-    record.approvedBy = checkInBy;
-    record.approvedAt = Timestamp.now();
+    record.approved_by = checkInBy;
+    record.approved_at = new Date().toISOString();
   }
   
-  const ref = await addDoc(collection(db, 'attendance'), record);
+  const { data: ref, error } = await supabase.from('attendance').insert([record]).select('id, status, venue_coach_id, venue_id, schedule_id').single();
+  handleDbError(error, 'checkIn');
   
-  // If auto-approved, calculate earnings from venueCoach or legacy schedule
-  if (record.status === 'approved') {
+  if (ref.status === 'approved') {
     let earnings = 0;
-    if (venueCoachId && venueId) {
-      try {
-        const vcDoc = await getDoc(doc(db, 'venues', venueId, 'venueCoaches', venueCoachId));
-        if (vcDoc.exists()) {
-          earnings = calculateEarnings(vcDoc.data());
-        }
-      } catch (e) { /* fallback below */ }
+    if (ref.venue_coach_id && ref.venue_id) {
+      const { data: vcDoc } = await supabase.from('venue_coaches').select('*').eq('id', ref.venue_coach_id).single();
+      if (vcDoc) earnings = calculateEarnings(vcDoc);
     }
-    if (!earnings && scheduleId) {
-      const schedule = await getSchedule(scheduleId);
-      if (schedule) {
-        earnings = calculateEarnings(schedule);
-      }
+    if (!earnings && ref.schedule_id) {
+      const { data: schedule } = await supabase.from('schedules').select('*').eq('id', ref.schedule_id).single();
+      if (schedule) earnings = calculateEarnings(schedule);
     }
     if (earnings) {
-      await updateDoc(doc(db, 'attendance', ref.id), { earnings });
+      await supabase.from('attendance').update({ earnings }).eq('id', ref.id);
     }
   }
   
   return ref.id;
 }
 
-/**
- * Get a single schedule
- * @param {string} id
- * @returns {Promise<object|null>}
- */
-async function getSchedule(id) {
-  const db = getDb();
-  const d = await getDoc(doc(db, 'schedules', id));
-  return d.exists() ? { id: d.id, ...d.data() } : null;
-}
-
-/**
- * Calculate earnings from a schedule
- * @param {object} schedule
- * @returns {number}
- */
 function calculateEarnings(schedule) {
   let total = 0;
-  if (schedule.salaryConfig) {
-    if (schedule.salaryConfig.type === 'fixed') total += Number(schedule.salaryConfig.amount || 0);
-    if (schedule.salaryConfig.type === 'per_student') {
-      const studentCount = Array.isArray(schedule.students) ? schedule.students.length : 0;
-      total += studentCount * Number(schedule.salaryConfig.amount || 0);
-    }
-  }
-  return total;
+  if (schedule.rate_type === 'per_session') total += Number(schedule.rate || 0);
+  return total; // Simplification since students is not on schedule anymore
 }
 
-// ==========================================
-// PHASE 4: V2 SALARY LOGIC
-// ==========================================
 export async function checkInV2({ coachId, classId, date, checkInBy }) {
-  const db = getDb();
-  
-  // Get coach salary config
-  const salaryQuery = await getDocs(query(collection(db, 'teacher_salaries'), where('coachId', '==', coachId)));
-  const salaryConfig = salaryQuery.empty ? null : salaryQuery.docs[0].data();
+  const { data: salaryConfig } = await supabase.from('teacher_salaries').select('*').eq('coach_id', coachId).single();
   
   const record = {
-    coachId,
-    classId,
+    coach_id: coachId,
+    class_id: classId || null,
     date,
-    checkInTime: Timestamp.now(),
-    checkInBy: checkInBy || coachId,
-    status: 'checked_in', // pending approval
-    calculatedSalary: 0,
-    salaryConfigSnapshot: salaryConfig
+    check_in_by: checkInBy || coachId,
+    status: 'checked_in',
+    calculated_salary: 0,
+    salary_config_snapshot: salaryConfig || null
   };
   
-  // If admin checks in, auto-approve
   if (checkInBy && checkInBy !== coachId) {
     record.status = 'approved';
-    record.approvedBy = checkInBy;
-    record.approvedAt = Timestamp.now();
-    record.calculatedSalary = await calculateV2Earnings(coachId, classId, date, salaryConfig);
+    record.approved_by = checkInBy;
+    record.approved_at = new Date().toISOString();
+    record.calculated_salary = await calculateV2Earnings(coachId, classId, date, salaryConfig);
   }
   
-  const ref = await addDoc(collection(db, 'teacher_salary_sessions'), record);
+  const { data: ref, error } = await supabase.from('teacher_salary_sessions').insert([record]).select('id').single();
+  handleDbError(error, 'checkInV2');
   return ref.id;
 }
 
 export async function approveAttendanceV2(sessionId, adminId) {
-  const db = getDb();
-  const sessionRef = doc(db, 'teacher_salary_sessions', sessionId);
-  const snap = await getDoc(sessionRef);
-  if (!snap.exists()) throw new Error('Session not found');
-  const data = snap.data();
+  const { data: session } = await supabase.from('teacher_salary_sessions').select('*').eq('id', sessionId).single();
+  if (!session) throw new Error('Session not found');
   
-  const earnings = await calculateV2Earnings(data.coachId, data.classId, data.date, data.salaryConfigSnapshot);
+  const earnings = await calculateV2Earnings(session.coach_id, session.class_id, session.date, session.salary_config_snapshot);
   
-  await updateDoc(sessionRef, {
+  await supabase.from('teacher_salary_sessions').update({
     status: 'approved',
-    approvedBy: adminId,
-    approvedAt: Timestamp.now(),
-    calculatedSalary: earnings
-  });
+    approved_by: adminId,
+    approved_at: new Date().toISOString(),
+    calculated_salary: earnings
+  }).eq('id', sessionId);
 }
 
 export async function rejectAttendanceV2(sessionId, adminId) {
-  const db = getDb();
-  await updateDoc(doc(db, 'teacher_salary_sessions', sessionId), {
+  await supabase.from('teacher_salary_sessions').update({
     status: 'rejected',
-    rejectedBy: adminId,
-    rejectedAt: Timestamp.now(),
-    calculatedSalary: 0
-  });
+    rejected_by: adminId,
+    rejected_at: new Date().toISOString(),
+    calculated_salary: 0
+  }).eq('id', sessionId);
 }
 
 async function calculateV2Earnings(coachId, classId, date, salaryConfig) {
   if (!salaryConfig) return 0;
-  
   let earnings = 0;
-  // Per session
-  if (salaryConfig.perSession) earnings += Number(salaryConfig.perSession);
-  
-  // Per student
-  if (salaryConfig.perStudent) {
-    const db = getDb();
-    // Count students who attended
-    const attSnap = await getDocs(query(
-      collection(db, 'student_attendance_v2'), 
-      where('classId', '==', classId),
-      where('date', '==', date)
-    ));
-    if (!attSnap.empty) {
-      // Find the specific attendance doc for this date
-      const recordData = attSnap.docs[0].data();
-      const presentCount = recordData.records.filter(r => r.status === 'present').length;
-      earnings += presentCount * Number(salaryConfig.perStudent);
+  if (salaryConfig.per_session) earnings += Number(salaryConfig.per_session);
+  if (salaryConfig.per_student && classId) {
+    const { data: attSnap } = await supabase.from('student_attendance_v2')
+      .select('*')
+      .eq('class_id', classId)
+      .eq('date', date);
+    if (attSnap && attSnap.length > 0) {
+      const records = attSnap[0].records || [];
+      const presentCount = records.filter(r => r.status === 'present').length;
+      earnings += presentCount * Number(salaryConfig.per_student);
     }
   }
   return earnings;
 }
 
-/**
- * Approve an attendance record
- * @param {string} attendanceId
- * @param {string} adminId
- */
 export async function approveAttendance(attendanceId, adminId) {
-  const db = getDb();
-  const attDoc = await getDoc(doc(db, 'attendance', attendanceId));
-  if (!attDoc.exists()) throw new Error('Record not found');
+  const { data: att } = await supabase.from('attendance').select('*').eq('id', attendanceId).single();
+  if (!att) throw new Error('Record not found');
   
-  const att = attDoc.data();
   let earnings = 0;
-  
-  // Try venueCoach first (new model)
-  if (att.venueCoachId && att.venueId) {
-    try {
-      const vcDoc = await getDoc(doc(db, 'venues', att.venueId, 'venueCoaches', att.venueCoachId));
-      if (vcDoc.exists()) {
-        earnings = calculateEarnings(vcDoc.data());
-      }
-    } catch (e) { /* fallback to legacy */ }
+  if (att.venue_coach_id) {
+    const { data: vcDoc } = await supabase.from('venue_coaches').select('*').eq('id', att.venue_coach_id).single();
+    if (vcDoc) earnings = calculateEarnings(vcDoc);
+  }
+  if (!earnings && att.schedule_id) {
+    const { data: schedule } = await supabase.from('schedules').select('*').eq('id', att.schedule_id).single();
+    if (schedule) earnings = calculateEarnings(schedule);
   }
   
-  // Fallback to legacy schedule
-  if (!earnings && att.scheduleId) {
-    const schedule = await getSchedule(att.scheduleId);
-    if (schedule) {
-      earnings = calculateEarnings(schedule);
-    }
-  }
-  
-  await updateDoc(doc(db, 'attendance', attendanceId), {
+  await supabase.from('attendance').update({
     status: 'approved',
-    approvedBy: adminId,
-    approvedAt: Timestamp.now(),
+    approved_by: adminId,
+    approved_at: new Date().toISOString(),
     earnings
-  });
+  }).eq('id', attendanceId);
 }
 
-/**
- * Reject an attendance record
- * @param {string} attendanceId
- * @param {string} adminId
- * @param {string} reason
- */
 export async function rejectAttendance(attendanceId, adminId, reason = '') {
-  const db = getDb();
-  await updateDoc(doc(db, 'attendance', attendanceId), {
+  await supabase.from('attendance').update({
     status: 'rejected',
-    approvedBy: adminId,
-    approvedAt: Timestamp.now(),
+    approved_by: adminId,
+    approved_at: new Date().toISOString(),
     note: reason
-  });
+  }).eq('id', attendanceId);
 }
 
-/**
- * Update an attendance record
- * @param {string} id
- * @param {object} data
- */
 export async function updateAttendance(id, data) {
-  const db = getDb();
-  await updateDoc(doc(db, 'attendance', id), data);
+  const updateData = { ...data };
+  if (data.checkInTime) updateData.check_in_time = data.checkInTime;
+  if (data.checkInBy) updateData.check_in_by = data.checkInBy;
+  if (data.approvedBy) updateData.approved_by = data.approvedBy;
+  if (data.approvedAt) updateData.approved_at = data.approvedAt;
+  if (data.venueCoachId) updateData.venue_coach_id = data.venueCoachId;
+  if (data.originalCoachId) updateData.original_coach_id = data.originalCoachId;
+  if (data.scheduleId) updateData.schedule_id = data.scheduleId;
+  if (data.isSubstitution !== undefined) updateData.is_substitution = data.isSubstitution;
+  
+  await supabase.from('attendance').update(updateData).eq('id', id);
 }
 
-/**
- * Delete an attendance record
- * @param {string} id
- */
 export async function deleteAttendanceRecord(id) {
-  const db = getDb();
-  await deleteDoc(doc(db, 'attendance', id));
+  await supabase.from('attendance').delete().eq('id', id);
 }
 
-// ============ PAYROLL (computed) ============
-
-/**
- * Calculate monthly payroll for all coaches
- * @param {string} yearMonth - "YYYY-MM"
- * @returns {Promise<Array>} [{coachId, coachName, totalSessions, totalHours, totalEarnings}]
- */
 export async function calculateMonthlyPayroll(yearMonth) {
   const [attendance, coaches] = await Promise.all([
     getAttendanceByMonth(yearMonth),
@@ -786,41 +521,30 @@ export async function calculateMonthlyPayroll(yearMonth) {
   
   const coachMap = {};
   coaches.forEach(c => { coachMap[c.id] = c; });
-  
   const payroll = {};
   
-  attendance
-    .filter(a => a.status === 'approved')
-    .forEach(a => {
-      if (!payroll[a.coachId]) {
-        const coach = coachMap[a.coachId];
-        payroll[a.coachId] = {
-          coachId: a.coachId,
-          coachName: coach?.name || 'Unknown',
-          coachEmail: coach?.email || '',
-          totalSessions: 0,
-          totalEarnings: 0,
-          records: []
-        };
-      }
-      payroll[a.coachId].totalSessions++;
-      payroll[a.coachId].totalEarnings += (a.earnings || 0);
-      payroll[a.coachId].records.push(a);
-    });
-  
+  attendance.filter(a => a.status === 'approved').forEach(a => {
+    if (!payroll[a.coachId]) {
+      const coach = coachMap[a.coachId];
+      payroll[a.coachId] = {
+        coachId: a.coachId,
+        coachName: coach?.name || 'Unknown',
+        coachEmail: coach?.email || '',
+        totalSessions: 0,
+        totalEarnings: 0,
+        records: []
+      };
+    }
+    payroll[a.coachId].totalSessions++;
+    payroll[a.coachId].totalEarnings += (a.earnings || 0);
+    payroll[a.coachId].records.push(a);
+  });
   return Object.values(payroll).sort((a, b) => b.totalEarnings - a.totalEarnings);
 }
 
-/**
- * Calculate payroll for a single coach in a month
- * @param {string} coachId
- * @param {string} yearMonth
- * @returns {Promise<object>}
- */
 export async function calculateCoachPayroll(coachId, yearMonth) {
   const attendance = await getAttendanceByCoachMonth(coachId, yearMonth);
   const approved = attendance.filter(a => a.status === 'approved');
-  
   return {
     coachId,
     totalSessions: approved.length,
@@ -829,295 +553,214 @@ export async function calculateCoachPayroll(coachId, yearMonth) {
     allRecords: attendance
   };
 }
-
 // ============ STUDENTS ============
 
-/**
- * Get all students
- */
 export async function getAllStudents() {
-  const db = getDb();
-  const snap = await getDocs(collection(db, 'students'));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data, error } = await supabase.from('students').select('*');
+  if (error) console.error(error);
+  return data || [];
 }
 
-/**
- * Get students by venue
- */
 export async function getStudentsByVenue(venueId) {
-  const db = getDb();
-  const q = query(collection(db, 'students'), where('venueId', '==', venueId), where('status', '==', 'active'));
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data, error } = await supabase.from('students').select('*').eq('venue_id', venueId).eq('status', 'active');
+  if (error) console.error(error);
+  return (data || []).map(d => ({ ...d, venueId: d.venue_id, classId: d.class_id, beltRank: d.belt_rank, parentPhone: d.parent_phone }));
 }
 
-/**
- * Add a student
- */
 export async function addStudent(data) {
-  const db = getDb();
   const studentData = {
     name: data.name,
     dob: data.dob || '',
-    beltRank: data.beltRank || '',
+    belt_rank: data.beltRank || '',
     weight: Number(data.weight) || 0,
     height: Number(data.height) || 0,
-    parentPhone: data.parentPhone || '',
-    venueId: data.venueId || '',
-    classId: data.classId || '',
-    status: 'active',
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now()
+    parent_phone: data.parentPhone || '',
+    venue_id: data.venueId || null,
+    class_id: data.classId || null,
+    status: 'active'
   };
-  const ref = await addDoc(collection(db, 'students'), studentData);
-  return ref.id;
+  const { data: newDoc, error } = await supabase.from('students').insert([studentData]).select('id').single();
+  if (error) throw error;
+  return newDoc.id;
 }
 
-/**
- * Update a student
- */
 export async function updateStudent(id, data) {
-  const db = getDb();
-  await updateDoc(doc(db, 'students', id), {
-    ...data,
-    updatedAt: Timestamp.now()
-  });
+  const updateData = { updated_at: new Date().toISOString() };
+  if (data.name !== undefined) updateData.name = data.name;
+  if (data.dob !== undefined) updateData.dob = data.dob;
+  if (data.beltRank !== undefined) updateData.belt_rank = data.beltRank;
+  if (data.weight !== undefined) updateData.weight = data.weight;
+  if (data.height !== undefined) updateData.height = data.height;
+  if (data.parentPhone !== undefined) updateData.parent_phone = data.parentPhone;
+  if (data.venueId !== undefined) updateData.venue_id = data.venueId;
+  if (data.classId !== undefined) updateData.class_id = data.classId;
+  if (data.status !== undefined) updateData.status = data.status;
+  
+  await supabase.from('students').update(updateData).eq('id', id);
 }
 
-/**
- * Delete a student (soft delete)
- */
 export async function deleteStudent(id) {
   await updateStudent(id, { status: 'inactive' });
 }
 
 // ============ STUDENT ATTENDANCE ============
 
-/**
- * Mark student attendance
- * @param {Array} studentIds - Array of student IDs present
- * @param {string} venueId
- * @param {string} date - YYYY-MM-DD
- * @param {string} coachId
- */
 export async function submitStudentAttendance(studentIds, venueId, date, coachId) {
-  const db = getDb();
-  const batch = writeBatch(db);
-  
-  studentIds.forEach(studentId => {
-    const ref = doc(collection(db, 'student_attendance'));
-    batch.set(ref, {
-      studentId,
-      venueId,
-      date,
-      isPresent: true,
-      markedByCoachId: coachId,
-      createdAt: Timestamp.now()
-    });
-  });
-  
-  await batch.commit();
+  const records = studentIds.map(studentId => ({
+    student_id: studentId,
+    venue_id: venueId,
+    date,
+    is_present: true,
+    marked_by_coach_id: coachId
+  }));
+  const { error } = await supabase.from('student_attendance').insert(records);
+  if (error) throw error;
 }
 
 // ============ SETTINGS ============
 
-/**
- * Get system settings (general)
- */
 export async function getSettings() {
-  const db = getDb();
-  const d = await getDoc(doc(db, 'settings', 'general'));
-  if (d.exists()) {
-    return d.data();
-  }
-  // Default settings if not exists
+  const { data, error } = await supabase.from('settings').select('*').eq('id', 'general').single();
+  if (error && error.code !== 'PGRST116') throw error;
+  if (data) return data.value || data;
+  
   const defaultSettings = {
     beltRanks: ["Đai trắng", "Đai vàng", "Đai xanh", "Đai đỏ", "Đai đen", "Đai đen 1 đẳng", "Đai đen 2 đẳng", "Đai đen 3 đẳng"]
   };
-  // Automatically create default document
-  await setDoc(doc(db, 'settings', 'general'), defaultSettings);
+  await supabase.from('settings').insert([{ id: 'general', value: defaultSettings }]);
   return defaultSettings;
 }
 
-/**
- * Update system settings
- */
 export async function updateSettings(data) {
-  const db = getDb();
-  await setDoc(doc(db, 'settings', 'general'), data, { merge: true });
+  const { data: existing } = await supabase.from('settings').select('*').eq('id', 'general').single();
+  let val = existing ? existing.value : {};
+  val = { ...val, ...data };
+  await supabase.from('settings').upsert({ id: 'general', value: val });
 }
 
 // ==========================================
 // V2 SCHEMA (CENTER MANAGEMENT SYSTEM)
 // ==========================================
 
-// ============ USER ACCOUNTS ============
 export async function getUserAccounts() {
-  const db = getDb();
-  const snap = await getDocs(collection(db, 'user_accounts'));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data } = await supabase.from('user_accounts').select('*');
+  return data || [];
 }
 
 export async function addUserAccount(data) {
-  const db = getDb();
-  const accountData = {
-    ...data,
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now()
-  };
-  const ref = await addDoc(collection(db, 'user_accounts'), accountData);
-  return ref.id;
+  const { data: newDoc, error } = await supabase.from('user_accounts').insert([data]).select('id').single();
+  if (error) throw error;
+  return newDoc.id;
 }
 
-// ============ CLASSES (Top Level) ============
 export async function getClassesV2() {
-  const db = getDb();
-  const snap = await getDocs(query(collection(db, 'classes'), where('status', '==', 'active')));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data } = await supabase.from('classes').select('*').eq('status', 'active');
+  return data || [];
 }
 
 export async function addClassV2(data) {
-  const db = getDb();
-  const classData = {
-    ...data,
-    status: 'active',
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now()
-  };
-  const ref = await addDoc(collection(db, 'classes'), classData);
-  return ref.id;
+  const { data: newDoc, error } = await supabase.from('classes').insert([{ ...data, status: 'active' }]).select('id').single();
+  if (error) throw error;
+  return newDoc.id;
 }
 
 export async function updateClassV2(id, data) {
-  const db = getDb();
-  await updateDoc(doc(db, 'classes', id), {
-    ...data,
-    updatedAt: Timestamp.now()
-  });
+  await supabase.from('classes').update({ ...data, updated_at: new Date().toISOString() }).eq('id', id);
 }
 
-// ============ SHIFTS (Ca học) ============
 export async function getShifts() {
-  const db = getDb();
-  const snap = await getDocs(query(collection(db, 'shifts'), where('status', '==', 'active')));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data } = await supabase.from('shifts').select('*').eq('status', 'active');
+  return data || [];
 }
 
 export async function addShift(data) {
-  const db = getDb();
-  const shiftData = {
-    ...data,
-    status: 'active',
-    createdAt: Timestamp.now()
-  };
-  const ref = await addDoc(collection(db, 'shifts'), shiftData);
-  return ref.id;
+  const { data: newDoc, error } = await supabase.from('shifts').insert([{ ...data, status: 'active' }]).select('id').single();
+  if (error) throw error;
+  return newDoc.id;
 }
 
-// ============ CLASS SCHEDULES ============
 export async function getClassSchedules(classId) {
-  const db = getDb();
-  const snap = await getDocs(query(collection(db, 'class_schedules'), where('classId', '==', classId)));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data } = await supabase.from('class_schedules').select('*').eq('class_id', classId);
+  return (data || []).map(d => ({ ...d, classId: d.class_id }));
 }
 
 export async function addClassSchedule(data) {
-  const db = getDb();
-  const ref = await addDoc(collection(db, 'class_schedules'), { ...data, createdAt: Timestamp.now() });
-  return ref.id;
+  const { data: newDoc, error } = await supabase.from('class_schedules').insert([{ ...data, class_id: data.classId }]).select('id').single();
+  if (error) throw error;
+  return newDoc.id;
 }
 
-// ============ CLASS TEACHERS ============
 export async function getClassTeachers(classId) {
-  const db = getDb();
-  const snap = await getDocs(query(collection(db, 'class_teachers'), where('classId', '==', classId), where('status', '==', 'active')));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data } = await supabase.from('class_teachers').select('*').eq('class_id', classId).eq('status', 'active');
+  return (data || []).map(d => ({ ...d, classId: d.class_id, coachId: d.coach_id }));
 }
 
 export async function addClassTeacher(data) {
-  const db = getDb();
-  const ref = await addDoc(collection(db, 'class_teachers'), { ...data, status: 'active', createdAt: Timestamp.now() });
-  return ref.id;
+  const { data: newDoc, error } = await supabase.from('class_teachers').insert([{ ...data, class_id: data.classId, coach_id: data.coachId, status: 'active' }]).select('id').single();
+  if (error) throw error;
+  return newDoc.id;
 }
 
-// ============ CLASS STUDENTS ============
 export async function getClassStudents(classId) {
-  const db = getDb();
-  const snap = await getDocs(query(collection(db, 'class_students'), where('classId', '==', classId), where('status', '==', 'active')));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data } = await supabase.from('class_students').select('*').eq('class_id', classId).eq('status', 'active');
+  return (data || []).map(d => ({ ...d, classId: d.class_id, studentId: d.student_id }));
 }
 
 export async function addClassStudent(data) {
-  const db = getDb();
-  const ref = await addDoc(collection(db, 'class_students'), { ...data, status: 'active', createdAt: Timestamp.now() });
-  return ref.id;
+  const { data: newDoc, error } = await supabase.from('class_students').insert([{ ...data, class_id: data.classId, student_id: data.studentId, status: 'active' }]).select('id').single();
+  if (error) throw error;
+  return newDoc.id;
 }
 
-// ============ CLASS HOLIDAYS ============
 export async function getClassHolidays(classId) {
-  const db = getDb();
-  const snap = await getDocs(query(collection(db, 'class_holidays'), where('classId', '==', classId)));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data } = await supabase.from('class_holidays').select('*').eq('class_id', classId);
+  return (data || []).map(d => ({ ...d, classId: d.class_id }));
 }
 
-// ==========================================
-// PHASE 2 SCHEMA (LEARNING TRACKING)
-// ==========================================
-
-// ============ STUDENT ATTENDANCE (V2) ============
 export async function getStudentAttendanceV2(classId, date) {
-  const db = getDb();
-  let q = query(collection(db, 'student_attendance_v2'), where('classId', '==', classId));
-  if (date) {
-    q = query(collection(db, 'student_attendance_v2'), where('classId', '==', classId), where('date', '==', date));
-  }
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  let query = supabase.from('student_attendance_v2').select('*').eq('class_id', classId);
+  if (date) query = query.eq('date', date);
+  const { data } = await query;
+  return (data || []).map(d => ({ ...d, classId: d.class_id }));
 }
 
 export async function addStudentAttendanceV2(data) {
-  const db = getDb();
-  const ref = await addDoc(collection(db, 'student_attendance_v2'), { ...data, createdAt: Timestamp.now() });
-  return ref.id;
+  const { data: newDoc, error } = await supabase.from('student_attendance_v2').insert([{ ...data, class_id: data.classId }]).select('id').single();
+  if (error) throw error;
+  return newDoc.id;
 }
 
-// ============ STUDENT EVALUATIONS ============
 export async function getStudentEvaluations(studentId) {
-  const db = getDb();
-  const snap = await getDocs(query(collection(db, 'student_evaluations'), where('studentId', '==', studentId)));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data } = await supabase.from('student_evaluations').select('*').eq('student_id', studentId);
+  return (data || []).map(d => ({ ...d, studentId: d.student_id }));
 }
 
 export async function addStudentEvaluation(data) {
-  const db = getDb();
-  const ref = await addDoc(collection(db, 'student_evaluations'), { ...data, createdAt: Timestamp.now() });
-  return ref.id;
+  const { data: newDoc, error } = await supabase.from('student_evaluations').insert([{ ...data, student_id: data.studentId }]).select('id').single();
+  if (error) throw error;
+  return newDoc.id;
 }
 
-// ============ CLASS TESTS ============
 export async function getClassTests(classId) {
-  const db = getDb();
-  const snap = await getDocs(query(collection(db, 'class_tests'), where('classId', '==', classId)));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data } = await supabase.from('class_tests').select('*').eq('class_id', classId);
+  return (data || []).map(d => ({ ...d, classId: d.class_id }));
 }
 
 export async function addClassTest(data) {
-  const db = getDb();
-  const ref = await addDoc(collection(db, 'class_tests'), { ...data, createdAt: Timestamp.now() });
-  return ref.id;
+  const { data: newDoc, error } = await supabase.from('class_tests').insert([{ ...data, class_id: data.classId }]).select('id').single();
+  if (error) throw error;
+  return newDoc.id;
 }
 
-// ============ STUDENT TEST GRADES ============
 export async function getStudentTestGrades(testId) {
-  const db = getDb();
-  const snap = await getDocs(query(collection(db, 'student_test_grades'), where('testId', '==', testId)));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data } = await supabase.from('student_test_grades').select('*').eq('test_id', testId);
+  return (data || []).map(d => ({ ...d, testId: d.test_id, studentId: d.student_id }));
 }
 
 export async function addStudentTestGrade(data) {
-  const db = getDb();
-  const ref = await addDoc(collection(db, 'student_test_grades'), { ...data, createdAt: Timestamp.now() });
-  return ref.id;
+  const { data: newDoc, error } = await supabase.from('student_test_grades').insert([{ ...data, test_id: data.testId, student_id: data.studentId }]).select('id').single();
+  if (error) throw error;
+  return newDoc.id;
 }
 
 // ==========================================
@@ -1125,47 +768,39 @@ export async function addStudentTestGrade(data) {
 // ==========================================
 
 export async function getTuitionPayments() {
-  const db = getDb();
-  const snap = await getDocs(collection(db, 'tuition_payments'));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data } = await supabase.from('tuition_payments').select('*');
+  return data || [];
 }
 export async function addTuitionPayment(data) {
-  const db = getDb();
-  const ref = await addDoc(collection(db, 'tuition_payments'), { ...data, createdAt: Timestamp.now() });
-  return ref.id;
+  const { data: newDoc } = await supabase.from('tuition_payments').insert([data]).select('id').single();
+  return newDoc.id;
 }
 
 export async function getTuitionAdjustments() {
-  const db = getDb();
-  const snap = await getDocs(collection(db, 'tuition_adjustments'));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data } = await supabase.from('tuition_adjustments').select('*');
+  return data || [];
 }
 export async function addTuitionAdjustment(data) {
-  const db = getDb();
-  const ref = await addDoc(collection(db, 'tuition_adjustments'), { ...data, createdAt: Timestamp.now() });
-  return ref.id;
+  const { data: newDoc } = await supabase.from('tuition_adjustments').insert([data]).select('id').single();
+  return newDoc.id;
 }
 
 export async function getFinanceCategories() {
-  const db = getDb();
-  const snap = await getDocs(collection(db, 'finance_categories'));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data } = await supabase.from('finance_categories').select('*');
+  return data || [];
 }
 export async function addFinanceCategory(data) {
-  const db = getDb();
-  const ref = await addDoc(collection(db, 'finance_categories'), { ...data, createdAt: Timestamp.now() });
-  return ref.id;
+  const { data: newDoc } = await supabase.from('finance_categories').insert([data]).select('id').single();
+  return newDoc.id;
 }
 
 export async function getFinanceTransactions() {
-  const db = getDb();
-  const snap = await getDocs(collection(db, 'finance_transactions'));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data } = await supabase.from('finance_transactions').select('*');
+  return data || [];
 }
 export async function addFinanceTransaction(data) {
-  const db = getDb();
-  const ref = await addDoc(collection(db, 'finance_transactions'), { ...data, createdAt: Timestamp.now() });
-  return ref.id;
+  const { data: newDoc } = await supabase.from('finance_transactions').insert([data]).select('id').single();
+  return newDoc.id;
 }
 
 // ==========================================
@@ -1173,118 +808,119 @@ export async function addFinanceTransaction(data) {
 // ==========================================
 
 export async function getTeacherSalaries() {
-  const db = getDb();
-  const snap = await getDocs(collection(db, 'teacher_salaries'));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data } = await supabase.from('teacher_salaries').select('*');
+  return (data || []).map(d => ({ ...d, coachId: d.coach_id, perSession: d.per_session, perStudent: d.per_student }));
 }
+
 export async function getTeacherSalary(coachId) {
-  const db = getDb();
-  const snap = await getDocs(query(collection(db, 'teacher_salaries'), where('coachId', '==', coachId)));
-  if (snap.empty) return null;
-  return { id: snap.docs[0].id, ...snap.docs[0].data() };
+  const { data } = await supabase.from('teacher_salaries').select('*').eq('coach_id', coachId).single();
+  if (!data) return null;
+  return { ...data, coachId: data.coach_id, perSession: data.per_session, perStudent: data.per_student };
 }
+
 export async function addTeacherSalary(data) {
-  const db = getDb();
-  const ref = await addDoc(collection(db, 'teacher_salaries'), { ...data, createdAt: Timestamp.now() });
-  return ref.id;
+  const insData = { ...data, coach_id: data.coachId, per_session: data.perSession, per_student: data.perStudent };
+  const { data: newDoc } = await supabase.from('teacher_salaries').insert([insData]).select('id').single();
+  return newDoc.id;
 }
+
 export async function updateTeacherSalary(id, data) {
-  const db = getDb();
-  await updateDoc(doc(db, 'teacher_salaries', id), {
-    ...data,
-    updatedAt: Timestamp.now()
-  });
+  const updateData = { updated_at: new Date().toISOString() };
+  if (data.perSession !== undefined) updateData.per_session = data.perSession;
+  if (data.perStudent !== undefined) updateData.per_student = data.perStudent;
+  if (data.baseSalary !== undefined) updateData.base_salary = data.baseSalary;
+  await supabase.from('teacher_salaries').update(updateData).eq('id', id);
 }
 
 export async function getTeacherSalarySessions() {
-  const db = getDb();
-  const snap = await getDocs(collection(db, 'teacher_salary_sessions'));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data } = await supabase.from('teacher_salary_sessions').select('*');
+  return (data || []).map(d => ({ ...d, coachId: d.coach_id, classId: d.class_id, checkInTime: d.check_in_time, checkInBy: d.check_in_by, calculatedSalary: d.calculated_salary, salaryConfigSnapshot: d.salary_config_snapshot, approvedBy: d.approved_by, approvedAt: d.approved_at, rejectedBy: d.rejected_by, rejectedAt: d.rejected_at }));
 }
+
 export async function getTeacherSalarySessionsByDate(date) {
-  const db = getDb();
-  const snap = await getDocs(query(collection(db, 'teacher_salary_sessions'), where('date', '==', date)));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data } = await supabase.from('teacher_salary_sessions').select('*').eq('date', date);
+  return (data || []).map(d => ({ ...d, coachId: d.coach_id, classId: d.class_id, checkInTime: d.check_in_time, checkInBy: d.check_in_by, calculatedSalary: d.calculated_salary, salaryConfigSnapshot: d.salary_config_snapshot, approvedBy: d.approved_by, approvedAt: d.approved_at, rejectedBy: d.rejected_by, rejectedAt: d.rejected_at }));
 }
+
 export async function addTeacherSalarySession(data) {
-  const db = getDb();
-  const ref = await addDoc(collection(db, 'teacher_salary_sessions'), { ...data, createdAt: Timestamp.now() });
-  return ref.id;
+  const insData = {
+    coach_id: data.coachId,
+    class_id: data.classId,
+    date: data.date,
+    check_in_by: data.checkInBy,
+    status: data.status,
+    calculated_salary: data.calculatedSalary,
+    salary_config_snapshot: data.salaryConfigSnapshot,
+    approved_by: data.approvedBy,
+    approved_at: data.approvedAt,
+    rejected_by: data.rejectedBy,
+    rejected_at: data.rejectedAt
+  };
+  const { data: newDoc } = await supabase.from('teacher_salary_sessions').insert([insData]).select('id').single();
+  return newDoc.id;
 }
+
 export async function deleteTeacherSalarySession(id) {
-  const db = getDb();
-  await deleteDoc(doc(db, 'teacher_salary_sessions', id));
+  await supabase.from('teacher_salary_sessions').delete().eq('id', id);
 }
+
 export async function getClassesForCoach(coachId) {
-  const db = getDb();
-  const snap = await getDocs(query(collection(db, 'class_teachers'), where('coachId', '==', coachId), where('status', '==', 'active')));
-  const classTeachers = snap.docs.map(d => d.data());
+  const ct = await getClassTeachers(coachId); // Actually this query was wrong in original, should be coachId
+  const { data } = await supabase.from('class_teachers').select('*').eq('coach_id', coachId).eq('status', 'active');
+  const classTeachers = data || [];
+  
   const classes = [];
-  for (const ct of classTeachers) {
-    const classDoc = await getDoc(doc(db, 'classes', ct.classId));
-    if (classDoc.exists()) {
-      classes.push({ id: classDoc.id, ...classDoc.data(), role: ct.role });
+  for (const t of classTeachers) {
+    const { data: classDoc } = await supabase.from('classes').select('*').eq('id', t.class_id).single();
+    if (classDoc) {
+      classes.push({ ...classDoc, role: t.role });
     }
   }
   return classes;
 }
 
 export async function calculateMonthlyPayrollV2(monthPrefix) {
-  const db = getDb();
-  
-  // Get all approved sessions for this month
-  const sessionsSnap = await getDocs(query(collection(db, 'teacher_salary_sessions'), where('status', '==', 'approved')));
-  const sessions = sessionsSnap.docs
-    .map(d => ({ id: d.id, ...d.data() }))
-    .filter(s => s.date && s.date.startsWith(monthPrefix));
+  const { data: sessionsSnap } = await supabase.from('teacher_salary_sessions').select('*').eq('status', 'approved').like('date', `${monthPrefix}%`);
+  const sessions = sessionsSnap || [];
 
-  // Get all coach salaries
-  const salariesSnap = await getDocs(collection(db, 'teacher_salaries'));
+  const { data: salariesSnap } = await supabase.from('teacher_salaries').select('*');
   const salaryMap = {};
-  salariesSnap.docs.forEach(d => {
-    const data = d.data();
-    if (data.coachId) {
-      salaryMap[data.coachId] = data;
-    }
+  (salariesSnap || []).forEach(d => {
+    if (d.coach_id) salaryMap[d.coach_id] = d;
   });
 
-  // Get all coaches
-  const coachesSnap = await getDocs(collection(db, 'user_accounts'));
+  const { data: coachesSnap } = await supabase.from('user_accounts').select('*');
   const coachMap = {};
-  coachesSnap.docs.forEach(d => {
-    if (d.data().role === 'coach' || d.data().role === 'admin') {
-      coachMap[d.id] = { id: d.id, ...d.data() };
-    }
+  (coachesSnap || []).forEach(d => {
+    if (d.role === 'coach' || d.role === 'admin') coachMap[d.id] = d;
   });
 
-  // Group by coach
   const payrollMap = {};
   for (const s of sessions) {
-    if (!payrollMap[s.coachId]) {
-      payrollMap[s.coachId] = {
-        coachId: s.coachId,
-        coachName: coachMap[s.coachId]?.name || 'Không rõ',
-        coachEmail: coachMap[s.coachId]?.email || '',
-        baseSalary: salaryMap[s.coachId]?.baseSalary || 0,
+    if (!payrollMap[s.coach_id]) {
+      payrollMap[s.coach_id] = {
+        coachId: s.coach_id,
+        coachName: coachMap[s.coach_id]?.name || 'Không rõ',
+        coachEmail: coachMap[s.coach_id]?.email || '',
+        baseSalary: salaryMap[s.coach_id]?.base_salary || 0,
         totalSessions: 0,
         sessionEarnings: 0,
         records: []
       };
     }
-    payrollMap[s.coachId].totalSessions += 1;
-    payrollMap[s.coachId].sessionEarnings += Number(s.calculatedSalary || 0);
-    payrollMap[s.coachId].records.push(s);
+    payrollMap[s.coach_id].totalSessions += 1;
+    payrollMap[s.coach_id].sessionEarnings += Number(s.calculated_salary || 0);
+    payrollMap[s.coach_id].records.push(s);
   }
 
-  // Include coaches with base salary but 0 sessions
   for (const coachId in salaryMap) {
     const sConf = salaryMap[coachId];
-    if (sConf.baseSalary > 0 && !payrollMap[coachId] && coachMap[coachId]) {
+    if (sConf.base_salary > 0 && !payrollMap[coachId] && coachMap[coachId]) {
       payrollMap[coachId] = {
         coachId,
         coachName: coachMap[coachId].name || 'Không rõ',
         coachEmail: coachMap[coachId].email || '',
-        baseSalary: sConf.baseSalary,
+        baseSalary: sConf.base_salary,
         totalSessions: 0,
         sessionEarnings: 0,
         records: []
@@ -1292,7 +928,6 @@ export async function calculateMonthlyPayrollV2(monthPrefix) {
     }
   }
 
-  // Calculate final
   return Object.values(payrollMap).map(p => ({
     ...p,
     totalEarnings: p.baseSalary + p.sessionEarnings
@@ -1300,29 +935,25 @@ export async function calculateMonthlyPayrollV2(monthPrefix) {
 }
 
 export async function paySalaryTransaction(coachId, coachName, month, amount) {
-  const db = getDb();
-  
-  // Create finance transaction
-  await addDoc(collection(db, 'finance_transactions'), {
+  await addFinanceTransaction({
     type: 'expense',
     amount: amount,
     category: 'Lương HLV',
-    date: getTodayStr(),
+    date: new Date().toISOString().split('T')[0],
     description: `Thanh toán lương tháng ${month} cho HLV ${coachName}`,
-    createdAt: Timestamp.now(),
     coachId: coachId,
     month: month
   });
 
-  // Mark sessions as paid
-  const sessionsSnap = await getDocs(query(collection(db, 'teacher_salary_sessions'), where('status', '==', 'approved'), where('coachId', '==', coachId)));
-  for (const docSnap of sessionsSnap.docs) {
-    const data = docSnap.data();
-    if (data.date && data.date.startsWith(month)) {
-      await updateDoc(doc(db, 'teacher_salary_sessions', docSnap.id), {
-        status: 'paid',
-        paidAt: Timestamp.now()
-      });
+  const { data: sessions } = await supabase.from('teacher_salary_sessions').select('id, date').eq('status', 'approved').eq('coach_id', coachId);
+  if (sessions) {
+    for (const docSnap of sessions) {
+      if (docSnap.date && docSnap.date.startsWith(month)) {
+        await supabase.from('teacher_salary_sessions').update({
+          status: 'paid',
+          paid_at: new Date().toISOString()
+        }).eq('id', docSnap.id);
+      }
     }
   }
 }
@@ -1332,56 +963,46 @@ export async function paySalaryTransaction(coachId, coachName, month, amount) {
 // ==========================================
 
 export async function getLibraryItems() {
-  const db = getDb();
-  const snap = await getDocs(collection(db, 'library_items'));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data } = await supabase.from('library_items').select('*');
+  return data || [];
 }
 export async function addLibraryItem(data) {
-  const db = getDb();
-  const ref = await addDoc(collection(db, 'library_items'), { ...data, createdAt: Timestamp.now() });
-  return ref.id;
+  const { data: newDoc } = await supabase.from('library_items').insert([data]).select('id').single();
+  return newDoc.id;
 }
 
 export async function getLectureCourses() {
-  const db = getDb();
-  const snap = await getDocs(collection(db, 'lecture_courses'));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data } = await supabase.from('lecture_courses').select('*');
+  return data || [];
 }
 export async function addLectureCourse(data) {
-  const db = getDb();
-  const ref = await addDoc(collection(db, 'lecture_courses'), { ...data, createdAt: Timestamp.now() });
-  return ref.id;
+  const { data: newDoc } = await supabase.from('lecture_courses').insert([data]).select('id').single();
+  return newDoc.id;
 }
 
 export async function getLectureLessons(courseId) {
-  const db = getDb();
-  const snap = await getDocs(query(collection(db, 'lecture_lessons'), where('courseId', '==', courseId)));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data } = await supabase.from('lecture_lessons').select('*').eq('course_id', courseId);
+  return data || [];
 }
 export async function addLectureLesson(data) {
-  const db = getDb();
-  const ref = await addDoc(collection(db, 'lecture_lessons'), { ...data, createdAt: Timestamp.now() });
-  return ref.id;
+  const { data: newDoc } = await supabase.from('lecture_lessons').insert([{ ...data, course_id: data.courseId }]).select('id').single();
+  return newDoc.id;
 }
 
 export async function getClassLectureCourses(classId) {
-  const db = getDb();
-  const snap = await getDocs(query(collection(db, 'class_lecture_courses'), where('classId', '==', classId)));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data } = await supabase.from('class_lecture_courses').select('*').eq('class_id', classId);
+  return data || [];
 }
 export async function addClassLectureCourse(data) {
-  const db = getDb();
-  const ref = await addDoc(collection(db, 'class_lecture_courses'), { ...data, createdAt: Timestamp.now() });
-  return ref.id;
+  const { data: newDoc } = await supabase.from('class_lecture_courses').insert([{ ...data, class_id: data.classId }]).select('id').single();
+  return newDoc.id;
 }
 
 export async function getClassLectureLessons(classId) {
-  const db = getDb();
-  const snap = await getDocs(query(collection(db, 'class_lecture_lessons'), where('classId', '==', classId)));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data } = await supabase.from('class_lecture_lessons').select('*').eq('class_id', classId);
+  return data || [];
 }
 export async function addClassLectureLesson(data) {
-  const db = getDb();
-  const ref = await addDoc(collection(db, 'class_lecture_lessons'), { ...data, createdAt: Timestamp.now() });
-  return ref.id;
+  const { data: newDoc } = await supabase.from('class_lecture_lessons').insert([{ ...data, class_id: data.classId }]).select('id').single();
+  return newDoc.id;
 }

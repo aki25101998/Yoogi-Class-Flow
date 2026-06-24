@@ -1,75 +1,25 @@
-// Authentication module — Google OAuth with Firebase
-import { firebaseConfig } from './firebase-config.js';
+// Authentication module — Google OAuth with Supabase
+import { supabaseClient } from './supabase-config.js';
 
-const { initializeApp, getAuth, GoogleAuthProvider, signInWithPopup, signOut: fbSignOut, onAuthStateChanged: fbOnAuthStateChanged, getFirestore, doc, getDoc, setDoc, getDocs, collection, Timestamp, query, where } = window.firebase;
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const provider = new GoogleAuthProvider();
+const supabase = supabaseClient;
 
 // Current user state
 let currentUser = null;
 let currentUserData = null;
 
-let isLoggingIn = false;
-
 /**
- * Sign in with Google popup
- * @returns {Promise<{user: object, userData: object}>}
+ * Sign in with Google
+ * Uses redirect by default in Supabase.
  */
 export async function signInWithGoogle() {
-  isLoggingIn = true;
-  try {
-    const result = await signInWithPopup(auth, provider);
-    const user = result.user;
-    
-    // Check if this user exists in coaches collection by email
-    const q = query(collection(db, 'coaches'), where('email', '==', user.email.toLowerCase().trim()));
-    const snap = await getDocs(q);
-    
-    if (!snap.empty) {
-      const userDoc = snap.docs[0];
-      currentUserData = { id: userDoc.id, ...userDoc.data() };
-      
-      if (globalAuthCallback) {
-        globalAuthCallback(user, currentUserData);
-      }
-      return { user, userData: currentUserData };
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: window.location.origin
     }
-    
-    // Check if any coaches exist at all — if not, make this user the admin
-    const coachesSnap = await getDocs(collection(db, 'coaches'));
-    if (coachesSnap.empty) {
-      const adminData = {
-        name: user.displayName || 'Admin',
-        email: user.email.toLowerCase().trim(),
-        phone: '',
-        role: 'admin',
-        rateType: 'per_session',
-        defaultRate: 0,
-        status: 'active',
-        photoURL: user.photoURL || '',
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now()
-      };
-      await setDoc(doc(db, 'coaches', user.uid), adminData);
-      currentUserData = { id: user.uid, ...adminData };
-      
-      // Notify listener manually since we skipped it
-      if (globalAuthCallback) {
-        globalAuthCallback(user, currentUserData);
-      }
-      return { user, userData: currentUserData };
-    }
-    
-    // User not in system and not first user — unauthorized
-    await fbSignOut(auth);
-    throw new Error('UNAUTHORIZED:' + user.email);
-  } finally {
-    isLoggingIn = false;
-  }
+  });
+  
+  if (error) throw error;
 }
 
 /**
@@ -78,7 +28,7 @@ export async function signInWithGoogle() {
 export async function signOutUser() {
   currentUser = null;
   currentUserData = null;
-  await fbSignOut(auth);
+  await supabase.auth.signOut();
 }
 
 let globalAuthCallback = null;
@@ -89,22 +39,65 @@ let globalAuthCallback = null;
  */
 export function onAuthStateChange(callback) {
   globalAuthCallback = callback;
-  fbOnAuthStateChanged(auth, async (user) => {
-    if (user) {
-      if (isLoggingIn) return; // Skip handling here if signInWithGoogle is doing it
+  
+  // We need to handle initial session and subsequent changes
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    if (session && session.user) {
+      const user = session.user;
       currentUser = user;
+      
       try {
-        const q = query(collection(db, 'coaches'), where('email', '==', user.email.toLowerCase().trim()));
-        const snap = await getDocs(q);
+        const email = user.email.toLowerCase().trim();
         
-        if (!snap.empty) {
-          const userDoc = snap.docs[0];
-          currentUserData = { id: userDoc.id, ...userDoc.data() };
+        // 1. Check if user is in coaches table
+        const { data: coaches, error } = await supabase
+          .from('coaches')
+          .select('*')
+          .eq('email', email);
+          
+        if (error) throw error;
+        
+        if (coaches && coaches.length > 0) {
+          currentUserData = coaches[0];
           callback(user, currentUserData);
         } else {
-          // User not in system
-          await fbSignOut(auth);
-          callback(null, null);
+          // 2. Not in coaches table. Check if any coaches exist.
+          const { count, error: countError } = await supabase
+            .from('coaches')
+            .select('*', { count: 'exact', head: true });
+            
+          if (countError) throw countError;
+          
+          if (count === 0) {
+            // First user ever -> make them admin
+            const adminData = {
+              name: user.user_metadata?.full_name || 'Admin',
+              email: email,
+              phone: '',
+              cccd: '',
+              level: '',
+              membership_number: '',
+              role: 'admin',
+              permissions: {},
+              status: 'active',
+              photo_url: user.user_metadata?.avatar_url || ''
+            };
+            
+            const { data: newAdmin, error: insertError } = await supabase
+              .from('coaches')
+              .insert([adminData])
+              .select();
+              
+            if (insertError) throw insertError;
+            
+            currentUserData = newAdmin[0];
+            callback(user, currentUserData);
+          } else {
+            // Not first user -> UNAUTHORIZED
+            await supabase.auth.signOut();
+            callback(null, null);
+            // We could trigger an event or alert for unauthorized, but returning null handles it.
+          }
         }
       } catch (err) {
         console.error('Error fetching user data:', err);
@@ -119,7 +112,7 @@ export function onAuthStateChange(callback) {
 }
 
 /**
- * Get current Firebase user
+ * Get current user
  * @returns {object|null}
  */
 export function getCurrentUser() {
@@ -127,7 +120,7 @@ export function getCurrentUser() {
 }
 
 /**
- * Get current user data from Firestore
+ * Get current user data from DB
  * @returns {object|null}
  */
 export function getCurrentUserData() {
@@ -143,24 +136,23 @@ export function isAdmin() {
 }
 
 /**
- * Get Firestore database instance
+ * Get Database instance (for compatibility, though we just use supabase client)
  * @returns {object}
  */
 export function getDb() {
-  return db;
+  return supabase;
 }
 
 /**
- * Get Firebase Auth instance
+ * Get Auth instance
  * @returns {object}
  */
 export function getAuthInstance() {
-  return auth;
+  return supabase.auth;
 }
 
 /**
  * Check if current user has a specific permission
- * Admin always has all permissions
  * @param {string} permissionName
  * @returns {boolean}
  */

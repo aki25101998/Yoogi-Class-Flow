@@ -48,20 +48,10 @@
     </div>
   </div>
 
-  <!-- Firebase SDK -->
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js';
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js';
-    import { getFirestore, collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, query, where, orderBy, Timestamp, writeBatch, setDoc, collectionGroup } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js';
-    
-    // Make Firebase available globally
-    window.firebase = {
-      initializeApp, getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
-      getFirestore, collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, 
-      query, where, orderBy, Timestamp, writeBatch, setDoc, collectionGroup
-    };
-
-    // Load app after Firebase is ready (with cache busting)
+    // Load app (with cache busting)
     import('./js/app.js?v=' + Date.now()).catch(e => alert('Import error: ' + (e.stack || e)));
     console.log("Import initiated");
   </script>
