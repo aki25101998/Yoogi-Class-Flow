@@ -63,13 +63,13 @@ async function loadPayrollData() {
     const totalSessions = payroll.reduce((sum, p) => sum + p.totalSessions, 0);
 
     const payrollStats = document.getElementById('payrollStats');
-    if (payrollStats) payrollStats.innerHTML = \`
+    if (payrollStats) payrollStats.innerHTML = `
       <div class="stat-card">
         <div class="stat-icon green">
           <span class="material-icons-round">payments</span>
         </div>
         <div>
-          <div class="stat-value payroll-total" style="font-size:1.25rem;">\${formatCurrency(totalPayroll)}</div>
+          <div class="stat-value payroll-total" style="font-size:1.25rem;">${formatCurrency(totalPayroll)}</div>
           <div class="stat-label">Tổng quỹ lương</div>
         </div>
       </div>
@@ -78,7 +78,7 @@ async function loadPayrollData() {
           <span class="material-icons-round">event_available</span>
         </div>
         <div>
-          <div class="stat-value">\${totalSessions}</div>
+          <div class="stat-value">${totalSessions}</div>
           <div class="stat-label">Tổng ca dạy</div>
         </div>
       </div>
@@ -87,27 +87,27 @@ async function loadPayrollData() {
           <span class="material-icons-round">people</span>
         </div>
         <div>
-          <div class="stat-value">\${payroll.length}</div>
+          <div class="stat-value">${payroll.length}</div>
           <div class="stat-label">Số HLV</div>
         </div>
       </div>
-    \`;
+    `;
 
     const tableEl = document.getElementById('payrollTable');
     if (!tableEl) return;
 
     if (payroll.length === 0) {
-      tableEl.innerHTML = \`
+      tableEl.innerHTML = `
         <div class="empty-state">
           <span class="material-icons-round empty-state-icon">receipt_long</span>
           <h3 class="empty-state-title">Chưa có dữ liệu</h3>
-          <p class="empty-state-text">Tháng \${formatMonth(currentMonth)} chưa có ca dạy nào được duyệt</p>
+          <p class="empty-state-text">Tháng ${formatMonth(currentMonth)} chưa có ca dạy nào được duyệt</p>
         </div>
-      \`;
+      `;
       return;
     }
 
-    tableEl.innerHTML = \`
+    tableEl.innerHTML = `
       <div class="table-wrapper">
         <table class="table">
           <thead>
@@ -122,40 +122,40 @@ async function loadPayrollData() {
             </tr>
           </thead>
           <tbody>
-            \${payroll.map((p, i) => \`
+            ${payroll.map((p, i) => `
               <tr>
-                <td>\${i + 1}</td>
+                <td>${i + 1}</td>
                 <td>
-                  <strong>\${escapeHtml(p.coachName)}</strong>
-                  <br><span style="font-size:0.7rem;color:var(--text-secondary);">\${escapeHtml(p.coachEmail)}</span>
+                  <strong>${escapeHtml(p.coachName)}</strong>
+                  <br><span style="font-size:0.7rem;color:var(--text-secondary);">${escapeHtml(p.coachEmail)}</span>
                 </td>
-                <td style="text-align:right;">\${formatCurrency(p.baseSalary)}</td>
-                <td style="text-align:center;">\${p.totalSessions}</td>
-                <td style="text-align:right;">\${formatCurrency(p.sessionEarnings)}</td>
-                <td style="text-align:right;font-weight:700;color:var(--accent-success);">\${formatCurrency(p.totalEarnings)}</td>
+                <td style="text-align:right;">${formatCurrency(p.baseSalary)}</td>
+                <td style="text-align:center;">${p.totalSessions}</td>
+                <td style="text-align:right;">${formatCurrency(p.sessionEarnings)}</td>
+                <td style="text-align:right;font-weight:700;color:var(--accent-success);">${formatCurrency(p.totalEarnings)}</td>
                 <td style="text-align:center;">
-                  <button class="btn btn-sm btn-ghost" data-detail="\${p.coachId}" title="Chi tiết">
+                  <button class="btn btn-sm btn-ghost" data-detail="${p.coachId}" title="Chi tiết">
                     <span class="material-icons-round">visibility</span>
                   </button>
-                  \${p.totalEarnings > 0 ? \`
-                    <button class="btn btn-sm btn-primary" data-pay="\${p.coachId}" data-name="\${escapeHtml(p.coachName)}" data-amount="\${p.totalEarnings}" title="Thanh toán">
+                  ${p.totalEarnings > 0 ? `
+                    <button class="btn btn-sm btn-primary" data-pay="${p.coachId}" data-name="${escapeHtml(p.coachName)}" data-amount="${p.totalEarnings}" title="Thanh toán">
                       <span class="material-icons-round">payments</span> Thanh toán
                     </button>
-                  \` : ''}
+                  ` : ''}
                 </td>
               </tr>
-            \`).join('')}
+            `).join('')}
             <tr style="background: rgba(255,255,255,0.03);">
               <td colspan="3" style="font-weight:700;">TỔNG CỘNG</td>
-              <td style="text-align:center;font-weight:700;">\${totalSessions}</td>
+              <td style="text-align:center;font-weight:700;">${totalSessions}</td>
               <td></td>
-              <td style="text-align:right;font-weight:800;font-size:1rem;color:var(--accent-success);">\${formatCurrency(totalPayroll)}</td>
+              <td style="text-align:right;font-weight:800;font-size:1rem;color:var(--accent-success);">${formatCurrency(totalPayroll)}</td>
               <td></td>
             </tr>
           </tbody>
         </table>
       </div>
-    \`;
+    `;
 
     // Detail handlers
     tableEl.querySelectorAll('[data-detail]').forEach(btn => {
@@ -173,7 +173,7 @@ async function loadPayrollData() {
         const name = btn.dataset.name;
         const amount = Number(btn.dataset.amount);
         
-        const ok = await confirmDialog('Thanh toán Lương', \`Tạo phiếu chi lương <strong>\${formatCurrency(amount)}</strong> cho HLV \${name} trong tháng \${currentMonth}?<br><small style="color:var(--text-secondary);">Phiếu chi sẽ được lưu vào Sổ quỹ chung.</small>\`);
+        const ok = await confirmDialog('Thanh toán Lương', `Tạo phiếu chi lương <strong>${formatCurrency(amount)}</strong> cho HLV ${name} trong tháng ${currentMonth}?<br><small style="color:var(--text-secondary);">Phiếu chi sẽ được lưu vào Sổ quỹ chung.</small>`);
         if (ok) {
           try {
             await paySalaryTransaction(coachId, name, currentMonth, amount);
@@ -195,16 +195,16 @@ function showCoachDetail(p, classMap) {
   const sortedRecords = [...p.records].sort((a, b) => a.date.localeCompare(b.date));
   
   showModal({
-    title: \`Chi tiết lương — \${p.coachName}\`,
+    title: `Chi tiết lương — ${p.coachName}`,
     showFooter: false,
     wide: true,
-    content: \`
+    content: `
       <div style="margin-bottom: var(--sp-4);">
-        <span style="font-size:0.8rem;color:var(--text-secondary);">Tháng \${formatMonth(currentMonth)}</span>
-        <div class="payroll-total" style="font-size:1.5rem;margin-top:var(--sp-2);">\${formatCurrency(p.totalEarnings)}</div>
+        <span style="font-size:0.8rem;color:var(--text-secondary);">Tháng ${formatMonth(currentMonth)}</span>
+        <div class="payroll-total" style="font-size:1.5rem;margin-top:var(--sp-2);">${formatCurrency(p.totalEarnings)}</div>
         <div style="font-size:0.9rem; color:var(--text-secondary); margin-top:var(--sp-2);">
-          <div>Lương cứng: <strong>\${formatCurrency(p.baseSalary)}</strong></div>
-          <div>Lương ca dạy (\${sortedRecords.length} ca): <strong>\${formatCurrency(p.sessionEarnings)}</strong></div>
+          <div>Lương cứng: <strong>${formatCurrency(p.baseSalary)}</strong></div>
+          <div>Lương ca dạy (${sortedRecords.length} ca): <strong>${formatCurrency(p.sessionEarnings)}</strong></div>
         </div>
       </div>
       <div class="table-wrapper">
@@ -218,20 +218,20 @@ function showCoachDetail(p, classMap) {
             </tr>
           </thead>
           <tbody>
-            \${sortedRecords.map(r => \`
+            ${sortedRecords.map(r => `
               <tr>
-                <td>\${formatDate(r.date)}</td>
-                <td>\${escapeHtml(classMap[r.classId]?.name || '?')}</td>
-                <td style="text-align:right;font-weight:600;">\${formatCurrency(r.calculatedSalary || 0)}</td>
+                <td>${formatDate(r.date)}</td>
+                <td>${escapeHtml(classMap[r.classId]?.name || '?')}</td>
+                <td style="text-align:right;font-weight:600;">${formatCurrency(r.calculatedSalary || 0)}</td>
                 <td style="text-align:center;">
-                  \${r.status === 'paid' ? '<span class="badge badge-success">Đã thanh toán</span>' : '<span class="badge badge-approved">Chờ TT</span>'}
+                  ${r.status === 'paid' ? '<span class="badge badge-success">Đã thanh toán</span>' : '<span class="badge badge-approved">Chờ TT</span>'}
                 </td>
               </tr>
-            \`).join('')}
-            \${sortedRecords.length === 0 ? '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);">Không có ca dạy nào</td></tr>' : ''}
+            `).join('')}
+            ${sortedRecords.length === 0 ? '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);">Không có ca dạy nào</td></tr>' : ''}
           </tbody>
         </table>
       </div>
-    \`
+    `
   });
 }

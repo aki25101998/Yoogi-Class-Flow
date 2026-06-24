@@ -131,19 +131,19 @@ async function loadClasses() {
                 <div class="venue-coaches-list">
                   ${teachers.map(t => {
                     const coach = coachMap[t.coachId];
-                    return \`
+                    return `
                       <div class="venue-coach-item">
                         <div class="flex items-center gap-3">
                           <div class="user-avatar-placeholder" style="width:32px;height:32px;font-size:0.8rem;">
-                            \${(coach?.name || '?').charAt(0).toUpperCase()}
+                            ${(coach?.name || '?').charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <div style="font-weight:600;font-size:0.9rem;">\${escapeHtml(coach?.name || 'Không rõ')}</div>
-                            <div style="font-size:0.75rem;color:var(--text-secondary);">Vai trò: \${t.role === 'main' ? 'Chính' : 'Trợ giảng'}</div>
+                            <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(coach?.name || 'Không rõ')}</div>
+                            <div style="font-size:0.75rem;color:var(--text-secondary);">Vai trò: ${t.role === 'main' ? 'Chính' : 'Trợ giảng'}</div>
                           </div>
                         </div>
                       </div>
-                    \`;
+                    `;
                   }).join('')}
                 </div>
               `}
@@ -164,9 +164,9 @@ async function loadClasses() {
                 </div>
               ` : `
                 <div class="flex" style="gap:8px;flex-wrap:wrap;">
-                  ${schedules.map(s => \`
-                    <span class="badge badge-info">\${formatDayShort(s.dayOfWeek)}: \${s.startTime} - \${s.endTime}</span>
-                  \`).join('')}
+                  ${schedules.map(s => `
+                    <span class="badge badge-info">${formatDayShort(s.dayOfWeek)}: ${s.startTime} - ${s.endTime}</span>
+                  `).join('')}
                 </div>
               `}
             </div>
@@ -191,14 +191,14 @@ async function loadClasses() {
                 <div class="venue-coaches-list" style="max-height: 250px; overflow-y:auto;">
                   ${students.map(s => {
                     const studentObj = studentMap[s.studentId];
-                    return \`
+                    return `
                     <div class="venue-coach-item" style="padding:var(--sp-2) var(--sp-3);">
                       <div class="flex items-center gap-3">
                         <span class="material-icons-round" style="color:var(--text-muted);font-size:1.2rem;">person</span>
-                        <div style="font-weight:500;font-size:0.85rem;">\${escapeHtml(studentObj?.name || 'Học viên ID: ' + s.studentId)}</div>
+                        <div style="font-weight:500;font-size:0.85rem;">${escapeHtml(studentObj?.name || 'Học viên ID: ' + s.studentId)}</div>
                       </div>
                     </div>
-                  \`}).join('')}
+                  `}).join('')}
                 </div>
               `}
             </div>
@@ -406,18 +406,18 @@ async function showAttendanceForm(classId) {
           ${students.length === 0 ? '<tr><td colspan="2" style="text-align:center;">Lớp chưa có học viên</td></tr>' : ''}
           ${students.map(s => {
             const stu = studentMap[s.studentId];
-            return \`
+            return `
               <tr>
-                <td>\${escapeHtml(stu?.name || s.studentId)}</td>
+                <td>${escapeHtml(stu?.name || s.studentId)}</td>
                 <td>
-                  <select class="form-select att-select" data-student-id="\${s.studentId}">
+                  <select class="form-select att-select" data-student-id="${s.studentId}">
                     <option value="present">Có mặt</option>
                     <option value="absent_excused">Vắng phép</option>
                     <option value="absent_unexcused">Vắng ko phép</option>
                   </select>
                 </td>
               </tr>
-            \`;
+            `;
           }).join('')}
         </tbody>
       </table>
@@ -476,15 +476,15 @@ async function showTestsForm(classId) {
     
     <div id="testsListContainer" style="display:flex; flex-direction:column; gap:8px;">
       ${tests.length === 0 ? '<div style="color:var(--text-muted); font-size:0.9rem;">Chưa có bài kiểm tra nào.</div>' : ''}
-      ${tests.map(t => \`
+      ${tests.map(t => `
         <div class="card" style="padding:var(--sp-3); display:flex; justify-content:space-between; align-items:center;">
           <div>
-            <div style="font-weight:600;">\${escapeHtml(t.name)}</div>
-            <div style="font-size:0.8rem; color:var(--text-secondary);">\${t.date || ''} - Hệ số \${t.weight || 1}</div>
+            <div style="font-weight:600;">${escapeHtml(t.name)}</div>
+            <div style="font-size:0.8rem; color:var(--text-secondary);">${t.date || ''} - Hệ số ${t.weight || 1}</div>
           </div>
-          <button class="btn btn-sm btn-outline" onclick="window.enterGrades('\${classId}', '\${t.id}')">Nhập điểm</button>
+          <button class="btn btn-sm btn-outline" onclick="window.enterGrades('${classId}', '${t.id}')">Nhập điểm</button>
         </div>
-      \`).join('')}
+      `).join('')}
     </div>
   `;
 
@@ -570,13 +570,13 @@ window.enterGrades = async (classId, testId) => {
           ${students.length === 0 ? '<tr><td colspan="3" style="text-align:center;">Lớp chưa có học viên</td></tr>' : ''}
           ${students.map(s => {
             const stu = studentMap[s.studentId];
-            return \`
-              <tr class="grade-row" data-student-id="\${s.studentId}">
-                <td>\${escapeHtml(stu?.name || s.studentId)}</td>
+            return `
+              <tr class="grade-row" data-student-id="${s.studentId}">
+                <td>${escapeHtml(stu?.name || s.studentId)}</td>
                 <td><input type="number" class="form-input grade-score" min="0" max="10" step="0.5" style="width:80px;" placeholder="0-10"></td>
                 <td><input type="text" class="form-input grade-note" placeholder="..."></td>
               </tr>
-            \`;
+            `;
           }).join('')}
         </tbody>
       </table>

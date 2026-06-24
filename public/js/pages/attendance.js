@@ -64,13 +64,13 @@ async function loadAttendanceData() {
     if (!tableEl) return;
     
     if (attendance.length === 0) {
-      tableEl.innerHTML = \`
+      tableEl.innerHTML = `
         <div class="empty-state">
           <span class="material-icons-round empty-state-icon">event_busy</span>
           <h3 class="empty-state-title">Không có dữ liệu điểm danh</h3>
-          <p class="empty-state-text">Ngày \${formatDate(currentDate)} chưa có ai check-in</p>
+          <p class="empty-state-text">Ngày ${formatDate(currentDate)} chưa có ai check-in</p>
         </div>
-      \`;
+      `;
       return;
     }
 
@@ -81,7 +81,7 @@ async function loadAttendanceData() {
       return 0;
     });
 
-    tableEl.innerHTML = \`
+    tableEl.innerHTML = `
       <div class="table-wrapper">
         <table class="table">
           <thead>
@@ -95,7 +95,7 @@ async function loadAttendanceData() {
             </tr>
           </thead>
           <tbody>
-            \${attendance.map(att => {
+            ${attendance.map(att => {
               const coach = coachMap[att.coachId];
               const cls = classMap[att.classId];
               
@@ -105,39 +105,39 @@ async function loadAttendanceData() {
                 'rejected': '<span class="badge badge-rejected">Từ chối</span>'
               };
 
-              return \`
+              return `
                 <tr>
                   <td>
-                    <div style="font-weight:500;">\${escapeHtml(coach?.name || 'Không rõ')}</div>
-                    <div style="font-size:0.8rem;color:var(--text-secondary);">\${escapeHtml(coach?.phone || '')}</div>
+                    <div style="font-weight:500;">${escapeHtml(coach?.name || 'Không rõ')}</div>
+                    <div style="font-size:0.8rem;color:var(--text-secondary);">${escapeHtml(coach?.phone || '')}</div>
                   </td>
-                  <td>\${escapeHtml(cls?.name || 'Không rõ')}</td>
-                  <td>\${formatTime(att.checkInTime)}</td>
-                  <td>\${statusMap[att.status] || att.status}</td>
-                  <td style="font-weight:600; color:var(--accent-success);">\${att.calculatedSalary ? Number(att.calculatedSalary).toLocaleString('vi-VN') + ' đ' : 'Chưa tính'}</td>
+                  <td>${escapeHtml(cls?.name || 'Không rõ')}</td>
+                  <td>${formatTime(att.checkInTime)}</td>
+                  <td>${statusMap[att.status] || att.status}</td>
+                  <td style="font-weight:600; color:var(--accent-success);">${att.calculatedSalary ? Number(att.calculatedSalary).toLocaleString('vi-VN') + ' đ' : 'Chưa tính'}</td>
                   <td>
                     <div class="flex gap-2">
-                      \${att.status === 'checked_in' ? \`
-                        <button class="btn btn-sm btn-success" data-approve="\${att.id}" title="Duyệt">
+                      ${att.status === 'checked_in' ? `
+                        <button class="btn btn-sm btn-success" data-approve="${att.id}" title="Duyệt">
                           <span class="material-icons-round" style="font-size:18px;">check</span>
                         </button>
-                        <button class="btn btn-sm btn-danger" data-reject="\${att.id}" title="Từ chối">
+                        <button class="btn btn-sm btn-danger" data-reject="${att.id}" title="Từ chối">
                           <span class="material-icons-round" style="font-size:18px;">close</span>
                         </button>
-                      \` : \`
-                        <button class="btn btn-sm btn-ghost" data-delete="\${att.id}" title="Xóa">
+                      ` : `
+                        <button class="btn btn-sm btn-ghost" data-delete="${att.id}" title="Xóa">
                           <span class="material-icons-round" style="font-size:18px;">delete</span>
                         </button>
-                      \`}
+                      `}
                     </div>
                   </td>
                 </tr>
-              \`;
+              `;
             }).join('')}
           </tbody>
         </table>
       </div>
-    \`;
+    `;
 
     tableEl.querySelectorAll('[data-approve]').forEach(btn => {
       btn.addEventListener('click', async () => {
@@ -170,9 +170,9 @@ async function loadAttendanceData() {
 
   } catch (err) {
     console.error(err);
-    document.getElementById('attendanceTable').innerHTML = \`
-      <div class="error-text">Lỗi: \${err.message}</div>
-    \`;
+    document.getElementById('attendanceTable').innerHTML = `
+      <div class="error-text">Lỗi: ${err.message}</div>
+    `;
   }
 }
 
@@ -188,7 +188,7 @@ async function bulkApprove() {
     for (const r of pending) {
       await approveAttendanceV2(r.id, admin.id);
     }
-    showToast({ message: \`Đã duyệt \${pending.length} bản ghi\`, type: 'success' });
+    showToast({ message: `Đã duyệt ${pending.length} bản ghi`, type: 'success' });
     loadAttendanceData();
   } catch (err) {
     showToast({ message: 'Lỗi: ' + err.message, type: 'error' });
@@ -207,23 +207,23 @@ async function showAdminCheckinForm() {
     return showToast({ message: 'Lỗi tải dữ liệu', type: 'error' });
   }
 
-  const content = \`
+  const content = `
     <div class="form-group">
       <label class="form-label">Chọn HLV</label>
       <select class="form-select" id="acCoach" required>
         <option value="">-- Chọn HLV --</option>
-        \${coaches.map(c => \`<option value="\${c.id}">\${escapeHtml(c.name)}</option>\`).join('')}
+        ${coaches.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')}
       </select>
     </div>
     <div class="form-group">
       <label class="form-label">Chọn Lớp học</label>
       <select class="form-select" id="acClass" required>
         <option value="">-- Chọn Lớp --</option>
-        \${classes.map(c => \`<option value="\${c.id}">\${escapeHtml(c.name)}</option>\`).join('')}
+        ${classes.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')}
       </select>
     </div>
     <p class="form-hint">Admin check-in giùm sẽ được tự động duyệt ngay lập tức và tính lương.</p>
-  \`;
+  `;
 
   showModal({
     title: 'Check-in Giùm HLV',

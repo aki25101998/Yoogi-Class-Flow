@@ -92,13 +92,13 @@ async function loadDashboardData() {
     // Stats
     const statsGrid = document.getElementById('statsGrid');
     if (!statsGrid) return;
-    statsGrid.innerHTML = \`
+    statsGrid.innerHTML = `
       <div class="stat-card">
         <div class="stat-icon purple">
           <span class="material-icons-round">class</span>
         </div>
         <div>
-          <div class="stat-value">\${classes.length}</div>
+          <div class="stat-value">${classes.length}</div>
           <div class="stat-label">Tổng Lớp học</div>
         </div>
       </div>
@@ -107,7 +107,7 @@ async function loadDashboardData() {
           <span class="material-icons-round">event</span>
         </div>
         <div>
-          <div class="stat-value">\${todaySchedules.length}</div>
+          <div class="stat-value">${todaySchedules.length}</div>
           <div class="stat-label">Ca dạy hôm nay</div>
         </div>
       </div>
@@ -116,7 +116,7 @@ async function loadDashboardData() {
           <span class="material-icons-round">account_balance_wallet</span>
         </div>
         <div>
-          <div class="stat-value">\${formatCurrency(monthIncome)}</div>
+          <div class="stat-value">${formatCurrency(monthIncome)}</div>
           <div class="stat-label">Tổng Thu tháng này</div>
         </div>
       </div>
@@ -125,15 +125,15 @@ async function loadDashboardData() {
           <span class="material-icons-round">payments</span>
         </div>
         <div>
-          <div class="stat-value">\${formatCurrency(monthExpense)}</div>
+          <div class="stat-value">${formatCurrency(monthExpense)}</div>
           <div class="stat-label">Tổng Chi tháng này</div>
         </div>
       </div>
-    \`;
+    `;
 
     // Today's schedule
     const todayScheduleEl = document.getElementById('todaySchedule');
-    if (todayScheduleEl) todayScheduleEl.innerHTML = \`
+    if (todayScheduleEl) todayScheduleEl.innerHTML = `
       <div class="table-wrapper">
         <table class="table">
           <thead>
@@ -145,11 +145,11 @@ async function loadDashboardData() {
             </tr>
           </thead>
           <tbody>
-            \${todaySchedules.length === 0 ? \`<tr><td colspan="4" style="text-align:center; padding: 2rem;">Không có lịch dạy hôm nay</td></tr>\` : todaySchedules.map(s => {
+            ${todaySchedules.length === 0 ? `<tr><td colspan="4" style="text-align:center; padding: 2rem;">Không có lịch dạy hôm nay</td></tr>` : todaySchedules.map(s => {
               const att = attMap[s.classId];
               const statusHtml = att
-                ? \`<span class="badge badge-\${att.status === 'approved' ? 'approved' : att.status === 'rejected' ? 'rejected' : 'pending'}">\${att.status === 'approved' ? 'Đã duyệt' : att.status === 'rejected' ? 'Từ chối' : 'Chờ duyệt'}</span>\`
-                : \`<span class="badge badge-absent">Chưa check-in</span>\`;
+                ? `<span class="badge badge-${att.status === 'approved' ? 'approved' : att.status === 'rejected' ? 'rejected' : 'pending'}">${att.status === 'approved' ? 'Đã duyệt' : att.status === 'rejected' ? 'Từ chối' : 'Chờ duyệt'}</span>`
+                : `<span class="badge badge-absent">Chưa check-in</span>`;
               
               let actionsHtml = '';
               if (!att) {
@@ -157,27 +157,27 @@ async function loadDashboardData() {
                 // Just display a message
                 actionsHtml = '<span style="font-size:0.8rem; color:var(--text-secondary);">Chờ HLV check-in</span>';
               } else if (att.status === 'checked_in') {
-                actionsHtml = \`<button class="btn btn-sm btn-primary" data-action="approve" data-att="\${att.id}">Duyệt</button>\`;
+                actionsHtml = `<button class="btn btn-sm btn-primary" data-action="approve" data-att="${att.id}">Duyệt</button>`;
               } else if (att.status === 'approved') {
-                actionsHtml = \`<span style="color:var(--accent-success); font-weight:600; font-size:0.85rem;">\${formatCurrency(att.calculatedSalary || 0)}</span>\`;
+                actionsHtml = `<span style="color:var(--accent-success); font-weight:600; font-size:0.85rem;">${formatCurrency(att.calculatedSalary || 0)}</span>`;
               }
               
-              return \`
+              return `
                 <tr>
-                  <td><strong>\${escapeHtml(s.className)}</strong></td>
-                  <td>\${s.startTime} - \${s.endTime}</td>
+                  <td><strong>${escapeHtml(s.className)}</strong></td>
+                  <td>${s.startTime} - ${s.endTime}</td>
                   <td>
-                    \${statusHtml}
-                    \${att ? \`<div style="font-size:0.75rem; color:var(--text-secondary); margin-top:4px;">bởi: \${escapeHtml(coachMap[att.coachId]?.name || '?')}</div>\` : ''}
+                    ${statusHtml}
+                    ${att ? `<div style="font-size:0.75rem; color:var(--text-secondary); margin-top:4px;">bởi: ${escapeHtml(coachMap[att.coachId]?.name || '?')}</div>` : ''}
                   </td>
-                  <td class="table-actions">\${actionsHtml}</td>
+                  <td class="table-actions">${actionsHtml}</td>
                 </tr>
-              \`;
+              `;
             }).join('')}
           </tbody>
         </table>
       </div>
-    \`;
+    `;
 
     // Action handlers
     document.querySelectorAll('[data-action="approve"]').forEach(btn => {
@@ -198,19 +198,19 @@ async function loadDashboardData() {
 
     // Monthly summary
     const monthSummaryEl = document.getElementById('monthSummary');
-    if (monthSummaryEl) monthSummaryEl.innerHTML = \`
+    if (monthSummaryEl) monthSummaryEl.innerHTML = `
       <div style="display:flex; flex-wrap:wrap; gap:var(--sp-6); padding: var(--sp-4);">
         <div style="flex:1; min-width: 250px;">
           <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: var(--sp-1);">Tổng Thu (Học phí, khác)</p>
-          <p style="font-size: 1.5rem; font-weight: 700; color: var(--accent-success);">\${formatCurrency(monthIncome)}</p>
+          <p style="font-size: 1.5rem; font-weight: 700; color: var(--accent-success);">${formatCurrency(monthIncome)}</p>
         </div>
         <div style="flex:1; min-width: 250px;">
           <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: var(--sp-1);">Tổng Chi (Bao gồm quỹ lương)</p>
-          <p style="font-size: 1.5rem; font-weight: 700; color: var(--accent-danger);">\${formatCurrency(monthExpense)}</p>
+          <p style="font-size: 1.5rem; font-weight: 700; color: var(--accent-danger);">${formatCurrency(monthExpense)}</p>
         </div>
         <div style="flex:1; min-width: 250px;">
           <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: var(--sp-1);">Tổng quỹ lương ước tính (Đã tính)</p>
-          <p style="font-size: 1.5rem; font-weight: 700; color: var(--accent-warning);">\${formatCurrency(totalPayroll)}</p>
+          <p style="font-size: 1.5rem; font-weight: 700; color: var(--accent-warning);">${formatCurrency(totalPayroll)}</p>
         </div>
       </div>
       <div class="table-wrapper">
@@ -223,21 +223,21 @@ async function loadDashboardData() {
             </tr>
           </thead>
           <tbody>
-            \${payroll.map(p => \`
+            ${payroll.map(p => `
               <tr>
                 <td>
-                  <strong>\${escapeHtml(p.coachName)}</strong>
-                  <div style="font-size:0.75rem; color:var(--text-secondary);">Cơ bản: \${formatCurrency(p.baseSalary)}</div>
+                  <strong>${escapeHtml(p.coachName)}</strong>
+                  <div style="font-size:0.75rem; color:var(--text-secondary);">Cơ bản: ${formatCurrency(p.baseSalary)}</div>
                 </td>
-                <td>\${p.totalSessions}</td>
-                <td style="text-align:right; font-weight:600;">\${formatCurrency(p.totalEarnings)}</td>
+                <td>${p.totalSessions}</td>
+                <td style="text-align:right; font-weight:600;">${formatCurrency(p.totalEarnings)}</td>
               </tr>
-            \`).join('')}
-            \${payroll.length === 0 ? '<tr><td colspan="3" style="text-align:center;">Chưa có dữ liệu lương tháng này</td></tr>' : ''}
+            `).join('')}
+            ${payroll.length === 0 ? '<tr><td colspan="3" style="text-align:center;">Chưa có dữ liệu lương tháng này</td></tr>' : ''}
           </tbody>
         </table>
       </div>
-    \`;
+    `;
   } catch (err) {
     console.error('Dashboard error:', err);
     showToast({ message: 'Lỗi tải dữ liệu: ' + err.message, type: 'error' });
@@ -245,7 +245,7 @@ async function loadDashboardData() {
 }
 
 function skeletonStats() {
-  return Array(4).fill(\`
+  return Array(4).fill(`
     <div class="stat-card">
       <div class="skeleton skeleton-avatar"></div>
       <div style="flex:1;">
@@ -253,15 +253,15 @@ function skeletonStats() {
         <div class="skeleton skeleton-text" style="width:60%;"></div>
       </div>
     </div>
-  \`).join('');
+  `).join('');
 }
 
 function skeletonTable() {
-  return \`
+  return `
     <div style="padding: 1rem;">
       <div class="skeleton skeleton-title" style="margin-bottom: 1rem;"></div>
       <div class="skeleton skeleton-text"></div>
       <div class="skeleton skeleton-text"></div>
     </div>
-  \`;
+  `;
 }

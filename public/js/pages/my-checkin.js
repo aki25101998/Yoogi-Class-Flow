@@ -91,56 +91,56 @@ async function loadCheckinData(container) {
         `;
       }
 
-      return \`
+      return `
         <div class="card mb-4" style="text-align:center;">
           <div style="margin-bottom:var(--sp-4);">
-            <div style="font-size:0.9rem;font-weight:600;margin-bottom:var(--sp-1);">\${escapeHtml(s.class.name)}</div>
-            <div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:var(--sp-1);">Vai trò: \${s.class.role === 'main' ? 'Chính' : 'Trợ giảng'}</div>
-            <div style="font-size:1.25rem;font-weight:700;color:var(--accent-primary);">\${s.startTime} - \${s.endTime}</div>
+            <div style="font-size:0.9rem;font-weight:600;margin-bottom:var(--sp-1);">${escapeHtml(s.class.name)}</div>
+            <div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:var(--sp-1);">Vai trò: ${s.class.role === 'main' ? 'Chính' : 'Trợ giảng'}</div>
+            <div style="font-size:1.25rem;font-weight:700;color:var(--accent-primary);">${s.startTime} - ${s.endTime}</div>
           </div>
           
-          <div class="checkin-container" id="checkin-container-\${s.scheduleKey}">
-            \${isCheckedIn ? \`
+          <div class="checkin-container" id="checkin-container-${s.scheduleKey}">
+            ${isCheckedIn ? `
               <div class="checkin-btn checked" style="cursor:default;">
-                <span class="material-icons-round">\${att.status === 'approved' ? 'verified' : 'schedule'}</span>
-                <span>\${statusMap[att.status]?.text || att.status}</span>
+                <span class="material-icons-round">${att.status === 'approved' ? 'verified' : 'schedule'}</span>
+                <span>${statusMap[att.status]?.text || att.status}</span>
               </div>
               <div class="checkin-time">
-                Check-in lúc \${formatTime(att.checkInTime)}
+                Check-in lúc ${formatTime(att.checkInTime)}
               </div>
-              \${att.status !== 'approved' ? \`
+              ${att.status !== 'approved' ? `
                 <div style="margin-top:var(--sp-3);">
-                  <span class="badge \${statusMap[att.status]?.class || 'badge-pending'}">\${statusMap[att.status]?.text || att.status}</span>
+                  <span class="badge ${statusMap[att.status]?.class || 'badge-pending'}">${statusMap[att.status]?.text || att.status}</span>
                 </div>
-              \` : ''}
-              \${att.status === 'approved' ? \`
+              ` : ''}
+              ${att.status === 'approved' ? `
                 <div style="margin-top:var(--sp-3); font-weight:600; color:var(--accent-success);">
-                  Lương ca này: \${Number(att.calculatedSalary || 0).toLocaleString('vi-VN')} đ
+                  Lương ca này: ${Number(att.calculatedSalary || 0).toLocaleString('vi-VN')} đ
                 </div>
-              \` : ''}
-            \` : \`
-              \${studentsHtml}
-              <button class="checkin-btn" data-class-id="\${s.classId}" data-schedule-key="\${s.scheduleKey}" style="width: 100%; border-radius: 8px;">
+              ` : ''}
+            ` : `
+              ${studentsHtml}
+              <button class="checkin-btn" data-class-id="${s.classId}" data-schedule-key="${s.scheduleKey}" style="width: 100%; border-radius: 8px;">
                 <span class="material-icons-round">fingerprint</span>
                 <span style="font-size: 1rem;">Xác nhận Chấm công</span>
               </button>
-            \`}
+            `}
           </div>
         </div>
-      \`;
+      `;
     })).then(res => res.join(''));
 
     // Check-in handlers
     content.querySelectorAll('.checkin-btn:not(.checked)').forEach(btn => {
       btn.addEventListener('click', async () => {
-        const container = document.getElementById(\`checkin-container-\${btn.dataset.scheduleKey}\`);
+        const container = document.getElementById(`checkin-container-${btn.dataset.scheduleKey}`);
         btn.disabled = true;
-        btn.innerHTML = \`
+        btn.innerHTML = `
           <div class="loading-spinner" style="width:40px;height:40px;">
             <div class="spinner-ring"></div>
           </div>
           <span>Đang xử lý...</span>
-        \`;
+        `;
 
         try {
           await checkInV2({
@@ -154,21 +154,21 @@ async function loadCheckinData(container) {
         } catch (err) {
           showToast({ message: 'Lỗi xử lý: ' + err.message, type: 'error' });
           btn.disabled = false;
-          btn.innerHTML = \`
+          btn.innerHTML = `
             <span class="material-icons-round">fingerprint</span>
             <span>Xác nhận Chấm công</span>
-          \`;
+          `;
         }
       });
     });
 
   } catch (err) {
-    document.getElementById('checkinContent').innerHTML = \`
+    document.getElementById('checkinContent').innerHTML = `
       <div class="empty-state">
         <span class="material-icons-round empty-state-icon">error</span>
         <h3 class="empty-state-title">Lỗi</h3>
-        <p class="empty-state-text">\${err.message}</p>
+        <p class="empty-state-text">${err.message}</p>
       </div>
-    \`;
+    `;
   }
 }

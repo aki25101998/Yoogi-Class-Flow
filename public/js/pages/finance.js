@@ -110,20 +110,20 @@ async function loadData() {
         const prefix = isIncome ? '+' : '-';
         const catName = catMap[t.categoryId]?.name || t.categoryName || 'Khác';
 
-        return \`
+        return `
           <tr>
-            <td>\${t.date}</td>
+            <td>${t.date}</td>
             <td>
-              <span class="badge" style="background:\${isIncome ? 'rgba(46,204,113,0.1)' : 'rgba(231,76,60,0.1)'};color:\${color};">
-                \${isIncome ? 'THU' : 'CHI'}
+              <span class="badge" style="background:${isIncome ? 'rgba(46,204,113,0.1)' : 'rgba(231,76,60,0.1)'};color:${color};">
+                ${isIncome ? 'THU' : 'CHI'}
               </span>
             </td>
-            <td>\${escapeHtml(catName)}</td>
-            <td>\${escapeHtml(t.description || '')}</td>
-            <td style="color:\${color};font-weight:600;">\${prefix}\${Number(t.amount).toLocaleString('vi-VN')}</td>
-            <td>\${escapeHtml(t.recordedBy || 'Admin')}</td>
+            <td>${escapeHtml(catName)}</td>
+            <td>${escapeHtml(t.description || '')}</td>
+            <td style="color:${color};font-weight:600;">${prefix}${Number(t.amount).toLocaleString('vi-VN')}</td>
+            <td>${escapeHtml(t.recordedBy || 'Admin')}</td>
           </tr>
-        \`;
+        `;
       }).join('');
     }
 
@@ -139,7 +139,7 @@ async function loadData() {
 }
 
 function showTransactionForm() {
-  const content = \`
+  const content = `
     <div class="grid grid-cols-2" style="gap:var(--sp-4);">
       <div class="form-group">
         <label class="form-label">Loại Giao Dịch</label>
@@ -150,7 +150,7 @@ function showTransactionForm() {
       </div>
       <div class="form-group">
         <label class="form-label">Ngày Giao Dịch</label>
-        <input type="date" id="fDate" class="form-input" value="\${new Date().toISOString().split('T')[0]}">
+        <input type="date" id="fDate" class="form-input" value="${new Date().toISOString().split('T')[0]}">
       </div>
     </div>
     
@@ -168,7 +168,7 @@ function showTransactionForm() {
       <label class="form-label">Diễn giải / Ghi chú</label>
       <input type="text" id="fDesc" class="form-input" placeholder="Chi tiết giao dịch...">
     </div>
-  \`;
+  `;
 
   showModal({
     title: 'Thêm Giao Dịch Thu/Chi',

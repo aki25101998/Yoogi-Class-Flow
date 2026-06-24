@@ -75,17 +75,17 @@ async function loadData() {
     tbody.innerHTML = payments.map(p => {
       const stu = studentMap[p.studentId];
       const cls = classMap[p.classId];
-      return \`
+      return `
         <tr>
-          <td><span class="badge badge-info">\${p.id.substring(0, 6).toUpperCase()}</span></td>
-          <td>\${p.paymentDate}</td>
-          <td style="font-weight: 500;">\${escapeHtml(stu?.name || 'Không rõ')}</td>
-          <td>\${escapeHtml(cls?.name || 'Không rõ')}</td>
-          <td>\${p.packageType} tháng</td>
-          <td style="color:var(--accent-success);font-weight:600;">\${Number(p.amount).toLocaleString('vi-VN')}</td>
-          <td>\${p.paymentMethod === 'transfer' ? 'Chuyển khoản' : 'Tiền mặt'}</td>
+          <td><span class="badge badge-info">${p.id.substring(0, 6).toUpperCase()}</span></td>
+          <td>${p.paymentDate}</td>
+          <td style="font-weight: 500;">${escapeHtml(stu?.name || 'Không rõ')}</td>
+          <td>${escapeHtml(cls?.name || 'Không rõ')}</td>
+          <td>${p.packageType} tháng</td>
+          <td style="color:var(--accent-success);font-weight:600;">${Number(p.amount).toLocaleString('vi-VN')}</td>
+          <td>${p.paymentMethod === 'transfer' ? 'Chuyển khoản' : 'Tiền mặt'}</td>
         </tr>
-      \`;
+      `;
     }).join('');
   } catch (e) {
     showToast({ message: 'Lỗi tải dữ liệu học phí: ' + e.message, type: 'error' });
@@ -93,23 +93,23 @@ async function loadData() {
 }
 
 function showCollectTuitionForm() {
-  const content = \`
+  const content = `
     <div class="form-group">
       <label class="form-label">Ngày thu</label>
-      <input type="date" id="tDate" class="form-input" value="\${new Date().toISOString().split('T')[0]}">
+      <input type="date" id="tDate" class="form-input" value="${new Date().toISOString().split('T')[0]}">
     </div>
     <div class="form-group">
       <label class="form-label">Học viên</label>
       <select id="tStudent" class="form-select" required>
         <option value="">-- Chọn học viên --</option>
-        \${allStudents.map(s => \`<option value="\${s.id}">\${escapeHtml(s.name)}</option>\`).join('')}
+        ${allStudents.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('')}
       </select>
     </div>
     <div class="form-group">
       <label class="form-label">Lớp học</label>
       <select id="tClass" class="form-select" required>
         <option value="">-- Chọn lớp học --</option>
-        \${allClasses.map(c => \`<option value="\${c.id}">\${escapeHtml(c.name)}</option>\`).join('')}
+        ${allClasses.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')}
       </select>
     </div>
     <div class="grid grid-cols-2" style="gap:var(--sp-4);">
@@ -134,7 +134,7 @@ function showCollectTuitionForm() {
       <label class="form-label">Số tiền thu (VND)</label>
       <input type="number" id="tAmount" class="form-input" required placeholder="500000" min="0">
     </div>
-  \`;
+  `;
 
   showModal({
     title: 'Thu Học Phí',
@@ -176,7 +176,7 @@ function showCollectTuitionForm() {
             amount: amt,
             categoryId: 'tuition',
             categoryName: 'Thu học phí',
-            description: \`Thu học phí \${pkg} tháng của \${studentName}\`,
+            description: `Thu học phí ${pkg} tháng của ${studentName}`,
             recordedBy: 'admin',
             paymentMethod: method
           });

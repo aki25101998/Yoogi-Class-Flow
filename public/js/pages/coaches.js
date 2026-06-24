@@ -281,26 +281,26 @@ async function showSalaryForm(coach) {
   const perSession = salaryData?.perSession || 0;
   const perStudent = salaryData?.perStudent || 0;
 
-  const content = \`
+  const content = `
     <div style="margin-bottom:var(--sp-4);">
-      <p style="font-size:0.9rem; color:var(--text-secondary);">Thiết lập các mức lương cho HLV <strong>\${escapeHtml(coach.name)}</strong>. Hệ thống sẽ tự động tính toán mỗi khi điểm danh.</p>
+      <p style="font-size:0.9rem; color:var(--text-secondary);">Thiết lập các mức lương cho HLV <strong>${escapeHtml(coach.name)}</strong>. Hệ thống sẽ tự động tính toán mỗi khi điểm danh.</p>
     </div>
     <div class="form-group">
       <label class="form-label">Lương cứng (VND/Tháng)</label>
-      <input type="number" id="salBase" class="form-input" value="\${baseSalary}" min="0" placeholder="VD: 5000000">
+      <input type="number" id="salBase" class="form-input" value="${baseSalary}" min="0" placeholder="VD: 5000000">
       <p class="form-hint">Khoản tiền cố định nhận hàng tháng bất kể số ca dạy.</p>
     </div>
     <div class="form-group">
       <label class="form-label">Lương theo ca (VND/Ca)</label>
-      <input type="number" id="salSession" class="form-input" value="\${perSession}" min="0" placeholder="VD: 200000">
+      <input type="number" id="salSession" class="form-input" value="${perSession}" min="0" placeholder="VD: 200000">
       <p class="form-hint">Khoản tiền nhận được cho mỗi ca dạy.</p>
     </div>
     <div class="form-group">
       <label class="form-label">Lương theo học viên (VND/Học viên/Ca)</label>
-      <input type="number" id="salStudent" class="form-input" value="\${perStudent}" min="0" placeholder="VD: 10000">
+      <input type="number" id="salStudent" class="form-input" value="${perStudent}" min="0" placeholder="VD: 10000">
       <p class="form-hint">Khoản tiền cộng thêm dựa trên sĩ số học viên thực tế đi học của ca đó.</p>
     </div>
-  \`;
+  `;
 
   showModal({
     title: 'Cấu Hình Lương HLV',
