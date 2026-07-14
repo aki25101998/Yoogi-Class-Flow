@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS public.student_attendance_v2 (
+CREATE TABLE IF NOT EXISTS public.student_attendance (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   class_id UUID REFERENCES public.venue_classes(id) ON DELETE CASCADE,
   date TEXT NOT NULL,

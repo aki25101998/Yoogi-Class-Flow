@@ -8,4 +8,4 @@ ALTER TABLE public.schedules DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.attendance DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.teacher_salaries DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.teacher_salary_sessions DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.student_attendance_v2 DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.student_attendance DISABLE ROW LEVEL SECURITY;

@@ -451,7 +451,7 @@ async function calculateV2Earnings(coachId, classId, date, salaryConfig) {
   let earnings = 0;
   if (salaryConfig.per_session) earnings += Number(salaryConfig.per_session);
   if (salaryConfig.per_student && classId) {
-    const { data: attSnap } = await supabase.from('student_attendance_v2')
+    const { data: attSnap } = await supabase.from('student_attendance')
       .select('*')
       .eq('class_id', classId)
       .eq('date', date);
@@ -718,14 +718,14 @@ export async function getClassHolidays(classId) {
 }
 
 export async function getStudentAttendanceV2(classId, date) {
-  let query = supabase.from('student_attendance_v2').select('*').eq('class_id', classId);
+  let query = supabase.from('student_attendance').select('*').eq('class_id', classId);
   if (date) query = query.eq('date', date);
   const { data } = await query;
   return (data || []).map(d => ({ ...d, classId: d.class_id }));
 }
 
 export async function addStudentAttendanceV2(data) {
-  const { data: newDoc, error } = await supabase.from('student_attendance_v2').insert([{ ...data, class_id: data.classId }]).select('id').single();
+  const { data: newDoc, error } = await supabase.from('student_attendance').insert([{ ...data, class_id: data.classId }]).select('id').single();
   if (error) throw error;
   return newDoc.id;
 }

@@ -15,5 +15,5 @@ Khi bạn thiết lập dự án mới hoặc cập nhật schema, hãy chạy c
 6. `06_attendance.sql`
 7. `07_teacher_salaries.sql`
 8. `08_teacher_salary_sessions.sql`
-9. `09_student_attendance_v2.sql`
+9. `09_student_attendance.sql`
 10. `10_rls_policies.sql` (Cấu hình bảo mật RLS)
