@@ -72,7 +72,10 @@ async function loadCoaches() {
     grid.innerHTML = coaches.map(coach => `
       <div class="coach-card ${coach.status === 'inactive' ? 'opacity-50' : ''}">
         <div class="coach-card-header">
-          <div class="user-avatar-placeholder">${(coach.name || 'U').charAt(0).toUpperCase()}</div>
+          ${coach.photo_url 
+            ? `<img src="${escapeHtml(coach.photo_url)}" class="user-avatar-placeholder" style="object-fit: cover; border: none; padding: 0;">`
+            : `<div class="user-avatar-placeholder">${(coach.name || 'U').charAt(0).toUpperCase()}</div>`
+          }
           <div class="coach-card-info">
             <div class="coach-card-name">${escapeHtml(coach.name)}</div>
             <div class="coach-card-email">${escapeHtml(coach.email)}</div>
@@ -103,12 +106,12 @@ async function loadCoaches() {
             <span class="material-icons-round">payments</span>
           </button>
           ${coach.status === 'active' ? `
-            <button class="btn btn-sm btn-ghost" data-delete="${coach.id}" style="flex:1;">
-              <span class="material-icons-round">person_off</span> Ngưng
+            <button class="btn btn-sm btn-ghost" data-delete="${coach.id}" style="flex:1;" title="Ngưng hoạt động">
+              <span class="material-icons-round">person_off</span>
             </button>
           ` : `
-            <button class="btn btn-sm btn-success" data-activate="${coach.id}" style="flex:1;">
-              <span class="material-icons-round">person</span> Kích hoạt
+            <button class="btn btn-sm btn-success" data-activate="${coach.id}" style="flex:1;" title="Kích hoạt">
+              <span class="material-icons-round">how_to_reg</span>
             </button>
           `}
         </div>
@@ -172,6 +175,21 @@ function showCoachForm(coach = null) {
     title: isEdit ? 'Sửa thông tin HLV' : 'Thêm HLV mới',
     confirmText: isEdit ? 'Cập nhật' : 'Thêm',
     content: `
+      <div class="form-group" style="text-align: center;">
+        <label class="form-label">Avatar HLV</label>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; margin-bottom: 16px;">
+          ${coach?.photo_url 
+            ? `<img id="avatarPreview" src="${escapeHtml(coach.photo_url)}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color);">`
+            : `<div id="avatarPreviewPlaceholder" style="width: 80px; height: 80px; border-radius: 50%; background: var(--bg-hover); display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; color: var(--text-secondary); border: 2px solid var(--border-color);">${(coach?.name || 'U').charAt(0).toUpperCase()}</div>
+               <img id="avatarPreview" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color); display: none;">`
+          }
+          <input type="file" id="coachAvatarInput" accept="image/*" style="display: none;">
+          <button type="button" class="btn btn-sm btn-outline" onclick="document.getElementById('coachAvatarInput').click()">
+            <span class="material-icons-round">upload</span> Chọn ảnh
+          </button>
+          <input type="hidden" id="coachPhotoUrl" value="${escapeHtml(coach?.photo_url || '')}">
+        </div>
+      </div>
       <div class="form-group">
         <label class="form-label">Họ và tên *</label>
         <input type="text" class="form-input" id="coachName" value="${escapeHtml(coach?.name || '')}" placeholder="Nguyễn Văn A" required>
@@ -237,6 +255,7 @@ function showCoachForm(coach = null) {
         level: document.getElementById('coachLevel').value,
         membershipNumber: document.getElementById('coachMembershipNumber').value.trim(),
         role: document.getElementById('coachRole').value,
+        photoUrl: document.getElementById('coachPhotoUrl').value,
         permissions: {
           manage_students: document.getElementById('perm_manage_students').checked,
           manage_venues: document.getElementById('perm_manage_venues').checked,
@@ -266,6 +285,55 @@ function showCoachForm(coach = null) {
       }
     }
   });
+
+  // Avatar upload handler
+  const avatarInput = document.getElementById('coachAvatarInput');
+  if (avatarInput) {
+    avatarInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 250;
+          const MAX_HEIGHT = 250;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          document.getElementById('coachPhotoUrl').value = dataUrl;
+          
+          const preview = document.getElementById('avatarPreview');
+          preview.src = dataUrl;
+          preview.style.display = 'block';
+          
+          const placeholder = document.getElementById('avatarPreviewPlaceholder');
+          if (placeholder) placeholder.style.display = 'none';
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
 }
 
 // Salary Form
