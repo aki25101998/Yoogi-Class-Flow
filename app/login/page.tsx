@@ -1,11 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
+import { useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    // Handle error returned from the callback route
+    const errorParam = searchParams.get("error");
+    if (errorParam === "unauthorized") {
+      setErrorMsg("Tài khoản của bạn chưa được cấp quyền truy cập. Vui lòng liên hệ quản trị viên.");
+    } else if (errorParam === "auth_failed") {
+      setErrorMsg("Đăng nhập thất bại. Vui lòng thử lại.");
+    }
+  }, [searchParams]);
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
@@ -21,10 +33,16 @@ export default function LoginPage() {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes("Failed to fetch")) {
+          throw new Error("Không thể kết nối đến cơ sở dữ liệu. Project Supabase của bạn có thể đã bị tạm dừng (paused). Vui lòng đăng nhập vào Supabase dashboard để khôi phục.");
+        }
+        throw error;
+      }
       // Redirect happens automatically
     } catch (err: any) {
-      setErrorMsg("Lỗi đăng nhập: " + err.message);
+      console.error("Login error:", err);
+      setErrorMsg(err.message || "Đã xảy ra lỗi không xác định khi đăng nhập.");
       setIsLoading(false);
     }
   };
@@ -39,8 +57,22 @@ export default function LoginPage() {
         <p className="login-subtitle">Hệ thống điểm danh và tính lương cho Huấn luyện viên</p>
         
         {errorMsg && (
-          <div style={{ color: "red", marginBottom: "1rem", fontSize: "14px" }}>
-            {errorMsg}
+          <div className="error-alert" style={{
+            background: "rgba(255, 82, 82, 0.15)",
+            border: "1px solid rgba(255, 82, 82, 0.3)",
+            color: "#ff5252",
+            padding: "12px 16px",
+            borderRadius: "8px",
+            marginBottom: "24px",
+            fontSize: "14px",
+            textAlign: "left",
+            display: "flex",
+            alignItems: "flex-start",
+            gap: "8px",
+            backdropFilter: "blur(10px)"
+          }}>
+            <span className="material-icons-round" style={{ fontSize: "20px" }}>error_outline</span>
+            <span>{errorMsg}</span>
           </div>
         )}
 
@@ -48,10 +80,11 @@ export default function LoginPage() {
           className="btn btn-google btn-lg w-full" 
           onClick={handleGoogleLogin}
           disabled={isLoading}
+          style={{ width: "100%", height: "48px", transition: "all 0.3s ease" }}
         >
           {isLoading ? (
-            <div className="loading-spinner" style={{ width: "20px", height: "20px", marginRight: "8px", display: "inline-block", verticalAlign: "middle" }}>
-              <div className="spinner-ring" style={{ borderWidth: "2px" }}></div>
+            <div className="loading-spinner" style={{ width: "20px", height: "20px", display: "inline-block", verticalAlign: "middle" }}>
+              <div className="spinner-ring" style={{ borderWidth: "2px", borderTopColor: "#333" }}></div>
             </div>
           ) : (
             <svg width="20" height="20" viewBox="0 0 48 48" style={{ marginRight: "8px", verticalAlign: "middle" }}>
@@ -61,12 +94,12 @@ export default function LoginPage() {
               <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
             </svg>
           )}
-          {isLoading ? "Đang đăng nhập..." : "Đăng nhập bằng Google"}
+          {isLoading ? "Đang xử lý..." : "Tiếp tục với Google"}
         </button>
         
         <p className="login-footer">
           Đăng nhập bằng tài khoản Google đã được quản trị viên cấp quyền.<br/>
-          Người đăng nhập đầu tiên sẽ trở thành quản trị viên.
+          Người đăng nhập đầu tiên sẽ tự động trở thành quản trị viên.
         </p>
       </div>
     </div>
