@@ -36,6 +36,8 @@ export default function LoginPage() {
       if (error) {
         if (error.message.includes("Failed to fetch")) {
           throw new Error("Không thể kết nối đến cơ sở dữ liệu. Project Supabase của bạn có thể đã bị tạm dừng (paused). Vui lòng đăng nhập vào Supabase dashboard để khôi phục.");
+        } else if (error.message.toLowerCase().includes("not enabled") || error.message.toLowerCase().includes("disabled")) {
+          throw new Error("Đăng nhập bằng Google chưa được bật trong Supabase. Vui lòng vào Supabase Dashboard > Authentication > Providers để bật và cấu hình Google Client ID.");
         }
         throw error;
       }
