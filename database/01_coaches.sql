@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS public.coaches (
   level TEXT DEFAULT '',
   membership_number TEXT DEFAULT '',
   role TEXT DEFAULT 'coach',
-  permissions JSONB DEFAULT '{}'::jsonb,
+  permissions JSONB DEFAULT '[]'::jsonb,
   status TEXT DEFAULT 'active',
   photo_url TEXT DEFAULT '',
   created_at TIMESTAMPTZ DEFAULT NOW(),
