@@ -6,6 +6,8 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   const next = searchParams.get('next') ?? '/dashboard'
+  
+  console.log("Auth callback accessed. URL:", request.url);
 
   if (code) {
     const cookieStore = cookies()
@@ -30,7 +32,14 @@ export async function GET(request: Request) {
       }
     )
     
+    console.log("Exchanging code for session...");
     const { data: authData, error } = await supabase.auth.exchangeCodeForSession(code)
+    
+    if (error) {
+      console.error("Error exchanging code for session:", error);
+    } else {
+      console.log("Exchange successful. User ID:", authData?.user?.id);
+    }
     
     if (!error && authData?.user) {
       // Custom Logic: Check if user exists in coaches table
@@ -45,20 +54,25 @@ export async function GET(request: Request) {
         const { count } = await supabase.from('coaches').select('*', { count: 'exact', head: true });
         if (count === 0) {
           // First user -> make admin
-          await supabase.from('coaches').insert([{
+          console.log("First user, creating admin record for", email);
+          const { error: insertError } = await supabase.from('coaches').insert([{
             name: authData.user.user_metadata?.full_name || 'Admin',
             email: email,
             role: 'admin',
             status: 'active'
           }]);
+          if (insertError) console.error("Insert error:", insertError);
           return NextResponse.redirect(`${origin}${next}`)
         } else {
           // Unauthorized -> sign out and redirect back to login with error
+          console.log("Unauthorized user. Count:", count);
           await supabase.auth.signOut();
           return NextResponse.redirect(`${origin}/login?error=unauthorized`)
         }
       }
     }
+  } else {
+    console.error("No code present in the URL parameters.");
   }
 
   // return the user to an error page with instructions
