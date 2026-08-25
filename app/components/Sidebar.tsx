@@ -35,7 +35,17 @@ const COACH_NAV = [
   ]}
 ];
 
-export default function Sidebar({ user, userData, isSidebarOpen, setIsSidebarOpen }: any) {
+import { User } from '@supabase/supabase-js';
+import { Coach } from '@/types/coach';
+
+interface SidebarProps {
+  user: User | null;
+  userData: Coach | null;
+  isSidebarOpen: boolean;
+  setIsSidebarOpen: (isOpen: boolean) => void;
+}
+
+export default function Sidebar({ user, userData, isSidebarOpen, setIsSidebarOpen }: SidebarProps) {
   const pathname = usePathname();
   const isAdmin = userData?.role === 'admin';
 

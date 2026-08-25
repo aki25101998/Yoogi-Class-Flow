@@ -3,7 +3,16 @@
 import { useState } from "react";
 import Sidebar from "@/app/components/Sidebar";
 
-export default function DashboardLayoutClient({ children, user, userData }: any) {
+import { User } from '@supabase/supabase-js';
+import { Coach } from '@/types/coach';
+
+interface DashboardLayoutClientProps {
+  children: React.ReactNode;
+  user: User | null;
+  userData: Coach | null;
+}
+
+export default function DashboardLayoutClient({ children, user, userData }: DashboardLayoutClientProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
