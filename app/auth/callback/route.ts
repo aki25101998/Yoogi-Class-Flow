@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
           },
         },
         cookieOptions: {
-          name: 'sb-yoogi',
+          name: 'sb-yoogi-v2',
         },
       }
     )

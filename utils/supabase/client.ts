@@ -6,7 +6,7 @@ export const createClient = () =>
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
       cookieOptions: {
-        name: 'sb-yoogi',
+        name: 'sb-yoogi-v2',
       },
     }
   );

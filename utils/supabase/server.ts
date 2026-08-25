@@ -28,7 +28,7 @@ export const createClient = () => {
         },
       },
       cookieOptions: {
-        name: 'sb-yoogi',
+        name: 'sb-yoogi-v2',
       },
     },
   );

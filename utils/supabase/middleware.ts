@@ -33,7 +33,7 @@ export const updateSession = async (request: NextRequest) => {
         },
       },
       cookieOptions: {
-        name: 'sb-yoogi',
+        name: 'sb-yoogi-v2',
       },
     },
   );
