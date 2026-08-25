@@ -18,33 +18,32 @@ export async function GET(request: Request) {
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
       {
         cookies: {
-          getAll() {
-            const allCookies = cookieStore.getAll()
+          get(name: string) {
+            // First try exact match
+            const exact = cookieStore.get(name)?.value
+            if (exact) return exact
             
-            // Robust PKCE Hack: Find ANY existing code verifier
-            const verifier = allCookies.find(c => c.name.includes('code-verifier'))
-            if (verifier) {
-              // Inject it under all possible names Supabase might look for
-              const projectRef = process.env.NEXT_PUBLIC_SUPABASE_URL!.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1]
-              
-              allCookies.push({ name: 'sb-yoogi-code-verifier', value: verifier.value })
-              allCookies.push({ name: 'sb-yoogi-auth-token-code-verifier', value: verifier.value })
-              
-              if (projectRef) {
-                allCookies.push({ name: `sb-${projectRef}-auth-token-code-verifier`, value: verifier.value })
-                allCookies.push({ name: `sb-${projectRef}-code-verifier`, value: verifier.value })
-              }
+            // If looking for code-verifier, find ANY code-verifier cookie
+            if (name.includes('code-verifier')) {
+              const all = cookieStore.getAll()
+              const verifier = all.find(c => c.name.includes('code-verifier'))
+              if (verifier) return verifier.value
             }
             
-            return allCookies
+            return undefined
           },
-          setAll(cookiesToSet: any[]) {
+          set(name: string, value: string, options: any) {
             try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
-              )
+              cookieStore.set({ name, value, ...options })
             } catch {
-              // The `setAll` method was called from a Server Component.
+              // Server Component context
+            }
+          },
+          remove(name: string, options: any) {
+            try {
+              cookieStore.set({ name, value: '', ...options, maxAge: 0 })
+            } catch {
+              // Server Component context
             }
           },
         },
