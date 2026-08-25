@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS public.coaches (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  auth_user_id UUID REFERENCES auth.users(id),
   name TEXT NOT NULL,
   email TEXT NOT NULL UNIQUE,
   phone TEXT DEFAULT '',
