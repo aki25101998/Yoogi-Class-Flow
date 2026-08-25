@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
 export const dynamic = 'force-dynamic'
@@ -13,30 +13,27 @@ export async function GET(request: Request) {
 
   if (code) {
     const cookieStore = cookies()
-    const supabase = createClient(
+    const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
       {
-        auth: {
-          flowType: 'pkce',
-          storage: {
-            getItem: (key) => {
-              let val = cookieStore.get(key)?.value;
-              // Robust fallback: if not found, find ANY code verifier cookie
-              if (!val && key.includes('code-verifier')) {
-                val = cookieStore.getAll().find(c => c.name.includes('code-verifier'))?.value;
-              }
-              return val ?? null;
-            },
-            setItem: (key, value) => {
-              try { cookieStore.set({ name: key, value, path: '/', sameSite: 'lax', secure: true }) } catch {}
-            },
-            removeItem: (key) => {
-              try { cookieStore.set({ name: key, value: '', maxAge: 0, path: '/' }) } catch {}
+        cookies: {
+          getAll() {
+            return cookieStore.getAll()
+          },
+          setAll(cookiesToSet: any[]) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              )
+            } catch {
+              // The `setAll` method was called from a Server Component.
             }
           },
-          storageKey: 'sb-yoogi',
-        }
+        },
+        cookieOptions: {
+          name: 'sb-yoogi',
+        },
       }
     )
     
