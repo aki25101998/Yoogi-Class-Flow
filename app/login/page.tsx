@@ -12,10 +12,16 @@ function LoginContent() {
   useEffect(() => {
     // Handle error returned from the callback route
     const errorParam = searchParams.get("error");
+    const detailsParam = searchParams.get("details");
+    
     if (errorParam === "unauthorized") {
       setErrorMsg("Tài khoản của bạn chưa được cấp quyền truy cập. Vui lòng liên hệ quản trị viên.");
     } else if (errorParam === "auth_failed") {
-      setErrorMsg("Đăng nhập thất bại. Vui lòng thử lại.");
+      if (detailsParam) {
+        setErrorMsg(`Đăng nhập thất bại: ${decodeURIComponent(detailsParam)}`);
+      } else {
+        setErrorMsg("Đăng nhập thất bại. Vui lòng thử lại.");
+      }
     }
   }, [searchParams]);
 

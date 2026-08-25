@@ -37,11 +37,12 @@ export async function GET(request: Request) {
     
     if (error) {
       console.error("Error exchanging code for session:", error);
+      return NextResponse.redirect(`${origin}/login?error=auth_failed&details=${encodeURIComponent(error.message)}`)
     } else {
       console.log("Exchange successful. User ID:", authData?.user?.id);
     }
     
-    if (!error && authData?.user) {
+    if (authData?.user) {
       // Custom Logic: Check if user exists in coaches table
       const email = authData.user.email?.toLowerCase().trim();
       const { data: coaches } = await supabase.from('coaches').select('*').eq('email', email);
@@ -73,8 +74,14 @@ export async function GET(request: Request) {
     }
   } else {
     console.error("No code present in the URL parameters.");
+    const providerError = searchParams.get('error')
+    const providerErrorDescription = searchParams.get('error_description')
+    if (providerError) {
+      return NextResponse.redirect(`${origin}/login?error=auth_failed&details=${encodeURIComponent(providerErrorDescription || providerError)}`)
+    }
+    return NextResponse.redirect(`${origin}/login?error=auth_failed&details=No_code_provided_in_URL`)
   }
 
-  // return the user to an error page with instructions
+  // Fallback
   return NextResponse.redirect(`${origin}/login?error=auth_failed`)
 }
