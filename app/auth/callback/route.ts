@@ -31,6 +31,9 @@ export async function GET(request: Request) {
             }
           },
         },
+        cookieOptions: {
+          name: 'sb-yoogi',
+        },
       }
     )
     

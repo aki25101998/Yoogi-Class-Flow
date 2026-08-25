@@ -27,6 +27,9 @@ export const updateSession = async (request: NextRequest) => {
           )
         },
       },
+      cookieOptions: {
+        name: 'sb-yoogi',
+      },
     },
   );
 
