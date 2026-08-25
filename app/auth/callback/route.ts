@@ -19,7 +19,24 @@ export async function GET(request: Request) {
       {
         cookies: {
           getAll() {
-            return cookieStore.getAll()
+            const allCookies = cookieStore.getAll()
+            
+            // Robust PKCE Hack: Find ANY existing code verifier
+            const verifier = allCookies.find(c => c.name.includes('code-verifier'))
+            if (verifier) {
+              // Inject it under all possible names Supabase might look for
+              const projectRef = process.env.NEXT_PUBLIC_SUPABASE_URL!.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1]
+              
+              allCookies.push({ name: 'sb-yoogi-code-verifier', value: verifier.value })
+              allCookies.push({ name: 'sb-yoogi-auth-token-code-verifier', value: verifier.value })
+              
+              if (projectRef) {
+                allCookies.push({ name: `sb-${projectRef}-auth-token-code-verifier`, value: verifier.value })
+                allCookies.push({ name: `sb-${projectRef}-code-verifier`, value: verifier.value })
+              }
+            }
+            
+            return allCookies
           },
           setAll(cookiesToSet: any[]) {
             try {
