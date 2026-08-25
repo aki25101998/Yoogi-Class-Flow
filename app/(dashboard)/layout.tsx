@@ -12,13 +12,13 @@ export default async function DashboardLayout({
   console.log("[DashboardLayout] Incoming cookies:", cookieStore.getAll().map(c => `${c.name}=${c.value.substring(0, 10)}...`).join(', '));
 
   const supabase = createClient();
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
   const { data, error } = await supabase.auth.getUser();
   
-  console.log("[DashboardLayout] getUser result:", { user: !!data?.user, error });
-  
   if (error || !data?.user) {
-    const cookieNames = cookieStore.getAll().map(c => c.name).join(', ');
-    redirect(`/login?error=auth_failed&details=${encodeURIComponent('Dashboard_No_User | Cookies: ' + (cookieNames || 'none'))}`);
+    const cookieNames = cookieStore.getAll().map(c => `${c.name}=${c.value.substring(0, 15)}...`).join(', ');
+    const debugDetails = `Session: ${!!sessionData?.session} | User: ${!!data?.user} | Err: ${error?.message || 'none'} | SessErr: ${sessionError?.message || 'none'} | Cookies: ${cookieNames}`;
+    redirect(`/login?error=auth_failed&details=${encodeURIComponent(debugDetails)}`);
   }
 
   const user = data.user;
