@@ -13,9 +13,10 @@ function LoginContent() {
   useEffect(() => {
     // Clear old cookies if they exist
     if (typeof document !== "undefined") {
-      const oldCookies = ["sb-yoogi", "sb-yoogi-code-verifier"];
-      oldCookies.forEach(name => {
-        if (document.cookie.includes(name + "=")) {
+      const cookies = document.cookie.split(';');
+      cookies.forEach(cookie => {
+        const name = cookie.split('=')[0].trim();
+        if ((name.includes('code-verifier') && name !== 'sb-yoogi-v2-code-verifier') || name === 'sb-yoogi') {
           document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
         }
       });

@@ -26,15 +26,6 @@ export async function GET(request: NextRequest) {
             const value = request.cookies.get(name)?.value
             if (value) return value
 
-            // Fallback: if looking for code-verifier, find ANY code-verifier cookie
-            if (name.includes('code-verifier')) {
-              for (const cookie of request.cookies.getAll()) {
-                if (cookie.name.includes('code-verifier')) {
-                  return cookie.value
-                }
-              }
-            }
-
             return undefined
           },
           set(name: string, value: string, options: any) {
