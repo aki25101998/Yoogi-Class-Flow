@@ -2,7 +2,6 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
 export const updateSession = async (request: NextRequest) => {
-  // Create an unmodified response
   let supabaseResponse = NextResponse.next({
     request: {
       headers: request.headers,
@@ -14,32 +13,33 @@ export const updateSession = async (request: NextRequest) => {
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value
+        getAll() {
+          return request.cookies.getAll();
         },
-        set(name: string, value: string, options: any) {
-          request.cookies.set(name, value)
+        setAll(cookiesToSet: { name: string; value: string; options: any }[]) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           supabaseResponse = NextResponse.next({
             request,
-          })
-          supabaseResponse.cookies.set(name, value, options)
-        },
-        remove(name: string, options: any) {
-          request.cookies.set(name, '')
-          supabaseResponse = NextResponse.next({
-            request,
-          })
-          supabaseResponse.cookies.set(name, '', { ...options, maxAge: 0 })
+          });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          );
         },
       },
-      cookieOptions: {
-        name: 'sb-yoogi-v2',
-      },
-    },
+    }
   );
 
-  // refreshing the auth token
-  await supabase.auth.getUser()
+  // IMPORTANT: Avoid writing any logic between createServerClient and
+  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
+  // issues with users being randomly logged out.
 
-  return supabaseResponse
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Redirect to login if user is not authenticated and trying to access a protected route.
+  // We don't protect routes here anymore, we do it at the layout level or specifically.
+  // The middleware's main job is just to refresh the session token.
+
+  return supabaseResponse;
 };

@@ -1,46 +1,25 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useSearchParams } from "next/navigation";
 
 function LoginContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [debugSession, setDebugSession] = useState<any>(null);
   const searchParams = useSearchParams();
 
-  useEffect(() => {
-    // Clear old cookies if they exist
-    const clearCookies = () => {
-      const cookies = document.cookie.split(';');
-      cookies.forEach(cookie => {
-        const name = cookie.split('=')[0].trim();
-        // Clear old verifiers and ALL session cookies (sb-yoogi, sb-yoogi-v2, sb-yoogi-v2.0, etc.)
-        // We only keep the CURRENT code-verifier
-        if (name.startsWith('sb-yoogi') && name !== 'sb-yoogi-v2-code-verifier') {
-          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-        }
-      });
-    };
-    clearCookies();
-    const supabase = createClient();
-    supabase.auth.getSession().then(({ data }) => setDebugSession(data.session));
-
-    // Handle error returned from the callback route
-    const errorParam = searchParams.get("error");
-    const detailsParam = searchParams.get("details");
-    
+  // Handle error returned from the callback route
+  const errorParam = searchParams.get("error");
+  
+  // Set initial error message based on URL parameters
+  useState(() => {
     if (errorParam === "unauthorized") {
       setErrorMsg("Tài khoản của bạn chưa được cấp quyền truy cập. Vui lòng liên hệ quản trị viên.");
     } else if (errorParam === "auth_failed") {
-      if (detailsParam) {
-        setErrorMsg(`Đăng nhập thất bại: ${decodeURIComponent(detailsParam)}`);
-      } else {
-        setErrorMsg("Đăng nhập thất bại. Vui lòng thử lại.");
-      }
+      setErrorMsg("Đăng nhập thất bại. Vui lòng thử lại.");
     }
-  }, [searchParams]);
+  });
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
@@ -57,14 +36,9 @@ function LoginContent() {
       });
 
       if (error) {
-        if (error.message.includes("Failed to fetch")) {
-          throw new Error("Không thể kết nối đến cơ sở dữ liệu. Project Supabase của bạn có thể đã bị tạm dừng (paused). Vui lòng đăng nhập vào Supabase dashboard để khôi phục.");
-        } else if (error.message.toLowerCase().includes("not enabled") || error.message.toLowerCase().includes("disabled")) {
-          throw new Error("Đăng nhập bằng Google chưa được bật trong Supabase. Vui lòng vào Supabase Dashboard > Authentication > Providers để bật và cấu hình Google Client ID.");
-        }
         throw error;
       }
-      // Redirect happens automatically
+      // Redirect happens automatically by Supabase
     } catch (err: any) {
       console.error("Login error:", err);
       setErrorMsg(err.message || "Đã xảy ra lỗi không xác định khi đăng nhập.");
@@ -126,13 +100,6 @@ function LoginContent() {
           Đăng nhập bằng tài khoản Google đã được quản trị viên cấp quyền.<br/>
           Người đăng nhập đầu tiên sẽ tự động trở thành quản trị viên.
         </p>
-
-        <div style={{ marginTop: '20px', fontSize: '10px', color: '#666', wordBreak: 'break-all', textAlign: 'left', background: '#f5f5f5', padding: '10px', borderRadius: '4px' }}>
-          <strong>Debug Info:</strong><br/>
-          URL: {typeof window !== 'undefined' ? window.location.href : 'ssr'}<br/>
-          Cookies: {typeof document !== 'undefined' ? document.cookie : 'ssr'}<br/>
-          Session: {debugSession ? `Yes (${debugSession.user?.email})` : 'No'}
-        </div>
       </div>
     </div>
   );
