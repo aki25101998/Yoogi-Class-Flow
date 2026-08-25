@@ -11,6 +11,16 @@ function LoginContent() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
+    // Clear old cookies if they exist
+    if (typeof document !== "undefined") {
+      const oldCookies = ["sb-yoogi", "sb-yoogi-code-verifier"];
+      oldCookies.forEach(name => {
+        if (document.cookie.includes(name + "=")) {
+          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+        }
+      });
+    }
+
     const supabase = createClient();
     supabase.auth.getSession().then(({ data }) => setDebugSession(data.session));
 
