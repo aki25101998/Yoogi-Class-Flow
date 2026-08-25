@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Helper: create a redirect response WITH all the session cookies attached
-    function redirectWithCookies(url: string) {
+    const redirectWithCookies = (url: string) => {
       const response = NextResponse.redirect(url)
       for (const { name, value, options } of cookiesToSet) {
         response.cookies.set(name, value, options)
