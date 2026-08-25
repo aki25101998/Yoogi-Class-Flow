@@ -15,9 +15,19 @@ export async function GET(request: NextRequest) {
   const error_uri = searchParams.get('error_uri');
 
   // Log safe info before exchange
+  console.log(`[Auth Callback] Origin: ${origin}`);
   console.log(`[Auth Callback] Pathname: ${pathname}`);
   console.log(`[Auth Callback] Has Code: ${!!code}`);
   console.log(`[Auth Callback] Has Provider Error: ${!!providerError}`);
+
+  // Safe cookie logging (names only)
+  const allCookies = request.cookies.getAll();
+  const cookieNames = allCookies.map(c => c.name);
+  console.log(`[Auth Callback] Received Cookie Names:`, cookieNames);
+  
+  const hasPkceVerifier = cookieNames.some(name => name.includes('code-verifier'));
+  console.log(`[Auth Callback] PKCE_VERIFIER_PRESENT=${hasPkceVerifier}`);
+
 
   if (code) {
     const supabase = await createClient();
