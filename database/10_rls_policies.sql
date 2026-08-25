@@ -1,4 +1,8 @@
--- Bật lại RLS cho tất cả các bảng
+-- Enable RLS for all tables
+ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.organization_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.organization_invitations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coaches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.venues ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.venue_coaches ENABLE ROW LEVEL SECURITY;
@@ -9,64 +13,91 @@ ALTER TABLE public.teacher_salaries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.teacher_salary_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.student_attendance ENABLE ROW LEVEL SECURITY;
 
--- Hàm Helper cho RLS (Security Definer để tránh đệ quy vô hạn khi query bảng coaches)
-CREATE OR REPLACE FUNCTION public.is_admin()
+-- Helper Functions
+CREATE OR REPLACE FUNCTION public.get_user_organizations()
+RETURNS SETOF UUID AS $$
+  SELECT organization_id FROM public.organization_members
+  JOIN public.profiles ON profiles.id = organization_members.user_id
+  WHERE profiles.auth_user_id = auth.uid() AND organization_members.status = 'active';
+$$ LANGUAGE sql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION public.is_org_admin(org_id UUID)
 RETURNS BOOLEAN AS $$
 BEGIN
   RETURN EXISTS (
-    SELECT 1 FROM public.coaches
-    WHERE auth_user_id = auth.uid() AND role = 'admin'
+    SELECT 1 FROM public.organization_members
+    JOIN public.profiles ON profiles.id = organization_members.user_id
+    WHERE profiles.auth_user_id = auth.uid() 
+      AND organization_members.organization_id = org_id
+      AND (organization_members.role = 'admin' OR organization_members.role = 'owner')
+      AND organization_members.status = 'active'
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 CREATE OR REPLACE FUNCTION public.get_my_coach_id()
-RETURNS UUID AS $$
-DECLARE
-  my_id UUID;
-BEGIN
-  SELECT id INTO my_id FROM public.coaches WHERE auth_user_id = auth.uid() LIMIT 1;
-  RETURN my_id;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+RETURNS SETOF UUID AS $$
+  SELECT coaches.id FROM public.coaches
+  JOIN public.organization_members ON organization_members.id = coaches.organization_member_id
+  JOIN public.profiles ON profiles.id = organization_members.user_id
+  WHERE profiles.auth_user_id = auth.uid() AND organization_members.status = 'active';
+$$ LANGUAGE sql SECURITY DEFINER;
 
--- 1. Policies cho coaches
-CREATE POLICY "Admin can do all on coaches" ON public.coaches FOR ALL USING (public.is_admin());
-CREATE POLICY "Coaches can view their own profile" ON public.coaches FOR SELECT USING (auth_user_id = auth.uid());
+-- 1. Policies for profiles
+CREATE POLICY "Users can view their own profile" ON public.profiles FOR SELECT USING (auth_user_id = auth.uid());
+CREATE POLICY "Users can update their own profile" ON public.profiles FOR UPDATE USING (auth_user_id = auth.uid());
+CREATE POLICY "Users can insert their own profile" ON public.profiles FOR INSERT WITH CHECK (auth_user_id = auth.uid());
 
--- 2. Policies cho venues
-CREATE POLICY "Admin can do all on venues" ON public.venues FOR ALL USING (public.is_admin());
-CREATE POLICY "Coaches can view venues" ON public.venues FOR SELECT USING (auth.uid() IS NOT NULL);
+-- 2. Policies for organizations
+CREATE POLICY "Org members can view their organizations" ON public.organizations FOR SELECT USING (id IN (SELECT public.get_user_organizations()));
+CREATE POLICY "Org admins can update organizations" ON public.organizations FOR UPDATE USING (public.is_org_admin(id));
 
--- 3. Policies cho venue_coaches
-CREATE POLICY "Admin can do all on venue_coaches" ON public.venue_coaches FOR ALL USING (public.is_admin());
-CREATE POLICY "Coaches can view their venue assignments" ON public.venue_coaches FOR SELECT USING (coach_id = public.get_my_coach_id());
+-- 3. Policies for organization_members
+CREATE POLICY "Members can view other members in same org" ON public.organization_members FOR SELECT USING (organization_id IN (SELECT public.get_user_organizations()));
+CREATE POLICY "Org admins can manage members" ON public.organization_members FOR ALL USING (public.is_org_admin(organization_id));
 
--- 4. Policies cho venue_classes
-CREATE POLICY "Admin can do all on venue_classes" ON public.venue_classes FOR ALL USING (public.is_admin());
-CREATE POLICY "Coaches can view classes" ON public.venue_classes FOR SELECT USING (auth.uid() IS NOT NULL);
-
--- 5. Policies cho schedules
-CREATE POLICY "Admin can do all on schedules" ON public.schedules FOR ALL USING (public.is_admin());
-CREATE POLICY "Coaches can view schedules" ON public.schedules FOR SELECT USING (auth.uid() IS NOT NULL);
-
--- 6. Policies cho attendance
-CREATE POLICY "Admin can do all on attendance" ON public.attendance FOR ALL USING (public.is_admin());
-CREATE POLICY "Coaches can view their own attendance" ON public.attendance 
-  FOR SELECT USING (coach_id = public.get_my_coach_id());
-CREATE POLICY "Coaches can insert their own attendance" ON public.attendance 
-  FOR INSERT WITH CHECK (coach_id = public.get_my_coach_id());
-
--- 7. Policies cho teacher_salaries
-CREATE POLICY "Admin can do all on teacher_salaries" ON public.teacher_salaries FOR ALL USING (public.is_admin());
-CREATE POLICY "Coaches can view own salaries" ON public.teacher_salaries FOR SELECT USING (coach_id = public.get_my_coach_id());
-
--- 8. Policies cho teacher_salary_sessions
-CREATE POLICY "Admin can do all on teacher_salary_sessions" ON public.teacher_salary_sessions FOR ALL USING (public.is_admin());
-CREATE POLICY "Coaches can view own salary sessions" ON public.teacher_salary_sessions FOR SELECT USING (
-  salary_id IN (SELECT id FROM public.teacher_salaries WHERE coach_id = public.get_my_coach_id())
+-- 4. Policies for organization_invitations
+CREATE POLICY "Members can view invitations in same org" ON public.organization_invitations FOR SELECT USING (organization_id IN (SELECT public.get_user_organizations()));
+CREATE POLICY "Org admins can manage invitations" ON public.organization_invitations FOR ALL USING (public.is_org_admin(organization_id));
+CREATE POLICY "Invitee can view their invitations" ON public.organization_invitations FOR SELECT USING (
+  email IN (SELECT email FROM public.profiles WHERE auth_user_id = auth.uid())
 );
 
--- 9. Policies cho student_attendance
-CREATE POLICY "Admin can do all on student_attendance" ON public.student_attendance FOR ALL USING (public.is_admin());
-CREATE POLICY "Coaches can view and manage student attendance" ON public.student_attendance FOR ALL USING (auth.uid() IS NOT NULL);
+-- 5. Policies for coaches
+CREATE POLICY "Admin can do all on coaches" ON public.coaches FOR ALL USING (public.is_org_admin(organization_id));
+CREATE POLICY "Coaches can view profiles in their org" ON public.coaches FOR SELECT USING (organization_id IN (SELECT public.get_user_organizations()));
+CREATE POLICY "Coaches can update their own profile" ON public.coaches FOR UPDATE USING (id IN (SELECT public.get_my_coach_id()));
+
+-- 6. Policies for venues
+CREATE POLICY "Admin can do all on venues" ON public.venues FOR ALL USING (public.is_org_admin(organization_id));
+CREATE POLICY "Coaches can view venues in their org" ON public.venues FOR SELECT USING (organization_id IN (SELECT public.get_user_organizations()));
+
+-- 7. Policies for venue_coaches
+CREATE POLICY "Admin can do all on venue_coaches" ON public.venue_coaches FOR ALL USING (public.is_org_admin(organization_id));
+CREATE POLICY "Coaches can view venue assignments in their org" ON public.venue_coaches FOR SELECT USING (organization_id IN (SELECT public.get_user_organizations()));
+
+-- 8. Policies for venue_classes
+CREATE POLICY "Admin can do all on venue_classes" ON public.venue_classes FOR ALL USING (public.is_org_admin(organization_id));
+CREATE POLICY "Coaches can view classes in their org" ON public.venue_classes FOR SELECT USING (organization_id IN (SELECT public.get_user_organizations()));
+
+-- 9. Policies for schedules
+CREATE POLICY "Admin can do all on schedules" ON public.schedules FOR ALL USING (public.is_org_admin(organization_id));
+CREATE POLICY "Coaches can view schedules in their org" ON public.schedules FOR SELECT USING (organization_id IN (SELECT public.get_user_organizations()));
+
+-- 10. Policies for attendance
+CREATE POLICY "Admin can do all on attendance" ON public.attendance FOR ALL USING (public.is_org_admin(organization_id));
+CREATE POLICY "Coaches can view attendance in their org" ON public.attendance FOR SELECT USING (organization_id IN (SELECT public.get_user_organizations()));
+CREATE POLICY "Coaches can insert their own attendance" ON public.attendance 
+  FOR INSERT WITH CHECK (organization_id IN (SELECT public.get_user_organizations()) AND coach_id IN (SELECT public.get_my_coach_id()));
+
+-- 11. Policies for teacher_salaries
+CREATE POLICY "Admin can do all on teacher_salaries" ON public.teacher_salaries FOR ALL USING (public.is_org_admin(organization_id));
+CREATE POLICY "Coaches can view own salaries" ON public.teacher_salaries FOR SELECT USING (organization_id IN (SELECT public.get_user_organizations()) AND coach_id IN (SELECT public.get_my_coach_id()));
+
+-- 12. Policies for teacher_salary_sessions
+CREATE POLICY "Admin can do all on teacher_salary_sessions" ON public.teacher_salary_sessions FOR ALL USING (public.is_org_admin(organization_id));
+CREATE POLICY "Coaches can view own salary sessions" ON public.teacher_salary_sessions FOR SELECT USING (organization_id IN (SELECT public.get_user_organizations()) AND coach_id IN (SELECT public.get_my_coach_id()));
+
+-- 13. Policies for student_attendance
+CREATE POLICY "Admin can do all on student_attendance" ON public.student_attendance FOR ALL USING (public.is_org_admin(organization_id));
+CREATE POLICY "Coaches can view student attendance in their org" ON public.student_attendance FOR SELECT USING (organization_id IN (SELECT public.get_user_organizations()));

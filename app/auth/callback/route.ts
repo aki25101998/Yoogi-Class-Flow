@@ -47,31 +47,57 @@ export async function GET(request: NextRequest) {
     }
 
     if (authData?.user) {
-      const email = authData.user.email?.toLowerCase().trim();
-      const { data: coaches } = await supabase.from('coaches').select('*').eq('email', email);
-
-      if (coaches && coaches.length > 0) {
-        return NextResponse.redirect(`${origin}${next}`);
-      } else {
-        const { count } = await supabase.from('coaches').select('*', { count: 'exact', head: true });
-        
-        if (count === 0) {
-          // First user -> make admin
-          const { error: insertError } = await supabase.from('coaches').insert([{
-            name: authData.user.user_metadata?.full_name || 'Admin',
+      const user = authData.user;
+      const email = user.email?.toLowerCase().trim();
+      
+      // 1. Check or Create Profile
+      let { data: profile } = await supabase.from('profiles').select('*').eq('auth_user_id', user.id).single();
+      
+      if (!profile) {
+        // Fallback for legacy profile by email
+        let { data: legacyProfile } = await supabase.from('profiles').select('*').eq('email', email).single();
+        if (legacyProfile) {
+          const { data: updatedProfile } = await supabase.from('profiles')
+            .update({ auth_user_id: user.id })
+            .eq('id', legacyProfile.id)
+            .select()
+            .single();
+          profile = updatedProfile;
+        } else {
+          const { data: newProfile, error: profileErr } = await supabase.from('profiles').insert([{
+            auth_user_id: user.id,
             email: email,
-            role: 'admin',
-            status: 'active'
-          }]);
+            name: user.user_metadata?.full_name || email?.split('@')[0] || 'User',
+            avatar_url: user.user_metadata?.avatar_url || ''
+          }]).select().single();
           
-          if (insertError) {
-            console.error("Insert error:", insertError);
-          }
+          if (profileErr) console.error("Profile insert error:", profileErr);
+          profile = newProfile;
+        }
+      }
+
+      if (profile) {
+        // 2. Check for pending invitations
+        const { data: invitations } = await supabase.from('organization_invitations')
+          .select('*')
+          .eq('email', email)
+          .eq('status', 'pending');
+          
+        if (invitations && invitations.length > 0) {
+          return NextResponse.redirect(`${origin}/accept-invite`);
+        }
+
+        // 3. Check for active organization memberships
+        const { data: memberships } = await supabase.from('organization_members')
+          .select('*')
+          .eq('user_id', profile.id)
+          .eq('status', 'active');
+
+        if (memberships && memberships.length > 0) {
           return NextResponse.redirect(`${origin}${next}`);
         } else {
-          // Unauthorized
-          await supabase.auth.signOut();
-          return NextResponse.redirect(`${origin}/login?error=unauthorized`);
+          // No organization, redirect to create one
+          return NextResponse.redirect(`${origin}/create-organization`);
         }
       }
     }
