@@ -18,7 +18,11 @@ export async function GET(request: NextRequest) {
       {
         cookies: {
           get(name: string) {
-            // Read from the incoming REQUEST (not from cookies() which is for the response)
+            // Check if we just set it
+            const recentlySet = cookiesToSet.find(c => c.name === name)
+            if (recentlySet) return recentlySet.value
+
+            // Read from the incoming REQUEST
             const value = request.cookies.get(name)?.value
             if (value) return value
 

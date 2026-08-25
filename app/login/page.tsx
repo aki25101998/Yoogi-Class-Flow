@@ -7,9 +7,13 @@ import { useSearchParams } from "next/navigation";
 function LoginContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [debugSession, setDebugSession] = useState<any>(null);
   const searchParams = useSearchParams();
 
   useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data }) => setDebugSession(data.session));
+
     // Handle error returned from the callback route
     const errorParam = searchParams.get("error");
     const detailsParam = searchParams.get("details");
@@ -109,6 +113,13 @@ function LoginContent() {
           Đăng nhập bằng tài khoản Google đã được quản trị viên cấp quyền.<br/>
           Người đăng nhập đầu tiên sẽ tự động trở thành quản trị viên.
         </p>
+
+        <div style={{ marginTop: '20px', fontSize: '10px', color: '#666', wordBreak: 'break-all', textAlign: 'left', background: '#f5f5f5', padding: '10px', borderRadius: '4px' }}>
+          <strong>Debug Info:</strong><br/>
+          URL: {typeof window !== 'undefined' ? window.location.href : 'ssr'}<br/>
+          Cookies: {typeof document !== 'undefined' ? document.cookie : 'ssr'}<br/>
+          Session: {debugSession ? `Yes (${debugSession.user?.email})` : 'No'}
+        </div>
       </div>
     </div>
   );
