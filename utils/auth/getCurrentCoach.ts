@@ -13,7 +13,7 @@ export async function getCurrentCoach() {
   // 1. Try mapping by auth_user_id first
   const { data: coachesById } = await supabase
     .from('coaches')
-    .select('*')
+    .select('id, auth_user_id, name, email, phone, role, permissions, status, photo_url')
     .eq('auth_user_id', user.id);
     
   if (coachesById && coachesById.length > 0) {
@@ -24,7 +24,7 @@ export async function getCurrentCoach() {
   const email = user.email?.toLowerCase().trim();
   const { data: coachesByEmail } = await supabase
     .from('coaches')
-    .select('*')
+    .select('id, auth_user_id, name, email, phone, role, permissions, status, photo_url')
     .eq('email', email);
     
   if (coachesByEmail && coachesByEmail.length > 0) {
