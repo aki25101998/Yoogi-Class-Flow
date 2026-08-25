@@ -39,7 +39,8 @@ export async function GET(request: Request) {
     
     if (error) {
       console.error("Error exchanging code for session:", error);
-      return NextResponse.redirect(`${origin}/login?error=auth_failed&details=${encodeURIComponent(error.message)}`)
+      const cookieNames = cookieStore.getAll().map((c: any) => c.name).join(', ');
+      return NextResponse.redirect(`${origin}/login?error=auth_failed&details=${encodeURIComponent(error.message + ' | Cookies present: ' + (cookieNames || 'none'))}`)
     } else {
       console.log("Exchange successful. User ID:", authData?.user?.id);
     }
