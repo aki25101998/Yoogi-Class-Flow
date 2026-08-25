@@ -12,16 +12,18 @@ function LoginContent() {
 
   useEffect(() => {
     // Clear old cookies if they exist
-    if (typeof document !== "undefined") {
+    const clearCookies = () => {
       const cookies = document.cookie.split(';');
       cookies.forEach(cookie => {
         const name = cookie.split('=')[0].trim();
-        if ((name.includes('code-verifier') && name !== 'sb-yoogi-v2-code-verifier') || name === 'sb-yoogi') {
+        // Clear old verifiers and ALL session cookies (sb-yoogi, sb-yoogi-v2, sb-yoogi-v2.0, etc.)
+        // We only keep the CURRENT code-verifier
+        if (name.startsWith('sb-yoogi') && name !== 'sb-yoogi-v2-code-verifier') {
           document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
         }
       });
-    }
-
+    };
+    clearCookies();
     const supabase = createClient();
     supabase.auth.getSession().then(({ data }) => setDebugSession(data.session));
 
