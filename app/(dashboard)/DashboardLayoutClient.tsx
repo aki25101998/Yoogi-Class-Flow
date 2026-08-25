@@ -10,9 +10,10 @@ interface DashboardLayoutClientProps {
   children: React.ReactNode;
   user: User | null;
   userData: Coach | null;
+  context: any;
 }
 
-export default function DashboardLayoutClient({ children, user, userData }: DashboardLayoutClientProps) {
+export default function DashboardLayoutClient({ children, user, userData, context }: DashboardLayoutClientProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
@@ -35,6 +36,7 @@ export default function DashboardLayoutClient({ children, user, userData }: Dash
       <Sidebar 
         user={user} 
         userData={userData} 
+        context={context}
         isSidebarOpen={isSidebarOpen} 
         setIsSidebarOpen={setIsSidebarOpen} 
       />
