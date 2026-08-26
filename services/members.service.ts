@@ -2,7 +2,7 @@ import { createClient } from '@/utils/supabase/server';
 import { OrganizationRole } from '@/types/organization';
 import { getCurrentOrganizationContext } from './organization.service';
 
-export async function inviteMember(email: string, role: OrganizationRole): Promise<{ success: boolean; error?: string }> {
+export async function inviteMember(email: string, role: OrganizationRole): Promise<{ success: boolean; error?: string; invitationCreated?: boolean; emailSent?: boolean; warning?: string }> {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Not authenticated or no organization context' };
 
@@ -52,7 +52,7 @@ export async function inviteMember(email: string, role: OrganizationRole): Promi
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiration
 
-  const { error } = await supabase.from('organization_invitations').insert([{
+  const { data: newInvite, error } = await supabase.from('organization_invitations').insert([{
     organization_id: context.organization.id,
     email: email.toLowerCase(),
     role,
@@ -60,13 +60,95 @@ export async function inviteMember(email: string, role: OrganizationRole): Promi
     invited_by: context.profile.id,
     status: 'pending',
     expires_at: expiresAt.toISOString()
-  }]);
+  }]).select().single();
 
   if (error) {
     return { success: false, error: error.message };
   }
 
-  return { success: true };
+  // Send Email
+  const roleLabels: Record<string, string> = {
+    owner: 'Chủ tổ chức',
+    admin: 'Quản trị viên',
+    head_coach: 'HLV trưởng',
+    assistant_coach: 'HLV phụ'
+  };
+  const roleLabel = roleLabels[role] || role;
+  
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const invitationUrl = `${appUrl}/invite/${newInvite.id}`;
+
+  const { sendInvitationEmail } = await import('./email.service');
+  const emailResult = await sendInvitationEmail({
+    to: email.toLowerCase(),
+    organizationName: context.organization.name || 'Tổ chức',
+    roleLabel,
+    invitationUrl
+  });
+
+  if (!emailResult.success) {
+    console.error('Email failed to send for invitation', newInvite.id, emailResult.error);
+    return { 
+      success: true, 
+      invitationCreated: true, 
+      emailSent: false, 
+      warning: 'Lời mời đã được tạo nhưng email chưa gửi được.' 
+    };
+  }
+
+  return { success: true, invitationCreated: true, emailSent: true };
+}
+
+export async function resendInvitation(invitationId: string): Promise<{ success: boolean; error?: string; emailSent?: boolean }> {
+  const context = await getCurrentOrganizationContext();
+  if (!context || !context.organization) return { success: false, error: 'Not authenticated or no organization context' };
+
+  if (context.membership?.role !== 'admin' && context.membership?.role !== 'owner') {
+    return { success: false, error: 'Permission denied: Only admin or owner can resend invitations' };
+  }
+
+  const supabase = await createClient();
+
+  // Fetch pending invitation
+  const { data: invite } = await supabase.from('organization_invitations')
+    .select('*')
+    .eq('id', invitationId)
+    .eq('organization_id', context.organization.id)
+    .eq('status', 'pending')
+    .single();
+
+  if (!invite) {
+    return { success: false, error: 'Không tìm thấy lời mời đang chờ.' };
+  }
+
+  if (invite.expires_at && new Date(invite.expires_at) < new Date()) {
+    return { success: false, error: 'Lời mời đã hết hạn, không thể gửi lại.' };
+  }
+
+  const roleLabels: Record<string, string> = {
+    owner: 'Chủ tổ chức',
+    admin: 'Quản trị viên',
+    head_coach: 'HLV trưởng',
+    assistant_coach: 'HLV phụ'
+  };
+  const roleLabel = roleLabels[invite.role] || invite.role;
+  
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const invitationUrl = `${appUrl}/invite/${invite.id}`;
+
+  const { sendInvitationEmail } = await import('./email.service');
+  const emailResult = await sendInvitationEmail({
+    to: invite.email,
+    organizationName: context.organization.name || 'Tổ chức',
+    roleLabel,
+    invitationUrl
+  });
+
+  if (!emailResult.success) {
+    return { success: false, error: 'Gửi lại email thất bại. Vui lòng thử lại sau.' };
+  }
+
+  return { success: true, emailSent: true };
 }
 
 export async function revokeInvitation(invitationId: string): Promise<{ success: boolean; error?: string }> {

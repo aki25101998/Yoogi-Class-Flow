@@ -77,7 +77,12 @@ export async function GET(request: NextRequest) {
       }
 
       if (profile) {
-        // 2. Check for pending invitations
+        // Prioritize specific invitation callback
+        if (next.startsWith('/invite/')) {
+          return NextResponse.redirect(`${origin}${next}`);
+        }
+
+        // 2. Check for pending invitations (legacy generic route)
         const { data: invitations } = await supabase.from('organization_invitations')
           .select('*')
           .eq('email', email)

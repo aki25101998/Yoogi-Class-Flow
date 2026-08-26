@@ -8,7 +8,8 @@ import {
   removeMemberAction,
   suspendMemberAction,
   reactivateMemberAction,
-  changeRoleAction
+  changeRoleAction,
+  resendInvitationAction
 } from './actions';
 import { OrganizationRole } from '@/types/organization';
 import { useCoaches } from '@/hooks/useCoaches';
@@ -49,6 +50,7 @@ export default function CoachesClient() {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<OrganizationRole>('assistant_coach');
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
   const isAdminOrOwner = currentUserRole === 'admin' || currentUserRole === 'owner';
@@ -61,15 +63,37 @@ export default function CoachesClient() {
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccessMsg('');
     setLoading(true);
     const res = await inviteMemberAction(email, role);
     setLoading(false);
+    
     if (res.success) {
-      setIsInviting(false);
-      setEmail('');
+      if (res.emailSent === false) {
+        setError(res.warning || 'Lời mời đã được tạo nhưng email chưa gửi được.');
+      } else {
+        setSuccessMsg(`Đã gửi lời mời tới ${email}`);
+        setIsInviting(false);
+        setEmail('');
+      }
       handleSuccess();
     } else {
       setError(res.error || 'Lỗi gửi lời mời');
+    }
+  };
+
+  const handleResend = async (id: string) => {
+    setError('');
+    setSuccessMsg('');
+    setLoading(true);
+    const res = await resendInvitationAction(id);
+    setLoading(false);
+    
+    if (res.success) {
+      setSuccessMsg('Đã gửi lại email lời mời.');
+      handleSuccess();
+    } else {
+      setError(res.error || 'Lỗi gửi lại lời mời');
     }
   };
 
@@ -124,7 +148,8 @@ export default function CoachesClient() {
         <Card className="mb-6">
           <CardContent>
             <h3 className="font-semibold mb-4">Gửi lời mời mới</h3>
-            {error && <div className="text-danger mb-4 text-sm">{error}</div>}
+            {error && <div className="text-warning mb-4 text-sm font-medium p-3 bg-warning/10 rounded">{error}</div>}
+            {successMsg && <div className="text-success mb-4 text-sm font-medium p-3 bg-success/10 rounded">{successMsg}</div>}
             <form onSubmit={handleInvite} className="flex gap-4 items-end flex-wrap">
               <div style={{ flex: '1 1 250px' }}>
                 <Input 
@@ -281,7 +306,10 @@ export default function CoachesClient() {
                     <TableCell className="text-secondary">-</TableCell>
                     {isAdminOrOwner && (
                       <TableCell>
-                        <Button size="sm" variant="danger" onClick={() => executeAction(revokeInvitationAction, inv.id, 'Thu hồi lời mời này?')} disabled={loading}>Thu hồi</Button>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" onClick={() => handleResend(inv.id)} disabled={loading}>Gửi lại</Button>
+                          <Button size="sm" variant="danger" onClick={() => executeAction(revokeInvitationAction, inv.id, 'Thu hồi lời mời này?')} disabled={loading}>Thu hồi</Button>
+                        </div>
                       </TableCell>
                     )}
                   </TableRow>

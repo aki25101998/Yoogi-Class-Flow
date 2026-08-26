@@ -6,7 +6,8 @@ import {
   removeMember,
   suspendMember,
   reactivateMember,
-  changeRole
+  changeRole,
+  resendInvitation
 } from '@/services/members.service';
 import { OrganizationRole } from '@/types/organization';
 
@@ -16,6 +17,10 @@ export async function inviteMemberAction(email: string, role: OrganizationRole) 
 
 export async function revokeInvitationAction(id: string) {
   return await revokeInvitation(id);
+}
+
+export async function resendInvitationAction(id: string) {
+  return await resendInvitation(id);
 }
 
 export async function removeMemberAction(id: string) {
