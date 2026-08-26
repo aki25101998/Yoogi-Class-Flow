@@ -1,10 +1,17 @@
-export default function SettingsPage() {
+import { getCurrentOrganizationContext } from '@/services/organization.service';
+import SettingsClient from './SettingsClient';
+
+export default async function SettingsPage() {
+  const context = await getCurrentOrganizationContext();
+  if (!context || !context.organization) return <div>Access Denied</div>;
+
   return (
     <div style={{ padding: '24px' }}>
-      <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px' }}>Cài đặt</h1>
-      <div style={{ backgroundColor: '#fff3cd', borderLeft: '4px solid #ffc107', padding: '16px', marginBottom: '16px' }}>
-        <p style={{ color: '#856404', margin: 0 }}>Trạng thái: Module đang được chuyển đổi</p>
-      </div>
+      <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '24px' }}>Cài đặt tổ chức</h1>
+      <SettingsClient 
+        organization={context.organization}
+        currentUserRole={context.membership?.role as string}
+      />
     </div>
   );
 }

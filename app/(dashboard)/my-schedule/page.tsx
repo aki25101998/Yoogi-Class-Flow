@@ -1,9 +1,65 @@
-export default function MySchedulePage() {
+import { createClient } from '@/utils/supabase/server';
+import { getCurrentOrganizationContext } from '@/services/organization.service';
+
+const DAYS_OF_WEEK = [
+  { value: 1, label: 'Thứ 2' },
+  { value: 2, label: 'Thứ 3' },
+  { value: 3, label: 'Thứ 4' },
+  { value: 4, label: 'Thứ 5' },
+  { value: 5, label: 'Thứ 6' },
+  { value: 6, label: 'Thứ 7' },
+  { value: 0, label: 'Chủ Nhật' }
+];
+
+export default async function MySchedulePage() {
+  const context = await getCurrentOrganizationContext();
+  if (!context || !context.organization || !context.coach) {
+    return (
+      <div style={{ padding: '24px' }}>
+        <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '24px' }}>Lịch dạy của tôi</h1>
+        <p style={{ color: '#ef4444' }}>Bạn chưa được liên kết với hồ sơ HLV nào trong hệ thống.</p>
+      </div>
+    );
+  }
+
+  const supabase = await createClient();
+  const coachId = context.coach.id;
+  
+  const { data: schedules } = await supabase
+    .from('schedules')
+    .select('*, venue_classes(name), venues(name)')
+    .eq('organization_id', context.organization.id)
+    .eq('coach_id', coachId);
+
   return (
     <div style={{ padding: '24px' }}>
-      <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px' }}>Lịch của tôi</h1>
-      <div style={{ backgroundColor: '#fff3cd', borderLeft: '4px solid #ffc107', padding: '16px', marginBottom: '16px' }}>
-        <p style={{ color: '#856404', margin: 0 }}>Trạng thái: Module đang được chuyển đổi</p>
+      <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '24px' }}>Lịch dạy của tôi</h1>
+      
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '16px' }}>
+        {DAYS_OF_WEEK.map(day => {
+          const daySchedules = (schedules || []).filter((s: any) => s.day_of_week === day.value).sort((a: any, b: any) => a.start_time.localeCompare(b.start_time));
+          
+          return (
+            <div key={day.value} style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+              <div style={{ backgroundColor: '#f3f4f6', padding: '12px', fontWeight: 'bold', textAlign: 'center', borderBottom: '1px solid #e5e7eb' }}>
+                {day.label}
+              </div>
+              <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {daySchedules.length === 0 ? (
+                  <div style={{ textAlign: 'center', color: '#9ca3af', fontSize: '12px' }}>Trống</div>
+                ) : (
+                  daySchedules.map((s: any) => (
+                    <div key={s.id} style={{ backgroundColor: '#f0fdf4', padding: '8px', borderRadius: '6px', border: '1px solid #bbf7d0', fontSize: '12px' }}>
+                      <div style={{ fontWeight: 'bold', color: '#166534', marginBottom: '4px' }}>{s.start_time} - {s.end_time}</div>
+                      <div style={{ marginBottom: '2px' }}><strong>Lớp:</strong> {s.venue_classes?.name}</div>
+                      <div style={{ marginBottom: '4px' }}><strong>Phòng:</strong> {s.venues?.name}</div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
