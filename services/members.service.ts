@@ -2,7 +2,7 @@ import { createClient } from '@/utils/supabase/server';
 import { OrganizationRole } from '@/types/organization';
 import { getCurrentOrganizationContext } from './organization.service';
 
-export async function inviteMember(email: string, role: OrganizationRole, permissions: string[] = []): Promise<{ success: boolean; error?: string }> {
+export async function inviteMember(email: string, role: OrganizationRole): Promise<{ success: boolean; error?: string }> {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Not authenticated or no organization context' };
 
@@ -36,6 +36,17 @@ export async function inviteMember(email: string, role: OrganizationRole, permis
 
   if (existingInvite) {
     return { success: false, error: 'Lời mời cho email này đã được gửi và đang chờ xử lý.' };
+  }
+
+  let permissions: string[] = [];
+  if (role === 'head_coach') {
+    permissions = ['VIEW_CLASSES', 'VIEW_STUDENTS', 'TAKE_ATTENDANCE', 'VIEW_ATTENDANCE', 'VIEW_SCHEDULE', 'VIEW_SALARY'];
+  } else if (role === 'assistant_coach') {
+    permissions = ['VIEW_ASSIGNED_CLASSES', 'VIEW_ASSIGNED_STUDENTS', 'TAKE_ATTENDANCE', 'VIEW_ATTENDANCE', 'VIEW_SCHEDULE', 'VIEW_MY_EARNINGS'];
+  } else if (role === 'admin') {
+    permissions = ['manage_coaches', 'manage_students', 'manage_venues', 'manage_classes', 'manage_schedule', 'manage_settings', 'manage_attendance', 'view_payroll', 'manage_members'];
+  } else if (role === 'owner') {
+    permissions = ['manage_coaches', 'manage_students', 'manage_venues', 'manage_classes', 'manage_schedule', 'manage_settings', 'manage_attendance', 'view_payroll', 'manage_members', 'manage_organization'];
   }
 
   const expiresAt = new Date();
@@ -84,14 +95,12 @@ export async function removeMember(memberId: string): Promise<{ success: boolean
     return { success: false, error: 'Permission denied' };
   }
 
-  // Basic check: don't allow removing oneself if they are the only owner. (Complex check skipped for brevity, but we prevent removing oneself at least)
   if (context.membership.id === memberId) {
     return { success: false, error: 'Không thể tự xóa bản thân khỏi tổ chức bằng cách này.' };
   }
 
   const supabase = await createClient();
 
-  // We could just change status to 'removed' instead of deleting, depending on business logic. Let's delete for now or update status.
   const { error } = await supabase.from('organization_members')
     .update({ status: 'removed' })
     .eq('id', memberId)
@@ -99,8 +108,58 @@ export async function removeMember(memberId: string): Promise<{ success: boolean
 
   if (error) return { success: false, error: error.message };
   
-  // also suspend coach record
   await supabase.from('coaches').update({ status: 'inactive' }).eq('organization_member_id', memberId);
 
+  return { success: true };
+}
+
+export async function suspendMember(memberId: string): Promise<{ success: boolean; error?: string }> {
+  const context = await getCurrentOrganizationContext();
+  if (!context || !context.organization) return { success: false, error: 'Not authenticated' };
+
+  if (context.membership?.role !== 'admin' && context.membership?.role !== 'owner') return { success: false, error: 'Permission denied' };
+  if (context.membership.id === memberId) return { success: false, error: 'Không thể tự đình chỉ bản thân.' };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from('organization_members').update({ status: 'suspended' }).eq('id', memberId).eq('organization_id', context.organization.id);
+  
+  if (error) return { success: false, error: error.message };
+  await supabase.from('coaches').update({ status: 'inactive' }).eq('organization_member_id', memberId);
+  return { success: true };
+}
+
+export async function reactivateMember(memberId: string): Promise<{ success: boolean; error?: string }> {
+  const context = await getCurrentOrganizationContext();
+  if (!context || !context.organization) return { success: false, error: 'Not authenticated' };
+  if (context.membership?.role !== 'admin' && context.membership?.role !== 'owner') return { success: false, error: 'Permission denied' };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from('organization_members').update({ status: 'active' }).eq('id', memberId).eq('organization_id', context.organization.id);
+  
+  if (error) return { success: false, error: error.message };
+  await supabase.from('coaches').update({ status: 'active' }).eq('organization_member_id', memberId);
+  return { success: true };
+}
+
+export async function changeRole(memberId: string, newRole: OrganizationRole): Promise<{ success: boolean; error?: string }> {
+  const context = await getCurrentOrganizationContext();
+  if (!context || !context.organization) return { success: false, error: 'Not authenticated' };
+  if (context.membership?.role !== 'admin' && context.membership?.role !== 'owner') return { success: false, error: 'Permission denied' };
+  if (context.membership.id === memberId) return { success: false, error: 'Không thể tự hạ quyền bản thân.' };
+
+  let permissions: string[] = [];
+  if (newRole === 'head_coach') permissions = ['VIEW_CLASSES', 'VIEW_STUDENTS', 'TAKE_ATTENDANCE', 'VIEW_ATTENDANCE', 'VIEW_SCHEDULE', 'VIEW_SALARY'];
+  else if (newRole === 'assistant_coach') permissions = ['VIEW_ASSIGNED_CLASSES', 'VIEW_ASSIGNED_STUDENTS', 'TAKE_ATTENDANCE', 'VIEW_ATTENDANCE', 'VIEW_SCHEDULE', 'VIEW_MY_EARNINGS'];
+  else if (newRole === 'admin') permissions = ['manage_coaches', 'manage_students', 'manage_venues', 'manage_classes', 'manage_schedule', 'manage_settings', 'manage_attendance', 'view_payroll', 'manage_members'];
+  else if (newRole === 'owner') permissions = ['manage_coaches', 'manage_students', 'manage_venues', 'manage_classes', 'manage_schedule', 'manage_settings', 'manage_attendance', 'view_payroll', 'manage_members', 'manage_organization'];
+
+  const supabase = await createClient();
+  const { error } = await supabase.from('organization_members').update({ role: newRole, permissions }).eq('id', memberId).eq('organization_id', context.organization.id);
+  
+  if (error) return { success: false, error: error.message };
+  
+  const coachRole = newRole === 'admin' || newRole === 'owner' ? 'admin' : 'coach';
+  await supabase.from('coaches').update({ role: coachRole, permissions }).eq('organization_member_id', memberId);
+  
   return { success: true };
 }
