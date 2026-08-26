@@ -47,7 +47,7 @@ function LoginContent() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: 'var(--background)', padding: 'var(--space-4)' }}>
+    <div className="flex items-center justify-center min-h-screen" style={{ width: '100%', backgroundColor: 'var(--background)', padding: 'var(--space-4)' }}>
       <div className="login-card" style={{ 
         backgroundColor: 'var(--surface)', 
         padding: 'var(--space-8)', 
