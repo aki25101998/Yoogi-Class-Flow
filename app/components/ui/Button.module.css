@@ -1,0 +1,114 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border: none;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Variants */
+.primary {
+  background-color: var(--primary);
+  color: var(--text-on-primary);
+  box-shadow: var(--shadow-sm);
+}
+.primary:not(:disabled):hover { background-color: var(--primary-hover); }
+
+.secondary {
+  background-color: var(--surface);
+  color: var(--text-main);
+  border: 1px solid var(--border);
+}
+.secondary:not(:disabled):hover { background-color: var(--surface-hover); }
+
+.danger {
+  background-color: var(--danger);
+  color: var(--text-on-primary);
+}
+.danger:not(:disabled):hover { background-color: var(--danger-hover); }
+
+.success {
+  background-color: var(--success);
+  color: var(--text-on-primary);
+}
+.success:not(:disabled):hover { background-color: var(--success); filter: brightness(0.9); }
+
+.warning {
+  background-color: var(--warning);
+  color: var(--text-on-primary);
+}
+.warning:not(:disabled):hover { background-color: var(--warning); filter: brightness(0.9); }
+
+.ghost {
+  background-color: transparent;
+  color: var(--text-secondary);
+}
+.ghost:not(:disabled):hover { background-color: var(--surface-hover); color: var(--text-main); }
+
+.outline {
+  background-color: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+.outline:not(:disabled):hover { background-color: var(--primary-light); }
+
+/* Sizes */
+.sm {
+  height: 32px;
+  padding: 0 var(--space-3);
+  font-size: 0.875rem;
+}
+
+.md {
+  height: 40px;
+  padding: 0 var(--space-4);
+  font-size: 0.95rem;
+}
+
+.lg {
+  height: 48px;
+  padding: 0 var(--space-6);
+  font-size: 1rem;
+}
+
+/* Loading & Icons */
+.icon {
+  display: flex;
+  align-items: center;
+}
+
+.spinner {
+  animation: rotate 2s linear infinite;
+  width: 1.25em;
+  height: 1.25em;
+  stroke: currentColor;
+}
+
+.spinnerCircle {
+  stroke: currentColor;
+  stroke-dasharray: 1, 200;
+  stroke-dashoffset: 0;
+  animation: dash 1.5s ease-in-out infinite;
+  stroke-linecap: round;
+}
+
+@keyframes rotate {
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes dash {
+  0% { stroke-dasharray: 1, 200; stroke-dashoffset: 0; }
+  50% { stroke-dasharray: 90, 200; stroke-dashoffset: -35px; }
+  100% { stroke-dasharray: 90, 200; stroke-dashoffset: -124px; }
+}

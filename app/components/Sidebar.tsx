@@ -23,8 +23,8 @@ const ADMIN_NAV = [
     { icon: 'payments', label: 'Bảng lương', route: '/payroll', permission: 'view_payroll' }
   ]},
   { section: 'Tài chính - Kế toán', items: [
-    { icon: 'account_balance_wallet', label: 'Học phí', route: '/tuition', permission: 'manage_venues' },
-    { icon: 'receipt_long', label: 'Sổ quỹ', route: '/finance', permission: 'manage_venues' }
+    { icon: 'account_balance_wallet', label: 'Học phí', route: '/tuition', permission: 'manage_tuition' },
+    { icon: 'receipt_long', label: 'Sổ quỹ', route: '/finance', permission: 'manage_finance' }
   ]}
 ];
 

@@ -1,7 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { addScheduleAction, deleteScheduleAction } from './actions';
+
+// UI Components
+import { PageHeader } from '@/app/components/ui/PageHeader';
+import { Button } from '@/app/components/ui/Button';
+import { Input, Select } from '@/app/components/ui/Input';
+import { Card, CardContent } from '@/app/components/ui/Card';
 
 const DAYS_OF_WEEK = [
   { value: 1, label: 'Thứ 2' },
@@ -14,9 +21,11 @@ const DAYS_OF_WEEK = [
 ];
 
 export default function ScheduleClient({ schedules, classes, coaches, venues, currentUserRole }: any) {
+  const router = useRouter();
   const [isAdding, setIsAdding] = useState(false);
   const [formData, setFormData] = useState({ coach_id: '', venue_id: '', class_id: '', day_of_week: 1, start_time: '18:00', end_time: '20:00' });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const isAdminOrOwner = currentUserRole === 'admin' || currentUserRole === 'owner';
 
@@ -26,103 +35,141 @@ export default function ScheduleClient({ schedules, classes, coaches, venues, cu
     setError('');
   };
 
+  const handleSuccess = () => {
+    router.refresh();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
     const res = await addScheduleAction(formData);
-    if (res.success) window.location.reload();
-    else setError(res.error || 'Lỗi khi xếp lịch');
+    setLoading(false);
+    if (res.success) {
+      resetForm();
+      handleSuccess();
+    } else setError(res.error || 'Lỗi khi xếp lịch');
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('Bạn có chắc muốn xóa lịch này?')) {
+      setLoading(true);
       const res = await deleteScheduleAction(id);
-      if (res.success) window.location.reload();
+      setLoading(false);
+      if (res.success) handleSuccess();
       else alert(res.error || 'Lỗi khi xóa');
     }
   };
 
   return (
-    <div>
-      {isAdminOrOwner && !isAdding && (
-        <button 
-          onClick={() => setIsAdding(true)}
-          style={{ marginBottom: '24px', padding: '8px 16px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-        >
-          + Thêm Lịch Mới
-        </button>
-      )}
+    <div className="flex-col gap-6">
+      <PageHeader 
+        title="Lịch dạy tuần" 
+        description="Quản lý lịch học định kỳ của các lớp trong tuần"
+        primaryAction={isAdminOrOwner && !isAdding ? (
+          <Button 
+            onClick={() => setIsAdding(true)}
+            leftIcon={<span className="material-icons-round">calendar_today</span>}
+          >
+            Thêm Lịch Mới
+          </Button>
+        ) : undefined}
+      />
 
       {isAdding && (
-        <div style={{ marginBottom: '24px', padding: '24px', backgroundColor: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>Thêm Lịch Dạy</h3>
-          {error && <div style={{ color: 'red', marginBottom: '16px' }}>{error}</div>}
-          <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', fontWeight: '500' }}>Lớp học</label>
-              <select required value={formData.class_id} onChange={e => setFormData({...formData, class_id: e.target.value})} style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #d1d5db' }}>
-                <option value="">-- Chọn lớp --</option>
-                {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', fontWeight: '500' }}>Huấn luyện viên</label>
-              <select required value={formData.coach_id} onChange={e => setFormData({...formData, coach_id: e.target.value})} style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #d1d5db' }}>
-                <option value="">-- Chọn HLV --</option>
-                {coaches.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', fontWeight: '500' }}>Địa điểm</label>
-              <select required value={formData.venue_id} onChange={e => setFormData({...formData, venue_id: e.target.value})} style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #d1d5db' }}>
-                <option value="">-- Chọn địa điểm --</option>
-                {venues.map((v: any) => <option key={v.id} value={v.id}>{v.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', fontWeight: '500' }}>Ngày trong tuần</label>
-              <select value={formData.day_of_week} onChange={e => setFormData({...formData, day_of_week: Number(e.target.value)})} style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #d1d5db' }}>
-                {DAYS_OF_WEEK.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', fontWeight: '500' }}>Giờ bắt đầu</label>
-              <input type="time" required value={formData.start_time} onChange={e => setFormData({...formData, start_time: e.target.value})} style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #d1d5db' }} />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', fontWeight: '500' }}>Giờ kết thúc</label>
-              <input type="time" required value={formData.end_time} onChange={e => setFormData({...formData, end_time: e.target.value})} style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #d1d5db' }} />
-            </div>
-            <div style={{ gridColumn: '1 / -1', marginTop: '8px', display: 'flex', gap: '8px' }}>
-              <button type="submit" style={{ padding: '8px 16px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Lưu</button>
-              <button type="button" onClick={resetForm} style={{ padding: '8px 16px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Hủy</button>
-            </div>
-          </form>
-        </div>
+        <Card className="mb-6">
+          <CardContent>
+            <h3 className="font-semibold text-lg mb-4 text-main">Thêm Lịch Dạy</h3>
+            {error && <div className="text-danger mb-4 text-sm">{error}</div>}
+            <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
+              <Select 
+                label="Lớp học *"
+                required 
+                value={formData.class_id} 
+                onChange={e => setFormData({...formData, class_id: e.target.value})}
+                options={[
+                  { value: '', label: '-- Chọn lớp --' },
+                  ...classes.map((c: any) => ({ value: c.id, label: c.name }))
+                ]}
+              />
+              <Select 
+                label="Huấn luyện viên *"
+                required 
+                value={formData.coach_id} 
+                onChange={e => setFormData({...formData, coach_id: e.target.value})}
+                options={[
+                  { value: '', label: '-- Chọn HLV --' },
+                  ...coaches.map((c: any) => ({ value: c.id, label: c.name }))
+                ]}
+              />
+              <Select 
+                label="Địa điểm *"
+                required 
+                value={formData.venue_id} 
+                onChange={e => setFormData({...formData, venue_id: e.target.value})}
+                options={[
+                  { value: '', label: '-- Chọn địa điểm --' },
+                  ...venues.map((v: any) => ({ value: v.id, label: v.name }))
+                ]}
+              />
+              <Select 
+                label="Ngày trong tuần"
+                value={formData.day_of_week.toString()} 
+                onChange={e => setFormData({...formData, day_of_week: Number(e.target.value)})}
+                options={DAYS_OF_WEEK.map(d => ({ value: d.value.toString(), label: d.label }))}
+              />
+              <Input 
+                label="Giờ bắt đầu"
+                type="time" 
+                required 
+                value={formData.start_time} 
+                onChange={e => setFormData({...formData, start_time: e.target.value})} 
+              />
+              <Input 
+                label="Giờ kết thúc"
+                type="time" 
+                required 
+                value={formData.end_time} 
+                onChange={e => setFormData({...formData, end_time: e.target.value})} 
+              />
+              <div className="col-span-full mt-2 flex gap-2">
+                <Button type="submit" isLoading={loading} variant="primary">Lưu</Button>
+                <Button type="button" variant="secondary" onClick={resetForm} disabled={loading}>Hủy</Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '16px' }}>
+      {/* Week Calendar Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 'var(--space-4)', overflowX: 'auto', minWidth: '800px' }}>
         {DAYS_OF_WEEK.map(day => {
           const daySchedules = schedules.filter((s: any) => s.day_of_week === day.value).sort((a: any, b: any) => a.start_time.localeCompare(b.start_time));
           
           return (
-            <div key={day.value} style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
-              <div style={{ backgroundColor: '#f3f4f6', padding: '12px', fontWeight: 'bold', textAlign: 'center', borderBottom: '1px solid #e5e7eb' }}>
+            <div key={day.value} className="bg-surface rounded-md border border-light overflow-hidden flex flex-col h-full min-h-[300px]">
+              <div className="bg-surface-hover p-3 font-semibold text-center border-b border-light text-main">
                 {day.label}
               </div>
-              <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div className="p-3 flex-col gap-3 flex-1">
                 {daySchedules.length === 0 ? (
-                  <div style={{ textAlign: 'center', color: '#9ca3af', fontSize: '12px' }}>Trống</div>
+                  <div className="text-center text-muted text-sm italic py-4">Trống</div>
                 ) : (
                   daySchedules.map((s: any) => (
-                    <div key={s.id} style={{ backgroundColor: '#f0fdf4', padding: '8px', borderRadius: '6px', border: '1px solid #bbf7d0', fontSize: '12px' }}>
-                      <div style={{ fontWeight: 'bold', color: '#166534', marginBottom: '4px' }}>{s.start_time} - {s.end_time}</div>
-                      <div style={{ marginBottom: '2px' }}><strong>Lớp:</strong> {s.venue_classes?.name}</div>
-                      <div style={{ marginBottom: '2px' }}><strong>HLV:</strong> {s.coaches?.name}</div>
-                      <div style={{ marginBottom: '4px' }}><strong>Phòng:</strong> {s.venues?.name}</div>
+                    <div key={s.id} className="bg-primary-light border border-primary text-primary p-2 rounded-md text-xs relative">
+                      <div className="font-bold mb-1">{s.start_time} - {s.end_time}</div>
+                      <div className="mb-1 truncate" title={s.venue_classes?.name}><strong>Lớp:</strong> {s.venue_classes?.name}</div>
+                      <div className="mb-1 truncate" title={s.coaches?.name}><strong>HLV:</strong> {s.coaches?.name}</div>
+                      <div className="mb-1 truncate" title={s.venues?.name}><strong>Phòng:</strong> {s.venues?.name}</div>
                       {isAdminOrOwner && (
-                        <div style={{ textAlign: 'right' }}>
-                          <button onClick={() => handleDelete(s.id)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: '10px' }}>Xóa</button>
+                        <div className="text-right mt-2">
+                          <button 
+                            onClick={() => handleDelete(s.id)} 
+                            disabled={loading}
+                            className="text-danger hover:underline cursor-pointer border-none bg-transparent text-[10px]"
+                          >
+                            Xóa
+                          </button>
                         </div>
                       )}
                     </div>

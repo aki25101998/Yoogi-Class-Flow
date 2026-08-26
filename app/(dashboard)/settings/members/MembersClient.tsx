@@ -1,27 +1,39 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { inviteMemberAction, revokeInvitationAction, removeMemberAction } from './actions';
 import { OrganizationRole } from '@/types/organization';
 
+// UI Components
+import { PageHeader } from '@/app/components/ui/PageHeader';
+import { Button } from '@/app/components/ui/Button';
+import { Input, Select } from '@/app/components/ui/Input';
+import { Card, CardContent } from '@/app/components/ui/Card';
+import { Badge } from '@/app/components/ui/Badge';
+import { Table, Thead, Tbody, Tr, Th, Td } from '@/app/components/ui/Table';
+import { EmptyState } from '@/app/components/ui/EmptyState';
+
 export default function MembersClient({ initialMembers, initialInvitations, currentUserRole, currentUserId }: any) {
+  const router = useRouter();
   const [members, setMembers] = useState(initialMembers);
   const [invitations, setInvitations] = useState(initialInvitations);
   const [isInviting, setIsInviting] = useState(false);
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<OrganizationRole>('assistant_coach');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
     const res = await inviteMemberAction(email, role);
+    setLoading(false);
     if (res.success) {
       setIsInviting(false);
       setEmail('');
-      // In a real app, refresh data here
-      alert('Đã gửi lời mời thành công!');
-      window.location.reload();
+      router.refresh();
     } else {
       setError(res.error || 'Lỗi gửi lời mời');
     }
@@ -29,16 +41,20 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
 
   const handleRevoke = async (id: string) => {
     if (confirm('Bạn có chắc muốn thu hồi lời mời này?')) {
+      setLoading(true);
       await revokeInvitationAction(id);
-      window.location.reload();
+      setLoading(false);
+      router.refresh();
     }
   };
 
   const handleRemove = async (id: string) => {
     if (confirm('Bạn có chắc muốn xóa thành viên này?')) {
+      setLoading(true);
       const res = await removeMemberAction(id);
+      setLoading(false);
       if (res.success) {
-        window.location.reload();
+        router.refresh();
       } else {
         alert(res.error || 'Lỗi khi xóa thành viên');
       }
@@ -48,85 +64,131 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
   const isAdminOrOwner = currentUserRole === 'admin' || currentUserRole === 'owner';
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <h2 style={{ fontSize: '20px', fontWeight: '600' }}>Danh sách thành viên</h2>
-        {isAdminOrOwner && (
-          <button 
+    <div className="flex-col gap-6">
+      <PageHeader 
+        title="Danh sách thành viên" 
+        description="Quản lý thành viên và phân quyền trong trung tâm"
+        primaryAction={isAdminOrOwner && !isInviting ? (
+          <Button 
             onClick={() => setIsInviting(true)}
-            style={{ padding: '8px 16px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+            leftIcon={<span className="material-icons-round">person_add</span>}
           >
-            + Mời thành viên
-          </button>
-        )}
-      </div>
+            Mời thành viên
+          </Button>
+        ) : undefined}
+      />
 
       {isInviting && (
-        <div style={{ marginBottom: '24px', padding: '16px', border: '1px solid #e5e7eb', borderRadius: '8px', backgroundColor: '#f9fafb' }}>
-          <h3 style={{ fontWeight: 'bold', marginBottom: '16px' }}>Gửi lời mời</h3>
-          {error && <div style={{ color: 'red', marginBottom: '12px' }}>{error}</div>}
-          <form onSubmit={handleInvite} style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', fontSize: '14px', marginBottom: '4px' }}>Email</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} required style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '14px', marginBottom: '4px' }}>Vai trò</label>
-              <select value={role} onChange={(e) => setRole(e.target.value as OrganizationRole)} style={{ padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }}>
-                <option value="assistant_coach">Assistant Coach</option>
-                <option value="head_coach">Head Coach</option>
-                {currentUserRole === 'owner' && <option value="admin">Admin</option>}
-              </select>
-            </div>
-            <div>
-              <button type="submit" style={{ padding: '8px 16px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Gửi</button>
-              <button type="button" onClick={() => setIsInviting(false)} style={{ padding: '8px 16px', marginLeft: '8px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Hủy</button>
-            </div>
-          </form>
-        </div>
+        <Card className="mb-6">
+          <CardContent>
+            <h3 className="font-semibold text-lg mb-4 text-main">Gửi lời mời</h3>
+            {error && <div className="text-danger mb-4 text-sm">{error}</div>}
+            <form onSubmit={handleInvite} className="flex flex-col sm:flex-row gap-4 items-end">
+              <div className="flex-1 w-full">
+                <Input 
+                  label="Email"
+                  type="email" 
+                  value={email} 
+                  onChange={e => setEmail(e.target.value)} 
+                  required 
+                />
+              </div>
+              <div className="w-full sm:w-48">
+                <Select 
+                  label="Vai trò"
+                  value={role} 
+                  onChange={(e) => setRole(e.target.value as OrganizationRole)}
+                  options={[
+                    { value: 'assistant_coach', label: 'Assistant Coach' },
+                    { value: 'head_coach', label: 'Head Coach' },
+                    ...(currentUserRole === 'owner' ? [{ value: 'admin', label: 'Admin' }] : [])
+                  ]}
+                />
+              </div>
+              <div className="flex gap-2 w-full sm:w-auto">
+                <Button type="submit" isLoading={loading} variant="primary" className="flex-1 sm:flex-none">
+                  Gửi
+                </Button>
+                <Button type="button" variant="secondary" onClick={() => setIsInviting(false)} disabled={loading} className="flex-1 sm:flex-none">
+                  Hủy
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       )}
 
-      <div style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-          <thead style={{ backgroundColor: '#f3f4f6' }}>
-            <tr>
-              <th style={{ padding: '12px 16px', borderBottom: '1px solid #e5e7eb' }}>Tên</th>
-              <th style={{ padding: '12px 16px', borderBottom: '1px solid #e5e7eb' }}>Email</th>
-              <th style={{ padding: '12px 16px', borderBottom: '1px solid #e5e7eb' }}>Vai trò</th>
-              <th style={{ padding: '12px 16px', borderBottom: '1px solid #e5e7eb' }}>Trạng thái</th>
-              <th style={{ padding: '12px 16px', borderBottom: '1px solid #e5e7eb' }}>Hành động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {members.map((m: any) => (
-              <tr key={m.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                <td style={{ padding: '12px 16px' }}>{m.profiles?.name || '-'}</td>
-                <td style={{ padding: '12px 16px' }}>{m.profiles?.email || '-'}</td>
-                <td style={{ padding: '12px 16px' }}>{m.role}</td>
-                <td style={{ padding: '12px 16px' }}><span style={{ color: '#10b981' }}>● Active</span></td>
-                <td style={{ padding: '12px 16px' }}>
-                  {isAdminOrOwner && m.id !== currentUserId && (
-                    <button onClick={() => handleRemove(m.id)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer' }}>Xóa</button>
-                  )}
-                </td>
-              </tr>
-            ))}
-            {invitations.map((inv: any) => (
-              <tr key={inv.id} style={{ borderBottom: '1px solid #e5e7eb', backgroundColor: '#f9fafb' }}>
-                <td style={{ padding: '12px 16px', color: '#6b7280' }}>-</td>
-                <td style={{ padding: '12px 16px' }}>{inv.email}</td>
-                <td style={{ padding: '12px 16px' }}>{inv.role}</td>
-                <td style={{ padding: '12px 16px' }}><span style={{ color: '#f59e0b' }}>● Pending</span></td>
-                <td style={{ padding: '12px 16px' }}>
-                  {isAdminOrOwner && (
-                    <button onClick={() => handleRevoke(inv.id)} style={{ color: '#f59e0b', background: 'none', border: 'none', cursor: 'pointer' }}>Thu hồi</button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {members.length === 0 && invitations.length === 0 ? (
+        <EmptyState 
+          title="Không có thành viên" 
+          description="Chưa có thành viên nào trong hệ thống." 
+          icon="groups"
+        />
+      ) : (
+        <Card>
+          <div className="overflow-x-auto">
+            <Table>
+              <Thead>
+                <Tr>
+                  <Th>Tên</Th>
+                  <Th>Email</Th>
+                  <Th>Vai trò</Th>
+                  <Th>Trạng thái</Th>
+                  <Th className="text-right">Hành động</Th>
+                </Tr>
+              </Thead>
+              <Tbody>
+                {members.map((m: any) => (
+                  <Tr key={m.id}>
+                    <Td className="font-medium text-main">{m.profiles?.name || '-'}</Td>
+                    <Td>{m.profiles?.email || '-'}</Td>
+                    <Td className="capitalize">{m.role.replace('_', ' ')}</Td>
+                    <Td>
+                      <Badge variant="success">Active</Badge>
+                    </Td>
+                    <Td className="text-right whitespace-nowrap">
+                      {isAdminOrOwner && m.id !== currentUserId && (
+                        <Button 
+                          variant="ghost"
+                          size="sm"
+                          className="text-danger hover:bg-danger-bg"
+                          onClick={() => handleRemove(m.id)}
+                          disabled={loading}
+                        >
+                          Xóa
+                        </Button>
+                      )}
+                    </Td>
+                  </Tr>
+                ))}
+                {invitations.map((inv: any) => (
+                  <Tr key={inv.id} className="bg-surface-hover/50">
+                    <Td className="text-muted">-</Td>
+                    <Td>{inv.email}</Td>
+                    <Td className="capitalize">{inv.role.replace('_', ' ')}</Td>
+                    <Td>
+                      <Badge variant="warning">Pending</Badge>
+                    </Td>
+                    <Td className="text-right whitespace-nowrap">
+                      {isAdminOrOwner && (
+                        <Button 
+                          variant="ghost"
+                          size="sm"
+                          className="text-warning hover:bg-warning-bg"
+                          onClick={() => handleRevoke(inv.id)}
+                          disabled={loading}
+                        >
+                          Thu hồi
+                        </Button>
+                      )}
+                    </Td>
+                  </Tr>
+                ))}
+              </Tbody>
+            </Table>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }

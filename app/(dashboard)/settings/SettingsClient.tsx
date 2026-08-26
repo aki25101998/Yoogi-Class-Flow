@@ -1,9 +1,17 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { updateOrganizationAction } from './actions';
 
+// UI Components
+import { PageHeader } from '@/app/components/ui/PageHeader';
+import { Button } from '@/app/components/ui/Button';
+import { Input } from '@/app/components/ui/Input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
+
 export default function SettingsClient({ organization, currentUserRole }: any) {
+  const router = useRouter();
   const [formData, setFormData] = useState({ 
     name: organization.name, 
     slug: organization.slug 
@@ -27,7 +35,7 @@ export default function SettingsClient({ organization, currentUserRole }: any) {
     if (res.success) {
       setSuccess('Cập nhật thành công!');
       setTimeout(() => setSuccess(''), 3000);
-      window.location.reload();
+      router.refresh();
     } else {
       setError(res.error || 'Lỗi khi cập nhật');
     }
@@ -36,32 +44,34 @@ export default function SettingsClient({ organization, currentUserRole }: any) {
   };
 
   return (
-    <div style={{ maxWidth: '600px' }}>
-      <div style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
-        <div style={{ padding: '16px 24px', borderBottom: '1px solid #e5e7eb', backgroundColor: '#f9fafb' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 'bold' }}>Thông tin tổ chức</h2>
-        </div>
+    <div className="flex-col gap-6 max-w-2xl">
+      <PageHeader 
+        title="Cài đặt Chung" 
+        description="Quản lý thông tin chung của tổ chức/trung tâm"
+      />
+
+      <Card>
+        <CardHeader className="border-b border-light pb-4">
+          <CardTitle>Thông tin tổ chức</CardTitle>
+        </CardHeader>
         
-        <div style={{ padding: '24px' }}>
-          {error && <div style={{ color: 'red', marginBottom: '16px', padding: '12px', backgroundColor: '#fee2e2', borderRadius: '4px' }}>{error}</div>}
-          {success && <div style={{ color: 'green', marginBottom: '16px', padding: '12px', backgroundColor: '#dcfce7', borderRadius: '4px' }}>{success}</div>}
+        <CardContent className="pt-6">
+          {error && <div className="text-danger mb-4 text-sm bg-danger-bg p-3 rounded-md">{error}</div>}
+          {success && <div className="text-success mb-4 text-sm bg-success-bg p-3 rounded-md">{success}</div>}
           
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Tên tổ chức / Trung tâm</label>
-              <input 
-                required 
-                disabled={!isAdminOrOwner}
-                value={formData.name} 
-                onChange={e => setFormData({...formData, name: e.target.value})} 
-                style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #d1d5db' }} 
-              />
-            </div>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+            <Input 
+              label="Tên tổ chức / Trung tâm"
+              required 
+              disabled={!isAdminOrOwner}
+              value={formData.name} 
+              onChange={e => setFormData({...formData, name: e.target.value})} 
+            />
             
             <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>URL tĩnh (Slug)</label>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <span style={{ padding: '10px', backgroundColor: '#f3f4f6', border: '1px solid #d1d5db', borderRight: 'none', borderRadius: '4px 0 0 4px', color: '#6b7280' }}>
+              <label className="block mb-2 text-sm font-medium text-main">URL tĩnh (Slug)</label>
+              <div className="flex items-center">
+                <span className="px-3 py-2 bg-surface-hover border border-light border-r-0 rounded-l-md text-secondary text-sm h-10 flex items-center">
                   https://app.com/
                 </span>
                 <input 
@@ -69,39 +79,41 @@ export default function SettingsClient({ organization, currentUserRole }: any) {
                   disabled={!isAdminOrOwner}
                   value={formData.slug} 
                   onChange={e => setFormData({...formData, slug: e.target.value})} 
-                  style={{ flex: 1, padding: '10px', borderRadius: '0 4px 4px 0', border: '1px solid #d1d5db' }} 
+                  className="flex-1 px-3 py-2 border border-light rounded-r-md text-main focus:outline-none focus:ring-2 focus:ring-primary h-10"
                 />
               </div>
-              <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>Được dùng để truy cập không gian làm việc của bạn.</p>
+              <p className="text-xs text-secondary mt-1">Được dùng để truy cập không gian làm việc của bạn.</p>
             </div>
             
             <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Gói dịch vụ (Subscription)</label>
-              <div style={{ padding: '10px', backgroundColor: '#f9fafb', borderRadius: '4px', border: '1px solid #d1d5db', color: '#4b5563' }}>
-                <span style={{ textTransform: 'capitalize', fontWeight: 'bold' }}>{organization.subscription_plan}</span> - Trạng thái: <span style={{ textTransform: 'capitalize' }}>{organization.subscription_status}</span>
+              <label className="block mb-2 text-sm font-medium text-main">Gói dịch vụ (Subscription)</label>
+              <div className="p-3 bg-surface-hover rounded-md border border-light text-secondary text-sm">
+                <span className="capitalize font-bold text-main">{organization.subscription_plan}</span> - Trạng thái: <span className="capitalize text-main">{organization.subscription_status}</span>
               </div>
             </div>
 
             {isAdminOrOwner && (
-              <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e5e7eb' }}>
-                <button 
+              <div className="mt-4 pt-4 border-t border-light flex justify-end">
+                <Button 
                   type="submit" 
+                  variant="primary"
+                  isLoading={isSubmitting}
                   disabled={isSubmitting}
-                  style={{ padding: '10px 24px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '4px', cursor: isSubmitting ? 'not-allowed' : 'pointer', fontWeight: 'bold', opacity: isSubmitting ? 0.7 : 1 }}
+                  leftIcon={<span className="material-icons-round">save</span>}
                 >
-                  {isSubmitting ? 'Đang lưu...' : 'Lưu Thay Đổi'}
-                </button>
+                  Lưu Thay Đổi
+                </Button>
               </div>
             )}
             
             {!isAdminOrOwner && (
-              <div style={{ marginTop: '16px', padding: '12px', backgroundColor: '#fef3c7', color: '#92400e', borderRadius: '4px', fontSize: '14px' }}>
+              <div className="mt-4 p-3 bg-warning-bg text-warning rounded-md text-sm">
                 Bạn đang xem với tư cách <strong>{currentUserRole}</strong>. Chỉ Admin hoặc Chủ sở hữu mới có thể thay đổi thiết lập này.
               </div>
             )}
           </form>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

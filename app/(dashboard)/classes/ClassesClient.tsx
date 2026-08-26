@@ -1,35 +1,53 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { assignCoachAction, removeCoachAction } from './actions';
 
+// UI Components
+import { PageHeader } from '@/app/components/ui/PageHeader';
+import { Button } from '@/app/components/ui/Button';
+import { Select } from '@/app/components/ui/Input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
+import { EmptyState } from '@/app/components/ui/EmptyState';
+import { Badge } from '@/app/components/ui/Badge';
+
 export default function ClassesClient({ initialClasses, availableCoaches, currentUserRole }: any) {
-  const [classes, setClasses] = useState(initialClasses);
+  const router = useRouter();
   const [selectedClassForAssign, setSelectedClassForAssign] = useState<string | null>(null);
   const [coachId, setCoachId] = useState('');
   const [role, setRole] = useState<'HEAD_COACH' | 'ASSISTANT_COACH'>('ASSISTANT_COACH');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const isAdminOrOwner = currentUserRole === 'admin' || currentUserRole === 'owner';
+
+  const handleSuccess = () => {
+    router.refresh();
+  };
 
   const handleAssign = async (classId: string, e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
     const res = await assignCoachAction(classId, coachId, role);
+    setLoading(false);
     if (res.success) {
       setSelectedClassForAssign(null);
       setCoachId('');
-      window.location.reload(); // simple reload for now
+      handleSuccess();
     } else {
       setError(res.error || 'Lỗi khi phân công');
     }
   };
 
-  const handleRemove = async (classId: string, coachId: string) => {
+  const handleRemove = async (classId: string, assignedCoachId: string) => {
     if (confirm('Bạn có chắc muốn gỡ HLV này khỏi lớp?')) {
-      const res = await removeCoachAction(classId, coachId);
+      setLoading(true);
+      const res = await removeCoachAction(classId, assignedCoachId);
+      setLoading(false);
       if (res.success) {
-        window.location.reload();
+        handleSuccess();
       } else {
         alert(res.error || 'Lỗi khi gỡ');
       }
@@ -37,83 +55,112 @@ export default function ClassesClient({ initialClasses, availableCoaches, curren
   };
 
   return (
-    <div>
-      {classes.map((cls: any) => (
-        <div key={cls.id} style={{ marginBottom: '24px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '16px', backgroundColor: 'white' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-            <div>
-              <h3 style={{ fontSize: '18px', fontWeight: 'bold' }}>{cls.name || 'Lớp chưa đặt tên'}</h3>
-              <p style={{ color: '#6b7280', fontSize: '14px' }}>{cls.start_time} - {cls.end_time}</p>
-            </div>
-            {isAdminOrOwner && (
-              <button 
-                onClick={() => setSelectedClassForAssign(cls.id)}
-                style={{ padding: '6px 12px', border: '1px solid #d1d5db', backgroundColor: 'white', borderRadius: '4px', cursor: 'pointer' }}
-              >
-                + Thêm HLV
-              </button>
-            )}
-          </div>
+    <div className="flex-col gap-6">
+      <PageHeader 
+        title="Quản lý Lớp học" 
+        description="Quản lý danh sách lớp học và phân công huấn luyện viên phụ trách"
+        primaryAction={isAdminOrOwner ? (
+          <Button leftIcon={<span className="material-icons-round">add</span>}>
+            Tạo Lớp (Sắp ra mắt)
+          </Button>
+        ) : undefined}
+      />
 
-          {selectedClassForAssign === cls.id && (
-            <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#f9fafb', borderRadius: '4px', border: '1px solid #e5e7eb' }}>
-              <h4 style={{ fontWeight: 'bold', marginBottom: '8px' }}>Phân công HLV mới</h4>
-              {error && <div style={{ color: 'red', marginBottom: '8px', fontSize: '14px' }}>{error}</div>}
-              <form onSubmit={(e) => handleAssign(cls.id, e)} style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px' }}>Chọn HLV</label>
-                  <select value={coachId} onChange={e => setCoachId(e.target.value)} required style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #d1d5db' }}>
-                    <option value="">-- Chọn --</option>
-                    {availableCoaches.map((c: any) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
+      {initialClasses.length === 0 ? (
+        <EmptyState 
+          title="Chưa có lớp học nào" 
+          description="Chưa có lớp học nào được tạo trong hệ thống. Vui lòng thêm lớp mới để bắt đầu." 
+          icon="class"
+        />
+      ) : (
+        <div className="flex-col gap-6">
+          {initialClasses.map((cls: any) => (
+            <Card key={cls.id}>
+              <CardHeader>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px' }}>Vai trò</label>
-                  <select value={role} onChange={e => setRole(e.target.value as any)} style={{ padding: '6px', borderRadius: '4px', border: '1px solid #d1d5db' }}>
-                    <option value="ASSISTANT_COACH">Assistant Coach</option>
-                    <option value="HEAD_COACH">Head Coach</option>
-                  </select>
+                  <CardTitle>{cls.name || 'Lớp chưa đặt tên'}</CardTitle>
+                  <p className="text-secondary mt-2 text-sm">{cls.start_time} - {cls.end_time}</p>
                 </div>
-                <div>
-                  <button type="submit" style={{ padding: '6px 12px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Lưu</button>
-                  <button type="button" onClick={() => setSelectedClassForAssign(null)} style={{ padding: '6px 12px', marginLeft: '4px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Hủy</button>
-                </div>
-              </form>
-            </div>
-          )}
+                {isAdminOrOwner && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setSelectedClassForAssign(selectedClassForAssign === cls.id ? null : cls.id)}
+                    leftIcon={<span className="material-icons-round">{selectedClassForAssign === cls.id ? 'close' : 'person_add'}</span>}
+                  >
+                    {selectedClassForAssign === cls.id ? 'Hủy' : 'Thêm HLV'}
+                  </Button>
+                )}
+              </CardHeader>
+              
+              <CardContent>
+                {selectedClassForAssign === cls.id && (
+                  <div className="mb-6 p-4 bg-surface-hover rounded-md border border-light">
+                    <h4 className="font-semibold mb-4">Phân công HLV mới</h4>
+                    {error && <div className="text-danger mb-4 text-sm">{error}</div>}
+                    <form onSubmit={(e) => handleAssign(cls.id, e)} className="flex gap-4 items-end flex-wrap">
+                      <div style={{ flex: '1 1 250px' }}>
+                        <Select 
+                          label="Chọn HLV"
+                          value={coachId} 
+                          onChange={e => setCoachId(e.target.value)} 
+                          required
+                          options={[
+                            { value: '', label: '-- Chọn --' },
+                            ...availableCoaches.map((c: any) => ({ value: c.id, label: c.name }))
+                          ]}
+                        />
+                      </div>
+                      <div style={{ flex: '1 1 200px' }}>
+                        <Select 
+                          label="Vai trò"
+                          value={role} 
+                          onChange={e => setRole(e.target.value as any)}
+                          options={[
+                            { value: 'ASSISTANT_COACH', label: 'HLV phụ (Assistant Coach)' },
+                            { value: 'HEAD_COACH', label: 'HLV trưởng (Head Coach)' }
+                          ]}
+                        />
+                      </div>
+                      <Button type="submit" isLoading={loading} variant="primary">Lưu phân công</Button>
+                    </form>
+                  </div>
+                )}
 
-          <div>
-            <h4 style={{ fontSize: '14px', fontWeight: 'bold', color: '#4b5563', marginBottom: '8px' }}>HLV phụ trách</h4>
-            {(!cls.class_coaches || cls.class_coaches.length === 0) ? (
-              <p style={{ color: '#9ca3af', fontSize: '14px', fontStyle: 'italic' }}>Chưa có HLV nào được phân công.</p>
-            ) : (
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                {cls.class_coaches.map((assignment: any) => (
-                  <li key={assignment.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f3f4f6' }}>
-                    <div>
-                      <span style={{ fontWeight: '500' }}>{assignment.coaches?.name}</span>
-                      <span style={{ color: '#6b7280', fontSize: '14px', marginLeft: '8px' }}>— {assignment.role}</span>
-                    </div>
-                    {isAdminOrOwner && (
-                      <button 
-                        onClick={() => handleRemove(cls.id, assignment.coach_id)}
-                        style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px' }}
-                      >
-                        Gỡ
-                      </button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      ))}
-      {classes.length === 0 && (
-        <div style={{ padding: '24px', textAlign: 'center', backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
-          <p style={{ color: '#6b7280' }}>Chưa có lớp học nào trong tổ chức.</p>
+                <div>
+                  <h4 className="text-sm font-semibold text-secondary mb-3 uppercase tracking-wider">HLV phụ trách</h4>
+                  {(!cls.class_coaches || cls.class_coaches.length === 0) ? (
+                    <p className="text-muted text-sm italic">Chưa có HLV nào được phân công.</p>
+                  ) : (
+                    <ul className="flex-col gap-2">
+                      {cls.class_coaches.map((assignment: any) => (
+                        <li key={assignment.id} className="flex justify-between items-center p-3 bg-background rounded-md border border-light">
+                          <div className="flex items-center gap-3">
+                            <span className="font-medium text-main">{assignment.coaches?.name}</span>
+                            <Badge variant={assignment.role === 'HEAD_COACH' ? 'primary' : 'default'}>
+                              {assignment.role === 'HEAD_COACH' ? 'HLV Trưởng' : 'HLV Phụ'}
+                            </Badge>
+                          </div>
+                          {isAdminOrOwner && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="text-danger hover:bg-danger-bg"
+                              onClick={() => handleRemove(cls.id, assignment.coach_id)}
+                              disabled={loading}
+                              leftIcon={<span className="material-icons-round">person_remove</span>}
+                            >
+                              Gỡ
+                            </Button>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
     </div>

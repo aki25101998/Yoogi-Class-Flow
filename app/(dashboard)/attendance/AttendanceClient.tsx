@@ -1,14 +1,25 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { saveAttendanceAction } from './actions';
 
+// UI Components
+import { PageHeader } from '@/app/components/ui/PageHeader';
+import { Button } from '@/app/components/ui/Button';
+import { Input, Select } from '@/app/components/ui/Input';
+import { Card, CardContent } from '@/app/components/ui/Card';
+import { EmptyState } from '@/app/components/ui/EmptyState';
+import { Table, Thead, Tbody, Tr, Th, Td } from '@/app/components/ui/Table';
+
 export default function AttendanceClient({ classes, allStudentAttendance }: any) {
+  const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedClassId, setSelectedClassId] = useState('');
   const [attendanceRecords, setAttendanceRecords] = useState<any[]>([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const selectedClass = classes.find((c: any) => c.id === selectedClassId);
 
@@ -49,95 +60,122 @@ export default function AttendanceClient({ classes, allStudentAttendance }: any)
     setSuccess('');
     if (!selectedClassId || !selectedDate) return;
     
+    setLoading(true);
     const res = await saveAttendanceAction(selectedClassId, selectedDate, attendanceRecords);
+    setLoading(false);
     if (res.success) {
       setSuccess('Đã lưu điểm danh!');
       setTimeout(() => setSuccess(''), 3000);
+      router.refresh();
     } else {
       setError(res.error || 'Lỗi khi lưu điểm danh');
     }
   };
 
   return (
-    <div>
-      <div style={{ marginBottom: '24px', padding: '24px', backgroundColor: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb', display: 'flex', gap: '16px', alignItems: 'flex-end' }}>
-        <div style={{ flex: 1 }}>
-          <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', fontWeight: '500' }}>Ngày</label>
-          <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #d1d5db' }} />
-        </div>
-        <div style={{ flex: 1 }}>
-          <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', fontWeight: '500' }}>Lớp học</label>
-          <select value={selectedClassId} onChange={e => setSelectedClassId(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #d1d5db' }}>
-            <option value="">-- Chọn lớp --</option>
-            {classes.map((c: any) => (
-              <option key={c.id} value={c.id}>{c.name} ({c.start_time}-{c.end_time})</option>
-            ))}
-          </select>
-        </div>
-      </div>
+    <div className="flex-col gap-6">
+      <PageHeader 
+        title="Điểm danh" 
+        description="Quản lý điểm danh hàng ngày của các lớp học"
+      />
 
-      {error && <div style={{ color: 'red', marginBottom: '16px' }}>{error}</div>}
-      {success && <div style={{ color: 'green', marginBottom: '16px' }}>{success}</div>}
+      <Card>
+        <CardContent className="flex flex-col sm:flex-row gap-4 items-end">
+          <div className="flex-1 w-full">
+            <Input 
+              label="Ngày"
+              type="date" 
+              value={selectedDate} 
+              onChange={e => setSelectedDate(e.target.value)} 
+            />
+          </div>
+          <div className="flex-1 w-full">
+            <Select 
+              label="Lớp học"
+              value={selectedClassId} 
+              onChange={e => setSelectedClassId(e.target.value)}
+              options={[
+                { value: '', label: '-- Chọn lớp --' },
+                ...classes.map((c: any) => ({ value: c.id, label: `${c.name} (${c.start_time}-${c.end_time})` }))
+              ]}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {error && <div className="text-danger text-sm font-medium">{error}</div>}
+      {success && <div className="text-success text-sm font-medium">{success}</div>}
 
       {selectedClassId ? (
-        <div style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead style={{ backgroundColor: '#f3f4f6' }}>
-              <tr>
-                <th style={{ padding: '12px 16px', fontWeight: '600', borderBottom: '1px solid #e5e7eb' }}>Học viên</th>
-                <th style={{ padding: '12px 16px', fontWeight: '600', borderBottom: '1px solid #e5e7eb' }}>Trạng thái</th>
-                <th style={{ padding: '12px 16px', fontWeight: '600', borderBottom: '1px solid #e5e7eb' }}>Ghi chú</th>
-              </tr>
-            </thead>
-            <tbody>
-              {selectedClass?.class_students?.length === 0 ? (
-                <tr>
-                  <td colSpan={3} style={{ padding: '24px', textAlign: 'center', color: '#6b7280' }}>Lớp chưa có học viên.</td>
-                </tr>
-              ) : (
-                selectedClass?.class_students?.map((cs: any) => {
-                  const record = attendanceRecords.find(r => r.student_id === cs.student_id);
-                  if (!record) return null;
-                  
-                  return (
-                    <tr key={cs.student_id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                      <td style={{ padding: '12px 16px', fontWeight: '500' }}>{cs.students?.name}</td>
-                      <td style={{ padding: '12px 16px' }}>
-                        <select 
-                          value={record.status} 
-                          onChange={(e) => handleStatusChange(cs.student_id, e.target.value)}
-                          style={{ padding: '6px', borderRadius: '4px', border: '1px solid #d1d5db' }}
-                        >
-                          <option value="present">Có mặt</option>
-                          <option value="absent">Vắng</option>
-                          <option value="excused">Có phép</option>
-                        </select>
-                      </td>
-                      <td style={{ padding: '12px 16px' }}>
-                        <input 
-                          type="text" 
-                          placeholder="Ghi chú..." 
-                          value={record.note} 
-                          onChange={(e) => handleNoteChange(cs.student_id, e.target.value)}
-                          style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #d1d5db' }}
-                        />
-                      </td>
-                    </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
-          <div style={{ padding: '16px', backgroundColor: '#f9fafb', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid #e5e7eb' }}>
-            <button onClick={handleSave} disabled={selectedClass?.class_students?.length === 0} style={{ padding: '8px 24px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
-              Lưu Điểm Danh
-            </button>
+        <Card>
+          <div className="overflow-x-auto">
+            <Table>
+              <Thead>
+                <Tr>
+                  <Th>Học viên</Th>
+                  <Th>Trạng thái</Th>
+                  <Th>Ghi chú</Th>
+                </Tr>
+              </Thead>
+              <Tbody>
+                {selectedClass?.class_students?.length === 0 ? (
+                  <Tr>
+                    <Td colSpan={3} className="text-center text-muted italic py-8">
+                      Lớp chưa có học viên.
+                    </Td>
+                  </Tr>
+                ) : (
+                  selectedClass?.class_students?.map((cs: any) => {
+                    const record = attendanceRecords.find(r => r.student_id === cs.student_id);
+                    if (!record) return null;
+                    
+                    return (
+                      <Tr key={cs.student_id}>
+                        <Td className="font-medium text-main">{cs.students?.name}</Td>
+                        <Td>
+                          <Select 
+                            value={record.status} 
+                            onChange={(e) => handleStatusChange(cs.student_id, e.target.value)}
+                            options={[
+                              { value: 'present', label: 'Có mặt' },
+                              { value: 'absent', label: 'Vắng' },
+                              { value: 'excused', label: 'Có phép' }
+                            ]}
+                          />
+                        </Td>
+                        <Td>
+                          <Input 
+                            type="text" 
+                            placeholder="Ghi chú..." 
+                            value={record.note} 
+                            onChange={(e) => handleNoteChange(cs.student_id, e.target.value)}
+                          />
+                        </Td>
+                      </Tr>
+                    )
+                  })
+                )}
+              </Tbody>
+            </Table>
           </div>
-        </div>
+          <div className="p-4 bg-surface-hover border-t border-light flex justify-end">
+            <Button 
+              onClick={handleSave} 
+              disabled={selectedClass?.class_students?.length === 0 || loading} 
+              isLoading={loading}
+              variant="primary"
+              leftIcon={<span className="material-icons-round">save</span>}
+            >
+              Lưu Điểm Danh
+            </Button>
+          </div>
+        </Card>
       ) : (
-        <div style={{ padding: '48px 24px', textAlign: 'center', color: '#6b7280', backgroundColor: '#f9fafb', borderRadius: '8px', border: '1px dashed #d1d5db' }}>
-          Vui lòng chọn ngày và lớp học để điểm danh.
-        </div>
+        <EmptyState 
+          title="Chưa chọn lớp" 
+          description="Vui lòng chọn ngày và lớp học để tiến hành điểm danh." 
+          icon="event_available"
+        />
       )}
     </div>
   );

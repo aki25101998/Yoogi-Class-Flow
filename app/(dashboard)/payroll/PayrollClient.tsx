@@ -1,11 +1,22 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { approveSalarySessionAction, payCoachSalaryAction } from './actions';
 
+// UI Components
+import { PageHeader } from '@/app/components/ui/PageHeader';
+import { Button } from '@/app/components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
+import { EmptyState } from '@/app/components/ui/EmptyState';
+import { Badge } from '@/app/components/ui/Badge';
+import { Table, Thead, Tbody, Tr, Th, Td } from '@/app/components/ui/Table';
+
 export default function PayrollClient({ coaches, salaryConfigs, salarySessions, currentUserRole }: any) {
+  const router = useRouter();
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
   const isAdminOrOwner = currentUserRole === 'admin' || currentUserRole === 'owner';
 
   // Nhóm các session theo coach
@@ -34,11 +45,13 @@ export default function PayrollClient({ coaches, salaryConfigs, salarySessions, 
 
   const handleApprove = async (sessionId: string, amount: number) => {
     setError('');
+    setLoading(true);
     const res = await approveSalarySessionAction(sessionId, amount);
+    setLoading(false);
     if (res.success) {
       setSuccess('Đã duyệt buổi dạy');
       setTimeout(() => setSuccess(''), 2000);
-      window.location.reload();
+      router.refresh();
     } else {
       setError(res.error || 'Lỗi khi duyệt');
     }
@@ -48,96 +61,113 @@ export default function PayrollClient({ coaches, salaryConfigs, salarySessions, 
     if (sessionIds.length === 0) return;
     if (confirm(`Xác nhận thanh toán ${amount.toLocaleString('vi-VN')} đ cho HLV này?`)) {
       setError('');
+      setLoading(true);
       const res = await payCoachSalaryAction(coachId, amount, sessionIds);
-      if (res.success) window.location.reload();
+      setLoading(false);
+      if (res.success) router.refresh();
       else setError(res.error || 'Lỗi khi thanh toán');
     }
   };
 
   return (
-    <div>
-      {error && <div style={{ color: 'red', marginBottom: '16px' }}>{error}</div>}
-      {success && <div style={{ color: 'green', marginBottom: '16px' }}>{success}</div>}
+    <div className="flex-col gap-6">
+      <PageHeader 
+        title="Quản lý Lương (Payroll)" 
+        description="Quản lý tính lương và thanh toán cho các huấn luyện viên"
+      />
 
-      <div style={{ display: 'grid', gap: '24px' }}>
+      {error && <div className="text-danger mb-4 text-sm font-medium">{error}</div>}
+      {success && <div className="text-success mb-4 text-sm font-medium">{success}</div>}
+
+      <div className="grid gap-6">
         {payrollData.map((data: any) => (
-          <div key={data.coach.id} style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e5e7eb', padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', borderBottom: '1px solid #e5e7eb', paddingBottom: '16px' }}>
+          <Card key={data.coach.id}>
+            <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-light pb-4">
               <div>
-                <h3 style={{ fontSize: '20px', fontWeight: 'bold' }}>{data.coach.name}</h3>
-                <p style={{ color: '#6b7280', fontSize: '14px' }}>Lương mặc định: {Number(data.config.per_session).toLocaleString('vi-VN')} đ/buổi</p>
+                <CardTitle className="text-xl">{data.coach.name}</CardTitle>
+                <div className="text-secondary text-sm mt-1">Lương mặc định: {Number(data.config.per_session).toLocaleString('vi-VN')} đ/buổi</div>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '14px', color: '#6b7280' }}>Cần thanh toán</div>
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ef4444', marginBottom: '8px' }}>
+              <div className="text-left sm:text-right">
+                <div className="text-sm text-secondary">Cần thanh toán</div>
+                <div className="text-2xl font-bold text-danger mb-2">
                   {data.approvedAmount.toLocaleString('vi-VN')} đ
                 </div>
                 {isAdminOrOwner && data.approvedSessions.length > 0 && (
-                  <button 
+                  <Button 
                     onClick={() => handlePay(data.coach.id, data.approvedAmount, data.approvedSessions.map((s:any)=>s.id))}
-                    style={{ padding: '6px 16px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+                    variant="primary"
+                    className="bg-success hover:bg-success-text text-white border-none"
+                    disabled={loading}
+                    isLoading={loading}
+                    leftIcon={<span className="material-icons-round">payments</span>}
                   >
                     Thanh toán
-                  </button>
+                  </Button>
                 )}
               </div>
-            </div>
-
-            <div>
-              <h4 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '12px' }}>Chi tiết buổi dạy</h4>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <h4 className="font-semibold text-main mb-3 text-base">Chi tiết buổi dạy</h4>
               {data.sessions.length === 0 ? (
-                <p style={{ color: '#6b7280', fontSize: '14px' }}>Chưa có dữ liệu điểm danh.</p>
+                <p className="text-muted text-sm italic">Chưa có dữ liệu điểm danh.</p>
               ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                  <thead style={{ backgroundColor: '#f9fafb' }}>
-                    <tr>
-                      <th style={{ padding: '8px 12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Ngày</th>
-                      <th style={{ padding: '8px 12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Lớp</th>
-                      <th style={{ padding: '8px 12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Trạng thái</th>
-                      <th style={{ padding: '8px 12px', textAlign: 'right', borderBottom: '1px solid #e5e7eb' }}>Lương tính</th>
-                      {isAdminOrOwner && <th style={{ padding: '8px 12px', textAlign: 'right', borderBottom: '1px solid #e5e7eb' }}>Thao tác</th>}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.sessions.map((s: any) => {
-                      const amountToApprove = s.calculated_salary > 0 ? s.calculated_salary : data.config.per_session;
-                      return (
-                        <tr key={s.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                          <td style={{ padding: '8px 12px' }}>{s.date}</td>
-                          <td style={{ padding: '8px 12px' }}>{s.venue_classes?.name || '---'}</td>
-                          <td style={{ padding: '8px 12px' }}>
-                            {s.status === 'checked_in' && <span style={{ color: '#d97706' }}>Chờ duyệt</span>}
-                            {s.status === 'approved' && <span style={{ color: '#2563eb' }}>Đã duyệt</span>}
-                            {s.status === 'paid' && <span style={{ color: '#16a34a' }}>Đã thanh toán</span>}
-                          </td>
-                          <td style={{ padding: '8px 12px', textAlign: 'right' }}>
-                            {Number(s.calculated_salary || 0).toLocaleString('vi-VN')} đ
-                          </td>
-                          {isAdminOrOwner && (
-                            <td style={{ padding: '8px 12px', textAlign: 'right' }}>
-                              {s.status === 'checked_in' && (
-                                <button 
-                                  onClick={() => handleApprove(s.id, amountToApprove)}
-                                  style={{ padding: '4px 8px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
-                                >
-                                  Duyệt {Number(amountToApprove).toLocaleString('vi-VN')} đ
-                                </button>
-                              )}
-                            </td>
-                          )}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <Thead>
+                      <Tr>
+                        <Th>Ngày</Th>
+                        <Th>Lớp</Th>
+                        <Th>Trạng thái</Th>
+                        <Th className="text-right">Lương tính</Th>
+                        {isAdminOrOwner && <Th className="text-right">Thao tác</Th>}
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {data.sessions.map((s: any) => {
+                        const amountToApprove = s.calculated_salary > 0 ? s.calculated_salary : data.config.per_session;
+                        return (
+                          <Tr key={s.id}>
+                            <Td>{s.date}</Td>
+                            <Td>{s.venue_classes?.name || '---'}</Td>
+                            <Td>
+                              {s.status === 'checked_in' && <Badge variant="warning">Chờ duyệt</Badge>}
+                              {s.status === 'approved' && <Badge variant="primary">Đã duyệt</Badge>}
+                              {s.status === 'paid' && <Badge variant="success">Đã thanh toán</Badge>}
+                            </Td>
+                            <Td className="text-right font-medium">
+                              {Number(s.calculated_salary || 0).toLocaleString('vi-VN')} đ
+                            </Td>
+                            {isAdminOrOwner && (
+                              <Td className="text-right">
+                                {s.status === 'checked_in' && (
+                                  <Button 
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleApprove(s.id, amountToApprove)}
+                                    disabled={loading}
+                                    isLoading={loading}
+                                  >
+                                    Duyệt {Number(amountToApprove).toLocaleString('vi-VN')} đ
+                                  </Button>
+                                )}
+                              </Td>
+                            )}
+                          </Tr>
+                        );
+                      })}
+                    </Tbody>
+                  </Table>
+                </div>
               )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         ))}
         {payrollData.length === 0 && (
-          <div style={{ padding: '24px', textAlign: 'center', backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
-            <p style={{ color: '#6b7280' }}>Chưa có huấn luyện viên nào.</p>
-          </div>
+          <EmptyState 
+            title="Chưa có HLV" 
+            description="Chưa có huấn luyện viên nào trong hệ thống để tính lương." 
+            icon="group"
+          />
         )}
       </div>
     </div>

@@ -18,7 +18,6 @@ export default function RootLayout({
     <html lang="vi">
       <head>
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
-        <link rel="stylesheet" href="/css/style.css" />
       </head>
       <body className={inter.className}>
         <div id="app">

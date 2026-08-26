@@ -1,10 +1,19 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { addStudentAction, updateStudentAction, deleteStudentAction, enrollStudentAction, unenrollStudentAction } from './actions';
 
+// UI Components
+import { PageHeader } from '@/app/components/ui/PageHeader';
+import { Button } from '@/app/components/ui/Button';
+import { Input, Select } from '@/app/components/ui/Input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
+import { EmptyState } from '@/app/components/ui/EmptyState';
+import { Badge } from '@/app/components/ui/Badge';
+
 export default function StudentsClient({ initialStudents, availableClasses, currentUserRole }: any) {
-  const [students, setStudents] = useState(initialStudents);
+  const router = useRouter();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', phone: '', parent_name: '', parent_phone: '', dob: '', status: 'active' });
@@ -12,6 +21,7 @@ export default function StudentsClient({ initialStudents, availableClasses, curr
   const [selectedStudentForEnroll, setSelectedStudentForEnroll] = useState<string | null>(null);
   const [classId, setClassId] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const isAdminOrOwner = currentUserRole === 'admin' || currentUserRole === 'owner';
 
@@ -22,25 +32,38 @@ export default function StudentsClient({ initialStudents, availableClasses, curr
     setError('');
   };
 
+  const handleSuccess = () => {
+    router.refresh();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
     
     if (editingId) {
       const res = await updateStudentAction(editingId, formData);
-      if (res.success) window.location.reload();
-      else setError(res.error || 'Lỗi khi cập nhật học viên');
+      setLoading(false);
+      if (res.success) {
+        resetForm();
+        handleSuccess();
+      } else setError(res.error || 'Lỗi khi cập nhật học viên');
     } else {
       const res = await addStudentAction(formData);
-      if (res.success) window.location.reload();
-      else setError(res.error || 'Lỗi khi thêm học viên');
+      setLoading(false);
+      if (res.success) {
+        resetForm();
+        handleSuccess();
+      } else setError(res.error || 'Lỗi khi thêm học viên');
     }
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('Bạn có chắc muốn xóa học viên này?')) {
+      setLoading(true);
       const res = await deleteStudentAction(id);
-      if (res.success) window.location.reload();
+      setLoading(false);
+      if (res.success) handleSuccess();
       else alert(res.error || 'Lỗi khi xóa');
     }
   };
@@ -48,166 +71,207 @@ export default function StudentsClient({ initialStudents, availableClasses, curr
   const handleEnroll = async (studentId: string, e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
     const res = await enrollStudentAction(studentId, classId);
+    setLoading(false);
     if (res.success) {
       setSelectedStudentForEnroll(null);
       setClassId('');
-      window.location.reload();
+      handleSuccess();
     } else {
       setError(res.error || 'Lỗi khi xếp lớp');
     }
   };
 
-  const handleUnenroll = async (studentId: string, classId: string) => {
+  const handleUnenroll = async (studentId: string, classToUnenrollId: string) => {
     if (confirm('Bạn có chắc muốn gỡ học viên khỏi lớp này?')) {
-      const res = await unenrollStudentAction(studentId, classId);
-      if (res.success) window.location.reload();
+      setLoading(true);
+      const res = await unenrollStudentAction(studentId, classToUnenrollId);
+      setLoading(false);
+      if (res.success) handleSuccess();
       else alert(res.error || 'Lỗi khi gỡ khỏi lớp');
     }
   };
 
   return (
-    <div>
-      {isAdminOrOwner && !isAdding && !editingId && (
-        <button 
-          onClick={() => setIsAdding(true)}
-          style={{ marginBottom: '24px', padding: '8px 16px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-        >
-          + Thêm Học Viên
-        </button>
-      )}
+    <div className="flex-col gap-6">
+      <PageHeader 
+        title="Quản lý Học viên" 
+        description="Quản lý danh sách học viên, thông tin liên hệ và xếp lớp"
+        primaryAction={isAdminOrOwner && !isAdding && !editingId ? (
+          <Button 
+            onClick={() => setIsAdding(true)}
+            leftIcon={<span className="material-icons-round">person_add</span>}
+          >
+            Thêm Học Viên
+          </Button>
+        ) : undefined}
+      />
 
       {(isAdding || editingId) && (
-        <div style={{ marginBottom: '24px', padding: '24px', backgroundColor: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>
-            {editingId ? 'Sửa thông tin học viên' : 'Thêm học viên mới'}
-          </h3>
-          {error && <div style={{ color: 'red', marginBottom: '16px' }}>{error}</div>}
-          <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', fontWeight: '500' }}>Tên học viên *</label>
-              <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #d1d5db' }} />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', fontWeight: '500' }}>Số điện thoại</label>
-              <input value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #d1d5db' }} />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', fontWeight: '500' }}>Tên phụ huynh</label>
-              <input value={formData.parent_name} onChange={e => setFormData({...formData, parent_name: e.target.value})} style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #d1d5db' }} />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', fontWeight: '500' }}>SĐT phụ huynh</label>
-              <input value={formData.parent_phone} onChange={e => setFormData({...formData, parent_phone: e.target.value})} style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #d1d5db' }} />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', fontWeight: '500' }}>Ngày sinh (YYYY-MM-DD)</label>
-              <input type="date" value={formData.dob} onChange={e => setFormData({...formData, dob: e.target.value})} style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #d1d5db' }} />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', fontWeight: '500' }}>Trạng thái</label>
-              <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #d1d5db' }}>
-                <option value="active">Đang học</option>
-                <option value="inactive">Đã nghỉ</option>
-              </select>
-            </div>
-            <div style={{ gridColumn: '1 / -1', marginTop: '8px', display: 'flex', gap: '8px' }}>
-              <button type="submit" style={{ padding: '8px 16px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Lưu</button>
-              <button type="button" onClick={resetForm} style={{ padding: '8px 16px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Hủy</button>
-            </div>
-          </form>
-        </div>
+        <Card className="mb-6">
+          <CardContent>
+            <h3 className="font-semibold text-lg mb-4 text-main">
+              {editingId ? 'Sửa thông tin học viên' : 'Thêm học viên mới'}
+            </h3>
+            {error && <div className="text-danger mb-4 text-sm">{error}</div>}
+            <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
+              <Input 
+                label="Tới học viên *" 
+                required 
+                value={formData.name} 
+                onChange={e => setFormData({...formData, name: e.target.value})} 
+              />
+              <Input 
+                label="Số điện thoại" 
+                value={formData.phone} 
+                onChange={e => setFormData({...formData, phone: e.target.value})} 
+              />
+              <Input 
+                label="Tên phụ huynh" 
+                value={formData.parent_name} 
+                onChange={e => setFormData({...formData, parent_name: e.target.value})} 
+              />
+              <Input 
+                label="SĐT phụ huynh" 
+                value={formData.parent_phone} 
+                onChange={e => setFormData({...formData, parent_phone: e.target.value})} 
+              />
+              <Input 
+                label="Ngày sinh" 
+                type="date" 
+                value={formData.dob} 
+                onChange={e => setFormData({...formData, dob: e.target.value})} 
+              />
+              <Select 
+                label="Trạng thái" 
+                value={formData.status} 
+                onChange={e => setFormData({...formData, status: e.target.value})}
+                options={[
+                  { value: 'active', label: 'Đang học' },
+                  { value: 'inactive', label: 'Đã nghỉ' }
+                ]}
+              />
+              <div className="col-span-full mt-2 flex gap-2">
+                <Button type="submit" isLoading={loading} variant="primary">Lưu</Button>
+                <Button type="button" variant="secondary" onClick={resetForm} disabled={loading}>Hủy</Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       )}
 
-      <div>
-        {students.map((student: any) => (
-          <div key={student.id} style={{ marginBottom: '24px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '16px', backgroundColor: 'white' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-              <div>
-                <h3 style={{ fontSize: '18px', fontWeight: 'bold' }}>{student.name}</h3>
-                <p style={{ color: '#6b7280', fontSize: '14px' }}>SĐT: {student.phone || 'N/A'} | Phụ huynh: {student.parent_name || 'N/A'} ({student.parent_phone || 'N/A'})</p>
-                <span style={{ display: 'inline-block', marginTop: '4px', padding: '2px 8px', borderRadius: '9999px', fontSize: '12px', backgroundColor: student.status === 'active' ? '#dcfce7' : '#f3f4f6', color: student.status === 'active' ? '#166534' : '#4b5563' }}>
-                  {student.status === 'active' ? 'Đang học' : 'Đã nghỉ'}
-                </span>
-              </div>
-              {isAdminOrOwner && (
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button 
-                    onClick={() => { setEditingId(student.id); setFormData(student); setIsAdding(false); }}
-                    style={{ padding: '6px 12px', border: '1px solid #d1d5db', backgroundColor: 'white', borderRadius: '4px', cursor: 'pointer' }}
-                  >
-                    Sửa
-                  </button>
-                  <button 
-                    onClick={() => handleDelete(student.id)}
-                    style={{ padding: '6px 12px', border: '1px solid #ef4444', color: '#ef4444', backgroundColor: 'white', borderRadius: '4px', cursor: 'pointer' }}
-                  >
-                    Xóa
-                  </button>
-                  <button 
-                    onClick={() => setSelectedStudentForEnroll(student.id)}
-                    style={{ padding: '6px 12px', border: '1px solid #d1d5db', backgroundColor: '#f3f4f6', borderRadius: '4px', cursor: 'pointer' }}
-                  >
-                    + Xếp Lớp
-                  </button>
+      {initialStudents.length === 0 ? (
+        <EmptyState 
+          title="Chưa có học viên nào" 
+          description="Bạn chưa thêm học viên nào vào trung tâm. Hãy bấm nút Thêm Học Viên để tạo mới." 
+          icon="face"
+        />
+      ) : (
+        <div className="flex-col gap-6">
+          {initialStudents.map((student: any) => (
+            <Card key={student.id}>
+              <CardHeader className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                <div>
+                  <CardTitle>{student.name}</CardTitle>
+                  <p className="text-secondary text-sm mt-1">
+                    SĐT: {student.phone || 'N/A'} | Phụ huynh: {student.parent_name || 'N/A'} ({student.parent_phone || 'N/A'})
+                  </p>
+                  <div className="mt-2">
+                    <Badge variant={student.status === 'active' ? 'success' : 'default'}>
+                      {student.status === 'active' ? 'Đang học' : 'Đã nghỉ'}
+                    </Badge>
+                  </div>
                 </div>
-              )}
-            </div>
-
-            {selectedStudentForEnroll === student.id && (
-              <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#f9fafb', borderRadius: '4px', border: '1px solid #e5e7eb' }}>
-                <h4 style={{ fontWeight: 'bold', marginBottom: '8px' }}>Xếp vào lớp mới</h4>
-                <form onSubmit={(e) => handleEnroll(student.id, e)} style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px' }}>Chọn lớp</label>
-                    <select value={classId} onChange={e => setClassId(e.target.value)} required style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #d1d5db' }}>
-                      <option value="">-- Chọn --</option>
-                      {availableClasses.map((c: any) => (
-                        <option key={c.id} value={c.id}>{c.name} ({c.start_time}-{c.end_time})</option>
-                      ))}
-                    </select>
+                {isAdminOrOwner && (
+                  <div className="flex gap-2 flex-wrap">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => { setEditingId(student.id); setFormData(student); setIsAdding(false); }}
+                      leftIcon={<span className="material-icons-round">edit</span>}
+                    >
+                      Sửa
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="text-danger border-danger hover:bg-danger-bg"
+                      onClick={() => handleDelete(student.id)}
+                      disabled={loading}
+                      leftIcon={<span className="material-icons-round">delete</span>}
+                    >
+                      Xóa
+                    </Button>
+                    <Button 
+                      variant="secondary" 
+                      size="sm"
+                      onClick={() => setSelectedStudentForEnroll(selectedStudentForEnroll === student.id ? null : student.id)}
+                      leftIcon={<span className="material-icons-round">{selectedStudentForEnroll === student.id ? 'close' : 'class'}</span>}
+                    >
+                      {selectedStudentForEnroll === student.id ? 'Hủy' : 'Xếp Lớp'}
+                    </Button>
                   </div>
-                  <div>
-                    <button type="submit" style={{ padding: '6px 12px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Lưu</button>
-                    <button type="button" onClick={() => setSelectedStudentForEnroll(null)} style={{ padding: '6px 12px', marginLeft: '4px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Hủy</button>
-                  </div>
-                </form>
-              </div>
-            )}
+                )}
+              </CardHeader>
 
-            <div>
-              <h4 style={{ fontSize: '14px', fontWeight: 'bold', color: '#4b5563', marginBottom: '8px' }}>Các lớp đang học</h4>
-              {(!student.class_students || student.class_students.length === 0) ? (
-                <p style={{ color: '#9ca3af', fontSize: '14px', fontStyle: 'italic' }}>Chưa được xếp vào lớp nào.</p>
-              ) : (
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                  {student.class_students.map((enrollment: any) => (
-                    <li key={enrollment.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f3f4f6' }}>
-                      <div>
-                        <span style={{ fontWeight: '500' }}>{enrollment.venue_classes?.name}</span>
-                        <span style={{ color: '#6b7280', fontSize: '14px', marginLeft: '8px' }}>— {enrollment.venue_classes?.start_time} - {enrollment.venue_classes?.end_time}</span>
+              <CardContent>
+                {selectedStudentForEnroll === student.id && (
+                  <div className="mb-6 p-4 bg-surface-hover rounded-md border border-light">
+                    <h4 className="font-semibold mb-4">Xếp vào lớp mới</h4>
+                    {error && <div className="text-danger mb-4 text-sm">{error}</div>}
+                    <form onSubmit={(e) => handleEnroll(student.id, e)} className="flex gap-4 items-end flex-wrap">
+                      <div style={{ flex: '1 1 250px' }}>
+                        <Select 
+                          label="Chọn lớp"
+                          value={classId} 
+                          onChange={e => setClassId(e.target.value)} 
+                          required
+                          options={[
+                            { value: '', label: '-- Chọn --' },
+                            ...availableClasses.map((c: any) => ({ value: c.id, label: `${c.name} (${c.start_time}-${c.end_time})` }))
+                          ]}
+                        />
                       </div>
-                      {isAdminOrOwner && (
-                        <button 
-                          onClick={() => handleUnenroll(student.id, enrollment.class_id)}
-                          style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px' }}
-                        >
-                          Gỡ khỏi lớp
-                        </button>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
-        ))}
-        {students.length === 0 && (
-          <div style={{ padding: '24px', textAlign: 'center', backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
-            <p style={{ color: '#6b7280' }}>Chưa có học viên nào.</p>
-          </div>
-        )}
-      </div>
+                      <Button type="submit" isLoading={loading} variant="primary">Lưu</Button>
+                    </form>
+                  </div>
+                )}
+
+                <div>
+                  <h4 className="text-sm font-semibold text-secondary mb-3 uppercase tracking-wider">Các lớp đang học</h4>
+                  {(!student.class_students || student.class_students.length === 0) ? (
+                    <p className="text-muted text-sm italic">Chưa được xếp vào lớp nào.</p>
+                  ) : (
+                    <ul className="flex-col gap-2">
+                      {student.class_students.map((enrollment: any) => (
+                        <li key={enrollment.id} className="flex justify-between items-center p-3 bg-background rounded-md border border-light">
+                          <div className="flex items-center gap-3">
+                            <span className="font-medium text-main">{enrollment.venue_classes?.name}</span>
+                            <span className="text-secondary text-sm">— {enrollment.venue_classes?.start_time} - {enrollment.venue_classes?.end_time}</span>
+                          </div>
+                          {isAdminOrOwner && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="text-danger hover:bg-danger-bg"
+                              onClick={() => handleUnenroll(student.id, enrollment.class_id)}
+                              disabled={loading}
+                              leftIcon={<span className="material-icons-round">remove_circle_outline</span>}
+                            >
+                              Gỡ
+                            </Button>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
