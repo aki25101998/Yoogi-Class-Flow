@@ -93,11 +93,10 @@ export default function PayrollClient({ coaches, salaryConfigs, salarySessions, 
                   {data.approvedAmount.toLocaleString('vi-VN')} đ
                 </div>
                 {isAdminOrOwner && data.approvedSessions.length > 0 && (
-                  <Button 
-                    onClick={() => handlePay(data.coach.id, data.approvedAmount, data.approvedSessions.map((s:any)=>s.id))}
-                    variant="primary"
-                    className="bg-success hover:bg-success-text text-white border-none"
-                    disabled={loading}
+                    <Button 
+                      onClick={() => handlePay(data.coach.id, data.approvedAmount, data.approvedSessions.map((s:any)=>s.id))}
+                      variant="success"
+                      disabled={loading}
                     isLoading={loading}
                     leftIcon={<span className="material-icons-round">payments</span>}
                   >

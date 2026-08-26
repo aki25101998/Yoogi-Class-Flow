@@ -166,7 +166,7 @@ export default function LoginPage() {
     <Suspense fallback={
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', width: '100vw' }}>
         <div className="loading-spinner" style={{ width: "40px", height: "40px", display: "inline-block" }}>
-          <div className="spinner-ring" style={{ borderWidth: "3px", borderTopColor: "#333" }}></div>
+          <div className="spinner-ring" style={{ borderWidth: "3px", borderTopColor: "var(--primary)" }}></div>
         </div>
       </div>
     }>

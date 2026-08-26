@@ -33,7 +33,7 @@ export default function DashboardClient({ isAdminOrOwner, stats, context }: any)
 
         <Card>
           <CardContent className="flex items-center gap-4">
-            <div style={{ backgroundColor: '#fce4ec', color: '#c2185b', padding: 'var(--space-3)', borderRadius: 'var(--radius-full)', display: 'flex' }}>
+            <div style={{ backgroundColor: 'var(--info-bg)', color: 'var(--info-text)', padding: 'var(--space-3)', borderRadius: 'var(--radius-full)', display: 'flex' }}>
               <span className="material-icons-round">class</span>
             </div>
             <div>

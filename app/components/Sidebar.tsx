@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
@@ -47,6 +48,29 @@ interface SidebarProps {
 
 export default function Sidebar({ user, userData, context, isSidebarOpen, setIsSidebarOpen }: SidebarProps) {
   const pathname = usePathname();
+  
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  useEffect(() => {
+    // Read theme from localStorage or document on mount
+    const storedTheme = localStorage.getItem('yoogi-theme') as "light" | "dark";
+    if (storedTheme) {
+      setTheme(storedTheme);
+    } else if (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark') {
+      setTheme('dark');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem('yoogi-theme', newTheme);
+    if (newTheme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  };
   
   // Use context if available, otherwise fallback to userData
   const role = context?.membership?.role || userData?.role;
@@ -130,6 +154,33 @@ export default function Sidebar({ user, userData, context, isSidebarOpen, setIsS
         </div>
 
         <div className="sidebar-footer">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', padding: '0 4px' }}>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+              {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+            </span>
+            <button 
+              onClick={toggleTheme}
+              style={{
+                background: 'var(--surface-hover)',
+                border: '1px solid var(--border-light)',
+                borderRadius: 'var(--radius-md)',
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--text-main)',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+              title={theme === 'dark' ? 'Chuyển sang Light Mode' : 'Chuyển sang Dark Mode'}
+            >
+              <span className="material-icons-round" style={{ fontSize: '1.25rem' }}>
+                {theme === 'dark' ? 'light_mode' : 'dark_mode'}
+              </span>
+            </button>
+          </div>
+          
           <div className="sidebar-user">
             {user?.user_metadata?.avatar_url ? (
               <img src={user.user_metadata.avatar_url} alt="Avatar" className="user-avatar" referrerPolicy="no-referrer" />

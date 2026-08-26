@@ -68,6 +68,52 @@
   --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
+[data-theme="dark"] {
+  /* Color Palette - Red/Black Theme */
+  --primary: #DC2626; /* Red 600 */
+  --primary-hover: #EF4444; /* Red 500 */
+  --primary-light: rgba(220, 38, 38, 0.12); /* Accent for active states */
+  
+  --secondary: #A1A1AA; /* Zinc 400 */
+  --secondary-hover: #D4D4D8; /* Zinc 300 */
+
+  --success: #22C55E;
+  --success-bg: rgba(34, 197, 94, 0.12);
+  --success-text: #86EFAC;
+
+  --danger: #EF4444;
+  --danger-hover: #F87171;
+  --danger-bg: rgba(239, 68, 68, 0.12);
+  --danger-text: #FCA5A5;
+
+  --warning: #F59E0B;
+  --warning-bg: rgba(245, 158, 11, 0.12);
+  --warning-text: #FCD34D;
+  
+  --info: #3B82F6;
+  --info-bg: rgba(59, 130, 246, 0.12);
+  --info-text: #93C5FD;
+
+  /* Surfaces & Backgrounds */
+  --background: #0B0B0D;
+  --surface: #121214;
+  --surface-hover: #18181B;
+  
+  /* Text */
+  --text-main: #F4F4F5;
+  --text-secondary: #A1A1AA;
+  --text-muted: #71717A;
+  --text-on-primary: #FFFFFF;
+
+  /* Borders & Dividers */
+  --border-light: #27272A;
+  --border: #3F3F46;
+  --border-focus: #DC2626; /* Use red for focus ring */
+  
+  /* System */
+  color-scheme: dark;
+}
+
 /* Reset & Base Styles */
 * {
   box-sizing: border-box;
@@ -82,6 +128,7 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 a {
@@ -222,7 +269,7 @@ body {
   display: flex;
   flex-direction: column;
   z-index: 50;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease, background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .sidebar-header {

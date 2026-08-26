@@ -17,7 +17,7 @@ export default async function MySchedulePage() {
     return (
       <div style={{ padding: '24px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '24px' }}>Lịch dạy của tôi</h1>
-        <p style={{ color: '#ef4444' }}>Bạn chưa được liên kết với hồ sơ HLV nào trong hệ thống.</p>
+        <p style={{ color: 'var(--danger)' }}>Bạn chưa được liên kết với hồ sơ HLV nào trong hệ thống.</p>
       </div>
     );
   }
@@ -40,17 +40,17 @@ export default async function MySchedulePage() {
           const daySchedules = (schedules || []).filter((s: any) => s.day_of_week === day.value).sort((a: any, b: any) => a.start_time.localeCompare(b.start_time));
           
           return (
-            <div key={day.value} style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
-              <div style={{ backgroundColor: '#f3f4f6', padding: '12px', fontWeight: 'bold', textAlign: 'center', borderBottom: '1px solid #e5e7eb' }}>
+            <div key={day.value} style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
+              <div style={{ backgroundColor: 'var(--surface-hover)', padding: '12px', fontWeight: 'bold', textAlign: 'center', borderBottom: '1px solid var(--border-light)' }}>
                 {day.label}
               </div>
               <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {daySchedules.length === 0 ? (
-                  <div style={{ textAlign: 'center', color: '#9ca3af', fontSize: '12px' }}>Trống</div>
+                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>Trống</div>
                 ) : (
                   daySchedules.map((s: any) => (
-                    <div key={s.id} style={{ backgroundColor: '#f0fdf4', padding: '8px', borderRadius: '6px', border: '1px solid #bbf7d0', fontSize: '12px' }}>
-                      <div style={{ fontWeight: 'bold', color: '#166534', marginBottom: '4px' }}>{s.start_time} - {s.end_time}</div>
+                    <div key={s.id} style={{ backgroundColor: 'var(--success-bg)', padding: '8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', fontSize: '12px' }}>
+                      <div style={{ fontWeight: 'bold', color: 'var(--success-text)', marginBottom: '4px' }}>{s.start_time} - {s.end_time}</div>
                       <div style={{ marginBottom: '2px' }}><strong>Lớp:</strong> {s.venue_classes?.name}</div>
                       <div style={{ marginBottom: '4px' }}><strong>Phòng:</strong> {s.venues?.name}</div>
                     </div>

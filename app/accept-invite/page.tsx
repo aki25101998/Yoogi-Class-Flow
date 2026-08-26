@@ -23,15 +23,15 @@ export default function AcceptInvitePage() {
   }, [router]);
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f3f4f6' }}>
-      <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', maxWidth: '400px', width: '100%', textAlign: 'center' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--background)' }}>
+      <div style={{ backgroundColor: 'var(--surface)', padding: '40px', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-md)', border: '1px solid var(--border-light)', maxWidth: '400px', width: '100%', textAlign: 'center' }}>
         <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px' }}>Đang xử lý lời mời...</h1>
         
         {loading ? (
-          <p style={{ color: '#4b5563' }}>Vui lòng đợi trong giây lát. Hệ thống đang thiết lập quyền truy cập cho bạn.</p>
+          <p style={{ color: 'var(--text-secondary)' }}>Vui lòng đợi trong giây lát. Hệ thống đang thiết lập quyền truy cập cho bạn.</p>
         ) : (
           <div>
-            <div style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '12px', borderRadius: '4px', marginBottom: '16px', fontSize: '14px', textAlign: 'left' }}>
+            <div style={{ backgroundColor: 'var(--danger-bg)', color: 'var(--danger-text)', padding: '12px', borderRadius: 'var(--radius-sm)', marginBottom: '16px', fontSize: '14px', textAlign: 'left' }}>
               {error}
             </div>
             <button 
@@ -39,8 +39,8 @@ export default function AcceptInvitePage() {
               style={{ 
                 width: '100%', 
                 padding: '12px', 
-                backgroundColor: '#2563eb', 
-                color: 'white', 
+                backgroundColor: 'var(--primary)', 
+                color: 'var(--text-on-primary)', 
                 border: 'none', 
                 borderRadius: '4px', 
                 fontWeight: 'bold',
