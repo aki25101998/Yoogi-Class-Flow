@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { 
   inviteMemberAction, 
   revokeInvitationAction, 
@@ -11,6 +11,8 @@ import {
   changeRoleAction
 } from './actions';
 import { OrganizationRole } from '@/types/organization';
+import { useCoaches } from '@/hooks/useCoaches';
+import { useDashboardContext } from '../DashboardProvider';
 
 // UI Components
 import { PageHeader } from '@/app/components/ui/PageHeader';
@@ -21,8 +23,27 @@ import { Table, TableContainer, TableHeader, TableBody, TableRow, TableHead, Tab
 import { Badge } from '@/app/components/ui/Badge';
 import { EmptyState } from '@/app/components/ui/EmptyState';
 
-export default function CoachesClient({ initialMembers, initialInvitations, currentUserRole, currentUserId }: any) {
-  const router = useRouter();
+function CoachSkeleton() {
+  return (
+    <TableRow className="animate-pulse">
+      <TableCell><div className="h-4 bg-surface-hover rounded w-3/4"></div></TableCell>
+      <TableCell><div className="h-4 bg-surface-hover rounded w-1/2"></div></TableCell>
+      <TableCell><div className="h-6 bg-surface-hover rounded w-20"></div></TableCell>
+      <TableCell><div className="h-4 bg-surface-hover rounded w-1/4"></div></TableCell>
+      <TableCell><div className="h-8 bg-surface-hover rounded w-24"></div></TableCell>
+    </TableRow>
+  );
+}
+
+export default function CoachesClient() {
+  const { context } = useDashboardContext();
+  const organizationId = context?.organization?.id;
+  const currentUserRole = context?.membership?.role;
+  const currentUserId = context?.membership?.id;
+
+  const { members, invitations, isLoading } = useCoaches(organizationId);
+  const queryClient = useQueryClient();
+
   const [activeTab, setActiveTab] = useState<'active' | 'invitations' | 'suspended'>('active');
   const [isInviting, setIsInviting] = useState(false);
   const [email, setEmail] = useState('');
@@ -33,7 +54,8 @@ export default function CoachesClient({ initialMembers, initialInvitations, curr
   const isAdminOrOwner = currentUserRole === 'admin' || currentUserRole === 'owner';
 
   const handleSuccess = () => {
-    router.refresh();
+    queryClient.invalidateQueries({ queryKey: ['coaches', organizationId] });
+    queryClient.invalidateQueries({ queryKey: ['invitations', organizationId] });
   };
 
   const handleInvite = async (e: React.FormEvent) => {
@@ -80,8 +102,8 @@ export default function CoachesClient({ initialMembers, initialInvitations, curr
     assistant_coach: 'HLV phụ'
   };
 
-  const activeMembers = initialMembers.filter((m: any) => m.status === 'active');
-  const suspendedMembers = initialMembers.filter((m: any) => m.status === 'suspended');
+  const activeMembers = members.filter((m: any) => m.status === 'active');
+  const suspendedMembers = members.filter((m: any) => m.status === 'suspended');
 
   return (
     <div className="flex-col gap-6">
@@ -155,7 +177,7 @@ export default function CoachesClient({ initialMembers, initialInvitations, curr
             fontWeight: activeTab === 'invitations' ? 600 : 500 
           }}
         >
-          Lời mời ({initialInvitations.length})
+          Lời mời ({invitations.length})
         </button>
         <button 
           onClick={() => setActiveTab('suspended')} 
@@ -182,80 +204,90 @@ export default function CoachesClient({ initialMembers, initialInvitations, curr
             </TableRow>
           </TableHeader>
           <TableBody>
-            {activeTab === 'active' && activeMembers.length === 0 && (
-              <TableRow><TableCell colSpan={5}><EmptyState title="Chưa có HLV đang hoạt động" description="Không tìm thấy HLV nào trong danh sách." /></TableCell></TableRow>
-            )}
-            {activeTab === 'suspended' && suspendedMembers.length === 0 && (
-              <TableRow><TableCell colSpan={5}><EmptyState title="Không có HLV nào bị tạm ngưng" description="Danh sách trống." icon="check_circle" /></TableCell></TableRow>
-            )}
-            {activeTab === 'invitations' && initialInvitations.length === 0 && (
-              <TableRow><TableCell colSpan={5}><EmptyState title="Không có lời mời nào đang chờ" description="Bạn có thể mời HLV mới ở nút phía trên." icon="mail" /></TableCell></TableRow>
-            )}
+            {isLoading ? (
+              <>
+                <CoachSkeleton />
+                <CoachSkeleton />
+                <CoachSkeleton />
+              </>
+            ) : (
+              <>
+                {activeTab === 'active' && activeMembers.length === 0 && (
+                  <TableRow><TableCell colSpan={5}><EmptyState title="Chưa có HLV đang hoạt động" description="Không tìm thấy HLV nào trong danh sách." /></TableCell></TableRow>
+                )}
+                {activeTab === 'suspended' && suspendedMembers.length === 0 && (
+                  <TableRow><TableCell colSpan={5}><EmptyState title="Không có HLV nào bị tạm ngưng" description="Danh sách trống." icon="check_circle" /></TableCell></TableRow>
+                )}
+                {activeTab === 'invitations' && invitations.length === 0 && (
+                  <TableRow><TableCell colSpan={5}><EmptyState title="Không có lời mời nào đang chờ" description="Bạn có thể mời HLV mới ở nút phía trên." icon="mail" /></TableCell></TableRow>
+                )}
 
-            {activeTab === 'active' && activeMembers.map((m: any) => (
-              <TableRow key={m.id}>
-                <TableCell className="font-medium">{m.profiles?.name || '-'}</TableCell>
-                <TableCell className="text-secondary">{m.profiles?.email || '-'}</TableCell>
-                <TableCell>
-                  {isAdminOrOwner && m.id !== currentUserId && currentUserRole === 'owner' ? (
-                     <Select 
-                        value={m.role} 
-                        onChange={(e) => executeChangeRole(m.id, e.target.value as OrganizationRole)}
-                        disabled={loading}
-                        options={[
-                          { value: 'assistant_coach', label: 'HLV phụ' },
-                          { value: 'head_coach', label: 'HLV trưởng' },
-                          { value: 'admin', label: 'Quản trị viên' },
-                          { value: 'owner', label: 'Chủ tổ chức' }
-                        ]}
-                      />
-                  ) : (
-                    <Badge variant={m.role === 'owner' || m.role === 'admin' ? 'primary' : 'default'}>
-                      {roleLabels[m.role] || m.role}
-                    </Badge>
-                  )}
-                </TableCell>
-                <TableCell>{m.classCount} lớp</TableCell>
-                {isAdminOrOwner && (
-                  <TableCell>
-                    {m.id !== currentUserId && (
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="warning" onClick={() => executeAction(suspendMemberAction, m.id, 'Tạm ngưng HLV này?')} disabled={loading}>Tạm ngưng</Button>
-                        <Button size="sm" variant="danger" onClick={() => executeAction(removeMemberAction, m.id, 'Xóa hoàn toàn HLV này?')} disabled={loading}>Xóa</Button>
-                      </div>
+                {activeTab === 'active' && activeMembers.map((m: any) => (
+                  <TableRow key={m.id}>
+                    <TableCell className="font-medium">{m.profiles?.name || '-'}</TableCell>
+                    <TableCell className="text-secondary">{m.profiles?.email || '-'}</TableCell>
+                    <TableCell>
+                      {isAdminOrOwner && m.id !== currentUserId && currentUserRole === 'owner' ? (
+                         <Select 
+                            value={m.role} 
+                            onChange={(e) => executeChangeRole(m.id, e.target.value as OrganizationRole)}
+                            disabled={loading}
+                            options={[
+                              { value: 'assistant_coach', label: 'HLV phụ' },
+                              { value: 'head_coach', label: 'HLV trưởng' },
+                              { value: 'admin', label: 'Quản trị viên' },
+                              { value: 'owner', label: 'Chủ tổ chức' }
+                            ]}
+                          />
+                      ) : (
+                        <Badge variant={m.role === 'owner' || m.role === 'admin' ? 'primary' : 'default'}>
+                          {roleLabels[m.role] || m.role}
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>{m.classCount} lớp</TableCell>
+                    {isAdminOrOwner && (
+                      <TableCell>
+                        {m.id !== currentUserId && (
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="warning" onClick={() => executeAction(suspendMemberAction, m.id, 'Tạm ngưng HLV này?')} disabled={loading}>Tạm ngưng</Button>
+                            <Button size="sm" variant="danger" onClick={() => executeAction(removeMemberAction, m.id, 'Xóa hoàn toàn HLV này?')} disabled={loading}>Xóa</Button>
+                          </div>
+                        )}
+                      </TableCell>
                     )}
-                  </TableCell>
-                )}
-              </TableRow>
-            ))}
+                  </TableRow>
+                ))}
 
-            {activeTab === 'suspended' && suspendedMembers.map((m: any) => (
-              <TableRow key={m.id} style={{ opacity: 0.7 }}>
-                <TableCell>{m.profiles?.name || '-'}</TableCell>
-                <TableCell className="text-secondary">{m.profiles?.email || '-'}</TableCell>
-                <TableCell><Badge variant="danger">{roleLabels[m.role] || m.role}</Badge></TableCell>
-                <TableCell>{m.classCount} lớp</TableCell>
-                {isAdminOrOwner && (
-                  <TableCell>
-                    <Button size="sm" variant="success" onClick={() => executeAction(reactivateMemberAction, m.id, 'Kích hoạt lại HLV này?')} disabled={loading}>Kích hoạt lại</Button>
-                  </TableCell>
-                )}
-              </TableRow>
-            ))}
+                {activeTab === 'suspended' && suspendedMembers.map((m: any) => (
+                  <TableRow key={m.id} style={{ opacity: 0.7 }}>
+                    <TableCell>{m.profiles?.name || '-'}</TableCell>
+                    <TableCell className="text-secondary">{m.profiles?.email || '-'}</TableCell>
+                    <TableCell><Badge variant="danger">{roleLabels[m.role] || m.role}</Badge></TableCell>
+                    <TableCell>{m.classCount} lớp</TableCell>
+                    {isAdminOrOwner && (
+                      <TableCell>
+                        <Button size="sm" variant="success" onClick={() => executeAction(reactivateMemberAction, m.id, 'Kích hoạt lại HLV này?')} disabled={loading}>Kích hoạt lại</Button>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
 
-            {activeTab === 'invitations' && initialInvitations.map((inv: any) => (
-              <TableRow key={inv.id}>
-                <TableCell className="text-secondary">-</TableCell>
-                <TableCell>{inv.email}</TableCell>
-                <TableCell><Badge variant="info">{roleLabels[inv.role] || inv.role}</Badge></TableCell>
-                <TableCell className="text-secondary">-</TableCell>
-                {isAdminOrOwner && (
-                  <TableCell>
-                    <Button size="sm" variant="danger" onClick={() => executeAction(revokeInvitationAction, inv.id, 'Thu hồi lời mời này?')} disabled={loading}>Thu hồi</Button>
-                  </TableCell>
-                )}
-              </TableRow>
-            ))}
+                {activeTab === 'invitations' && invitations.map((inv: any) => (
+                  <TableRow key={inv.id}>
+                    <TableCell className="text-secondary">-</TableCell>
+                    <TableCell>{inv.email}</TableCell>
+                    <TableCell><Badge variant="info">{roleLabels[inv.role] || inv.role}</Badge></TableCell>
+                    <TableCell className="text-secondary">-</TableCell>
+                    {isAdminOrOwner && (
+                      <TableCell>
+                        <Button size="sm" variant="danger" onClick={() => executeAction(revokeInvitationAction, inv.id, 'Thu hồi lời mời này?')} disabled={loading}>Thu hồi</Button>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </>
+            )}
           </TableBody>
         </Table>
       </TableContainer>

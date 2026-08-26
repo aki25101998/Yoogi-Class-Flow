@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import Providers from "./providers";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -37,7 +38,9 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <div id="app">
-          {children}
+          <Providers>
+            {children}
+          </Providers>
         </div>
         {/* Next.js equivalent of toast container, we might replace this with a React Toast provider later */}
         <div id="toastContainer" className="toast-container"></div>

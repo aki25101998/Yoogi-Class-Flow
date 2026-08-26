@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { User } from '@supabase/supabase-js';
-import { Coach } from '@/types/coach';
+import { useDashboardContext } from "@/app/(dashboard)/DashboardProvider";
+import { useQueryClient } from "@tanstack/react-query";
+import { prefetchRouteData } from "@/utils/prefetch";
 
 const ADMIN_NAV = [
   { section: 'Tổng quan', items: [
@@ -39,15 +40,14 @@ const COACH_NAV = [
 ];
 
 interface SidebarProps {
-  user: User | null;
-  userData: Coach | null;
-  context?: any;
   isSidebarOpen: boolean;
   setIsSidebarOpen: (isOpen: boolean) => void;
 }
 
-export default function Sidebar({ user, userData, context, isSidebarOpen, setIsSidebarOpen }: SidebarProps) {
+export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProps) {
   const pathname = usePathname();
+  const { user, userData, context } = useDashboardContext();
+  const queryClient = useQueryClient();
   
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
@@ -132,6 +132,7 @@ export default function Sidebar({ user, userData, context, isSidebarOpen, setIsS
                   key={itemIdx}
                   className={`nav-item ${pathname === item.route ? 'active' : ''}`}
                   onClick={() => setIsSidebarOpen(false)}
+                  onMouseEnter={() => prefetchRouteData(queryClient, item.route, context?.organization?.id, isAdminOrOwner, context?.coach?.id)}
                 >
                   <span className="material-icons-round">{item.icon}</span>
                   <span>{item.label}</span>

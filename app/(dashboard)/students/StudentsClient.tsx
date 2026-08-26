@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { addStudentAction, updateStudentAction, deleteStudentAction, enrollStudentAction, unenrollStudentAction } from './actions';
+import { useStudents } from '@/hooks/useStudents';
+import { useDashboardContext } from '../DashboardProvider';
 
 // UI Components
 import { PageHeader } from '@/app/components/ui/PageHeader';
@@ -12,8 +14,30 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Ca
 import { EmptyState } from '@/app/components/ui/EmptyState';
 import { Badge } from '@/app/components/ui/Badge';
 
-export default function StudentsClient({ initialStudents, availableClasses, currentUserRole }: any) {
-  const router = useRouter();
+function StudentSkeleton() {
+  return (
+    <Card className="mb-4 animate-pulse">
+      <CardHeader>
+        <div className="h-6 bg-surface-hover rounded w-1/3 mb-2"></div>
+        <div className="h-4 bg-surface-hover rounded w-1/2 mb-3"></div>
+        <div className="h-5 bg-surface-hover rounded w-20"></div>
+      </CardHeader>
+      <CardContent>
+        <div className="h-4 bg-surface-hover rounded w-1/4 mb-3"></div>
+        <div className="h-10 bg-surface-hover rounded w-full border border-light"></div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function StudentsClient() {
+  const { context } = useDashboardContext();
+  const organizationId = context?.organization?.id;
+  const currentUserRole = context?.membership?.role;
+
+  const { students, availableClasses, isLoading } = useStudents(organizationId);
+  const queryClient = useQueryClient();
+
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', phone: '', parent_name: '', parent_phone: '', dob: '', status: 'active' });
@@ -33,7 +57,7 @@ export default function StudentsClient({ initialStudents, availableClasses, curr
   };
 
   const handleSuccess = () => {
-    router.refresh();
+    queryClient.invalidateQueries({ queryKey: ['students', organizationId] });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -117,7 +141,7 @@ export default function StudentsClient({ initialStudents, availableClasses, curr
             {error && <div className="text-danger mb-4 text-sm">{error}</div>}
             <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
               <Input 
-                label="Tới học viên *" 
+                label="Tên học viên *" 
                 required 
                 value={formData.name} 
                 onChange={e => setFormData({...formData, name: e.target.value})} 
@@ -161,7 +185,13 @@ export default function StudentsClient({ initialStudents, availableClasses, curr
         </Card>
       )}
 
-      {initialStudents.length === 0 ? (
+      {isLoading ? (
+        <div className="flex-col gap-6 mt-6">
+          <StudentSkeleton />
+          <StudentSkeleton />
+          <StudentSkeleton />
+        </div>
+      ) : students.length === 0 ? (
         <EmptyState 
           title="Chưa có học viên nào" 
           description="Bạn chưa thêm học viên nào vào trung tâm. Hãy bấm nút Thêm Học Viên để tạo mới." 
@@ -169,7 +199,7 @@ export default function StudentsClient({ initialStudents, availableClasses, curr
         />
       ) : (
         <div className="flex-col gap-6">
-          {initialStudents.map((student: any) => (
+          {students.map((student: any) => (
             <Card key={student.id}>
               <CardHeader className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
                 <div>

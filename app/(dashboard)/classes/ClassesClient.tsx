@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { assignCoachAction, removeCoachAction } from './actions';
+import { useClasses } from '@/hooks/useClasses';
+import { useDashboardContext } from '../DashboardProvider';
 
 // UI Components
 import { PageHeader } from '@/app/components/ui/PageHeader';
@@ -12,8 +14,29 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Ca
 import { EmptyState } from '@/app/components/ui/EmptyState';
 import { Badge } from '@/app/components/ui/Badge';
 
-export default function ClassesClient({ initialClasses, availableCoaches, currentUserRole }: any) {
-  const router = useRouter();
+function ClassSkeleton() {
+  return (
+    <Card className="mb-4 animate-pulse">
+      <CardHeader>
+        <div className="h-6 bg-surface-hover rounded w-1/3 mb-2"></div>
+        <div className="h-4 bg-surface-hover rounded w-20"></div>
+      </CardHeader>
+      <CardContent>
+        <div className="h-4 bg-surface-hover rounded w-1/4 mb-3"></div>
+        <div className="h-10 bg-surface-hover rounded w-full border border-light"></div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function ClassesClient() {
+  const { context } = useDashboardContext();
+  const organizationId = context?.organization?.id;
+  const currentUserRole = context?.membership?.role;
+
+  const { classes, availableCoaches, isLoading } = useClasses(organizationId);
+  const queryClient = useQueryClient();
+
   const [selectedClassForAssign, setSelectedClassForAssign] = useState<string | null>(null);
   const [coachId, setCoachId] = useState('');
   const [role, setRole] = useState<'HEAD_COACH' | 'ASSISTANT_COACH'>('ASSISTANT_COACH');
@@ -23,7 +46,7 @@ export default function ClassesClient({ initialClasses, availableCoaches, curren
   const isAdminOrOwner = currentUserRole === 'admin' || currentUserRole === 'owner';
 
   const handleSuccess = () => {
-    router.refresh();
+    queryClient.invalidateQueries({ queryKey: ['classes', organizationId] });
   };
 
   const handleAssign = async (classId: string, e: React.FormEvent) => {
@@ -66,7 +89,12 @@ export default function ClassesClient({ initialClasses, availableCoaches, curren
         ) : undefined}
       />
 
-      {initialClasses.length === 0 ? (
+      {isLoading ? (
+        <div className="flex-col gap-6 mt-6">
+          <ClassSkeleton />
+          <ClassSkeleton />
+        </div>
+      ) : classes.length === 0 ? (
         <EmptyState 
           title="Chưa có lớp học nào" 
           description="Chưa có lớp học nào được tạo trong hệ thống. Vui lòng thêm lớp mới để bắt đầu." 
@@ -74,7 +102,7 @@ export default function ClassesClient({ initialClasses, availableCoaches, curren
         />
       ) : (
         <div className="flex-col gap-6">
-          {initialClasses.map((cls: any) => (
+          {classes.map((cls: any) => (
             <Card key={cls.id}>
               <CardHeader>
                 <div>

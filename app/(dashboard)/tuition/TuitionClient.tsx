@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { addTuitionAction, deleteTuitionAction, recordPaymentAction } from './actions';
+import { useTuition } from '@/hooks/useTuition';
+import { useDashboardContext } from '../DashboardProvider';
 
 // UI Components
 import { PageHeader } from '@/app/components/ui/PageHeader';
@@ -13,8 +15,26 @@ import { EmptyState } from '@/app/components/ui/EmptyState';
 import { Badge } from '@/app/components/ui/Badge';
 import { Table, Thead, Tbody, Tr, Th, Td } from '@/app/components/ui/Table';
 
-export default function TuitionClient({ tuitionList, students, classes, currentUserRole }: any) {
-  const router = useRouter();
+function TuitionSkeleton() {
+  return (
+    <Card className="animate-pulse">
+      <CardContent>
+        <div className="h-10 bg-surface-hover rounded w-full mb-4"></div>
+        <div className="h-10 bg-surface-hover rounded w-full mb-4"></div>
+        <div className="h-10 bg-surface-hover rounded w-full"></div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function TuitionClient() {
+  const { context } = useDashboardContext();
+  const organizationId = context?.organization?.id;
+  const currentUserRole = context?.membership?.role;
+
+  const { tuitionList, students, classes, isLoading: isFetching } = useTuition(organizationId);
+  const queryClient = useQueryClient();
+
   const [isAdding, setIsAdding] = useState(false);
   const [formData, setFormData] = useState({ student_id: '', class_id: '', amount: 0, due_date: '' });
   const [paymentId, setPaymentId] = useState<string | null>(null);
@@ -31,7 +51,7 @@ export default function TuitionClient({ tuitionList, students, classes, currentU
   };
 
   const handleSuccess = () => {
-    router.refresh();
+    queryClient.invalidateQueries({ queryKey: ['tuition', organizationId] });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -164,7 +184,9 @@ export default function TuitionClient({ tuitionList, students, classes, currentU
         </Card>
       )}
 
-      {tuitionList.length === 0 ? (
+      {isFetching ? (
+        <TuitionSkeleton />
+      ) : tuitionList.length === 0 ? (
         <EmptyState 
           title="Chưa có khoản thu nào" 
           description="Hệ thống chưa ghi nhận khoản thu học phí nào." 

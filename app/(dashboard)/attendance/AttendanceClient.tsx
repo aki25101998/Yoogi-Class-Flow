@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { saveAttendanceAction } from './actions';
+import { useAttendance } from '@/hooks/useAttendance';
+import { useDashboardContext } from '../DashboardProvider';
 
 // UI Components
 import { PageHeader } from '@/app/components/ui/PageHeader';
@@ -12,8 +14,13 @@ import { Card, CardContent } from '@/app/components/ui/Card';
 import { EmptyState } from '@/app/components/ui/EmptyState';
 import { Table, Thead, Tbody, Tr, Th, Td } from '@/app/components/ui/Table';
 
-export default function AttendanceClient({ classes, allStudentAttendance }: any) {
-  const router = useRouter();
+export default function AttendanceClient() {
+  const { context } = useDashboardContext();
+  const organizationId = context?.organization?.id;
+
+  const { classes, allStudentAttendance, isLoading: isFetching } = useAttendance(organizationId);
+  const queryClient = useQueryClient();
+
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedClassId, setSelectedClassId] = useState('');
   const [attendanceRecords, setAttendanceRecords] = useState<any[]>([]);
@@ -66,7 +73,7 @@ export default function AttendanceClient({ classes, allStudentAttendance }: any)
     if (res.success) {
       setSuccess('Đã lưu điểm danh!');
       setTimeout(() => setSuccess(''), 3000);
-      router.refresh();
+      queryClient.invalidateQueries({ queryKey: ['studentAttendance', organizationId] });
     } else {
       setError(res.error || 'Lỗi khi lưu điểm danh');
     }
@@ -79,29 +86,35 @@ export default function AttendanceClient({ classes, allStudentAttendance }: any)
         description="Quản lý điểm danh hàng ngày của các lớp học"
       />
 
-      <Card>
-        <CardContent className="flex flex-col sm:flex-row gap-4 items-end">
-          <div className="flex-1 w-full">
-            <Input 
-              label="Ngày"
-              type="date" 
-              value={selectedDate} 
-              onChange={e => setSelectedDate(e.target.value)} 
-            />
-          </div>
-          <div className="flex-1 w-full">
-            <Select 
-              label="Lớp học"
-              value={selectedClassId} 
-              onChange={e => setSelectedClassId(e.target.value)}
-              options={[
-                { value: '', label: '-- Chọn lớp --' },
-                ...classes.map((c: any) => ({ value: c.id, label: `${c.name} (${c.start_time}-${c.end_time})` }))
-              ]}
-            />
-          </div>
-        </CardContent>
-      </Card>
+      {isFetching ? (
+        <Card className="animate-pulse">
+          <CardContent className="h-20 bg-surface-hover rounded-md"></CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="flex flex-col sm:flex-row gap-4 items-end">
+            <div className="flex-1 w-full">
+              <Input 
+                label="Ngày"
+                type="date" 
+                value={selectedDate} 
+                onChange={e => setSelectedDate(e.target.value)} 
+              />
+            </div>
+            <div className="flex-1 w-full">
+              <Select 
+                label="Lớp học"
+                value={selectedClassId} 
+                onChange={e => setSelectedClassId(e.target.value)}
+                options={[
+                  { value: '', label: '-- Chọn lớp --' },
+                  ...classes.map((c: any) => ({ value: c.id, label: `${c.name} (${c.start_time}-${c.end_time})` }))
+                ]}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {error && <div className="text-danger text-sm font-medium">{error}</div>}
       {success && <div className="text-success text-sm font-medium">{success}</div>}

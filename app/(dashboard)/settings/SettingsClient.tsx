@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateOrganizationAction } from './actions';
+import { useDashboardContext } from '../DashboardProvider';
 
 // UI Components
 import { PageHeader } from '@/app/components/ui/PageHeader';
@@ -10,11 +11,15 @@ import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
 
-export default function SettingsClient({ organization, currentUserRole }: any) {
+export default function SettingsClient() {
   const router = useRouter();
+  const { context } = useDashboardContext();
+  const organization = context?.organization;
+  const currentUserRole = context?.membership?.role;
+
   const [formData, setFormData] = useState({ 
-    name: organization.name, 
-    slug: organization.slug 
+    name: organization?.name || '', 
+    slug: organization?.slug || '' 
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');

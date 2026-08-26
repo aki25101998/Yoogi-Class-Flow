@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { addVenueAction, updateVenueAction, deleteVenueAction } from './actions';
+import { useVenues } from '@/hooks/useVenues';
+import { useDashboardContext } from '../DashboardProvider';
 
 // UI Components
 import { PageHeader } from '@/app/components/ui/PageHeader';
@@ -12,8 +14,31 @@ import { Card, CardContent } from '@/app/components/ui/Card';
 import { EmptyState } from '@/app/components/ui/EmptyState';
 import { Badge } from '@/app/components/ui/Badge';
 
-export default function VenuesClient({ initialVenues, currentUserRole }: any) {
-  const router = useRouter();
+function VenueSkeleton() {
+  return (
+    <Card className="mb-4 animate-pulse">
+      <CardContent className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between p-4">
+        <div className="flex items-start gap-4 w-full">
+          <div className="w-10 h-10 bg-surface-hover rounded-md shrink-0"></div>
+          <div className="flex-1">
+            <div className="h-6 bg-surface-hover rounded w-1/3 mb-2"></div>
+            <div className="h-4 bg-surface-hover rounded w-1/2 mb-2"></div>
+            <div className="h-5 bg-surface-hover rounded w-20"></div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function VenuesClient() {
+  const { context } = useDashboardContext();
+  const organizationId = context?.organization?.id;
+  const currentUserRole = context?.membership?.role;
+
+  const { venues, isLoading } = useVenues(organizationId);
+  const queryClient = useQueryClient();
+
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', address: '', status: 'active' });
@@ -30,7 +55,7 @@ export default function VenuesClient({ initialVenues, currentUserRole }: any) {
   };
 
   const handleSuccess = () => {
-    router.refresh();
+    queryClient.invalidateQueries({ queryKey: ['venues', organizationId] });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -117,7 +142,12 @@ export default function VenuesClient({ initialVenues, currentUserRole }: any) {
         </Card>
       )}
 
-      {initialVenues.length === 0 ? (
+      {isLoading ? (
+        <div className="flex-col gap-4 mt-6">
+          <VenueSkeleton />
+          <VenueSkeleton />
+        </div>
+      ) : venues.length === 0 ? (
         <EmptyState 
           title="Chưa có địa điểm nào" 
           description="Hệ thống chưa có dữ liệu địa điểm. Vui lòng thêm địa điểm mới." 
@@ -125,7 +155,7 @@ export default function VenuesClient({ initialVenues, currentUserRole }: any) {
         />
       ) : (
         <div className="flex-col gap-4">
-          {initialVenues.map((venue: any) => (
+          {venues.map((venue: any) => (
             <Card key={venue.id}>
               <CardContent className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between p-4">
                 <div className="flex items-start gap-4">

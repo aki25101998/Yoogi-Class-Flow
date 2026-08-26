@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { addScheduleAction, deleteScheduleAction } from './actions';
+import { useSchedule } from '@/hooks/useSchedule';
+import { useDashboardContext } from '../DashboardProvider';
 
 // UI Components
 import { PageHeader } from '@/app/components/ui/PageHeader';
@@ -20,8 +22,30 @@ const DAYS_OF_WEEK = [
   { value: 0, label: 'Chủ Nhật' }
 ];
 
-export default function ScheduleClient({ schedules, classes, coaches, venues, currentUserRole }: any) {
-  const router = useRouter();
+function ScheduleSkeleton() {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 'var(--space-4)', overflowX: 'auto', minWidth: '800px' }} className="animate-pulse">
+      {DAYS_OF_WEEK.map(day => (
+        <div key={day.value} className="bg-surface rounded-md border border-light overflow-hidden flex flex-col h-full min-h-[300px]">
+          <div className="bg-surface-hover p-3 font-semibold text-center border-b border-light h-10"></div>
+          <div className="p-3 flex-col gap-3 flex-1">
+            <div className="h-24 bg-surface-hover rounded w-full"></div>
+            <div className="h-24 bg-surface-hover rounded w-full"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function ScheduleClient() {
+  const { context } = useDashboardContext();
+  const organizationId = context?.organization?.id;
+  const currentUserRole = context?.membership?.role;
+
+  const { schedules, classes, coaches, venues, isLoading } = useSchedule(organizationId);
+  const queryClient = useQueryClient();
+
   const [isAdding, setIsAdding] = useState(false);
   const [formData, setFormData] = useState({ coach_id: '', venue_id: '', class_id: '', day_of_week: 1, start_time: '18:00', end_time: '20:00' });
   const [error, setError] = useState('');
@@ -36,7 +60,7 @@ export default function ScheduleClient({ schedules, classes, coaches, venues, cu
   };
 
   const handleSuccess = () => {
-    router.refresh();
+    queryClient.invalidateQueries({ queryKey: ['schedules', organizationId] });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -141,45 +165,48 @@ export default function ScheduleClient({ schedules, classes, coaches, venues, cu
         </Card>
       )}
 
-      {/* Week Calendar Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 'var(--space-4)', overflowX: 'auto', minWidth: '800px' }}>
-        {DAYS_OF_WEEK.map(day => {
-          const daySchedules = schedules.filter((s: any) => s.day_of_week === day.value).sort((a: any, b: any) => a.start_time.localeCompare(b.start_time));
-          
-          return (
-            <div key={day.value} className="bg-surface rounded-md border border-light overflow-hidden flex flex-col h-full min-h-[300px]">
-              <div className="bg-surface-hover p-3 font-semibold text-center border-b border-light text-main">
-                {day.label}
+      {isLoading ? (
+        <ScheduleSkeleton />
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 'var(--space-4)', overflowX: 'auto', minWidth: '800px' }}>
+          {DAYS_OF_WEEK.map(day => {
+            const daySchedules = schedules.filter((s: any) => s.day_of_week === day.value).sort((a: any, b: any) => a.start_time.localeCompare(b.start_time));
+            
+            return (
+              <div key={day.value} className="bg-surface rounded-md border border-light overflow-hidden flex flex-col h-full min-h-[300px]">
+                <div className="bg-surface-hover p-3 font-semibold text-center border-b border-light text-main">
+                  {day.label}
+                </div>
+                <div className="p-3 flex-col gap-3 flex-1">
+                  {daySchedules.length === 0 ? (
+                    <div className="text-center text-muted text-sm italic py-4">Trống</div>
+                  ) : (
+                    daySchedules.map((s: any) => (
+                      <div key={s.id} className="bg-primary-light border border-primary text-primary p-2 rounded-md text-xs relative">
+                        <div className="font-bold mb-1">{s.start_time} - {s.end_time}</div>
+                        <div className="mb-1 truncate" title={s.venue_classes?.name}><strong>Lớp:</strong> {s.venue_classes?.name}</div>
+                        <div className="mb-1 truncate" title={s.coaches?.name}><strong>HLV:</strong> {s.coaches?.name}</div>
+                        <div className="mb-1 truncate" title={s.venues?.name}><strong>Phòng:</strong> {s.venues?.name}</div>
+                        {isAdminOrOwner && (
+                          <div className="text-right mt-2">
+                            <button 
+                              onClick={() => handleDelete(s.id)} 
+                              disabled={loading}
+                              className="text-danger hover:underline cursor-pointer border-none bg-transparent text-[10px]"
+                            >
+                              Xóa
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
-              <div className="p-3 flex-col gap-3 flex-1">
-                {daySchedules.length === 0 ? (
-                  <div className="text-center text-muted text-sm italic py-4">Trống</div>
-                ) : (
-                  daySchedules.map((s: any) => (
-                    <div key={s.id} className="bg-primary-light border border-primary text-primary p-2 rounded-md text-xs relative">
-                      <div className="font-bold mb-1">{s.start_time} - {s.end_time}</div>
-                      <div className="mb-1 truncate" title={s.venue_classes?.name}><strong>Lớp:</strong> {s.venue_classes?.name}</div>
-                      <div className="mb-1 truncate" title={s.coaches?.name}><strong>HLV:</strong> {s.coaches?.name}</div>
-                      <div className="mb-1 truncate" title={s.venues?.name}><strong>Phòng:</strong> {s.venues?.name}</div>
-                      {isAdminOrOwner && (
-                        <div className="text-right mt-2">
-                          <button 
-                            onClick={() => handleDelete(s.id)} 
-                            disabled={loading}
-                            className="text-danger hover:underline cursor-pointer border-none bg-transparent text-[10px]"
-                          >
-                            Xóa
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { addTransactionAction, deleteTransactionAction } from './actions';
+import { useFinance } from '@/hooks/useFinance';
+import { useDashboardContext } from '../DashboardProvider';
 
 // UI Components
 import { PageHeader } from '@/app/components/ui/PageHeader';
@@ -13,8 +15,27 @@ import { EmptyState } from '@/app/components/ui/EmptyState';
 import { Badge } from '@/app/components/ui/Badge';
 import { Table, Thead, Tbody, Tr, Th, Td } from '@/app/components/ui/Table';
 
-export default function FinanceClient({ transactions, currentUserRole }: any) {
-  const router = useRouter();
+function FinanceSkeleton() {
+  return (
+    <div className="flex-col gap-6 animate-pulse">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card><CardContent className="h-24 bg-surface-hover"></CardContent></Card>
+        <Card><CardContent className="h-24 bg-surface-hover"></CardContent></Card>
+        <Card><CardContent className="h-24 bg-surface-hover"></CardContent></Card>
+      </div>
+      <Card><CardContent className="h-64 bg-surface-hover mt-6"></CardContent></Card>
+    </div>
+  );
+}
+
+export default function FinanceClient() {
+  const { context } = useDashboardContext();
+  const organizationId = context?.organization?.id;
+  const currentUserRole = context?.membership?.role;
+
+  const { transactions, isLoading: isFetching } = useFinance(organizationId);
+  const queryClient = useQueryClient();
+
   const [isAdding, setIsAdding] = useState(false);
   const [formData, setFormData] = useState({ type: 'income', category: '', amount: 0, date: new Date().toISOString().split('T')[0], description: '' });
   const [error, setError] = useState('');
@@ -33,7 +54,7 @@ export default function FinanceClient({ transactions, currentUserRole }: any) {
   };
 
   const handleSuccess = () => {
-    router.refresh();
+    queryClient.invalidateQueries({ queryKey: ['financeTransactions', organizationId] });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -73,138 +94,144 @@ export default function FinanceClient({ transactions, currentUserRole }: any) {
         ) : undefined}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardContent>
-            <div className="text-secondary text-sm font-medium mb-2 uppercase tracking-wider">Tổng thu</div>
-            <div className="text-2xl font-bold text-success">{totalIncome.toLocaleString('vi-VN')} đ</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent>
-            <div className="text-secondary text-sm font-medium mb-2 uppercase tracking-wider">Tổng chi</div>
-            <div className="text-2xl font-bold text-danger">{totalExpense.toLocaleString('vi-VN')} đ</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent>
-            <div className="text-secondary text-sm font-medium mb-2 uppercase tracking-wider">Số dư (Lợi nhuận)</div>
-            <div className={`text-2xl font-bold ${balance >= 0 ? 'text-primary' : 'text-danger'}`}>
-              {balance.toLocaleString('vi-VN')} đ
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {isAdding && (
-        <Card className="mb-6">
-          <CardContent>
-            <h3 className="font-semibold text-lg mb-4 text-main">Thêm giao dịch mới</h3>
-            {error && <div className="text-danger mb-4 text-sm">{error}</div>}
-            <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
-              <Select 
-                label="Loại giao dịch *"
-                required 
-                value={formData.type} 
-                onChange={e => setFormData({...formData, type: e.target.value})}
-                options={[
-                  { value: 'income', label: 'Thu' },
-                  { value: 'expense', label: 'Chi' }
-                ]}
-              />
-              <Input 
-                label="Danh mục *"
-                required 
-                placeholder="VD: Học phí, Tiền thuê mặt bằng, Tiền điện..." 
-                value={formData.category} 
-                onChange={e => setFormData({...formData, category: e.target.value})} 
-              />
-              <Input 
-                label="Số tiền (VNĐ) *"
-                type="number" 
-                required 
-                min="1" 
-                value={formData.amount} 
-                onChange={e => setFormData({...formData, amount: Number(e.target.value)})} 
-              />
-              <Input 
-                label="Ngày *"
-                type="date" 
-                required 
-                value={formData.date} 
-                onChange={e => setFormData({...formData, date: e.target.value})} 
-              />
-              <div className="col-span-full">
-                <Input 
-                  label="Mô tả thêm"
-                  value={formData.description} 
-                  onChange={e => setFormData({...formData, description: e.target.value})} 
-                />
-              </div>
-              <div className="col-span-full mt-2 flex gap-2">
-                <Button type="submit" isLoading={loading} variant="primary">Lưu</Button>
-                <Button type="button" variant="secondary" onClick={resetForm} disabled={loading}>Hủy</Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-
-      {transactions.length === 0 ? (
-        <EmptyState 
-          title="Chưa có giao dịch" 
-          description="Hệ thống chưa ghi nhận dòng tiền nào." 
-          icon="receipt_long"
-        />
+      {isFetching ? (
+        <FinanceSkeleton />
       ) : (
-        <Card>
-          <div className="overflow-x-auto">
-            <Table>
-              <Thead>
-                <Tr>
-                  <Th>Ngày</Th>
-                  <Th>Danh mục</Th>
-                  <Th>Mô tả</Th>
-                  <Th className="text-right">Số tiền</Th>
-                  {isAdminOrOwner && <Th className="text-right">Thao tác</Th>}
-                </Tr>
-              </Thead>
-              <Tbody>
-                {transactions.map((t: any) => {
-                  const isIncome = t.type === 'income';
-                  return (
-                    <Tr key={t.id}>
-                      <Td>{t.date}</Td>
-                      <Td className="font-medium text-main">
-                        <Badge variant={isIncome ? 'success' : 'danger'} className="mr-2">
-                          {isIncome ? 'THU' : 'CHI'}
-                        </Badge>
-                        {t.category}
-                      </Td>
-                      <Td className="max-w-[200px] truncate" title={t.description}>{t.description}</Td>
-                      <Td className={`text-right font-bold ${isIncome ? 'text-success' : 'text-danger'}`}>
-                        {isIncome ? '+' : '-'}{Number(t.amount).toLocaleString('vi-VN')} đ
-                      </Td>
-                      {isAdminOrOwner && (
-                        <Td className="text-right whitespace-nowrap">
-                          <Button 
-                            variant="ghost"
-                            size="sm"
-                            className="text-danger hover:bg-danger-bg"
-                            onClick={() => handleDelete(t.id)}
-                            disabled={loading}
-                          >
-                            Xóa
-                          </Button>
-                        </Td>
-                      )}
-                    </Tr>
-                  );
-                })}
-              </Tbody>
-            </Table>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card>
+              <CardContent>
+                <div className="text-secondary text-sm font-medium mb-2 uppercase tracking-wider">Tổng thu</div>
+                <div className="text-2xl font-bold text-success">{totalIncome.toLocaleString('vi-VN')} đ</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent>
+                <div className="text-secondary text-sm font-medium mb-2 uppercase tracking-wider">Tổng chi</div>
+                <div className="text-2xl font-bold text-danger">{totalExpense.toLocaleString('vi-VN')} đ</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent>
+                <div className="text-secondary text-sm font-medium mb-2 uppercase tracking-wider">Số dư (Lợi nhuận)</div>
+                <div className={`text-2xl font-bold ${balance >= 0 ? 'text-primary' : 'text-danger'}`}>
+                  {balance.toLocaleString('vi-VN')} đ
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </Card>
+
+          {isAdding && (
+            <Card className="mb-6">
+              <CardContent>
+                <h3 className="font-semibold text-lg mb-4 text-main">Thêm giao dịch mới</h3>
+                {error && <div className="text-danger mb-4 text-sm">{error}</div>}
+                <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
+                  <Select 
+                    label="Loại giao dịch *"
+                    required 
+                    value={formData.type} 
+                    onChange={e => setFormData({...formData, type: e.target.value})}
+                    options={[
+                      { value: 'income', label: 'Thu' },
+                      { value: 'expense', label: 'Chi' }
+                    ]}
+                  />
+                  <Input 
+                    label="Danh mục *"
+                    required 
+                    placeholder="VD: Học phí, Tiền thuê mặt bằng, Tiền điện..." 
+                    value={formData.category} 
+                    onChange={e => setFormData({...formData, category: e.target.value})} 
+                  />
+                  <Input 
+                    label="Số tiền (VNĐ) *"
+                    type="number" 
+                    required 
+                    min="1" 
+                    value={formData.amount} 
+                    onChange={e => setFormData({...formData, amount: Number(e.target.value)})} 
+                  />
+                  <Input 
+                    label="Ngày *"
+                    type="date" 
+                    required 
+                    value={formData.date} 
+                    onChange={e => setFormData({...formData, date: e.target.value})} 
+                  />
+                  <div className="col-span-full">
+                    <Input 
+                      label="Mô tả thêm"
+                      value={formData.description} 
+                      onChange={e => setFormData({...formData, description: e.target.value})} 
+                    />
+                  </div>
+                  <div className="col-span-full mt-2 flex gap-2">
+                    <Button type="submit" isLoading={loading} variant="primary">Lưu</Button>
+                    <Button type="button" variant="secondary" onClick={resetForm} disabled={loading}>Hủy</Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          )}
+
+          {transactions.length === 0 ? (
+            <EmptyState 
+              title="Chưa có giao dịch" 
+              description="Hệ thống chưa ghi nhận dòng tiền nào." 
+              icon="receipt_long"
+            />
+          ) : (
+            <Card>
+              <div className="overflow-x-auto">
+                <Table>
+                  <Thead>
+                    <Tr>
+                      <Th>Ngày</Th>
+                      <Th>Danh mục</Th>
+                      <Th>Mô tả</Th>
+                      <Th className="text-right">Số tiền</Th>
+                      {isAdminOrOwner && <Th className="text-right">Thao tác</Th>}
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {transactions.map((t: any) => {
+                      const isIncome = t.type === 'income';
+                      return (
+                        <Tr key={t.id}>
+                          <Td>{t.date}</Td>
+                          <Td className="font-medium text-main">
+                            <Badge variant={isIncome ? 'success' : 'danger'} className="mr-2">
+                              {isIncome ? 'THU' : 'CHI'}
+                            </Badge>
+                            {t.category}
+                          </Td>
+                          <Td className="max-w-[200px] truncate" title={t.description}>{t.description}</Td>
+                          <Td className={`text-right font-bold ${isIncome ? 'text-success' : 'text-danger'}`}>
+                            {isIncome ? '+' : '-'}{Number(t.amount).toLocaleString('vi-VN')} đ
+                          </Td>
+                          {isAdminOrOwner && (
+                            <Td className="text-right whitespace-nowrap">
+                              <Button 
+                                variant="ghost"
+                                size="sm"
+                                className="text-danger hover:bg-danger-bg"
+                                onClick={() => handleDelete(t.id)}
+                                disabled={loading}
+                              >
+                                Xóa
+                              </Button>
+                            </Td>
+                          )}
+                        </Tr>
+                      );
+                    })}
+                  </Tbody>
+                </Table>
+              </div>
+            </Card>
+          )}
+        </>
       )}
     </div>
   );
