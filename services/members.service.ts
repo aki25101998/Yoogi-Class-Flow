@@ -2,7 +2,7 @@ import { createClient } from '@/utils/supabase/server';
 import { OrganizationRole } from '@/types/organization';
 import { getCurrentOrganizationContext } from './organization.service';
 
-export async function inviteMember(email: string, role: OrganizationRole): Promise<{ success: boolean; error?: string; invitationCreated?: boolean; emailSent?: boolean; warning?: string }> {
+export async function inviteMember(email: string, role: OrganizationRole): Promise<{ success: boolean; error?: string; invitationCreated?: boolean; invitationUrl?: string; invitationId?: string; expiresAt?: string }> {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Not authenticated or no organization context' };
 
@@ -35,7 +35,7 @@ export async function inviteMember(email: string, role: OrganizationRole): Promi
     .single();
 
   if (existingInvite) {
-    return { success: false, error: 'Lời mời cho email này đã được gửi và đang chờ xử lý.' };
+    return { success: false, error: 'Lời mời cho email này đã tồn tại và đang chờ xử lý.' };
   }
 
   let permissions: string[] = [];
@@ -66,37 +66,17 @@ export async function inviteMember(email: string, role: OrganizationRole): Promi
     return { success: false, error: error.message };
   }
 
-  // Send Email
-  const roleLabels: Record<string, string> = {
-    owner: 'Chủ tổ chức',
-    admin: 'Quản trị viên',
-    head_coach: 'HLV trưởng',
-    assistant_coach: 'HLV phụ'
-  };
-  const roleLabel = roleLabels[role] || role;
-  
+  // Generate invitation URL (link-first flow — no email sent)
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   const invitationUrl = `${appUrl}/invite/${newInvite.id}`;
 
-  const { sendInvitationEmail } = await import('./email.service');
-  const emailResult = await sendInvitationEmail({
-    to: email.toLowerCase(),
-    organizationName: context.organization.name || 'Tổ chức',
-    roleLabel,
-    invitationUrl
-  });
-
-  if (!emailResult.success) {
-    console.error('Email failed to send for invitation', newInvite.id, emailResult.error);
-    return { 
-      success: true, 
-      invitationCreated: true, 
-      emailSent: false, 
-      warning: 'Lời mời đã được tạo nhưng email chưa gửi được.' 
-    };
-  }
-
-  return { success: true, invitationCreated: true, emailSent: true };
+  return {
+    success: true,
+    invitationCreated: true,
+    invitationUrl,
+    invitationId: newInvite.id,
+    expiresAt: expiresAt.toISOString()
+  };
 }
 
 export async function resendInvitation(invitationId: string): Promise<{ success: boolean; error?: string; emailSent?: boolean }> {
