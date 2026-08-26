@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useSearchParams } from "next/navigation";
 
@@ -8,6 +8,27 @@ function LoginContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const searchParams = useSearchParams();
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  useEffect(() => {
+    const storedTheme = localStorage.getItem('yoogi-theme') as "light" | "dark";
+    if (storedTheme) {
+      setTheme(storedTheme);
+    } else if (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark') {
+      setTheme('dark');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem('yoogi-theme', newTheme);
+    if (newTheme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  };
 
   // Handle error returned from the callback route
   const errorParam = searchParams.get("error");
@@ -47,7 +68,38 @@ function LoginContent() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen" style={{ width: '100%', backgroundColor: 'var(--background)', padding: 'var(--space-4)' }}>
+    <div className="flex items-center justify-center min-h-screen" style={{ width: '100%', backgroundColor: 'var(--background)', padding: 'var(--space-4)', position: 'relative' }}>
+      
+      {/* Theme Toggle Button */}
+      <button 
+        onClick={toggleTheme}
+        style={{
+          position: 'absolute',
+          top: 'var(--space-6)',
+          right: 'var(--space-6)',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-full)',
+          width: '44px',
+          height: '44px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'var(--text-main)',
+          cursor: 'pointer',
+          transition: 'all 0.2s',
+          boxShadow: 'var(--shadow-sm)',
+          zIndex: 10
+        }}
+        onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--surface-hover)'}
+        onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--surface)'}
+        title={theme === 'dark' ? 'Chuyển sang Light Mode' : 'Chuyển sang Dark Mode'}
+      >
+        <span className="material-icons-round" style={{ fontSize: '1.25rem' }}>
+          {theme === 'dark' ? 'light_mode' : 'dark_mode'}
+        </span>
+      </button>
+
       <div className="login-card" style={{ 
         backgroundColor: 'var(--surface)', 
         padding: 'var(--space-8)', 
