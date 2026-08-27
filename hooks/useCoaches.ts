@@ -30,7 +30,14 @@ export function useCoaches(organizationId: string | undefined) {
              .eq('coach_id', coachId);
            classCount = count || 0;
         }
-        return { ...m, classCount };
+        
+        // Unified data structure for the UI
+        return {
+          ...m,
+          name: m.profiles?.name || m.profiles?.email || '-',
+          email: m.profiles?.email || '-',
+          classCount
+        };
       }));
       
       return memberWithClassCount;

@@ -367,8 +367,8 @@ export default function CoachesClient() {
 
                 {activeTab === 'active' && activeMembers.map((m: any) => (
                   <TableRow key={m.id}>
-                    <TableCell className="font-medium">{m.profiles?.name || '-'}</TableCell>
-                    <TableCell className="text-secondary">{m.profiles?.email || '-'}</TableCell>
+                    <TableCell className="font-medium">{m.name}</TableCell>
+                    <TableCell className="text-secondary">{m.email}</TableCell>
                     <TableCell>
                       {isAdminOrOwner && m.id !== currentUserId && currentUserRole === 'owner' ? (
                          <Select 
@@ -404,8 +404,8 @@ export default function CoachesClient() {
 
                 {activeTab === 'suspended' && suspendedMembers.map((m: any) => (
                   <TableRow key={m.id} style={{ opacity: 0.7 }}>
-                    <TableCell>{m.profiles?.name || '-'}</TableCell>
-                    <TableCell className="text-secondary">{m.profiles?.email || '-'}</TableCell>
+                    <TableCell>{m.name}</TableCell>
+                    <TableCell className="text-secondary">{m.email}</TableCell>
                     <TableCell><Badge variant="danger">{roleLabels[m.role] || m.role}</Badge></TableCell>
                     <TableCell>{m.classCount} lớp</TableCell>
                     {isAdminOrOwner && (
