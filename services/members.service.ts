@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { OrganizationRole } from '@/types/organization';
 import { getCurrentOrganizationContext } from './organization.service';
+import { getAppUrl } from '@/utils/app-url';
 
 export async function inviteMember(email: string, role: OrganizationRole): Promise<{ success: boolean; error?: string; invitationCreated?: boolean; invitationUrl?: string; invitationId?: string; expiresAt?: string }> {
   const context = await getCurrentOrganizationContext();
@@ -67,7 +68,7 @@ export async function inviteMember(email: string, role: OrganizationRole): Promi
   }
 
   // Generate invitation URL (link-first flow — no email sent)
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const appUrl = getAppUrl();
   const invitationUrl = `${appUrl}/invite/${newInvite.id}`;
 
   return {
@@ -113,7 +114,7 @@ export async function resendInvitation(invitationId: string): Promise<{ success:
   };
   const roleLabel = roleLabels[invite.role] || invite.role;
   
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const appUrl = getAppUrl();
   const invitationUrl = `${appUrl}/invite/${invite.id}`;
 
   const { sendInvitationEmail } = await import('./email.service');
