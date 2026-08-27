@@ -55,14 +55,25 @@ export default function InviteClient({
   };
 
   const handleAccept = async () => {
+    if (loading) return;
+    
     setError('');
     setLoading(true);
-    const res = await acceptInvitationAction(invitationId);
-    if (res.success) {
-      router.push('/dashboard');
-      router.refresh();
-    } else {
-      setError(res.error || 'Đã có lỗi xảy ra.');
+    
+    try {
+      const res = await acceptInvitationAction(invitationId);
+      
+      if (res.success) {
+        router.push('/dashboard');
+        router.refresh();
+        return;
+      }
+      
+      setError(res.error || 'Không thể nhận lời mời.');
+    } catch (error) {
+      console.error('Accept invitation failed:', error);
+      setError('Không thể nhận lời mời lúc này. Vui lòng thử lại.');
+    } finally {
       setLoading(false);
     }
   };
