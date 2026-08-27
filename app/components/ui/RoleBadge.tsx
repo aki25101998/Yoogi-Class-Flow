@@ -20,7 +20,7 @@ const ROLE_BADGE_VARIANTS: Record<OrganizationRole, BadgeVariant> = {
   owner: 'primary',
   admin: 'info',
   head_coach: 'warning',
-  assistant_coach: 'default',
+  assistant_coach: 'success',
 };
 
 interface RoleBadgeProps {
@@ -37,13 +37,13 @@ export function RoleBadge({ role, onClick, className = '', isEditable = false }:
   return (
     <Badge
       variant={variant}
-      className={`capitalize ${onClick ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''} ${className}`}
+      className={`!normal-case tracking-normal ${onClick ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''} ${className}`}
       onClick={onClick}
       title={ROLE_DESCRIPTIONS[role] || label}
     >
       <span className="flex items-center gap-1">
         {label}
-        {isEditable && <span className="material-icons-round text-[14px]">edit</span>}
+        {isEditable && <span className="material-icons-round text-[12px]">edit</span>}
       </span>
     </Badge>
   );
