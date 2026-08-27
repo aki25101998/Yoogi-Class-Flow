@@ -56,6 +56,7 @@ RETURNS SETOF UUID AS $$
 $$ LANGUAGE sql SECURITY DEFINER;
 
 -- Profiles
+DROP POLICY IF EXISTS "Users can view profiles in their organizations" ON public.profiles;
 CREATE POLICY "Users can view profiles in their organizations" ON public.profiles FOR SELECT USING (
   EXISTS (
     SELECT 1 FROM public.organization_members
@@ -63,58 +64,84 @@ CREATE POLICY "Users can view profiles in their organizations" ON public.profile
     AND organization_members.organization_id IN (SELECT public.get_user_organizations())
   )
 );
+DROP POLICY IF EXISTS "Users can view their own profile" ON public.profiles;
 CREATE POLICY "Users can view their own profile" ON public.profiles FOR SELECT USING (auth_user_id = auth.uid());
+DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
 CREATE POLICY "Users can update their own profile" ON public.profiles FOR UPDATE USING (auth_user_id = auth.uid());
+DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
 CREATE POLICY "Users can insert their own profile" ON public.profiles FOR INSERT WITH CHECK (auth_user_id = auth.uid());
 
 -- Organizations
+DROP POLICY IF EXISTS "Org members can view their organizations" ON public.organizations;
 CREATE POLICY "Org members can view their organizations" ON public.organizations FOR SELECT USING (id IN (SELECT public.get_user_organizations()));
+DROP POLICY IF EXISTS "Org admins can update organizations" ON public.organizations;
 CREATE POLICY "Org admins can update organizations" ON public.organizations FOR UPDATE USING (public.is_org_admin(id));
 
 -- Organization Members
+DROP POLICY IF EXISTS "Members can view other members in same org" ON public.organization_members;
 CREATE POLICY "Members can view other members in same org" ON public.organization_members FOR SELECT USING (organization_id IN (SELECT public.get_user_organizations()));
+DROP POLICY IF EXISTS "Org admins can manage members" ON public.organization_members;
 CREATE POLICY "Org admins can manage members" ON public.organization_members FOR ALL USING (public.is_org_admin(organization_id));
 
 -- Invitations
+DROP POLICY IF EXISTS "Members can view invitations in same org" ON public.organization_invitations;
 CREATE POLICY "Members can view invitations in same org" ON public.organization_invitations FOR SELECT USING (organization_id IN (SELECT public.get_user_organizations()));
+DROP POLICY IF EXISTS "Org admins can manage invitations" ON public.organization_invitations;
 CREATE POLICY "Org admins can manage invitations" ON public.organization_invitations FOR ALL USING (public.is_org_admin(organization_id));
+DROP POLICY IF EXISTS "Invitee can view their invitations" ON public.organization_invitations;
 CREATE POLICY "Invitee can view their invitations" ON public.organization_invitations FOR SELECT USING (
   email IN (SELECT email FROM public.profiles WHERE auth_user_id = auth.uid())
 );
 
 -- Coaches
+DROP POLICY IF EXISTS "Admin can do all on coaches" ON public.coaches;
 CREATE POLICY "Admin can do all on coaches" ON public.coaches FOR ALL USING (public.is_org_admin(organization_id));
+DROP POLICY IF EXISTS "Coaches can view profiles in their org" ON public.coaches;
 CREATE POLICY "Coaches can view profiles in their org" ON public.coaches FOR SELECT USING (organization_id IN (SELECT public.get_user_organizations()));
+DROP POLICY IF EXISTS "Coaches can update their own profile" ON public.coaches;
 CREATE POLICY "Coaches can update their own profile" ON public.coaches FOR UPDATE USING (id IN (SELECT public.get_my_coach_id()));
 
 -- Class Coaches
+DROP POLICY IF EXISTS "Admin can do all on class_coaches" ON public.class_coaches;
 CREATE POLICY "Admin can do all on class_coaches" ON public.class_coaches FOR ALL USING (public.is_org_admin(organization_id));
+DROP POLICY IF EXISTS "Coaches can view their own assignments" ON public.class_coaches;
 CREATE POLICY "Coaches can view their own assignments" ON public.class_coaches FOR SELECT USING (coach_id IN (SELECT public.get_my_coach_id()));
+DROP POLICY IF EXISTS "Coaches can view other assignments in their classes" ON public.class_coaches;
 CREATE POLICY "Coaches can view other assignments in their classes" ON public.class_coaches FOR SELECT USING (class_id IN (SELECT public.get_my_class_ids()));
 
 -- Entities (Venues, Classes, Students, etc.)
+DROP POLICY IF EXISTS "Admin can do all on venues" ON public.venues;
 CREATE POLICY "Admin can do all on venues" ON public.venues FOR ALL USING (public.is_org_admin(organization_id));
+DROP POLICY IF EXISTS "Coaches can view venues in their org" ON public.venues;
 CREATE POLICY "Coaches can view venues in their org" ON public.venues FOR SELECT USING (organization_id IN (SELECT public.get_user_organizations()));
 
+DROP POLICY IF EXISTS "Admin can do all on venue_classes" ON public.venue_classes;
 CREATE POLICY "Admin can do all on venue_classes" ON public.venue_classes FOR ALL USING (public.is_org_admin(organization_id));
+DROP POLICY IF EXISTS "Coaches can view assigned classes" ON public.venue_classes;
 CREATE POLICY "Coaches can view assigned classes" ON public.venue_classes FOR SELECT USING (
   id IN (SELECT public.get_my_class_ids()) OR 
   public.is_org_admin(organization_id)
 );
 
+DROP POLICY IF EXISTS "Admin can do all on students" ON public.students;
 CREATE POLICY "Admin can do all on students" ON public.students FOR ALL USING (public.is_org_admin(organization_id));
+DROP POLICY IF EXISTS "Coaches can view assigned students" ON public.students;
 CREATE POLICY "Coaches can view assigned students" ON public.students FOR SELECT USING (
   id IN (SELECT student_id FROM public.class_students WHERE class_id IN (SELECT public.get_my_class_ids())) OR 
   public.is_org_admin(organization_id)
 );
 
+DROP POLICY IF EXISTS "Admin can do all on class_students" ON public.class_students;
 CREATE POLICY "Admin can do all on class_students" ON public.class_students FOR ALL USING (public.is_org_admin(organization_id));
+DROP POLICY IF EXISTS "Coaches can view assigned class_students" ON public.class_students;
 CREATE POLICY "Coaches can view assigned class_students" ON public.class_students FOR SELECT USING (
   class_id IN (SELECT public.get_my_class_ids()) OR 
   public.is_org_admin(organization_id)
 );
 
+DROP POLICY IF EXISTS "Admin can do all on schedules" ON public.schedules;
 CREATE POLICY "Admin can do all on schedules" ON public.schedules FOR ALL USING (public.is_org_admin(organization_id));
+DROP POLICY IF EXISTS "Coaches can view assigned schedules" ON public.schedules;
 CREATE POLICY "Coaches can view assigned schedules" ON public.schedules FOR SELECT USING (
   class_id IN (SELECT public.get_my_class_ids()) OR 
   coach_id IN (SELECT public.get_my_coach_id()) OR 
@@ -122,34 +149,48 @@ CREATE POLICY "Coaches can view assigned schedules" ON public.schedules FOR SELE
 );
 
 -- Attendance
+DROP POLICY IF EXISTS "Admin can do all on attendance" ON public.attendance;
 CREATE POLICY "Admin can do all on attendance" ON public.attendance FOR ALL USING (public.is_org_admin(organization_id));
+DROP POLICY IF EXISTS "Coaches can view attendance for their classes or themselves" ON public.attendance;
 CREATE POLICY "Coaches can view attendance for their classes or themselves" ON public.attendance FOR SELECT USING (
   schedule_id IN (SELECT id FROM public.schedules WHERE class_id IN (SELECT public.get_my_class_ids())) OR 
   coach_id IN (SELECT public.get_my_coach_id()) OR 
   public.is_org_admin(organization_id)
 );
+DROP POLICY IF EXISTS "Coaches can insert their own attendance" ON public.attendance;
 CREATE POLICY "Coaches can insert their own attendance" ON public.attendance 
   FOR INSERT WITH CHECK (organization_id IN (SELECT public.get_user_organizations()) AND coach_id IN (SELECT public.get_my_coach_id()));
 
+DROP POLICY IF EXISTS "Admin can do all on student_attendance" ON public.student_attendance;
 CREATE POLICY "Admin can do all on student_attendance" ON public.student_attendance FOR ALL USING (public.is_org_admin(organization_id));
+DROP POLICY IF EXISTS "Coaches can view assigned class student attendance" ON public.student_attendance;
 CREATE POLICY "Coaches can view assigned class student attendance" ON public.student_attendance FOR SELECT USING (
   class_id IN (SELECT public.get_my_class_ids()) OR 
   public.is_org_admin(organization_id)
 );
+DROP POLICY IF EXISTS "Coaches can manage assigned class student attendance" ON public.student_attendance;
 CREATE POLICY "Coaches can manage assigned class student attendance" ON public.student_attendance FOR ALL USING (
   class_id IN (SELECT public.get_my_class_ids()) OR 
   public.is_org_admin(organization_id)
 );
 
 -- Finance / Payroll
+DROP POLICY IF EXISTS "Admin can do all on teacher_salaries" ON public.teacher_salaries;
 CREATE POLICY "Admin can do all on teacher_salaries" ON public.teacher_salaries FOR ALL USING (public.is_org_admin(organization_id));
+DROP POLICY IF EXISTS "Coaches can view own salaries" ON public.teacher_salaries;
 CREATE POLICY "Coaches can view own salaries" ON public.teacher_salaries FOR SELECT USING (organization_id IN (SELECT public.get_user_organizations()) AND coach_id IN (SELECT public.get_my_coach_id()));
 
+DROP POLICY IF EXISTS "Admin can do all on teacher_salary_sessions" ON public.teacher_salary_sessions;
 CREATE POLICY "Admin can do all on teacher_salary_sessions" ON public.teacher_salary_sessions FOR ALL USING (public.is_org_admin(organization_id));
+DROP POLICY IF EXISTS "Coaches can view own salary sessions" ON public.teacher_salary_sessions;
 CREATE POLICY "Coaches can view own salary sessions" ON public.teacher_salary_sessions FOR SELECT USING (organization_id IN (SELECT public.get_user_organizations()) AND coach_id IN (SELECT public.get_my_coach_id()));
 
+DROP POLICY IF EXISTS "Admin can do all on tuition" ON public.tuition;
 CREATE POLICY "Admin can do all on tuition" ON public.tuition FOR ALL USING (public.is_org_admin(organization_id));
+DROP POLICY IF EXISTS "Coaches can view tuition in their org" ON public.tuition;
 CREATE POLICY "Coaches can view tuition in their org" ON public.tuition FOR SELECT USING (organization_id IN (SELECT public.get_user_organizations()));
 
+DROP POLICY IF EXISTS "Admin can do all on finance_transactions" ON public.finance_transactions;
 CREATE POLICY "Admin can do all on finance_transactions" ON public.finance_transactions FOR ALL USING (public.is_org_admin(organization_id));
+DROP POLICY IF EXISTS "Coaches can view finance_transactions in their org" ON public.finance_transactions;
 CREATE POLICY "Coaches can view finance_transactions in their org" ON public.finance_transactions FOR SELECT USING (organization_id IN (SELECT public.get_user_organizations()));
