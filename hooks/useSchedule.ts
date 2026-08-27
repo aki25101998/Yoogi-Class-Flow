@@ -13,7 +13,7 @@ export function useSchedule(organizationId: string | undefined) {
       if (!organizationId) return [];
       const { data, error } = await supabase
         .from('schedules')
-        .select('*, venue_classes(name), coaches(name), venues(name)')
+        .select('*, venue_classes(name), coaches(id, organization_members(profiles(name))), venues(name)')
         .eq('organization_id', organizationId)
         .order('start_time', { ascending: true });
       
@@ -44,11 +44,14 @@ export function useSchedule(organizationId: string | undefined) {
       if (!organizationId) return [];
       const { data, error } = await supabase
         .from('coaches')
-        .select('id, name')
+        .select('id, organization_members(profiles(name))')
         .eq('organization_id', organizationId)
         .eq('status', 'active');
       if (error) throw error;
-      return data || [];
+      return (data || []).map((coach: any) => ({
+        id: coach.id,
+        name: coach.organization_members?.profiles?.name || 'Unknown'
+      }));
     },
     enabled: !!organizationId,
   });

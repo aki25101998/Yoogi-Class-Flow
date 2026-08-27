@@ -1,4 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
+import { Coach } from "@/types/coach";
 
 export async function getCurrentCoach() {
   const supabase = await createClient();
@@ -18,17 +19,6 @@ export async function getCurrentCoach() {
     .single();
     
   if (!profile) {
-    // Fallback for legacy coaches before migration is fully complete
-    const email = user.email?.toLowerCase().trim();
-    const { data: legacyCoach } = await supabase
-      .from('coaches')
-      .select('*')
-      .eq('email', email)
-      .single();
-      
-    if (legacyCoach) {
-      return { user, coach: legacyCoach, error: null };
-    }
     return { user, coach: null, error: new Error("Profile not found") };
   }
 
@@ -54,18 +44,20 @@ export async function getCurrentCoach() {
     .single();
 
   // 4. Construct compatibility coach object for frontend
-  const coach = {
-    id: coachProfile?.id || currentMembership.id, // Fallback to member id if not a coach
-    auth_user_id: user.id,
+  const coach: Coach = {
+    id: coachProfile?.id || currentMembership.id,
     organization_id: currentMembership.organization_id,
     organization_member_id: currentMembership.id,
     name: profile.name,
     email: profile.email,
     phone: coachProfile?.phone || '',
-    role: currentMembership.role,
-    permissions: currentMembership.permissions,
-    status: currentMembership.status,
-    photo_url: profile.avatar_url || coachProfile?.photo_url || ''
+    cccd: coachProfile?.cccd || '',
+    level: coachProfile?.level || '',
+    membership_number: coachProfile?.membership_number || '',
+    role: coachProfile?.role || currentMembership.role,
+    permissions: coachProfile?.permissions || currentMembership.permissions || [],
+    status: coachProfile?.status || currentMembership.status,
+    avatar_url: profile.avatar_url || ''
   };
 
   return { user, coach, error: null };

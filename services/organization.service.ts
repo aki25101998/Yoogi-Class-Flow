@@ -99,5 +99,23 @@ export async function createOrganization(name: string, slug: string): Promise<{ 
     return { success: false, error: memberError.message };
   }
 
+  // Create corresponding coach record for the owner
+  const { data: member } = await supabase
+    .from('organization_members')
+    .select('id')
+    .eq('organization_id', org.id)
+    .eq('user_id', profile.id)
+    .single();
+
+  if (member) {
+    await supabase.from('coaches').insert([{
+      organization_id: org.id,
+      organization_member_id: member.id,
+      role: 'admin', // maps owner to admin for coach role
+      status: 'active',
+      permissions
+    }]);
+  }
+
   return { success: true };
 }

@@ -14,7 +14,7 @@ export function useClasses(organizationId: string | undefined) {
       if (!organizationId) return [];
       const { data, error } = await supabase
         .from('venue_classes')
-        .select('*, class_coaches(*, coaches(name))')
+        .select('*, class_coaches(*, coaches(id, organization_members(profiles(name))))')
         .eq('organization_id', organizationId);
       
       if (error) throw error;
@@ -32,12 +32,18 @@ export function useClasses(organizationId: string | undefined) {
       if (!organizationId) return [];
       const { data, error } = await supabase
         .from('coaches')
-        .select('id, name, role')
+        .select('id, role, organization_members(profiles(name))')
         .eq('organization_id', organizationId)
         .eq('status', 'active');
       
       if (error) throw error;
-      return data || [];
+      
+      // Map to keep UI compatibility
+      return (data || []).map((coach: any) => ({
+        id: coach.id,
+        role: coach.role,
+        name: coach.organization_members?.profiles?.name || 'Unknown'
+      }));
     },
     enabled: !!organizationId,
   });

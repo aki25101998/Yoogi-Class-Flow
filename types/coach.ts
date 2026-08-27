@@ -1,8 +1,10 @@
 export interface Coach {
   id: string;
-  auth_user_id?: string;
+  organization_id: string;
+  organization_member_id: string;
   name: string;
   email: string;
+  avatar_url?: string;
   phone?: string;
   cccd?: string;
   level?: string;
@@ -10,7 +12,7 @@ export interface Coach {
   role: 'admin' | 'coach' | string;
   permissions: string[];
   status: string;
-  photo_url?: string;
+  classCount?: number;
   created_at?: string;
   updated_at?: string;
 }

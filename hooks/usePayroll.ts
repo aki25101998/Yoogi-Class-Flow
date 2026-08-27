@@ -10,11 +10,14 @@ export function usePayroll(organizationId: string | undefined) {
       if (!organizationId) return [];
       const { data, error } = await supabase
         .from('coaches')
-        .select('id, name')
+        .select('id, organization_members(profiles(name))')
         .eq('organization_id', organizationId)
         .eq('status', 'active');
       if (error) throw error;
-      return data || [];
+      return (data || []).map((coach: any) => ({
+        id: coach.id,
+        name: coach.organization_members?.profiles?.name || 'Unknown'
+      }));
     },
     enabled: !!organizationId,
   });
