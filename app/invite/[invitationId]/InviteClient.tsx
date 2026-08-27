@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/app/components/ui/Button';
 import { acceptInvitationAction } from './actions';
@@ -26,7 +26,8 @@ export default function InviteClient({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
+  const isAcceptingRef = useRef(false);
+
   if (invitationStatus === 'revoked') {
     return <div className="text-danger font-medium p-4 bg-danger/10 rounded-lg">Lời mời đã bị thu hồi.</div>;
   }
@@ -55,8 +56,9 @@ export default function InviteClient({
   };
 
   const handleAccept = async () => {
-    if (loading) return;
+    if (loading || isAcceptingRef.current) return;
     
+    isAcceptingRef.current = true;
     setError('');
     setLoading(true);
     
