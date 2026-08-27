@@ -47,6 +47,9 @@ export default function InviteClient({
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/auth/callback?next=/invite/${invitationId}`,
+        queryParams: {
+          prompt: 'select_account',
+        },
       },
     });
   };
