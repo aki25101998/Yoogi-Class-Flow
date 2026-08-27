@@ -17,8 +17,7 @@ const ADMIN_NAV = [
     { icon: 'school', label: 'Học viên', route: '/students', permission: 'manage_students' },
     { icon: 'location_on', label: 'Địa điểm', route: '/venues', permission: 'manage_venues' },
     { icon: 'class', label: 'Lớp học', route: '/classes', permission: 'manage_classes' },
-    { icon: 'calendar_month', label: 'Lịch dạy', route: '/schedule', permission: 'manage_schedule' },
-    { icon: 'settings', label: 'Cài đặt', route: '/settings', permission: 'manage_settings' }
+    { icon: 'calendar_month', label: 'Lịch dạy', route: '/schedule', permission: 'manage_schedule' }
   ]},
   { section: 'Chấm công', items: [
     { icon: 'fact_check', label: 'Điểm danh', route: '/attendance', permission: 'manage_attendance' },
@@ -27,6 +26,10 @@ const ADMIN_NAV = [
   { section: 'Tài chính - Kế toán', items: [
     { icon: 'account_balance_wallet', label: 'Học phí', route: '/tuition', permission: 'manage_tuition' },
     { icon: 'receipt_long', label: 'Sổ quỹ', route: '/finance', permission: 'manage_finance' }
+  ]},
+  { section: 'Hệ thống', items: [
+    { icon: 'group', label: 'Thành viên', route: '/settings/members', permission: 'manage_members' },
+    { icon: 'settings', label: 'Cài đặt', route: '/settings', permission: 'manage_settings' }
   ]}
 ];
 
@@ -83,6 +86,18 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
     return permissions.includes(perm);
   };
 
+  const checkIsActive = (route: string) => {
+    if (pathname === route) return true;
+    if (route === '/dashboard') return false;
+    if (route === '/settings') {
+      return pathname === '/settings' || (pathname.startsWith('/settings/') && !pathname.startsWith('/settings/members'));
+    }
+    if (route === '/settings/members') {
+      return pathname.startsWith('/settings/members');
+    }
+    return pathname.startsWith(`${route}/`);
+  };
+
   const navSections = [
     ...(isAdminOrOwner ? [] : COACH_NAV),
     ...ADMIN_NAV.map(section => ({
@@ -130,7 +145,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
                 <Link 
                   href={item.route} 
                   key={itemIdx}
-                  className={`nav-item ${pathname === item.route ? 'active' : ''}`}
+                  className={`nav-item ${checkIsActive(item.route) ? 'active' : ''}`}
                   onClick={() => setIsSidebarOpen(false)}
                   onMouseEnter={() => prefetchRouteData(queryClient, item.route, context?.organization?.id, isAdminOrOwner, context?.coach?.id)}
                 >
@@ -138,18 +153,6 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
                   <span>{item.label}</span>
                 </Link>
               ))}
-              
-              {/* Insert Members link under Cài đặt for admins */}
-              {section.section === 'Quản lý' && isAdminOrOwner && (
-                <Link 
-                  href="/settings/members" 
-                  className={`nav-item ${pathname === '/settings/members' ? 'active' : ''}`}
-                  onClick={() => setIsSidebarOpen(false)}
-                >
-                  <span className="material-icons-round">group</span>
-                  <span>Thành viên</span>
-                </Link>
-              )}
             </div>
           ))}
         </div>
