@@ -6,5 +6,6 @@ CREATE TABLE IF NOT EXISTS public.venues (
   name TEXT NOT NULL,
   address TEXT DEFAULT '',
   status TEXT DEFAULT 'active',
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(organization_id, id)
 );

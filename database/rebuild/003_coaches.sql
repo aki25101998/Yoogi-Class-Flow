@@ -16,5 +16,6 @@ CREATE TABLE IF NOT EXISTS public.coaches (
   photo_url TEXT DEFAULT '',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(organization_member_id)
+  UNIQUE(organization_member_id),
+  UNIQUE(organization_id, id)
 );

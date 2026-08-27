@@ -103,17 +103,31 @@ CREATE POLICY "Coaches can view assigned classes" ON public.venue_classes FOR SE
 );
 
 CREATE POLICY "Admin can do all on students" ON public.students FOR ALL USING (public.is_org_admin(organization_id));
-CREATE POLICY "Coaches can view students in their org" ON public.students FOR SELECT USING (organization_id IN (SELECT public.get_user_organizations()));
+CREATE POLICY "Coaches can view assigned students" ON public.students FOR SELECT USING (
+  id IN (SELECT student_id FROM public.class_students WHERE class_id IN (SELECT public.get_my_class_ids())) OR 
+  public.is_org_admin(organization_id)
+);
 
 CREATE POLICY "Admin can do all on class_students" ON public.class_students FOR ALL USING (public.is_org_admin(organization_id));
-CREATE POLICY "Coaches can view class_students in their org" ON public.class_students FOR SELECT USING (organization_id IN (SELECT public.get_user_organizations()));
+CREATE POLICY "Coaches can view assigned class_students" ON public.class_students FOR SELECT USING (
+  class_id IN (SELECT public.get_my_class_ids()) OR 
+  public.is_org_admin(organization_id)
+);
 
 CREATE POLICY "Admin can do all on schedules" ON public.schedules FOR ALL USING (public.is_org_admin(organization_id));
-CREATE POLICY "Coaches can view schedules in their org" ON public.schedules FOR SELECT USING (organization_id IN (SELECT public.get_user_organizations()));
+CREATE POLICY "Coaches can view assigned schedules" ON public.schedules FOR SELECT USING (
+  class_id IN (SELECT public.get_my_class_ids()) OR 
+  coach_id IN (SELECT public.get_my_coach_id()) OR 
+  public.is_org_admin(organization_id)
+);
 
 -- Attendance
 CREATE POLICY "Admin can do all on attendance" ON public.attendance FOR ALL USING (public.is_org_admin(organization_id));
-CREATE POLICY "Coaches can view attendance in their org" ON public.attendance FOR SELECT USING (organization_id IN (SELECT public.get_user_organizations()));
+CREATE POLICY "Coaches can view attendance for their classes or themselves" ON public.attendance FOR SELECT USING (
+  schedule_id IN (SELECT id FROM public.schedules WHERE class_id IN (SELECT public.get_my_class_ids())) OR 
+  coach_id IN (SELECT public.get_my_coach_id()) OR 
+  public.is_org_admin(organization_id)
+);
 CREATE POLICY "Coaches can insert their own attendance" ON public.attendance 
   FOR INSERT WITH CHECK (organization_id IN (SELECT public.get_user_organizations()) AND coach_id IN (SELECT public.get_my_coach_id()));
 
