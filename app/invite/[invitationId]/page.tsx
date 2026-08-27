@@ -18,7 +18,7 @@ export default async function InvitePage({ params }: { params: { invitationId: s
 
   if (error || !invitation) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
+      <div className="flex w-full h-screen items-center justify-center bg-background">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Không tìm thấy lời mời</h1>
           <p className="text-secondary">Lời mời này không tồn tại hoặc đã bị xóa.</p>
@@ -38,7 +38,7 @@ export default async function InvitePage({ params }: { params: { invitationId: s
   const organizationName = invitation.organization_name || 'Tổ chức';
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+    <div className="flex w-full min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-md p-8 bg-surface rounded-xl shadow-lg border border-border text-center">
         <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-6">
           <span className="material-icons-round text-3xl">mail</span>
