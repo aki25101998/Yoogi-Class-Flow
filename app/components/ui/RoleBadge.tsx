@@ -43,7 +43,7 @@ export function RoleBadge({ role, onClick, className = '', isEditable = false }:
     >
       <span className="flex items-center gap-1">
         {label}
-        {isEditable && <span className="material-icons-round text-[12px]">edit</span>}
+        {isEditable && <span className="material-icons-round text-[10px] opacity-70">edit</span>}
       </span>
     </Badge>
   );
