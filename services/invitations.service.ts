@@ -27,8 +27,12 @@ export async function acceptInvitation(): Promise<{ success: boolean; error?: st
   });
 
   if (rpcError) {
-    console.error('RPC Error accepting invitation:', rpcError);
-    return { success: false, error: 'Lỗi hệ thống khi nhận lời mời.' };
+    console.error('RPC Error accepting invitation:', rpcError, {
+      userId: userData.user.id,
+      email,
+      invitationId: invitation.id
+    });
+    return { success: false, error: `Lỗi hệ thống: ${rpcError.message}` };
   }
 
   if (rpcResult && typeof rpcResult === 'object') {
@@ -57,8 +61,12 @@ export async function acceptInvitationById(invitationId: string): Promise<{ succ
   });
 
   if (rpcError) {
-    console.error('RPC Error accepting invitation:', rpcError);
-    return { success: false, error: 'Lỗi hệ thống khi nhận lời mời.' };
+    console.error('RPC Error accepting invitation:', rpcError, {
+      userId: userData.user.id,
+      email,
+      invitationId
+    });
+    return { success: false, error: `Lỗi hệ thống: ${rpcError.message}` };
   }
 
   // The RPC returns a JSON object { success: boolean, error?: string }
