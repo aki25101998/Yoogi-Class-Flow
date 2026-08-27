@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { inviteMemberAction, revokeInvitationAction, removeMemberAction } from './actions';
+import { inviteMemberAction, revokeInvitationAction, removeMemberAction, changeRoleAction } from './actions';
 import { OrganizationRole } from '@/types/organization';
+import { RoleBadge } from '@/app/components/ui/RoleBadge';
+import { ChangeRoleModal } from '@/app/components/ui/ChangeRoleModal';
 
 // UI Components
 import { PageHeader } from '@/app/components/ui/PageHeader';
@@ -23,6 +25,11 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
   const [role, setRole] = useState<OrganizationRole>('assistant_coach');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // Role change state
+  const [selectedMember, setSelectedMember] = useState<{ id: string; role: OrganizationRole; name: string } | null>(null);
+  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+  const [roleChangeLoading, setRoleChangeLoading] = useState(false);
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,6 +69,28 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
   };
 
   const isAdminOrOwner = currentUserRole === 'admin' || currentUserRole === 'owner';
+
+  const handleOpenRoleModal = (member: any) => {
+    if (isAdminOrOwner && member.id !== currentUserId) {
+      if (currentUserRole === 'admin' && member.role === 'owner') return;
+      setSelectedMember({ id: member.id, role: member.role, name: member.profiles?.name || 'Thành viên' });
+      setIsRoleModalOpen(true);
+    }
+  };
+
+  const handleRoleSave = async (newRole: OrganizationRole) => {
+    if (!selectedMember) return;
+    setRoleChangeLoading(true);
+    const res = await changeRoleAction(selectedMember.id, newRole);
+    setRoleChangeLoading(false);
+    if (res.success) {
+      setIsRoleModalOpen(false);
+      setSelectedMember(null);
+      router.refresh();
+    } else {
+      alert(res.error || 'Lỗi khi thay đổi vai trò');
+    }
+  };
 
   return (
     <div className="flex-col gap-6">
@@ -142,7 +171,13 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
                   <Tr key={m.id}>
                     <Td className="font-medium text-main">{m.profiles?.name || '-'}</Td>
                     <Td>{m.profiles?.email || '-'}</Td>
-                    <Td className="capitalize">{m.role.replace('_', ' ')}</Td>
+                    <Td>
+                      <RoleBadge 
+                        role={m.role} 
+                        isEditable={isAdminOrOwner && m.id !== currentUserId && !(currentUserRole === 'admin' && m.role === 'owner')}
+                        onClick={isAdminOrOwner && m.id !== currentUserId && !(currentUserRole === 'admin' && m.role === 'owner') ? () => handleOpenRoleModal(m) : undefined}
+                      />
+                    </Td>
                     <Td>
                       <Badge variant="success">Active</Badge>
                     </Td>
@@ -165,7 +200,9 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
                   <Tr key={inv.id} className="bg-surface-hover/50">
                     <Td className="text-muted">-</Td>
                     <Td>{inv.email}</Td>
-                    <Td className="capitalize">{inv.role.replace('_', ' ')}</Td>
+                    <Td>
+                      <RoleBadge role={inv.role} />
+                    </Td>
                     <Td>
                       <Badge variant="warning">Pending</Badge>
                     </Td>
@@ -188,6 +225,17 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
             </Table>
           </div>
         </Card>
+      )}
+
+      {selectedMember && (
+        <ChangeRoleModal
+          isOpen={isRoleModalOpen}
+          onClose={() => setIsRoleModalOpen(false)}
+          currentRole={selectedMember.role}
+          memberName={selectedMember.name}
+          onSave={handleRoleSave}
+          isLoading={roleChangeLoading}
+        />
       )}
     </div>
   );

@@ -208,7 +208,26 @@ export async function changeRole(memberId: string, newRole: OrganizationRole): P
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Not authenticated' };
   if (context.membership?.role !== 'admin' && context.membership?.role !== 'owner') return { success: false, error: 'Permission denied' };
-  if (context.membership.id === memberId) return { success: false, error: 'Không thể tự hạ quyền bản thân.' };
+  if (context.membership.id === memberId) return { success: false, error: 'Không thể tự thay đổi vai trò của bản thân.' };
+
+  const supabase = await createClient();
+  
+  // Fetch target member to check their current role
+  const { data: targetMember, error: fetchError } = await supabase
+    .from('organization_members')
+    .select('role')
+    .eq('id', memberId)
+    .eq('organization_id', context.organization.id)
+    .single();
+
+  if (fetchError || !targetMember) {
+    return { success: false, error: 'Không tìm thấy thành viên.' };
+  }
+
+  // Prevent Admin from changing Owner's role
+  if (targetMember.role === 'owner' && context.membership.role !== 'owner') {
+    return { success: false, error: 'Quản trị viên không thể thay đổi vai trò của Chủ trung tâm.' };
+  }
 
   let permissions: string[] = [];
   if (newRole === 'head_coach') permissions = ['VIEW_CLASSES', 'VIEW_STUDENTS', 'TAKE_ATTENDANCE', 'VIEW_ATTENDANCE', 'VIEW_SCHEDULE', 'VIEW_SALARY'];
@@ -216,7 +235,6 @@ export async function changeRole(memberId: string, newRole: OrganizationRole): P
   else if (newRole === 'admin') permissions = ['manage_coaches', 'manage_students', 'manage_venues', 'manage_classes', 'manage_schedule', 'manage_settings', 'manage_attendance', 'view_payroll', 'manage_members'];
   else if (newRole === 'owner') permissions = ['manage_coaches', 'manage_students', 'manage_venues', 'manage_classes', 'manage_schedule', 'manage_settings', 'manage_attendance', 'view_payroll', 'manage_members', 'manage_organization'];
 
-  const supabase = await createClient();
   const { error } = await supabase.from('organization_members').update({ role: newRole, permissions }).eq('id', memberId).eq('organization_id', context.organization.id);
   
   if (error) return { success: false, error: error.message };

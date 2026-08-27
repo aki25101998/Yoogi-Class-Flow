@@ -1,6 +1,6 @@
 'use server';
 
-import { inviteMember, revokeInvitation, removeMember } from '@/services/members.service';
+import { inviteMember, revokeInvitation, removeMember, changeRole } from '@/services/members.service';
 import { OrganizationRole } from '@/types/organization';
 
 export async function inviteMemberAction(email: string, role: OrganizationRole) {
@@ -13,4 +13,8 @@ export async function revokeInvitationAction(id: string) {
 
 export async function removeMemberAction(id: string) {
   return await removeMember(id);
+}
+
+export async function changeRoleAction(id: string, newRole: OrganizationRole) {
+  return await changeRole(id, newRole);
 }
