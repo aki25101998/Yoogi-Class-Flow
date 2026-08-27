@@ -9,11 +9,12 @@ export default async function InvitePage({ params }: { params: { invitationId: s
   const { data: userData } = await supabase.auth.getUser();
   const user = userData?.user;
 
-  const { data: invitation, error } = await supabase
-    .from('organization_invitations')
-    .select('*, organization:organizations(name)')
-    .eq('id', params.invitationId)
-    .single();
+  // Use the public RPC to fetch limited data securely for anonymous users
+  const { data, error } = await supabase.rpc('get_public_invitation', {
+    invitation_id: params.invitationId
+  });
+
+  const invitation = data?.[0];
 
   if (error || !invitation) {
     return (
@@ -34,7 +35,7 @@ export default async function InvitePage({ params }: { params: { invitationId: s
   };
 
   const roleLabel = roleLabels[invitation.role] || invitation.role;
-  const organizationName = invitation.organization?.name || 'Tổ chức';
+  const organizationName = invitation.organization_name || 'Tổ chức';
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
