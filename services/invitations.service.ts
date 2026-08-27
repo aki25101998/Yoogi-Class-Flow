@@ -1,14 +1,16 @@
 import { createClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@/utils/supabase/admin';
 
 export async function acceptInvitation(): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
+  const adminClient = createAdminClient();
   const { data: userData } = await supabase.auth.getUser();
   if (!userData?.user) return { success: false, error: 'Not authenticated' };
 
   const email = userData.user.email?.toLowerCase().trim();
   if (!email) return { success: false, error: 'User email not found' };
 
-  const { data: profile } = await supabase
+  const { data: profile } = await adminClient
     .from('profiles')
     .select('*')
     .eq('auth_user_id', userData.user.id)
@@ -17,7 +19,7 @@ export async function acceptInvitation(): Promise<{ success: boolean; error?: st
   if (!profile) return { success: false, error: 'Profile not found' };
 
   // Fetch pending invitations for this email
-  const { data: invitations, error: invError } = await supabase
+  const { data: invitations, error: invError } = await adminClient
     .from('organization_invitations')
     .select('*')
     .eq('email', email)
@@ -33,12 +35,12 @@ export async function acceptInvitation(): Promise<{ success: boolean; error?: st
   // Check if it's expired
   if (invitation.expires_at && new Date(invitation.expires_at) < new Date()) {
     // Mark as expired
-    await supabase.from('organization_invitations').update({ status: 'expired' }).eq('id', invitation.id);
+    await adminClient.from('organization_invitations').update({ status: 'expired' }).eq('id', invitation.id);
     return { success: false, error: 'Lời mời đã hết hạn.' };
   }
 
   // Check if they are already a member
-  const { data: existingMembership } = await supabase
+  const { data: existingMembership } = await adminClient
     .from('organization_members')
     .select('*')
     .eq('organization_id', invitation.organization_id)
@@ -47,7 +49,7 @@ export async function acceptInvitation(): Promise<{ success: boolean; error?: st
 
   if (existingMembership && existingMembership.length > 0) {
     // Already a member, just mark invitation as accepted
-    await supabase.from('organization_invitations').update({ 
+    await adminClient.from('organization_invitations').update({ 
       status: 'accepted', 
       accepted_at: new Date().toISOString() 
     }).eq('id', invitation.id);
@@ -55,7 +57,7 @@ export async function acceptInvitation(): Promise<{ success: boolean; error?: st
   }
 
   // Create membership
-  const { error: memberError } = await supabase
+  const { error: memberError } = await adminClient
     .from('organization_members')
     .insert([{
       organization_id: invitation.organization_id,
@@ -72,20 +74,20 @@ export async function acceptInvitation(): Promise<{ success: boolean; error?: st
   // Also create coach record if they are a coach
   if (invitation.role === 'head_coach' || invitation.role === 'assistant_coach' || invitation.role === 'admin' || invitation.role === 'owner') {
     // Check if coach record already exists (maybe from legacy)
-    const { data: existingCoach } = await supabase.from('coaches').select('*').eq('email', email).single();
+    const { data: existingCoach } = await adminClient.from('coaches').select('*').eq('email', email).single();
     
     // Get the new membership to link it
-    const { data: newMembership } = await supabase.from('organization_members')
+    const { data: newMembership } = await adminClient.from('organization_members')
       .select('id').eq('organization_id', invitation.organization_id).eq('user_id', profile.id).single();
 
     if (existingCoach && newMembership) {
-      await supabase.from('coaches').update({ 
+      await adminClient.from('coaches').update({ 
         organization_id: invitation.organization_id,
         organization_member_id: newMembership.id
       }).eq('id', existingCoach.id);
     } else if (newMembership) {
       // Create new coach record
-      await supabase.from('coaches').insert([{
+      await adminClient.from('coaches').insert([{
         organization_id: invitation.organization_id,
         organization_member_id: newMembership.id,
         email: email,
@@ -98,7 +100,7 @@ export async function acceptInvitation(): Promise<{ success: boolean; error?: st
   }
 
   // Mark invitation as accepted
-  await supabase.from('organization_invitations').update({ 
+  await adminClient.from('organization_invitations').update({ 
     status: 'accepted', 
     accepted_at: new Date().toISOString() 
   }).eq('id', invitation.id);
@@ -108,13 +110,14 @@ export async function acceptInvitation(): Promise<{ success: boolean; error?: st
 
 export async function acceptInvitationById(invitationId: string): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
+  const adminClient = createAdminClient();
   const { data: userData } = await supabase.auth.getUser();
   if (!userData?.user) return { success: false, error: 'Not authenticated' };
 
   const email = userData.user.email?.toLowerCase().trim();
   if (!email) return { success: false, error: 'User email not found' };
 
-  const { data: profile } = await supabase
+  const { data: profile } = await adminClient
     .from('profiles')
     .select('*')
     .eq('auth_user_id', userData.user.id)
@@ -123,7 +126,7 @@ export async function acceptInvitationById(invitationId: string): Promise<{ succ
   if (!profile) return { success: false, error: 'Profile not found' };
 
   // Fetch the specific invitation by ID
-  const { data: invitation, error: invError } = await supabase
+  const { data: invitation, error: invError } = await adminClient
     .from('organization_invitations')
     .select('*')
     .eq('id', invitationId)
@@ -154,12 +157,12 @@ export async function acceptInvitationById(invitationId: string): Promise<{ succ
 
   // Check expiry again just in case the CRON didn't run or status wasn't updated
   if (invitation.expires_at && new Date(invitation.expires_at) < new Date()) {
-    await supabase.from('organization_invitations').update({ status: 'expired' }).eq('id', invitation.id);
+    await adminClient.from('organization_invitations').update({ status: 'expired' }).eq('id', invitation.id);
     return { success: false, error: 'Lời mời đã hết hạn.' };
   }
 
   // Check if they are already an active member
-  const { data: existingMembership } = await supabase
+  const { data: existingMembership } = await adminClient
     .from('organization_members')
     .select('*')
     .eq('organization_id', invitation.organization_id)
@@ -167,7 +170,7 @@ export async function acceptInvitationById(invitationId: string): Promise<{ succ
     .eq('status', 'active');
 
   if (existingMembership && existingMembership.length > 0) {
-    await supabase.from('organization_invitations').update({ 
+    await adminClient.from('organization_invitations').update({ 
       status: 'accepted', 
       accepted_at: new Date().toISOString() 
     }).eq('id', invitation.id);
@@ -175,7 +178,7 @@ export async function acceptInvitationById(invitationId: string): Promise<{ succ
   }
 
   // Create membership
-  const { error: memberError } = await supabase
+  const { error: memberError } = await adminClient
     .from('organization_members')
     .insert([{
       organization_id: invitation.organization_id,
@@ -191,17 +194,17 @@ export async function acceptInvitationById(invitationId: string): Promise<{ succ
 
   // Also create coach record if they are a coach
   if (invitation.role === 'head_coach' || invitation.role === 'assistant_coach' || invitation.role === 'admin' || invitation.role === 'owner') {
-    const { data: existingCoach } = await supabase.from('coaches').select('*').eq('email', email).single();
-    const { data: newMembership } = await supabase.from('organization_members')
+    const { data: existingCoach } = await adminClient.from('coaches').select('*').eq('email', email).single();
+    const { data: newMembership } = await adminClient.from('organization_members')
       .select('id').eq('organization_id', invitation.organization_id).eq('user_id', profile.id).single();
 
     if (existingCoach && newMembership) {
-      await supabase.from('coaches').update({ 
+      await adminClient.from('coaches').update({ 
         organization_id: invitation.organization_id,
         organization_member_id: newMembership.id
       }).eq('id', existingCoach.id);
     } else if (newMembership) {
-      await supabase.from('coaches').insert([{
+      await adminClient.from('coaches').insert([{
         organization_id: invitation.organization_id,
         organization_member_id: newMembership.id,
         email: email,
@@ -214,7 +217,7 @@ export async function acceptInvitationById(invitationId: string): Promise<{ succ
   }
 
   // Mark invitation as accepted
-  await supabase.from('organization_invitations').update({ 
+  await adminClient.from('organization_invitations').update({ 
     status: 'accepted', 
     accepted_at: new Date().toISOString() 
   }).eq('id', invitation.id);
