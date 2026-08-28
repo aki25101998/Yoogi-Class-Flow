@@ -27,10 +27,9 @@ interface RoleBadgeProps {
   role: OrganizationRole;
   onClick?: () => void;
   className?: string;
-  isEditable?: boolean;
 }
 
-export function RoleBadge({ role, onClick, className = '', isEditable = false }: RoleBadgeProps) {
+export function RoleBadge({ role, onClick, className = '' }: RoleBadgeProps) {
   const label = ROLE_LABELS[role] || 'Không xác định';
   const variant = ROLE_BADGE_VARIANTS[role] || 'default';
 
@@ -43,7 +42,6 @@ export function RoleBadge({ role, onClick, className = '', isEditable = false }:
     >
       <span className="inline-flex items-center gap-[4px] leading-none">
         {label}
-        {isEditable && <span className="material-icons-round text-[7px] opacity-60 flex-shrink-0 leading-none">edit</span>}
       </span>
     </Badge>
   );

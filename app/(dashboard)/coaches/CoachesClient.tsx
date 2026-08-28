@@ -21,6 +21,7 @@ import { Input, Select } from '@/app/components/ui/Input';
 import { Card, CardContent } from '@/app/components/ui/Card';
 import { Table, TableContainer, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/app/components/ui/Table';
 import { Badge } from '@/app/components/ui/Badge';
+import { ChangeRoleModal } from '@/app/components/ui/ChangeRoleModal';
 import { EmptyState } from '@/app/components/ui/EmptyState';
 
 function CoachSkeleton() {
@@ -81,6 +82,7 @@ export default function CoachesClient() {
 
   // Copy link state for invitation list
   const [copiedInvitationId, setCopiedInvitationId] = useState<string | null>(null);
+  const [editingRoleMember, setEditingRoleMember] = useState<{id: string, name: string, role: OrganizationRole} | null>(null);
 
   const isAdminOrOwner = currentUserRole === 'admin' || currentUserRole === 'owner';
 
@@ -150,10 +152,12 @@ export default function CoachesClient() {
   };
 
   const executeChangeRole = async (id: string, newRole: OrganizationRole) => {
-    if (!confirm(`Bạn có chắc muốn đổi vai trò thành ${newRole}?`)) return;
     setLoading(true);
     const res = await changeRoleAction(id, newRole);
-    if (res.success) handleSuccess();
+    if (res.success) {
+      handleSuccess();
+      setEditingRoleMember(null);
+    }
     else {
       alert(res.error || 'Lỗi đổi quyền');
     }
@@ -343,7 +347,7 @@ export default function CoachesClient() {
               ) : (
                 <TableHead>Số lớp phụ trách</TableHead>
               )}
-              {isAdminOrOwner && <TableHead>Hành động</TableHead>}
+              {isAdminOrOwner && <TableHead className="font-semibold">Hành động</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -370,31 +374,34 @@ export default function CoachesClient() {
                     <TableCell className="font-medium">{m.name}</TableCell>
                     <TableCell className="text-secondary">{m.email}</TableCell>
                     <TableCell>
-                      {isAdminOrOwner && m.id !== currentUserId && currentUserRole === 'owner' ? (
-                         <Select 
-                            value={m.role} 
-                            onChange={(e) => executeChangeRole(m.id, e.target.value as OrganizationRole)}
-                            disabled={loading}
-                            options={[
-                              { value: 'assistant_coach', label: 'HLV phụ' },
-                              { value: 'head_coach', label: 'HLV trưởng' },
-                              { value: 'admin', label: 'Quản trị viên' },
-                              { value: 'owner', label: 'Chủ tổ chức' }
-                            ]}
-                          />
-                      ) : (
-                        <Badge variant={m.role === 'owner' || m.role === 'admin' ? 'primary' : 'default'}>
-                          {roleLabels[m.role] || m.role}
-                        </Badge>
-                      )}
+                      <Badge variant={m.role === 'owner' || m.role === 'admin' ? 'primary' : 'default'}>
+                        {roleLabels[m.role] || m.role}
+                      </Badge>
                     </TableCell>
                     <TableCell>{m.classCount} lớp</TableCell>
                     {isAdminOrOwner && (
                       <TableCell>
                         {m.id !== currentUserId && (
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="warning" onClick={() => executeAction(suspendMemberAction, m.id, 'Tạm ngưng HLV này?')} disabled={loading}>Tạm ngưng</Button>
-                            <Button size="sm" variant="danger" onClick={() => executeAction(removeMemberAction, m.id, 'Xóa hoàn toàn HLV này?')} disabled={loading}>Xóa</Button>
+                          <div className="flex items-center gap-2">
+                            {currentUserRole === 'owner' && (
+                              <button
+                                onClick={() => setEditingRoleMember({ id: m.id, name: m.name, role: m.role as OrganizationRole })}
+                                className="text-sm font-semibold text-primary hover:opacity-80 transition-opacity disabled:opacity-50"
+                                disabled={loading}
+                              >
+                                Chỉnh sửa
+                              </button>
+                            )}
+                            {currentUserRole === 'owner' && (
+                              <span className="text-secondary/40 select-none">|</span>
+                            )}
+                            <button
+                              onClick={() => executeAction(removeMemberAction, m.id, 'Xóa hoàn toàn HLV này?')}
+                              className="text-sm font-medium text-danger hover:opacity-80 transition-opacity disabled:opacity-50"
+                              disabled={loading}
+                            >
+                              Xóa
+                            </button>
                           </div>
                         )}
                       </TableCell>
@@ -455,6 +462,19 @@ export default function CoachesClient() {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {editingRoleMember && (
+        <ChangeRoleModal
+          isOpen={!!editingRoleMember}
+          onClose={() => setEditingRoleMember(null)}
+          currentRole={editingRoleMember.role}
+          memberName={editingRoleMember.name}
+          onSave={async (newRole) => {
+            await executeChangeRole(editingRoleMember.id, newRole);
+          }}
+          isLoading={loading}
+        />
+      )}
     </div>
   );
 }

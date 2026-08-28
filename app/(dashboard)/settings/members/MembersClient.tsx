@@ -163,7 +163,7 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
                   <Th>Email</Th>
                   <Th>Vai trò</Th>
                   <Th>Trạng thái</Th>
-                  <Th className="text-right">Hành động</Th>
+                  <Th className="text-right font-semibold">Hành động</Th>
                 </Tr>
               </Thead>
               <Tbody>
@@ -172,26 +172,34 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
                     <Td className="font-medium text-main">{m.profiles?.name || '-'}</Td>
                     <Td>{m.profiles?.email || '-'}</Td>
                     <Td>
-                      <RoleBadge 
-                        role={m.role} 
-                        isEditable={isAdminOrOwner && m.id !== currentUserId && !(currentUserRole === 'admin' && m.role === 'owner')}
-                        onClick={isAdminOrOwner && m.id !== currentUserId && !(currentUserRole === 'admin' && m.role === 'owner') ? () => handleOpenRoleModal(m) : undefined}
-                      />
+                      <RoleBadge role={m.role} />
                     </Td>
                     <Td>
                       <Badge variant="success">Active</Badge>
                     </Td>
                     <Td className="text-right whitespace-nowrap">
                       {isAdminOrOwner && m.id !== currentUserId && (
-                        <Button 
-                          variant="ghost"
-                          size="sm"
-                          className="text-danger hover:bg-danger-bg"
-                          onClick={() => handleRemove(m.id)}
-                          disabled={loading}
-                        >
-                          Xóa
-                        </Button>
+                        <div className="flex items-center justify-end gap-2">
+                          {!(currentUserRole === 'admin' && m.role === 'owner') && (
+                            <button
+                              onClick={() => handleOpenRoleModal(m)}
+                              className="text-sm font-semibold text-primary hover:opacity-80 transition-opacity disabled:opacity-50"
+                              disabled={loading}
+                            >
+                              Chỉnh sửa
+                            </button>
+                          )}
+                          {!(currentUserRole === 'admin' && m.role === 'owner') && (
+                            <span className="text-secondary/40 select-none">|</span>
+                          )}
+                          <button
+                            onClick={() => handleRemove(m.id)}
+                            className="text-sm font-medium text-danger hover:opacity-80 transition-opacity disabled:opacity-50"
+                            disabled={loading}
+                          >
+                            Xóa
+                          </button>
+                        </div>
                       )}
                     </Td>
                   </Tr>
@@ -208,15 +216,13 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
                     </Td>
                     <Td className="text-right whitespace-nowrap">
                       {isAdminOrOwner && (
-                        <Button 
-                          variant="ghost"
-                          size="sm"
-                          className="text-warning hover:bg-warning-bg"
+                        <button
                           onClick={() => handleRevoke(inv.id)}
+                          className="text-sm font-medium text-danger hover:opacity-80 transition-opacity disabled:opacity-50"
                           disabled={loading}
                         >
                           Thu hồi
-                        </Button>
+                        </button>
                       )}
                     </Td>
                   </Tr>
