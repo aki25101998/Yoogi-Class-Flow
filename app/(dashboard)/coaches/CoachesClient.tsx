@@ -382,22 +382,22 @@ export default function CoachesClient() {
                     {isAdminOrOwner && (
                       <TableCell>
                         {m.id !== currentUserId && (
-                          <div className="flex items-center">
+                          <div>
                             {currentUserRole === 'owner' && (
                               <button
                                 onClick={() => setEditingRoleMember({ id: m.id, name: m.name, role: m.role as OrganizationRole })}
-                                className="action-link action-link--primary"
+                                className="text-action text-action-primary"
                                 disabled={loading}
                               >
                                 Chỉnh sửa
                               </button>
                             )}
                             {currentUserRole === 'owner' && (
-                              <span className="action-separator" aria-hidden="true">|</span>
+                              <span className="text-action-separator" aria-hidden="true">|</span>
                             )}
                             <button
                               onClick={() => executeAction(removeMemberAction, m.id, 'Xóa hoàn toàn HLV này?')}
-                              className="action-link action-link--danger"
+                              className="text-action text-action-danger"
                               disabled={loading}
                             >
                               Xóa

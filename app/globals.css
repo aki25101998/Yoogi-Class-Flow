@@ -453,66 +453,59 @@ body {
   }
 }
 
-
-/* Action Links (for data tables) */
-.action-link {
+/* Table Text Actions */
+.text-action {
   appearance: none;
   -webkit-appearance: none;
   background: transparent !important;
-  border: 0 !important;
+  border: none !important;
   padding: 0 !important;
   margin: 0 !important;
-  height: auto !important;
-  min-height: 0 !important;
-  width: auto !important;
   box-shadow: none !important;
   border-radius: 0 !important;
-  font: inherit;
-  font-size: 13px;
-  line-height: 1.4;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 500;
+  line-height: inherit;
   cursor: pointer;
-  transition: color 0.15s ease, opacity 0.15s ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: inline;
+  color: inherit;
+  transition: opacity 0.2s ease;
+  text-decoration: none;
 }
 
-.action-link:hover,
-.action-link:active {
+.text-action:hover {
+  opacity: 0.7;
   background: transparent !important;
-  opacity: 0.8;
 }
 
-.action-link:focus-visible {
+.text-action:focus {
+  outline: none;
+}
+
+.text-action:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
   border-radius: 2px !important;
-  background: transparent !important;
 }
 
-.action-link:disabled {
+.text-action:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.action-link--primary {
+.text-action-primary {
   color: var(--primary) !important;
-  font-weight: 500;
 }
 
-.action-link--danger {
+.text-action-danger {
   color: var(--danger) !important;
-  font-weight: 500;
 }
 
-.action-separator {
+.text-action-separator {
   color: var(--text-muted);
-  font-weight: 400;
-  font-size: 13px;
-  line-height: 1.4;
-  user-select: none;
   margin: 0 8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  font-weight: 400;
+  display: inline;
+  user-select: none;
 }
