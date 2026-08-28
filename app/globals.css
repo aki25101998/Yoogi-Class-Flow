@@ -452,3 +452,67 @@ body {
     transform: translateX(0);
   }
 }
+
+
+/* Action Links (for data tables) */
+.action-link {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  width: auto !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: color 0.15s ease, opacity 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-link:hover,
+.action-link:active {
+  background: transparent !important;
+  opacity: 0.8;
+}
+
+.action-link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 2px !important;
+  background: transparent !important;
+}
+
+.action-link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.action-link--primary {
+  color: var(--primary) !important;
+  font-weight: 500;
+}
+
+.action-link--danger {
+  color: var(--danger) !important;
+  font-weight: 500;
+}
+
+.action-separator {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 1.4;
+  user-select: none;
+  margin: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}

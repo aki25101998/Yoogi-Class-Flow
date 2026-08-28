@@ -382,22 +382,22 @@ export default function CoachesClient() {
                     {isAdminOrOwner && (
                       <TableCell>
                         {m.id !== currentUserId && (
-                          <div className="flex items-center gap-[8px]">
+                          <div className="flex items-center">
                             {currentUserRole === 'owner' && (
                               <button
                                 onClick={() => setEditingRoleMember({ id: m.id, name: m.name, role: m.role as OrganizationRole })}
-                                className="bg-transparent border-none p-0 m-0 outline-none shadow-none text-[13px] font-semibold text-primary hover:text-primary hover:opacity-80 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="action-link action-link--primary"
                                 disabled={loading}
                               >
                                 Chỉnh sửa
                               </button>
                             )}
                             {currentUserRole === 'owner' && (
-                              <span className="text-[13px] text-secondary opacity-40 select-none leading-none flex items-center justify-center">|</span>
+                              <span className="action-separator" aria-hidden="true">|</span>
                             )}
                             <button
                               onClick={() => executeAction(removeMemberAction, m.id, 'Xóa hoàn toàn HLV này?')}
-                              className="bg-transparent border-none p-0 m-0 outline-none shadow-none text-[13px] font-medium text-danger hover:text-danger hover:opacity-80 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="action-link action-link--danger"
                               disabled={loading}
                             >
                               Xóa
