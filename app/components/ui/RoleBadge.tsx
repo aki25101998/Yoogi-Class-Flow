@@ -37,13 +37,13 @@ export function RoleBadge({ role, onClick, className = '', isEditable = false }:
   return (
     <Badge
       variant={variant}
-      className={`!normal-case tracking-normal ${onClick ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''} ${className}`}
+      className={`!normal-case tracking-normal !px-2.5 ${onClick ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''} ${className}`}
       onClick={onClick}
       title={ROLE_DESCRIPTIONS[role] || label}
     >
-      <span className="flex items-center gap-[3px] leading-none">
+      <span className="inline-flex items-center gap-[4px] leading-none">
         {label}
-        {isEditable && <span className="material-icons-round text-[8px] opacity-70 leading-none">edit</span>}
+        {isEditable && <span className="material-icons-round text-[7px] opacity-60 flex-shrink-0 leading-none">edit</span>}
       </span>
     </Badge>
   );
