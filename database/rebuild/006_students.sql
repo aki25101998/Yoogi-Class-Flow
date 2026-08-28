@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS public.students (
   parent_name TEXT,
   parent_phone TEXT,
   dob TEXT,
+  current_belt TEXT DEFAULT 'Chưa có đai',
   status TEXT DEFAULT 'active',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),

@@ -14,12 +14,19 @@ export function useStudents(organizationId: string | undefined) {
       if (!organizationId) return [];
       const { data, error } = await supabase
         .from('students')
-        .select('*, class_students(id, class_id, venue_classes(name, start_time, end_time))')
+        .select('*, class_students(id, class_id, status, venue_classes(name, start_time, end_time, venues(name)))')
         .eq('organization_id', organizationId)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data || [];
+      
+      // Filter out non-active classes
+      const activeStudents = data?.map(student => ({
+        ...student,
+        class_students: student.class_students?.filter((cs: any) => cs.status === 'active') || []
+      })) || [];
+      
+      return activeStudents;
     },
     enabled: !!organizationId,
   });
@@ -33,7 +40,7 @@ export function useStudents(organizationId: string | undefined) {
       if (!organizationId) return [];
       const { data, error } = await supabase
         .from('venue_classes')
-        .select('id, name, start_time, end_time')
+        .select('id, name, start_time, end_time, venues(name)')
         .eq('organization_id', organizationId)
         .eq('status', 'active');
       

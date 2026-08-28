@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { addStudentAction, updateStudentAction, deleteStudentAction, enrollStudentAction, unenrollStudentAction } from './actions';
+import { addStudentAction, updateStudentAction, deleteStudentAction } from './actions';
 import { useStudents } from '@/hooks/useStudents';
 import { useDashboardContext } from '../DashboardProvider';
 
@@ -15,17 +15,25 @@ import { EmptyState } from '@/app/components/ui/EmptyState';
 import { Badge } from '@/app/components/ui/Badge';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/app/components/ui/Modal';
 
+const BELT_OPTIONS = [
+  { value: 'Chưa có đai', label: 'Chưa có đai' },
+  { value: 'Đai trắng', label: '🥋 Đai trắng' },
+  { value: 'Đai vàng', label: '🥋 Đai vàng' },
+  { value: 'Đai xanh lá', label: '🥋 Đai xanh lá' },
+  { value: 'Đai xanh dương', label: '🥋 Đai xanh dương' },
+  { value: 'Đai đỏ', label: '🥋 Đai đỏ' },
+  { value: 'Đai đen', label: '🥋 Đai đen' },
+];
+
 function StudentSkeleton() {
   return (
     <Card className="mb-4 animate-pulse">
       <CardHeader>
         <div className="h-6 bg-surface-hover rounded w-1/3 mb-2"></div>
         <div className="h-4 bg-surface-hover rounded w-1/2 mb-3"></div>
-        <div className="h-5 bg-surface-hover rounded w-20"></div>
       </CardHeader>
       <CardContent>
         <div className="h-4 bg-surface-hover rounded w-1/4 mb-3"></div>
-        <div className="h-10 bg-surface-hover rounded w-full border border-light"></div>
       </CardContent>
     </Card>
   );
@@ -41,17 +49,20 @@ export default function StudentsClient() {
 
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ name: '', phone: '', parent_name: '', parent_phone: '', dob: '', status: 'active' });
+  const [formData, setFormData] = useState({ 
+    name: '', phone: '', parent_name: '', parent_phone: '', dob: '', status: 'active', current_belt: 'Chưa có đai' 
+  });
   
-  const [selectedStudentForEnroll, setSelectedStudentForEnroll] = useState<string | null>(null);
-  const [classId, setClassId] = useState('');
+  const [editingClassId, setEditingClassId] = useState<string>('');
+  
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const isAdminOrOwner = currentUserRole === 'admin' || currentUserRole === 'owner';
 
   const resetForm = () => {
-    setFormData({ name: '', phone: '', parent_name: '', parent_phone: '', dob: '', status: 'active' });
+    setFormData({ name: '', phone: '', parent_name: '', parent_phone: '', dob: '', status: 'active', current_belt: 'Chưa có đai' });
+    setEditingClassId('');
     setIsAdding(false);
     setEditingId(null);
     setError('');
@@ -67,7 +78,7 @@ export default function StudentsClient() {
     setLoading(true);
     
     if (editingId) {
-      const res = await updateStudentAction(editingId, formData);
+      const res = await updateStudentAction(editingId, formData, editingClassId);
       setLoading(false);
       if (res.success) {
         resetForm();
@@ -93,36 +104,30 @@ export default function StudentsClient() {
     }
   };
 
-  const handleEnroll = async (studentId: string, e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    const res = await enrollStudentAction(studentId, classId);
-    setLoading(false);
-    if (res.success) {
-      setSelectedStudentForEnroll(null);
-      setClassId('');
-      handleSuccess();
-    } else {
-      setError(res.error || 'Lỗi khi xếp lớp');
-    }
-  };
-
-  const handleUnenroll = async (studentId: string, classToUnenrollId: string) => {
-    if (confirm('Bạn có chắc muốn gỡ học viên khỏi lớp này?')) {
-      setLoading(true);
-      const res = await unenrollStudentAction(studentId, classToUnenrollId);
-      setLoading(false);
-      if (res.success) handleSuccess();
-      else alert(res.error || 'Lỗi khi gỡ khỏi lớp');
-    }
+  const handleEdit = (student: any) => {
+    setEditingId(student.id);
+    setFormData({
+      name: student.name || '',
+      phone: student.phone || '',
+      parent_name: student.parent_name || '',
+      parent_phone: student.parent_phone || '',
+      dob: student.dob || '',
+      status: student.status || 'active',
+      current_belt: student.current_belt || 'Chưa có đai'
+    });
+    
+    // Tìm lớp active hiện tại
+    const activeClass = student.class_students && student.class_students.length > 0 ? student.class_students[0] : null;
+    setEditingClassId(activeClass ? activeClass.class_id : '');
+    
+    setIsAdding(false);
   };
 
   return (
     <div className="flex-col gap-6">
       <PageHeader 
         title="Quản lý Học viên" 
-        description="Quản lý danh sách học viên, thông tin liên hệ và xếp lớp"
+        description="Quản lý hồ sơ cơ bản và thông tin võ thuật của học viên"
         primaryAction={isAdminOrOwner ? (
           <Button 
             onClick={() => setIsAdding(true)}
@@ -144,36 +149,47 @@ export default function StudentsClient() {
               value={formData.name} 
               onChange={e => setFormData({...formData, name: e.target.value})} 
             />
+            
+            {editingId && (
+              <>
+                <Select 
+                  label="Lớp hiện tại"
+                  value={editingClassId} 
+                  onChange={e => setEditingClassId(e.target.value)} 
+                  options={[
+                    { value: '', label: '-- Chưa có lớp --' },
+                    ...availableClasses.map((c: any) => ({ 
+                      value: c.id, 
+                      label: `${c.name} (${c.venues?.name || 'Không rõ chi nhánh'})` 
+                    }))
+                  ]}
+                />
+                <Select 
+                  label="Đai hiện tại"
+                  value={formData.current_belt} 
+                  onChange={e => setFormData({...formData, current_belt: e.target.value})} 
+                  options={BELT_OPTIONS}
+                />
+              </>
+            )}
+
             <Input 
               label="Số điện thoại" 
               value={formData.phone} 
               onChange={e => setFormData({...formData, phone: e.target.value})} 
             />
-            <Input 
-              label="Tên phụ huynh" 
-              value={formData.parent_name} 
-              onChange={e => setFormData({...formData, parent_name: e.target.value})} 
-            />
-            <Input 
-              label="SĐT phụ huynh" 
-              value={formData.parent_phone} 
-              onChange={e => setFormData({...formData, parent_phone: e.target.value})} 
-            />
-            <Input 
-              label="Ngày sinh" 
-              type="date" 
-              value={formData.dob} 
-              onChange={e => setFormData({...formData, dob: e.target.value})} 
-            />
-            <Select 
-              label="Trạng thái" 
-              value={formData.status} 
-              onChange={e => setFormData({...formData, status: e.target.value})}
-              options={[
-                { value: 'active', label: 'Đang học' },
-                { value: 'inactive', label: 'Đã nghỉ' }
-              ]}
-            />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <Input 
+                label="Tên phụ huynh" 
+                value={formData.parent_name} 
+                onChange={e => setFormData({...formData, parent_name: e.target.value})} 
+              />
+              <Input 
+                label="SĐT phụ huynh" 
+                value={formData.parent_phone} 
+                onChange={e => setFormData({...formData, parent_phone: e.target.value})} 
+              />
+            </div>
           </form>
         </ModalBody>
         <ModalFooter>
@@ -182,126 +198,85 @@ export default function StudentsClient() {
         </ModalFooter>
       </Modal>
 
-      <Modal isOpen={!!selectedStudentForEnroll} onClose={loading ? () => {} : () => { setSelectedStudentForEnroll(null); setClassId(''); }}>
-        <ModalHeader title="Xếp vào lớp mới" onClose={loading ? () => {} : () => { setSelectedStudentForEnroll(null); setClassId(''); }} />
-        <ModalBody>
-          {error && <div style={{ color: 'var(--danger)', marginBottom: '16px', fontSize: '0.875rem' }}>{error}</div>}
-          <form id="enroll-form" onSubmit={(e) => {
-            if (selectedStudentForEnroll) handleEnroll(selectedStudentForEnroll, e);
-          }} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <Select 
-              label="Chọn lớp"
-              value={classId} 
-              onChange={e => setClassId(e.target.value)} 
-              required
-              options={[
-                { value: '', label: '-- Chọn --' },
-                ...availableClasses.map((c: any) => ({ value: c.id, label: `${c.name} (${c.start_time}-${c.end_time})` }))
-              ]}
-            />
-          </form>
-        </ModalBody>
-        <ModalFooter>
-          <Button type="button" variant="secondary" onClick={() => { setSelectedStudentForEnroll(null); setClassId(''); }} disabled={loading}>Hủy</Button>
-          <Button type="submit" form="enroll-form" isLoading={loading} variant="primary">Lưu</Button>
-        </ModalFooter>
-      </Modal>
-
       {isLoading ? (
         <div className="flex-col gap-6 mt-6">
-          <StudentSkeleton />
           <StudentSkeleton />
           <StudentSkeleton />
         </div>
       ) : students.length === 0 ? (
         <EmptyState 
           title="Chưa có học viên nào" 
-          description="Bạn chưa thêm học viên nào vào trung tâm. Hãy bấm nút Thêm Học Viên để tạo mới." 
+          description="Hãy bấm nút Thêm Học Viên để tạo mới." 
           icon="face"
         />
       ) : (
         <div className="flex-col gap-6">
-          {students.map((student: any) => (
-            <Card key={student.id}>
-              <CardHeader className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-                <div>
-                  <CardTitle>{student.name}</CardTitle>
-                  <p className="text-secondary text-sm mt-1">
-                    SĐT: {student.phone || 'N/A'} | Phụ huynh: {student.parent_name || 'N/A'} ({student.parent_phone || 'N/A'})
-                  </p>
-                  <div className="mt-2">
-                    <Badge variant={student.status === 'active' ? 'success' : 'default'}>
-                      {student.status === 'active' ? 'Đang học' : 'Đã nghỉ'}
-                    </Badge>
+          {students.map((student: any) => {
+            const activeClass = student.class_students && student.class_students.length > 0 ? student.class_students[0] : null;
+            const currentClassName = activeClass ? activeClass.venue_classes?.name : 'Chưa xếp lớp';
+            const currentVenueName = activeClass ? (activeClass.venue_classes?.venues?.name || 'Không rõ') : 'N/A';
+
+            return (
+              <Card key={student.id}>
+                <CardHeader className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                  <div>
+                    <CardTitle>{student.name}</CardTitle>
+                    <p className="text-secondary text-sm mt-1">
+                      SĐT: {student.phone || 'N/A'} | Phụ huynh: {student.parent_name || 'N/A'}
+                    </p>
                   </div>
-                </div>
-                {isAdminOrOwner && (
-                  <div className="flex gap-2 flex-wrap">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => { setEditingId(student.id); setFormData(student); setIsAdding(false); }}
-                      leftIcon={<span className="material-icons-round">edit</span>}
-                    >
-                      Sửa
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="text-danger border-danger hover:bg-danger-bg"
-                      onClick={() => handleDelete(student.id)}
-                      disabled={loading}
-                      leftIcon={<span className="material-icons-round">delete</span>}
-                    >
-                      Xóa
-                    </Button>
-                    <Button 
-                      variant="secondary" 
-                      size="sm"
-                      onClick={() => setSelectedStudentForEnroll(selectedStudentForEnroll === student.id ? null : student.id)}
-                      leftIcon={<span className="material-icons-round">{selectedStudentForEnroll === student.id ? 'close' : 'class'}</span>}
-                    >
-                      {selectedStudentForEnroll === student.id ? 'Hủy' : 'Xếp Lớp'}
-                    </Button>
-                  </div>
-                )}
-              </CardHeader>
-
-              <CardContent>
-
-
-                <div>
-                  <h4 className="text-sm font-semibold text-secondary mb-3 uppercase tracking-wider">Các lớp đang học</h4>
-                  {(!student.class_students || student.class_students.length === 0) ? (
-                    <p className="text-muted text-sm italic">Chưa được xếp vào lớp nào.</p>
-                  ) : (
-                    <ul className="flex-col gap-2">
-                      {student.class_students.map((enrollment: any) => (
-                        <li key={enrollment.id} className="flex justify-between items-center p-3 bg-background rounded-md border border-light">
-                          <div className="flex items-center gap-3">
-                            <span className="font-medium text-main">{enrollment.venue_classes?.name}</span>
-                            <span className="text-secondary text-sm">— {enrollment.venue_classes?.start_time} - {enrollment.venue_classes?.end_time}</span>
-                          </div>
-                          {isAdminOrOwner && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              className="text-danger hover:bg-danger-bg"
-                              onClick={() => handleUnenroll(student.id, enrollment.class_id)}
-                              disabled={loading}
-                              leftIcon={<span className="material-icons-round">remove_circle_outline</span>}
-                            >
-                              Gỡ
-                            </Button>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
+                  {isAdminOrOwner && (
+                    <div className="flex gap-2 flex-wrap">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEdit(student)}
+                        leftIcon={<span className="material-icons-round">edit</span>}
+                      >
+                        Sửa
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="text-danger border-danger hover:bg-danger-bg"
+                        onClick={() => handleDelete(student.id)}
+                        disabled={loading}
+                        leftIcon={<span className="material-icons-round">delete</span>}
+                      >
+                        Xóa
+                      </Button>
+                    </div>
                   )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardHeader>
+
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2 p-4 bg-background rounded-lg border border-light">
+                    <div>
+                      <h4 className="text-sm font-semibold text-secondary mb-3 uppercase tracking-wider">Thông tin cơ bản</h4>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex justify-between">
+                          <span className="text-muted">Lớp hiện tại:</span>
+                          <span className="font-medium text-main">{currentClassName}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted">Chi nhánh:</span>
+                          <span className="font-medium text-main">{currentVenueName}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h4 className="text-sm font-semibold text-secondary mb-3 uppercase tracking-wider">Thông tin võ thuật</h4>
+                      <div className="flex justify-between">
+                        <span className="text-muted">Đai hiện tại:</span>
+                        <span className="font-medium text-main">{student.current_belt || 'Chưa có đai'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

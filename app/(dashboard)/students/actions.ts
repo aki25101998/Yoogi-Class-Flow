@@ -26,7 +26,19 @@ export async function addStudentAction(data: { name: string; phone?: string; par
   return { success: true };
 }
 
-export async function updateStudentAction(id: string, data: { name: string; phone?: string; parent_name?: string; parent_phone?: string; dob?: string; status?: string }) {
+export async function updateStudentAction(
+  id: string, 
+  data: { 
+    name: string; 
+    phone?: string; 
+    parent_name?: string; 
+    parent_phone?: string; 
+    dob?: string; 
+    status?: string;
+    current_belt?: string;
+  },
+  newClassId?: string
+) {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
@@ -38,6 +50,44 @@ export async function updateStudentAction(id: string, data: { name: string; phon
     .eq('organization_id', context.organization.id);
 
   if (error) return { success: false, error: error.message };
+
+  // Handle class changes
+  if (newClassId !== undefined) {
+    // 1. Get current active classes
+    const { data: currentActive } = await supabase
+      .from('class_students')
+      .select('id, class_id')
+      .eq('student_id', id)
+      .eq('status', 'active')
+      .eq('organization_id', context.organization.id);
+
+    // If there's an existing class and it's different from the new one
+    const currentClassId = currentActive && currentActive.length > 0 ? currentActive[0].class_id : null;
+
+    if (newClassId !== currentClassId) {
+      // If changing to a different class, drop the old one(s)
+      if (currentActive && currentActive.length > 0) {
+        await supabase
+          .from('class_students')
+          .update({ status: 'dropped' })
+          .eq('student_id', id)
+          .eq('status', 'active')
+          .eq('organization_id', context.organization.id);
+      }
+      
+      // If a new class was selected (not empty), enroll the student
+      if (newClassId) {
+        await supabase
+          .from('class_students')
+          .insert({
+            organization_id: context.organization.id,
+            student_id: id,
+            class_id: newClassId,
+            status: 'active'
+          });
+      }
+    }
+  }
   
   revalidatePath('/students');
   return { success: true };
