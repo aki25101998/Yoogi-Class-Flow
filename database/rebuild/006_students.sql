@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS public.students (
   parent_name TEXT,
   parent_phone TEXT,
   dob TEXT,
-  current_belt TEXT DEFAULT 'Chưa có đai',
+  current_belt_id UUID REFERENCES public.organization_belts(id) ON DELETE SET NULL,
   status TEXT DEFAULT 'active',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),

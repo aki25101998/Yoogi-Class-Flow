@@ -15,15 +15,7 @@ import { EmptyState } from '@/app/components/ui/EmptyState';
 import { Badge } from '@/app/components/ui/Badge';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/app/components/ui/Modal';
 
-const BELT_OPTIONS = [
-  { value: 'Chưa có đai', label: 'Chưa có đai' },
-  { value: 'Đai trắng', label: '🥋 Đai trắng' },
-  { value: 'Đai vàng', label: '🥋 Đai vàng' },
-  { value: 'Đai xanh lá', label: '🥋 Đai xanh lá' },
-  { value: 'Đai xanh dương', label: '🥋 Đai xanh dương' },
-  { value: 'Đai đỏ', label: '🥋 Đai đỏ' },
-  { value: 'Đai đen', label: '🥋 Đai đen' },
-];
+
 
 function StudentSkeleton() {
   return (
@@ -44,13 +36,13 @@ export default function StudentsClient() {
   const organizationId = context?.organization?.id;
   const currentUserRole = context?.membership?.role;
 
-  const { students, availableClasses, isLoading } = useStudents(organizationId);
+  const { students, availableClasses, availableBelts, isLoading } = useStudents(organizationId);
   const queryClient = useQueryClient();
 
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ 
-    name: '', phone: '', parent_name: '', parent_phone: '', dob: '', status: 'active', current_belt: 'Chưa có đai' 
+    name: '', phone: '', parent_name: '', parent_phone: '', dob: '', status: 'active', current_belt_id: '' 
   });
   
   const [editingClassId, setEditingClassId] = useState<string>('');
@@ -61,7 +53,7 @@ export default function StudentsClient() {
   const isAdminOrOwner = currentUserRole === 'admin' || currentUserRole === 'owner';
 
   const resetForm = () => {
-    setFormData({ name: '', phone: '', parent_name: '', parent_phone: '', dob: '', status: 'active', current_belt: 'Chưa có đai' });
+    setFormData({ name: '', phone: '', parent_name: '', parent_phone: '', dob: '', status: 'active', current_belt_id: '' });
     setEditingClassId('');
     setIsAdding(false);
     setEditingId(null);
@@ -77,15 +69,20 @@ export default function StudentsClient() {
     setError('');
     setLoading(true);
     
+    const submitData = {
+      ...formData,
+      current_belt_id: formData.current_belt_id === '' ? null : formData.current_belt_id
+    };
+    
     if (editingId) {
-      const res = await updateStudentAction(editingId, formData, editingClassId);
+      const res = await updateStudentAction(editingId, submitData, editingClassId);
       setLoading(false);
       if (res.success) {
         resetForm();
         handleSuccess();
       } else setError(res.error || 'Lỗi khi cập nhật học viên');
     } else {
-      const res = await addStudentAction(formData);
+      const res = await addStudentAction(submitData);
       setLoading(false);
       if (res.success) {
         resetForm();
@@ -113,7 +110,7 @@ export default function StudentsClient() {
       parent_phone: student.parent_phone || '',
       dob: student.dob || '',
       status: student.status || 'active',
-      current_belt: student.current_belt || 'Chưa có đai'
+      current_belt_id: student.current_belt_id || ''
     });
     
     // Tìm lớp active hiện tại
@@ -166,9 +163,15 @@ export default function StudentsClient() {
                 />
                 <Select 
                   label="Đai hiện tại"
-                  value={formData.current_belt} 
-                  onChange={e => setFormData({...formData, current_belt: e.target.value})} 
-                  options={BELT_OPTIONS}
+                  value={formData.current_belt_id} 
+                  onChange={e => setFormData({...formData, current_belt_id: e.target.value})} 
+                  options={[
+                    { value: '', label: 'Chưa có đai' },
+                    ...availableBelts.map((belt: any) => ({
+                      value: belt.id,
+                      label: belt.name
+                    }))
+                  ]}
                 />
               </>
             )}
@@ -269,7 +272,7 @@ export default function StudentsClient() {
                       <h4 className="text-sm font-semibold text-secondary mb-3 uppercase tracking-wider">Thông tin võ thuật</h4>
                       <div className="flex justify-between">
                         <span className="text-muted">Đai hiện tại:</span>
-                        <span className="font-medium text-main">{student.current_belt || 'Chưa có đai'}</span>
+                        <span className="font-medium text-main">{student.organization_belts?.name || 'Chưa có đai'}</span>
                       </div>
                     </div>
                   </div>

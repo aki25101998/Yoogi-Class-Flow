@@ -11,6 +11,7 @@ ALTER TABLE public.venue_classes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.class_coaches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.students ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.class_students ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.organization_belts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.schedules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.attendance ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.student_attendance ENABLE ROW LEVEL SECURITY;
@@ -194,3 +195,9 @@ DROP POLICY IF EXISTS "Admin can do all on finance_transactions" ON public.finan
 CREATE POLICY "Admin can do all on finance_transactions" ON public.finance_transactions FOR ALL USING (public.is_org_admin(organization_id));
 DROP POLICY IF EXISTS "Coaches can view finance_transactions in their org" ON public.finance_transactions;
 CREATE POLICY "Coaches can view finance_transactions in their org" ON public.finance_transactions FOR SELECT USING (organization_id IN (SELECT public.get_user_organizations()));
+
+-- Belts
+DROP POLICY IF EXISTS "Admin can do all on organization_belts" ON public.organization_belts;
+CREATE POLICY "Admin can do all on organization_belts" ON public.organization_belts FOR ALL USING (public.is_org_admin(organization_id));
+DROP POLICY IF EXISTS "Everyone can view belts in their org" ON public.organization_belts;
+CREATE POLICY "Everyone can view belts in their org" ON public.organization_belts FOR SELECT USING (organization_id IN (SELECT public.get_user_organizations()));

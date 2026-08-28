@@ -35,7 +35,7 @@ export async function updateStudentAction(
     parent_phone?: string; 
     dob?: string; 
     status?: string;
-    current_belt?: string;
+    current_belt_id?: string | null;
   },
   newClassId?: string
 ) {

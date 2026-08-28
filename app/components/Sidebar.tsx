@@ -29,6 +29,7 @@ const ADMIN_NAV = [
   ]},
   { section: 'Hệ thống', items: [
     { icon: 'group', label: 'Thành viên', route: '/settings/members', permission: 'manage_members' },
+    { icon: 'military_tech', label: 'Cấp đai', route: '/settings/belts', permission: 'manage_settings' },
     { icon: 'settings', label: 'Cài đặt', route: '/settings', permission: 'manage_settings' }
   ]}
 ];
