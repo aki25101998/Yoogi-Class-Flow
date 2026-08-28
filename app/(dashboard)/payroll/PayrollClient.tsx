@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { approveSalarySessionAction, payCoachSalaryAction } from './actions';
+import { approveSalarySessionAction, payCoachSalaryAction, updateSalaryConfigAction } from './actions';
 import { usePayroll } from '@/hooks/usePayroll';
 import { useDashboardContext } from '../DashboardProvider';
 
@@ -13,6 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Ca
 import { EmptyState } from '@/app/components/ui/EmptyState';
 import { Badge } from '@/app/components/ui/Badge';
 import { Table, Thead, Tbody, Tr, Th, Td } from '@/app/components/ui/Table';
+import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/app/components/ui/Modal';
+import { Input } from '@/app/components/ui/Input';
 
 function PayrollSkeleton() {
   return (
@@ -50,6 +52,10 @@ export default function PayrollClient() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  const [configModalCoach, setConfigModalCoach] = useState<any>(null);
+  const [configForm, setConfigForm] = useState({ per_session: 0, per_student: 0 });
+
   const isAdminOrOwner = currentUserRole === 'admin' || currentUserRole === 'owner';
 
   // Nhóm các session theo coach
@@ -76,10 +82,10 @@ export default function PayrollClient() {
     };
   });
 
-  const handleApprove = async (sessionId: string, amount: number) => {
+  const handleApprove = async (sessionId: string) => {
     setError('');
     setLoading(true);
-    const res = await approveSalarySessionAction(sessionId, amount);
+    const res = await approveSalarySessionAction(sessionId);
     setLoading(false);
     if (res.success) {
       setSuccess('Đã duyệt buổi dạy');
@@ -102,6 +108,30 @@ export default function PayrollClient() {
     }
   };
 
+  const openConfigModal = (data: any) => {
+    setConfigModalCoach(data.coach);
+    setConfigForm({
+      per_session: data.config.per_session || 0,
+      per_student: data.config.per_student || 0
+    });
+  };
+
+  const handleSaveConfig = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!configModalCoach) return;
+    
+    setLoading(true);
+    const res = await updateSalaryConfigAction(configModalCoach.id, configForm.per_session, configForm.per_student);
+    setLoading(false);
+    
+    if (res.success) {
+      setConfigModalCoach(null);
+      queryClient.invalidateQueries({ queryKey: ['salaryConfigs', organizationId] });
+    } else {
+      alert(res.error || 'Lỗi lưu cấu hình');
+    }
+  };
+
   return (
     <div className="flex-col gap-6">
       <PageHeader 
@@ -120,8 +150,23 @@ export default function PayrollClient() {
             <Card key={data.coach.id}>
               <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-light pb-4">
                 <div>
-                  <CardTitle className="text-xl">{data.coach.name}</CardTitle>
-                  <div className="text-secondary text-sm mt-1">Lương mặc định: {Number(data.config.per_session).toLocaleString('vi-VN')} đ/buổi</div>
+                  <CardTitle className="text-xl flex items-center gap-2">
+                    {data.coach.name}
+                    {isAdminOrOwner && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => openConfigModal(data)}
+                        leftIcon={<span className="material-icons-round text-sm">settings</span>}
+                      >
+                        Cấu hình
+                      </Button>
+                    )}
+                  </CardTitle>
+                  <div className="text-secondary text-sm mt-1">
+                    Cơ bản: {Number(data.config.per_session).toLocaleString('vi-VN')} đ/buổi
+                    {Number(data.config.per_student) > 0 && ` + ${Number(data.config.per_student).toLocaleString('vi-VN')} đ/học viên`}
+                  </div>
                 </div>
                 <div className="text-left sm:text-right">
                   <div className="text-sm text-secondary">Cần thanh toán</div>
@@ -129,10 +174,10 @@ export default function PayrollClient() {
                     {data.approvedAmount.toLocaleString('vi-VN')} đ
                   </div>
                   {isAdminOrOwner && data.approvedSessions.length > 0 && (
-                      <Button 
-                        onClick={() => handlePay(data.coach.id, data.approvedAmount, data.approvedSessions.map((s:any)=>s.id))}
-                        variant="success"
-                        disabled={loading}
+                    <Button 
+                      onClick={() => handlePay(data.coach.id, data.approvedAmount, data.approvedSessions.map((s:any)=>s.id))}
+                      variant="success"
+                      disabled={loading}
                       isLoading={loading}
                       leftIcon={<span className="material-icons-round">payments</span>}
                     >
@@ -159,7 +204,6 @@ export default function PayrollClient() {
                       </Thead>
                       <Tbody>
                         {data.sessions.map((s: any) => {
-                          const amountToApprove = s.calculated_salary > 0 ? s.calculated_salary : data.config.per_session;
                           return (
                             <Tr key={s.id}>
                               <Td>{s.date}</Td>
@@ -170,7 +214,7 @@ export default function PayrollClient() {
                                 {s.status === 'paid' && <Badge variant="success">Đã thanh toán</Badge>}
                               </Td>
                               <Td className="text-right font-medium">
-                                {Number(s.calculated_salary || 0).toLocaleString('vi-VN')} đ
+                                {s.status === 'checked_in' ? '---' : `${Number(s.calculated_salary || 0).toLocaleString('vi-VN')} đ`}
                               </Td>
                               {isAdminOrOwner && (
                                 <Td className="text-right">
@@ -178,11 +222,11 @@ export default function PayrollClient() {
                                     <Button 
                                       size="sm"
                                       variant="outline"
-                                      onClick={() => handleApprove(s.id, amountToApprove)}
+                                      onClick={() => handleApprove(s.id)}
                                       disabled={loading}
                                       isLoading={loading}
                                     >
-                                      Duyệt {Number(amountToApprove).toLocaleString('vi-VN')} đ
+                                      Duyệt
                                     </Button>
                                   )}
                                 </Td>
@@ -206,6 +250,35 @@ export default function PayrollClient() {
           )}
         </div>
       )}
+
+      {/* Salary Config Modal */}
+      <Modal isOpen={!!configModalCoach} onClose={loading ? () => {} : () => setConfigModalCoach(null)}>
+        <ModalHeader title={`Cấu hình lương: ${configModalCoach?.name}`} onClose={loading ? () => {} : () => setConfigModalCoach(null)} />
+        <ModalBody>
+          <form id="config-form" onSubmit={handleSaveConfig} className="flex-col gap-4">
+            <Input 
+              label="Lương cơ bản (đ/buổi)"
+              type="number" 
+              required 
+              min="0"
+              value={configForm.per_session.toString()} 
+              onChange={e => setConfigForm({...configForm, per_session: Number(e.target.value)})} 
+            />
+            <Input 
+              label="Thưởng theo học viên đi học (đ/học viên)"
+              type="number" 
+              required 
+              min="0"
+              value={configForm.per_student.toString()} 
+              onChange={e => setConfigForm({...configForm, per_student: Number(e.target.value)})} 
+            />
+          </form>
+        </ModalBody>
+        <ModalFooter>
+          <Button type="button" variant="secondary" onClick={() => setConfigModalCoach(null)} disabled={loading}>Hủy</Button>
+          <Button type="submit" form="config-form" isLoading={loading} variant="primary">Lưu cấu hình</Button>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 }

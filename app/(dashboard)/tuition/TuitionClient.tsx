@@ -40,6 +40,7 @@ export default function TuitionClient() {
   const [formData, setFormData] = useState({ student_id: '', class_id: '', amount: 0, due_date: '' });
   const [paymentId, setPaymentId] = useState<string | null>(null);
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
+  const [paymentRemaining, setPaymentRemaining] = useState<number>(0);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -83,6 +84,11 @@ export default function TuitionClient() {
     if (!paymentId) return;
     
     setLoading(true);
+    if (paymentAmount > paymentRemaining) {
+      setError('Số tiền thanh toán không được lớn hơn số nợ còn lại');
+      setLoading(false);
+      return;
+    }
     const res = await recordPaymentAction(paymentId, paymentAmount);
     setLoading(false);
     if (res.success) {
@@ -155,8 +161,8 @@ export default function TuitionClient() {
         </ModalFooter>
       </Modal>
 
-      <Modal isOpen={!!paymentId} onClose={loading ? () => {} : () => { setPaymentId(null); setPaymentAmount(0); }}>
-        <ModalHeader title="Ghi nhận thanh toán" onClose={loading ? () => {} : () => { setPaymentId(null); setPaymentAmount(0); }} />
+      <Modal isOpen={!!paymentId} onClose={loading ? () => {} : () => { setPaymentId(null); setPaymentAmount(0); setPaymentRemaining(0); }}>
+        <ModalHeader title="Ghi nhận thanh toán" onClose={loading ? () => {} : () => { setPaymentId(null); setPaymentAmount(0); setPaymentRemaining(0); }} />
         <ModalBody>
           {error && <div style={{ color: 'var(--danger)', marginBottom: '16px', fontSize: '0.875rem' }}>{error}</div>}
           <form id="payment-form" onSubmit={handlePayment} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -166,6 +172,7 @@ export default function TuitionClient() {
                 type="number" 
                 required 
                 min="1" 
+                max={paymentRemaining.toString()}
                 value={paymentAmount} 
                 onChange={e => setPaymentAmount(Number(e.target.value))} 
               />
@@ -173,7 +180,7 @@ export default function TuitionClient() {
           </form>
         </ModalBody>
         <ModalFooter>
-          <Button type="button" variant="secondary" onClick={() => { setPaymentId(null); setPaymentAmount(0); }} disabled={loading}>Hủy</Button>
+          <Button type="button" variant="secondary" onClick={() => { setPaymentId(null); setPaymentAmount(0); setPaymentRemaining(0); }} disabled={loading}>Hủy</Button>
           <Button type="submit" form="payment-form" isLoading={loading} variant="success">Xác nhận</Button>
         </ModalFooter>
       </Modal>
@@ -232,7 +239,7 @@ export default function TuitionClient() {
                               variant="outline"
                               size="sm"
                               className="mr-2 text-success border-success hover:bg-success-bg"
-                              onClick={() => { setPaymentId(t.id); setPaymentAmount(remaining); }}
+                              onClick={() => { setPaymentId(t.id); setPaymentAmount(remaining); setPaymentRemaining(remaining); }}
                               disabled={loading}
                             >
                               Thanh toán

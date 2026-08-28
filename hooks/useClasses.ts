@@ -14,7 +14,7 @@ export function useClasses(organizationId: string | undefined) {
       if (!organizationId) return [];
       const { data, error } = await supabase
         .from('venue_classes')
-        .select('*, class_coaches(*, coaches(id, organization_members(profiles(name))))')
+        .select('*, venues(name), class_coaches(*, coaches(id, organization_members(profiles(name)))), class_students(id, student_id, status, students(name, phone))')
         .eq('organization_id', organizationId);
       
       if (error) throw error;
@@ -48,10 +48,50 @@ export function useClasses(organizationId: string | undefined) {
     enabled: !!organizationId,
   });
 
+  const {
+    data: availableVenues = [],
+    isLoading: isVenuesLoading,
+  } = useQuery({
+    queryKey: ['availableVenues', organizationId],
+    queryFn: async () => {
+      if (!organizationId) return [];
+      const { data, error } = await supabase
+        .from('venues')
+        .select('id, name')
+        .eq('organization_id', organizationId)
+        .eq('status', 'active');
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!organizationId,
+  });
+
+  const {
+    data: availableStudents = [],
+    isLoading: isStudentsLoading,
+  } = useQuery({
+    queryKey: ['availableStudents', organizationId],
+    queryFn: async () => {
+      if (!organizationId) return [];
+      const { data, error } = await supabase
+        .from('students')
+        .select('id, name, phone, class_students(status)')
+        .eq('organization_id', organizationId)
+        .eq('status', 'active');
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!organizationId,
+  });
+
   return {
     classes,
     availableCoaches,
-    isLoading: isClassesLoading || isCoachesLoading,
+    availableVenues,
+    availableStudents,
+    isLoading: isClassesLoading || isCoachesLoading || isVenuesLoading || isStudentsLoading,
     error: classesError,
   };
 }

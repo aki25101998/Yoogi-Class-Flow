@@ -46,7 +46,7 @@ export default function AttendanceClient() {
       if (selectedClass && selectedClass.class_students) {
         const defaultRecords = selectedClass.class_students.map((cs: any) => ({
           student_id: cs.student_id,
-          status: 'present', // present, absent, excused
+          status: 'pending', // pending, present, absent, excused
           note: ''
         }));
         setAttendanceRecords(defaultRecords);
@@ -60,6 +60,10 @@ export default function AttendanceClient() {
 
   const handleNoteChange = (studentId: string, note: string) => {
     setAttendanceRecords(prev => prev.map(r => r.student_id === studentId ? { ...r, note } : r));
+  };
+
+  const handleMarkAllPresent = () => {
+    setAttendanceRecords(prev => prev.map(r => r.status === 'pending' ? { ...r, status: 'present' } : r));
   };
 
   const handleSave = async () => {
@@ -122,6 +126,18 @@ export default function AttendanceClient() {
       {selectedClassId ? (
         <Card>
           <div className="overflow-x-auto">
+            <div className="flex justify-between items-center p-4 border-b border-light">
+              <h3 className="font-semibold text-main">Danh sách học viên ({selectedClass?.class_students?.length || 0})</h3>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleMarkAllPresent}
+                disabled={selectedClass?.class_students?.length === 0}
+                leftIcon={<span className="material-icons-round">done_all</span>}
+              >
+                Tất cả có mặt
+              </Button>
+            </div>
             <Table>
               <Thead>
                 <Tr>
@@ -150,6 +166,7 @@ export default function AttendanceClient() {
                             value={record.status} 
                             onChange={(e) => handleStatusChange(cs.student_id, e.target.value)}
                             options={[
+                              { value: 'pending', label: 'Chưa điểm danh' },
                               { value: 'present', label: 'Có mặt' },
                               { value: 'absent', label: 'Vắng' },
                               { value: 'excused', label: 'Có phép' }

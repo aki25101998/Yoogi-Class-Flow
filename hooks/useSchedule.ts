@@ -15,6 +15,7 @@ export function useSchedule(organizationId: string | undefined) {
         .from('schedules')
         .select('*, venue_classes(name), coaches(id, organization_members(profiles(name))), venues(name)')
         .eq('organization_id', organizationId)
+        .eq('status', 'active')
         .order('start_time', { ascending: true });
       
       if (error) throw error;

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { addScheduleAction, deleteScheduleAction } from './actions';
+import { addScheduleAction, updateScheduleAction, deleteScheduleAction } from './actions';
 import { useSchedule } from '@/hooks/useSchedule';
 import { useDashboardContext } from '../DashboardProvider';
 
@@ -11,6 +11,7 @@ import { PageHeader } from '@/app/components/ui/PageHeader';
 import { Button } from '@/app/components/ui/Button';
 import { Input, Select } from '@/app/components/ui/Input';
 import { Card, CardContent } from '@/app/components/ui/Card';
+import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/app/components/ui/Modal';
 
 const DAYS_OF_WEEK = [
   { value: 1, label: 'Thứ 2' },
@@ -46,7 +47,8 @@ export default function ScheduleClient() {
   const { schedules, classes, coaches, venues, isLoading } = useSchedule(organizationId);
   const queryClient = useQueryClient();
 
-  const [isAdding, setIsAdding] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ coach_id: '', venue_id: '', class_id: '', day_of_week: 1, start_time: '18:00', end_time: '20:00' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -55,7 +57,8 @@ export default function ScheduleClient() {
 
   const resetForm = () => {
     setFormData({ coach_id: '', venue_id: '', class_id: '', day_of_week: 1, start_time: '18:00', end_time: '20:00' });
-    setIsAdding(false);
+    setEditingId(null);
+    setIsModalOpen(false);
     setError('');
   };
 
@@ -63,11 +66,36 @@ export default function ScheduleClient() {
     queryClient.invalidateQueries({ queryKey: ['schedules', organizationId] });
   };
 
+  const openAddModal = () => {
+    resetForm();
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (s: any) => {
+    setFormData({
+      coach_id: s.coach_id || '',
+      venue_id: s.venue_id || '',
+      class_id: s.class_id || '',
+      day_of_week: s.day_of_week ?? 1,
+      start_time: s.start_time || '18:00',
+      end_time: s.end_time || '20:00'
+    });
+    setEditingId(s.id);
+    setError('');
+    setIsModalOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    const res = await addScheduleAction(formData);
+    let res;
+    if (editingId) {
+      res = await updateScheduleAction(editingId, formData);
+    } else {
+      res = await addScheduleAction(formData);
+    }
+    
     setLoading(false);
     if (res.success) {
       resetForm();
@@ -90,9 +118,9 @@ export default function ScheduleClient() {
       <PageHeader 
         title="Lịch dạy tuần" 
         description="Quản lý lịch học định kỳ của các lớp trong tuần"
-        primaryAction={isAdminOrOwner && !isAdding ? (
+        primaryAction={isAdminOrOwner ? (
           <Button 
-            onClick={() => setIsAdding(true)}
+            onClick={openAddModal}
             leftIcon={<span className="material-icons-round">calendar_today</span>}
           >
             Thêm Lịch Mới
@@ -100,48 +128,48 @@ export default function ScheduleClient() {
         ) : undefined}
       />
 
-      {isAdding && (
-        <Card className="mb-6">
-          <CardContent>
-            <h3 className="font-semibold text-lg mb-4 text-main">Thêm Lịch Dạy</h3>
-            {error && <div className="text-danger mb-4 text-sm">{error}</div>}
-            <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
-              <Select 
-                label="Lớp học *"
-                required 
-                value={formData.class_id} 
-                onChange={e => setFormData({...formData, class_id: e.target.value})}
-                options={[
-                  { value: '', label: '-- Chọn lớp --' },
-                  ...classes.map((c: any) => ({ value: c.id, label: c.name }))
-                ]}
-              />
-              <Select 
-                label="Huấn luyện viên *"
-                required 
-                value={formData.coach_id} 
-                onChange={e => setFormData({...formData, coach_id: e.target.value})}
-                options={[
-                  { value: '', label: '-- Chọn HLV --' },
-                  ...coaches.map((c: any) => ({ value: c.id, label: c.name }))
-                ]}
-              />
-              <Select 
-                label="Địa điểm *"
-                required 
-                value={formData.venue_id} 
-                onChange={e => setFormData({...formData, venue_id: e.target.value})}
-                options={[
-                  { value: '', label: '-- Chọn địa điểm --' },
-                  ...venues.map((v: any) => ({ value: v.id, label: v.name }))
-                ]}
-              />
-              <Select 
-                label="Ngày trong tuần"
-                value={formData.day_of_week.toString()} 
-                onChange={e => setFormData({...formData, day_of_week: Number(e.target.value)})}
-                options={DAYS_OF_WEEK.map(d => ({ value: d.value.toString(), label: d.label }))}
-              />
+      <Modal isOpen={isModalOpen} onClose={loading ? () => {} : resetForm}>
+        <ModalHeader title={editingId ? "Sửa Lịch Dạy" : "Thêm Lịch Dạy"} onClose={loading ? () => {} : resetForm} />
+        <ModalBody>
+          {error && <div style={{ color: 'var(--danger)', marginBottom: '16px', fontSize: '0.875rem' }}>{error}</div>}
+          <form id="schedule-form" onSubmit={handleSubmit} style={{ display: 'grid', gap: '16px' }}>
+            <Select 
+              label="Lớp học *"
+              required 
+              value={formData.class_id} 
+              onChange={e => setFormData({...formData, class_id: e.target.value})}
+              options={[
+                { value: '', label: '-- Chọn lớp --' },
+                ...classes.map((c: any) => ({ value: c.id, label: c.name }))
+              ]}
+            />
+            <Select 
+              label="Huấn luyện viên *"
+              required 
+              value={formData.coach_id} 
+              onChange={e => setFormData({...formData, coach_id: e.target.value})}
+              options={[
+                { value: '', label: '-- Chọn HLV --' },
+                ...coaches.map((c: any) => ({ value: c.id, label: c.name }))
+              ]}
+            />
+            <Select 
+              label="Địa điểm *"
+              required 
+              value={formData.venue_id} 
+              onChange={e => setFormData({...formData, venue_id: e.target.value})}
+              options={[
+                { value: '', label: '-- Chọn địa điểm --' },
+                ...venues.map((v: any) => ({ value: v.id, label: v.name }))
+              ]}
+            />
+            <Select 
+              label="Ngày trong tuần"
+              value={formData.day_of_week.toString()} 
+              onChange={e => setFormData({...formData, day_of_week: Number(e.target.value)})}
+              options={DAYS_OF_WEEK.map(d => ({ value: d.value.toString(), label: d.label }))}
+            />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <Input 
                 label="Giờ bắt đầu"
                 type="time" 
@@ -156,14 +184,14 @@ export default function ScheduleClient() {
                 value={formData.end_time} 
                 onChange={e => setFormData({...formData, end_time: e.target.value})} 
               />
-              <div className="col-span-full mt-2 flex gap-2">
-                <Button type="submit" isLoading={loading} variant="primary">Lưu</Button>
-                <Button type="button" variant="secondary" onClick={resetForm} disabled={loading}>Hủy</Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+            </div>
+          </form>
+        </ModalBody>
+        <ModalFooter>
+          <Button type="button" variant="secondary" onClick={resetForm} disabled={loading}>Hủy</Button>
+          <Button type="submit" form="schedule-form" isLoading={loading} variant="primary">Lưu</Button>
+        </ModalFooter>
+      </Modal>
 
       {isLoading ? (
         <ScheduleSkeleton />
@@ -182,19 +210,26 @@ export default function ScheduleClient() {
                     <div className="text-center text-muted text-sm italic py-4">Trống</div>
                   ) : (
                     daySchedules.map((s: any) => (
-                      <div key={s.id} className="bg-primary-light border border-primary text-primary p-2 rounded-md text-xs relative">
+                      <div key={s.id} className="bg-primary-light border border-primary text-primary p-2 rounded-md text-xs relative flex flex-col">
                         <div className="font-bold mb-1">{s.start_time} - {s.end_time}</div>
                         <div className="mb-1 truncate" title={s.venue_classes?.name}><strong>Lớp:</strong> {s.venue_classes?.name}</div>
                         <div className="mb-1 truncate" title={s.coaches?.name}><strong>HLV:</strong> {s.coaches?.name}</div>
                         <div className="mb-1 truncate" title={s.venues?.name}><strong>Phòng:</strong> {s.venues?.name}</div>
                         {isAdminOrOwner && (
-                          <div className="text-right mt-2">
+                          <div className="flex gap-2 justify-end mt-2">
+                            <button 
+                              onClick={() => openEditModal(s)} 
+                              disabled={loading}
+                              className="text-primary hover:underline cursor-pointer border-none bg-transparent text-[10px]"
+                            >
+                              Sửa
+                            </button>
                             <button 
                               onClick={() => handleDelete(s.id)} 
                               disabled={loading}
                               className="text-danger hover:underline cursor-pointer border-none bg-transparent text-[10px]"
                             >
-                              Xóa
+                              Ngừng
                             </button>
                           </div>
                         )}
