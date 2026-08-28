@@ -209,20 +209,30 @@ export default function CoachesClient() {
         <ModalBody>
           {invitationResult ? (
             <div>
-              <div className="flex items-center gap-2 mb-4">
-                <span className="material-icons-round text-success" style={{ fontSize: '24px' }}>check_circle</span>
-                <h3 className="font-semibold text-success">Thành công!</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                <span className="material-icons-round" style={{ fontSize: '24px', color: 'var(--success)' }}>check_circle</span>
+                <h3 style={{ fontWeight: 600, color: 'var(--success)' }}>Thành công!</h3>
               </div>
               
-              <p className="text-sm mb-4 text-secondary">
+              <p style={{ fontSize: '0.875rem', marginBottom: '16px', color: 'var(--text-secondary)' }}>
                 Gửi liên kết này cho HLV để tham gia:
               </p>
 
-              <div className="bg-surface-hover p-3 rounded-md mb-4 border border-light break-all text-[13px] font-mono text-main">
+              <div style={{
+                backgroundColor: 'var(--surface-hover)',
+                padding: '12px 16px',
+                borderRadius: 'var(--radius-md)',
+                marginBottom: '16px',
+                border: '1px solid var(--border-light)',
+                wordBreak: 'break-all',
+                fontSize: '13px',
+                fontFamily: 'monospace',
+                color: 'var(--text-main)'
+              }}>
                 {invitationResult.url}
               </div>
 
-              <div className="flex gap-3 items-center flex-wrap mb-4">
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '16px' }}>
                 <Button
                   variant={copySuccess ? 'success' : 'primary'}
                   size="sm"
@@ -237,24 +247,24 @@ export default function CoachesClient() {
               </div>
 
               {copyError && (
-                <div className="text-warning text-sm mb-3 p-2 bg-warning/10 rounded">
+                <div style={{ color: 'var(--warning)', fontSize: '0.875rem', marginBottom: '12px', padding: '8px', backgroundColor: 'var(--warning-bg)', borderRadius: 'var(--radius-sm)' }}>
                   Không thể tự động sao chép. Vui lòng chọn và copy liên kết phía trên thủ công.
                 </div>
               )}
 
-              <p className="text-sm text-secondary">
-                <span className="material-icons-round text-[14px] align-middle mr-1">schedule</span>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                <span className="material-icons-round" style={{ fontSize: '14px', verticalAlign: 'middle', marginRight: '4px' }}>schedule</span>
                 Lời mời có hiệu lực đến {formatExpiryDate(invitationResult.expiresAt)}.
               </p>
-              <p className="text-sm text-secondary mt-1">
-                <span className="material-icons-round text-[14px] align-middle mr-1">chat</span>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                <span className="material-icons-round" style={{ fontSize: '14px', verticalAlign: 'middle', marginRight: '4px' }}>chat</span>
                 Hãy gửi liên kết này cho HLV qua Zalo, Messenger hoặc phương thức liên lạc khác.
               </p>
             </div>
           ) : (
             <div>
-              {error && <div className="text-danger mb-4 text-sm font-medium p-3 bg-danger/10 rounded">{error}</div>}
-              <form id="invite-form" onSubmit={handleInvite} className="flex flex-col gap-4">
+              {error && <div style={{ color: 'var(--danger)', marginBottom: '16px', fontSize: '0.875rem', fontWeight: 500, padding: '12px', backgroundColor: 'var(--danger-bg)', borderRadius: 'var(--radius-sm)' }}>{error}</div>}
+              <form id="invite-form" onSubmit={handleInvite} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <Input 
                   label="Email Google"
                   type="email" 

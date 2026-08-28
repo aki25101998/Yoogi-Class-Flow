@@ -44,38 +44,44 @@ export function ChangeRoleModal({
     <Modal isOpen={isOpen} onClose={isLoading ? () => {} : onClose}>
       <ModalHeader title="Chỉnh sửa vai trò" onClose={isLoading ? () => {} : onClose} />
       <ModalBody>
-        <div className="flex flex-col gap-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
-            <p className="text-sm text-muted">Thành viên</p>
-            <p className="font-semibold text-main">{memberName}</p>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Thành viên</p>
+            <p style={{ fontWeight: 600, color: 'var(--text-main)' }}>{memberName}</p>
           </div>
           
-          <div className="flex flex-col gap-2 mt-2">
-            <p className="text-sm font-medium text-main">Vai trò mới</p>
-            <div className="flex flex-col gap-2">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+            <p style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-main)' }}>Vai trò mới</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {AVAILABLE_ROLES.map(role => (
                 <label 
                   key={role} 
-                  className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                    selectedRole === role 
-                      ? 'border-primary bg-primary/5' 
-                      : 'border-border hover:bg-surface-hover'
-                  }`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px',
+                    padding: '12px',
+                    borderRadius: 'var(--radius-lg)',
+                    border: `1px solid ${selectedRole === role ? 'var(--primary)' : 'var(--border-light)'}`,
+                    backgroundColor: selectedRole === role ? 'var(--primary-light)' : 'transparent',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
                 >
-                  <div className="flex items-center h-5">
+                  <div style={{ display: 'flex', alignItems: 'center', height: '20px' }}>
                     <input
                       type="radio"
                       name="role"
                       value={role}
                       checked={selectedRole === role}
                       onChange={() => setSelectedRole(role)}
-                      className="w-4 h-4 text-primary focus:ring-primary border-border"
+                      style={{ width: '16px', height: '16px' }}
                       disabled={isLoading}
                     />
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-main">{ROLE_LABELS[role]}</span>
-                    <span className="text-xs text-muted mt-1">{ROLE_DESCRIPTIONS[role]}</span>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-main)' }}>{ROLE_LABELS[role]}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>{ROLE_DESCRIPTIONS[role]}</span>
                   </div>
                 </label>
               ))}

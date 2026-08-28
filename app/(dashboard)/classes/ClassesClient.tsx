@@ -164,10 +164,10 @@ export default function ClassesClient() {
       <Modal isOpen={!!selectedClassForAssign} onClose={loading ? () => {} : () => { setSelectedClassForAssign(null); setCoachId(''); setRole('ASSISTANT_COACH'); }}>
         <ModalHeader title="Phân công HLV mới" onClose={loading ? () => {} : () => { setSelectedClassForAssign(null); setCoachId(''); setRole('ASSISTANT_COACH'); }} />
         <ModalBody>
-          {error && <div className="text-danger mb-4 text-sm">{error}</div>}
+          {error && <div style={{ color: 'var(--danger)', marginBottom: '16px', fontSize: '0.875rem' }}>{error}</div>}
           <form id="assign-coach-form" onSubmit={(e) => {
             if (selectedClassForAssign) handleAssign(selectedClassForAssign, e);
-          }} className="flex flex-col gap-4">
+          }} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <Select 
               label="Chọn HLV"
               value={coachId} 

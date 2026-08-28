@@ -109,8 +109,8 @@ export default function VenuesClient() {
       <Modal isOpen={isAdding || !!editingId} onClose={loading ? () => {} : resetForm}>
         <ModalHeader title={editingId ? 'Sửa thông tin địa điểm' : 'Thêm địa điểm mới'} onClose={loading ? () => {} : resetForm} />
         <ModalBody>
-          {error && <div className="text-danger mb-4 text-sm">{error}</div>}
-          <form id="venue-form" onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
+          {error && <div style={{ color: 'var(--danger)', marginBottom: '16px', fontSize: '0.875rem' }}>{error}</div>}
+          <form id="venue-form" onSubmit={handleSubmit} style={{ display: 'grid', gap: '16px' }}>
             <Input 
               label="Tên địa điểm *" 
               required 

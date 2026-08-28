@@ -125,8 +125,8 @@ export default function FinanceClient() {
           <Modal isOpen={isAdding} onClose={loading ? () => {} : resetForm}>
             <ModalHeader title="Thêm giao dịch mới" onClose={loading ? () => {} : resetForm} />
             <ModalBody>
-              {error && <div className="text-danger mb-4 text-sm">{error}</div>}
-              <form id="finance-form" onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
+              {error && <div style={{ color: 'var(--danger)', marginBottom: '16px', fontSize: '0.875rem' }}>{error}</div>}
+              <form id="finance-form" onSubmit={handleSubmit} style={{ display: 'grid', gap: '16px' }}>
                 <Select 
                   label="Loại giao dịch *"
                   required 
@@ -159,7 +159,7 @@ export default function FinanceClient() {
                   value={formData.date} 
                   onChange={e => setFormData({...formData, date: e.target.value})} 
                 />
-                <div className="col-span-full">
+                <div>
                   <Input 
                     label="Mô tả thêm"
                     value={formData.description} 

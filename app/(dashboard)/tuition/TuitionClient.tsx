@@ -112,8 +112,8 @@ export default function TuitionClient() {
       <Modal isOpen={isAdding} onClose={loading ? () => {} : resetForm}>
         <ModalHeader title="Thêm khoản thu học phí mới" onClose={loading ? () => {} : resetForm} />
         <ModalBody>
-          {error && <div className="text-danger mb-4 text-sm">{error}</div>}
-          <form id="tuition-form" onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
+          {error && <div style={{ color: 'var(--danger)', marginBottom: '16px', fontSize: '0.875rem' }}>{error}</div>}
+          <form id="tuition-form" onSubmit={handleSubmit} style={{ display: 'grid', gap: '16px' }}>
             <Select 
               label="Học viên *"
               required 
@@ -158,9 +158,9 @@ export default function TuitionClient() {
       <Modal isOpen={!!paymentId} onClose={loading ? () => {} : () => { setPaymentId(null); setPaymentAmount(0); }}>
         <ModalHeader title="Ghi nhận thanh toán" onClose={loading ? () => {} : () => { setPaymentId(null); setPaymentAmount(0); }} />
         <ModalBody>
-          {error && <div className="text-danger mb-4 text-sm">{error}</div>}
-          <form id="payment-form" onSubmit={handlePayment} className="flex gap-4 items-end flex-wrap">
-            <div className="flex-1 min-w-[200px]">
+          {error && <div style={{ color: 'var(--danger)', marginBottom: '16px', fontSize: '0.875rem' }}>{error}</div>}
+          <form id="payment-form" onSubmit={handlePayment} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
               <Input 
                 label="Số tiền thanh toán (VNĐ)"
                 type="number" 
@@ -174,7 +174,7 @@ export default function TuitionClient() {
         </ModalBody>
         <ModalFooter>
           <Button type="button" variant="secondary" onClick={() => { setPaymentId(null); setPaymentAmount(0); }} disabled={loading}>Hủy</Button>
-          <Button type="submit" form="payment-form" isLoading={loading} className="bg-success text-success-text hover:bg-success-text hover:text-success-bg border-none">Xác nhận</Button>
+          <Button type="submit" form="payment-form" isLoading={loading} variant="success">Xác nhận</Button>
         </ModalFooter>
       </Modal>
 

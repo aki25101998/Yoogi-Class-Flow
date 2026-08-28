@@ -136,8 +136,8 @@ export default function StudentsClient() {
       <Modal isOpen={isAdding || !!editingId} onClose={loading ? () => {} : resetForm}>
         <ModalHeader title={editingId ? 'Sửa thông tin học viên' : 'Thêm học viên mới'} onClose={loading ? () => {} : resetForm} />
         <ModalBody>
-          {error && <div className="text-danger mb-4 text-sm">{error}</div>}
-          <form id="student-form" onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
+          {error && <div style={{ color: 'var(--danger)', marginBottom: '16px', fontSize: '0.875rem' }}>{error}</div>}
+          <form id="student-form" onSubmit={handleSubmit} style={{ display: 'grid', gap: '16px' }}>
             <Input 
               label="Tên học viên *" 
               required 
@@ -185,10 +185,10 @@ export default function StudentsClient() {
       <Modal isOpen={!!selectedStudentForEnroll} onClose={loading ? () => {} : () => { setSelectedStudentForEnroll(null); setClassId(''); }}>
         <ModalHeader title="Xếp vào lớp mới" onClose={loading ? () => {} : () => { setSelectedStudentForEnroll(null); setClassId(''); }} />
         <ModalBody>
-          {error && <div className="text-danger mb-4 text-sm">{error}</div>}
+          {error && <div style={{ color: 'var(--danger)', marginBottom: '16px', fontSize: '0.875rem' }}>{error}</div>}
           <form id="enroll-form" onSubmit={(e) => {
             if (selectedStudentForEnroll) handleEnroll(selectedStudentForEnroll, e);
-          }} className="flex flex-col gap-4">
+          }} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <Select 
               label="Chọn lớp"
               value={classId} 
