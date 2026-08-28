@@ -13,6 +13,7 @@ import { Select } from '@/app/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
 import { EmptyState } from '@/app/components/ui/EmptyState';
 import { Badge } from '@/app/components/ui/Badge';
+import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/app/components/ui/Modal';
 
 function ClassSkeleton() {
   return (
@@ -122,38 +123,7 @@ export default function ClassesClient() {
               </CardHeader>
               
               <CardContent>
-                {selectedClassForAssign === cls.id && (
-                  <div className="mb-6 p-4 bg-surface-hover rounded-md border border-light">
-                    <h4 className="font-semibold mb-4">Phân công HLV mới</h4>
-                    {error && <div className="text-danger mb-4 text-sm">{error}</div>}
-                    <form onSubmit={(e) => handleAssign(cls.id, e)} className="flex gap-4 items-end flex-wrap">
-                      <div style={{ flex: '1 1 250px' }}>
-                        <Select 
-                          label="Chọn HLV"
-                          value={coachId} 
-                          onChange={e => setCoachId(e.target.value)} 
-                          required
-                          options={[
-                            { value: '', label: '-- Chọn --' },
-                            ...availableCoaches.map((c: any) => ({ value: c.id, label: c.name }))
-                          ]}
-                        />
-                      </div>
-                      <div style={{ flex: '1 1 200px' }}>
-                        <Select 
-                          label="Vai trò"
-                          value={role} 
-                          onChange={e => setRole(e.target.value as any)}
-                          options={[
-                            { value: 'ASSISTANT_COACH', label: 'HLV phụ (Assistant Coach)' },
-                            { value: 'HEAD_COACH', label: 'HLV trưởng (Head Coach)' }
-                          ]}
-                        />
-                      </div>
-                      <Button type="submit" isLoading={loading} variant="primary">Lưu phân công</Button>
-                    </form>
-                  </div>
-                )}
+
 
                 <div>
                   <h4 className="text-sm font-semibold text-secondary mb-3 uppercase tracking-wider">HLV phụ trách</h4>
@@ -191,6 +161,39 @@ export default function ClassesClient() {
           ))}
         </div>
       )}
+      <Modal isOpen={!!selectedClassForAssign} onClose={loading ? () => {} : () => { setSelectedClassForAssign(null); setCoachId(''); setRole('ASSISTANT_COACH'); }}>
+        <ModalHeader title="Phân công HLV mới" onClose={loading ? () => {} : () => { setSelectedClassForAssign(null); setCoachId(''); setRole('ASSISTANT_COACH'); }} />
+        <ModalBody>
+          {error && <div className="text-danger mb-4 text-sm">{error}</div>}
+          <form id="assign-coach-form" onSubmit={(e) => {
+            if (selectedClassForAssign) handleAssign(selectedClassForAssign, e);
+          }} className="flex flex-col gap-4">
+            <Select 
+              label="Chọn HLV"
+              value={coachId} 
+              onChange={e => setCoachId(e.target.value)} 
+              required
+              options={[
+                { value: '', label: '-- Chọn --' },
+                ...availableCoaches.map((c: any) => ({ value: c.id, label: c.name }))
+              ]}
+            />
+            <Select 
+              label="Vai trò"
+              value={role} 
+              onChange={e => setRole(e.target.value as any)}
+              options={[
+                { value: 'ASSISTANT_COACH', label: 'HLV phụ (Assistant Coach)' },
+                { value: 'HEAD_COACH', label: 'HLV trưởng (Head Coach)' }
+              ]}
+            />
+          </form>
+        </ModalBody>
+        <ModalFooter>
+          <Button type="button" variant="secondary" onClick={() => { setSelectedClassForAssign(null); setCoachId(''); setRole('ASSISTANT_COACH'); }} disabled={loading}>Hủy</Button>
+          <Button type="submit" form="assign-coach-form" isLoading={loading} variant="primary">Lưu phân công</Button>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 }

@@ -14,6 +14,7 @@ import { Card, CardContent } from '@/app/components/ui/Card';
 import { EmptyState } from '@/app/components/ui/EmptyState';
 import { Badge } from '@/app/components/ui/Badge';
 import { Table, Thead, Tbody, Tr, Th, Td } from '@/app/components/ui/Table';
+import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/app/components/ui/Modal';
 
 function TuitionSkeleton() {
   return (
@@ -98,7 +99,7 @@ export default function TuitionClient() {
       <PageHeader 
         title="Quản lý Học phí" 
         description="Quản lý các khoản thu và thanh toán học phí của học viên"
-        primaryAction={isAdminOrOwner && !isAdding ? (
+        primaryAction={isAdminOrOwner ? (
           <Button 
             onClick={() => setIsAdding(true)}
             leftIcon={<span className="material-icons-round">request_quote</span>}
@@ -108,81 +109,74 @@ export default function TuitionClient() {
         ) : undefined}
       />
 
-      {isAdding && (
-        <Card className="mb-6">
-          <CardContent>
-            <h3 className="font-semibold text-lg mb-4 text-main">Thêm khoản thu học phí mới</h3>
-            {error && <div className="text-danger mb-4 text-sm">{error}</div>}
-            <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
-              <Select 
-                label="Học viên *"
-                required 
-                value={formData.student_id} 
-                onChange={e => setFormData({...formData, student_id: e.target.value})}
-                options={[
-                  { value: '', label: '-- Chọn học viên --' },
-                  ...students.map((s: any) => ({ value: s.id, label: s.name }))
-                ]}
-              />
-              <Select 
-                label="Lớp học (Tùy chọn)"
-                value={formData.class_id} 
-                onChange={e => setFormData({...formData, class_id: e.target.value})}
-                options={[
-                  { value: '', label: '-- Chọn lớp --' },
-                  ...classes.map((c: any) => ({ value: c.id, label: c.name }))
-                ]}
-              />
+      <Modal isOpen={isAdding} onClose={loading ? () => {} : resetForm}>
+        <ModalHeader title="Thêm khoản thu học phí mới" onClose={loading ? () => {} : resetForm} />
+        <ModalBody>
+          {error && <div className="text-danger mb-4 text-sm">{error}</div>}
+          <form id="tuition-form" onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
+            <Select 
+              label="Học viên *"
+              required 
+              value={formData.student_id} 
+              onChange={e => setFormData({...formData, student_id: e.target.value})}
+              options={[
+                { value: '', label: '-- Chọn học viên --' },
+                ...students.map((s: any) => ({ value: s.id, label: s.name }))
+              ]}
+            />
+            <Select 
+              label="Lớp học (Tùy chọn)"
+              value={formData.class_id} 
+              onChange={e => setFormData({...formData, class_id: e.target.value})}
+              options={[
+                { value: '', label: '-- Chọn lớp --' },
+                ...classes.map((c: any) => ({ value: c.id, label: c.name }))
+              ]}
+            />
+            <Input 
+              label="Số tiền (VNĐ) *"
+              type="number" 
+              required 
+              value={formData.amount} 
+              onChange={e => setFormData({...formData, amount: Number(e.target.value)})} 
+            />
+            <Input 
+              label="Kỳ hạn (YYYY-MM)"
+              type="month" 
+              required 
+              value={formData.due_date} 
+              onChange={e => setFormData({...formData, due_date: e.target.value})} 
+            />
+          </form>
+        </ModalBody>
+        <ModalFooter>
+          <Button type="button" variant="secondary" onClick={resetForm} disabled={loading}>Hủy</Button>
+          <Button type="submit" form="tuition-form" isLoading={loading} variant="primary">Lưu</Button>
+        </ModalFooter>
+      </Modal>
+
+      <Modal isOpen={!!paymentId} onClose={loading ? () => {} : () => { setPaymentId(null); setPaymentAmount(0); }}>
+        <ModalHeader title="Ghi nhận thanh toán" onClose={loading ? () => {} : () => { setPaymentId(null); setPaymentAmount(0); }} />
+        <ModalBody>
+          {error && <div className="text-danger mb-4 text-sm">{error}</div>}
+          <form id="payment-form" onSubmit={handlePayment} className="flex gap-4 items-end flex-wrap">
+            <div className="flex-1 min-w-[200px]">
               <Input 
-                label="Số tiền (VNĐ) *"
+                label="Số tiền thanh toán (VNĐ)"
                 type="number" 
                 required 
-                value={formData.amount} 
-                onChange={e => setFormData({...formData, amount: Number(e.target.value)})} 
+                min="1" 
+                value={paymentAmount} 
+                onChange={e => setPaymentAmount(Number(e.target.value))} 
               />
-              <Input 
-                label="Kỳ hạn (YYYY-MM)"
-                type="month" 
-                required 
-                value={formData.due_date} 
-                onChange={e => setFormData({...formData, due_date: e.target.value})} 
-              />
-              <div className="col-span-full mt-2 flex gap-2">
-                <Button type="submit" isLoading={loading} variant="primary">Lưu</Button>
-                <Button type="button" variant="secondary" onClick={resetForm} disabled={loading}>Hủy</Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-
-      {paymentId && (
-        <Card className="mb-6 border-success">
-          <CardContent>
-            <h3 className="font-semibold text-lg mb-4 text-success">Ghi nhận thanh toán</h3>
-            <form onSubmit={handlePayment} className="flex gap-4 items-end flex-wrap">
-              <div className="flex-1 min-w-[200px]">
-                <Input 
-                  label="Số tiền thanh toán (VNĐ)"
-                  type="number" 
-                  required 
-                  min="1" 
-                  value={paymentAmount} 
-                  onChange={e => setPaymentAmount(Number(e.target.value))} 
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit" isLoading={loading} className="bg-success text-success-text hover:bg-success-text hover:text-success-bg border-none">
-                  Xác nhận
-                </Button>
-                <Button type="button" variant="secondary" onClick={() => { setPaymentId(null); setPaymentAmount(0); }} disabled={loading}>
-                  Hủy
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+            </div>
+          </form>
+        </ModalBody>
+        <ModalFooter>
+          <Button type="button" variant="secondary" onClick={() => { setPaymentId(null); setPaymentAmount(0); }} disabled={loading}>Hủy</Button>
+          <Button type="submit" form="payment-form" isLoading={loading} className="bg-success text-success-text hover:bg-success-text hover:text-success-bg border-none">Xác nhận</Button>
+        </ModalFooter>
+      </Modal>
 
       {isFetching ? (
         <TuitionSkeleton />

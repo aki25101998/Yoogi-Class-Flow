@@ -14,6 +14,7 @@ import { Card, CardContent } from '@/app/components/ui/Card';
 import { EmptyState } from '@/app/components/ui/EmptyState';
 import { Badge } from '@/app/components/ui/Badge';
 import { Table, Thead, Tbody, Tr, Th, Td } from '@/app/components/ui/Table';
+import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/app/components/ui/Modal';
 
 function FinanceSkeleton() {
   return (
@@ -84,7 +85,7 @@ export default function FinanceClient() {
       <PageHeader 
         title="Quản lý Tài chính" 
         description="Theo dõi dòng tiền thu chi của trung tâm"
-        primaryAction={isAdminOrOwner && !isAdding ? (
+        primaryAction={isAdminOrOwner ? (
           <Button 
             onClick={() => setIsAdding(true)}
             leftIcon={<span className="material-icons-round">add_circle_outline</span>}
@@ -121,59 +122,57 @@ export default function FinanceClient() {
             </Card>
           </div>
 
-          {isAdding && (
-            <Card className="mb-6">
-              <CardContent>
-                <h3 className="font-semibold text-lg mb-4 text-main">Thêm giao dịch mới</h3>
-                {error && <div className="text-danger mb-4 text-sm">{error}</div>}
-                <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
-                  <Select 
-                    label="Loại giao dịch *"
-                    required 
-                    value={formData.type} 
-                    onChange={e => setFormData({...formData, type: e.target.value})}
-                    options={[
-                      { value: 'income', label: 'Thu' },
-                      { value: 'expense', label: 'Chi' }
-                    ]}
-                  />
+          <Modal isOpen={isAdding} onClose={loading ? () => {} : resetForm}>
+            <ModalHeader title="Thêm giao dịch mới" onClose={loading ? () => {} : resetForm} />
+            <ModalBody>
+              {error && <div className="text-danger mb-4 text-sm">{error}</div>}
+              <form id="finance-form" onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
+                <Select 
+                  label="Loại giao dịch *"
+                  required 
+                  value={formData.type} 
+                  onChange={e => setFormData({...formData, type: e.target.value})}
+                  options={[
+                    { value: 'income', label: 'Thu' },
+                    { value: 'expense', label: 'Chi' }
+                  ]}
+                />
+                <Input 
+                  label="Danh mục *"
+                  required 
+                  placeholder="VD: Học phí, Tiền thuê mặt bằng, Tiền điện..." 
+                  value={formData.category} 
+                  onChange={e => setFormData({...formData, category: e.target.value})} 
+                />
+                <Input 
+                  label="Số tiền (VNĐ) *"
+                  type="number" 
+                  required 
+                  min="1" 
+                  value={formData.amount} 
+                  onChange={e => setFormData({...formData, amount: Number(e.target.value)})} 
+                />
+                <Input 
+                  label="Ngày *"
+                  type="date" 
+                  required 
+                  value={formData.date} 
+                  onChange={e => setFormData({...formData, date: e.target.value})} 
+                />
+                <div className="col-span-full">
                   <Input 
-                    label="Danh mục *"
-                    required 
-                    placeholder="VD: Học phí, Tiền thuê mặt bằng, Tiền điện..." 
-                    value={formData.category} 
-                    onChange={e => setFormData({...formData, category: e.target.value})} 
+                    label="Mô tả thêm"
+                    value={formData.description} 
+                    onChange={e => setFormData({...formData, description: e.target.value})} 
                   />
-                  <Input 
-                    label="Số tiền (VNĐ) *"
-                    type="number" 
-                    required 
-                    min="1" 
-                    value={formData.amount} 
-                    onChange={e => setFormData({...formData, amount: Number(e.target.value)})} 
-                  />
-                  <Input 
-                    label="Ngày *"
-                    type="date" 
-                    required 
-                    value={formData.date} 
-                    onChange={e => setFormData({...formData, date: e.target.value})} 
-                  />
-                  <div className="col-span-full">
-                    <Input 
-                      label="Mô tả thêm"
-                      value={formData.description} 
-                      onChange={e => setFormData({...formData, description: e.target.value})} 
-                    />
-                  </div>
-                  <div className="col-span-full mt-2 flex gap-2">
-                    <Button type="submit" isLoading={loading} variant="primary">Lưu</Button>
-                    <Button type="button" variant="secondary" onClick={resetForm} disabled={loading}>Hủy</Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          )}
+                </div>
+              </form>
+            </ModalBody>
+            <ModalFooter>
+              <Button type="button" variant="secondary" onClick={resetForm} disabled={loading}>Hủy</Button>
+              <Button type="submit" form="finance-form" isLoading={loading} variant="primary">Lưu</Button>
+            </ModalFooter>
+          </Modal>
 
           {transactions.length === 0 ? (
             <EmptyState 

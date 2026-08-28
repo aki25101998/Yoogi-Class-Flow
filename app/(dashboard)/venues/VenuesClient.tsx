@@ -13,6 +13,7 @@ import { Input, Select } from '@/app/components/ui/Input';
 import { Card, CardContent } from '@/app/components/ui/Card';
 import { EmptyState } from '@/app/components/ui/EmptyState';
 import { Badge } from '@/app/components/ui/Badge';
+import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/app/components/ui/Modal';
 
 function VenueSkeleton() {
   return (
@@ -95,7 +96,7 @@ export default function VenuesClient() {
       <PageHeader 
         title="Quản lý Địa điểm" 
         description="Quản lý danh sách các địa điểm, cơ sở đào tạo của trung tâm"
-        primaryAction={isAdminOrOwner && !isAdding && !editingId ? (
+        primaryAction={isAdminOrOwner ? (
           <Button 
             onClick={() => setIsAdding(true)}
             leftIcon={<span className="material-icons-round">add_location</span>}
@@ -105,42 +106,38 @@ export default function VenuesClient() {
         ) : undefined}
       />
 
-      {(isAdding || editingId) && (
-        <Card className="mb-6">
-          <CardContent>
-            <h3 className="font-semibold text-lg mb-4 text-main">
-              {editingId ? 'Sửa thông tin địa điểm' : 'Thêm địa điểm mới'}
-            </h3>
-            {error && <div className="text-danger mb-4 text-sm">{error}</div>}
-            <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
-              <Input 
-                label="Tên địa điểm *" 
-                required 
-                value={formData.name} 
-                onChange={e => setFormData({...formData, name: e.target.value})} 
-              />
-              <Input 
-                label="Địa chỉ" 
-                value={formData.address} 
-                onChange={e => setFormData({...formData, address: e.target.value})} 
-              />
-              <Select 
-                label="Trạng thái" 
-                value={formData.status} 
-                onChange={e => setFormData({...formData, status: e.target.value})}
-                options={[
-                  { value: 'active', label: 'Hoạt động' },
-                  { value: 'inactive', label: 'Tạm ngưng' }
-                ]}
-              />
-              <div className="col-span-full mt-2 flex gap-2">
-                <Button type="submit" isLoading={loading} variant="primary">Lưu</Button>
-                <Button type="button" variant="secondary" onClick={resetForm} disabled={loading}>Hủy</Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+      <Modal isOpen={isAdding || !!editingId} onClose={loading ? () => {} : resetForm}>
+        <ModalHeader title={editingId ? 'Sửa thông tin địa điểm' : 'Thêm địa điểm mới'} onClose={loading ? () => {} : resetForm} />
+        <ModalBody>
+          {error && <div className="text-danger mb-4 text-sm">{error}</div>}
+          <form id="venue-form" onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
+            <Input 
+              label="Tên địa điểm *" 
+              required 
+              value={formData.name} 
+              onChange={e => setFormData({...formData, name: e.target.value})} 
+            />
+            <Input 
+              label="Địa chỉ" 
+              value={formData.address} 
+              onChange={e => setFormData({...formData, address: e.target.value})} 
+            />
+            <Select 
+              label="Trạng thái" 
+              value={formData.status} 
+              onChange={e => setFormData({...formData, status: e.target.value})}
+              options={[
+                { value: 'active', label: 'Hoạt động' },
+                { value: 'inactive', label: 'Tạm ngưng' }
+              ]}
+            />
+          </form>
+        </ModalBody>
+        <ModalFooter>
+          <Button type="button" variant="secondary" onClick={resetForm} disabled={loading}>Hủy</Button>
+          <Button type="submit" form="venue-form" isLoading={loading} variant="primary">Lưu</Button>
+        </ModalFooter>
+      </Modal>
 
       {isLoading ? (
         <div className="flex-col gap-4 mt-6">

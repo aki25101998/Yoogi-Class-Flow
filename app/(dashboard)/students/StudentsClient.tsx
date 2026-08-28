@@ -13,6 +13,7 @@ import { Input, Select } from '@/app/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
 import { EmptyState } from '@/app/components/ui/EmptyState';
 import { Badge } from '@/app/components/ui/Badge';
+import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/app/components/ui/Modal';
 
 function StudentSkeleton() {
   return (
@@ -122,7 +123,7 @@ export default function StudentsClient() {
       <PageHeader 
         title="Quản lý Học viên" 
         description="Quản lý danh sách học viên, thông tin liên hệ và xếp lớp"
-        primaryAction={isAdminOrOwner && !isAdding && !editingId ? (
+        primaryAction={isAdminOrOwner ? (
           <Button 
             onClick={() => setIsAdding(true)}
             leftIcon={<span className="material-icons-round">person_add</span>}
@@ -132,58 +133,79 @@ export default function StudentsClient() {
         ) : undefined}
       />
 
-      {(isAdding || editingId) && (
-        <Card className="mb-6">
-          <CardContent>
-            <h3 className="font-semibold text-lg mb-4 text-main">
-              {editingId ? 'Sửa thông tin học viên' : 'Thêm học viên mới'}
-            </h3>
-            {error && <div className="text-danger mb-4 text-sm">{error}</div>}
-            <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
-              <Input 
-                label="Tên học viên *" 
-                required 
-                value={formData.name} 
-                onChange={e => setFormData({...formData, name: e.target.value})} 
-              />
-              <Input 
-                label="Số điện thoại" 
-                value={formData.phone} 
-                onChange={e => setFormData({...formData, phone: e.target.value})} 
-              />
-              <Input 
-                label="Tên phụ huynh" 
-                value={formData.parent_name} 
-                onChange={e => setFormData({...formData, parent_name: e.target.value})} 
-              />
-              <Input 
-                label="SĐT phụ huynh" 
-                value={formData.parent_phone} 
-                onChange={e => setFormData({...formData, parent_phone: e.target.value})} 
-              />
-              <Input 
-                label="Ngày sinh" 
-                type="date" 
-                value={formData.dob} 
-                onChange={e => setFormData({...formData, dob: e.target.value})} 
-              />
-              <Select 
-                label="Trạng thái" 
-                value={formData.status} 
-                onChange={e => setFormData({...formData, status: e.target.value})}
-                options={[
-                  { value: 'active', label: 'Đang học' },
-                  { value: 'inactive', label: 'Đã nghỉ' }
-                ]}
-              />
-              <div className="col-span-full mt-2 flex gap-2">
-                <Button type="submit" isLoading={loading} variant="primary">Lưu</Button>
-                <Button type="button" variant="secondary" onClick={resetForm} disabled={loading}>Hủy</Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+      <Modal isOpen={isAdding || !!editingId} onClose={loading ? () => {} : resetForm}>
+        <ModalHeader title={editingId ? 'Sửa thông tin học viên' : 'Thêm học viên mới'} onClose={loading ? () => {} : resetForm} />
+        <ModalBody>
+          {error && <div className="text-danger mb-4 text-sm">{error}</div>}
+          <form id="student-form" onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
+            <Input 
+              label="Tên học viên *" 
+              required 
+              value={formData.name} 
+              onChange={e => setFormData({...formData, name: e.target.value})} 
+            />
+            <Input 
+              label="Số điện thoại" 
+              value={formData.phone} 
+              onChange={e => setFormData({...formData, phone: e.target.value})} 
+            />
+            <Input 
+              label="Tên phụ huynh" 
+              value={formData.parent_name} 
+              onChange={e => setFormData({...formData, parent_name: e.target.value})} 
+            />
+            <Input 
+              label="SĐT phụ huynh" 
+              value={formData.parent_phone} 
+              onChange={e => setFormData({...formData, parent_phone: e.target.value})} 
+            />
+            <Input 
+              label="Ngày sinh" 
+              type="date" 
+              value={formData.dob} 
+              onChange={e => setFormData({...formData, dob: e.target.value})} 
+            />
+            <Select 
+              label="Trạng thái" 
+              value={formData.status} 
+              onChange={e => setFormData({...formData, status: e.target.value})}
+              options={[
+                { value: 'active', label: 'Đang học' },
+                { value: 'inactive', label: 'Đã nghỉ' }
+              ]}
+            />
+          </form>
+        </ModalBody>
+        <ModalFooter>
+          <Button type="button" variant="secondary" onClick={resetForm} disabled={loading}>Hủy</Button>
+          <Button type="submit" form="student-form" isLoading={loading} variant="primary">Lưu</Button>
+        </ModalFooter>
+      </Modal>
+
+      <Modal isOpen={!!selectedStudentForEnroll} onClose={loading ? () => {} : () => { setSelectedStudentForEnroll(null); setClassId(''); }}>
+        <ModalHeader title="Xếp vào lớp mới" onClose={loading ? () => {} : () => { setSelectedStudentForEnroll(null); setClassId(''); }} />
+        <ModalBody>
+          {error && <div className="text-danger mb-4 text-sm">{error}</div>}
+          <form id="enroll-form" onSubmit={(e) => {
+            if (selectedStudentForEnroll) handleEnroll(selectedStudentForEnroll, e);
+          }} className="flex flex-col gap-4">
+            <Select 
+              label="Chọn lớp"
+              value={classId} 
+              onChange={e => setClassId(e.target.value)} 
+              required
+              options={[
+                { value: '', label: '-- Chọn --' },
+                ...availableClasses.map((c: any) => ({ value: c.id, label: `${c.name} (${c.start_time}-${c.end_time})` }))
+              ]}
+            />
+          </form>
+        </ModalBody>
+        <ModalFooter>
+          <Button type="button" variant="secondary" onClick={() => { setSelectedStudentForEnroll(null); setClassId(''); }} disabled={loading}>Hủy</Button>
+          <Button type="submit" form="enroll-form" isLoading={loading} variant="primary">Lưu</Button>
+        </ModalFooter>
+      </Modal>
 
       {isLoading ? (
         <div className="flex-col gap-6 mt-6">
@@ -246,27 +268,7 @@ export default function StudentsClient() {
               </CardHeader>
 
               <CardContent>
-                {selectedStudentForEnroll === student.id && (
-                  <div className="mb-6 p-4 bg-surface-hover rounded-md border border-light">
-                    <h4 className="font-semibold mb-4">Xếp vào lớp mới</h4>
-                    {error && <div className="text-danger mb-4 text-sm">{error}</div>}
-                    <form onSubmit={(e) => handleEnroll(student.id, e)} className="flex gap-4 items-end flex-wrap">
-                      <div style={{ flex: '1 1 250px' }}>
-                        <Select 
-                          label="Chọn lớp"
-                          value={classId} 
-                          onChange={e => setClassId(e.target.value)} 
-                          required
-                          options={[
-                            { value: '', label: '-- Chọn --' },
-                            ...availableClasses.map((c: any) => ({ value: c.id, label: `${c.name} (${c.start_time}-${c.end_time})` }))
-                          ]}
-                        />
-                      </div>
-                      <Button type="submit" isLoading={loading} variant="primary">Lưu</Button>
-                    </form>
-                  </div>
-                )}
+
 
                 <div>
                   <h4 className="text-sm font-semibold text-secondary mb-3 uppercase tracking-wider">Các lớp đang học</h4>

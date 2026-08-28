@@ -22,6 +22,7 @@ import { Card, CardContent } from '@/app/components/ui/Card';
 import { Table, TableContainer, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/app/components/ui/Table';
 import { Badge } from '@/app/components/ui/Badge';
 import { ChangeRoleModal } from '@/app/components/ui/ChangeRoleModal';
+import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/app/components/ui/Modal';
 import { EmptyState } from '@/app/components/ui/EmptyState';
 
 function CoachSkeleton() {
@@ -203,100 +204,85 @@ export default function CoachesClient() {
         ) : undefined}
       />
 
-      {isInviting && isAdminOrOwner && (
-        <Card className="mb-6">
-          <CardContent>
-            {/* Invitation Result — Link display */}
-            {invitationResult ? (
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="material-icons-round text-success" style={{ fontSize: '24px' }}>check_circle</span>
-                  <h3 className="font-semibold" style={{ color: 'var(--success)' }}>Đã tạo lời mời HLV</h3>
-                </div>
-                
-                <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-                  Gửi liên kết này cho HLV để tham gia:
-                </p>
-
-                <div style={{
-                  backgroundColor: 'var(--surface-hover)',
-                  padding: 'var(--space-3) var(--space-4)',
-                  borderRadius: 'var(--radius-md)',
-                  marginBottom: 'var(--space-4)',
-                  border: '1px solid var(--border-light)',
-                  wordBreak: 'break-all',
-                  fontSize: '13px',
-                  fontFamily: 'monospace',
-                  color: 'var(--text-primary)'
-                }}>
-                  {invitationResult.url}
-                </div>
-
-                <div className="flex gap-3 items-center flex-wrap mb-4">
-                  <Button
-                    variant={copySuccess ? 'success' : 'primary'}
-                    size="sm"
-                    onClick={() => handleCopyLink(invitationResult.url)}
-                    leftIcon={<span className="material-icons-round" style={{ fontSize: '18px' }}>{copySuccess ? 'done' : 'content_copy'}</span>}
-                  >
-                    {copySuccess ? 'Đã sao chép!' : 'Sao chép liên kết'}
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleCloseInvitationResult}>
-                    Đóng
-                  </Button>
-                </div>
-
-                {copyError && (
-                  <div className="text-warning text-sm mb-3 p-2 bg-warning/10 rounded">
-                    Không thể tự động sao chép. Vui lòng chọn và copy liên kết phía trên thủ công.
-                  </div>
-                )}
-
-                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  <span className="material-icons-round" style={{ fontSize: '14px', verticalAlign: 'middle', marginRight: '4px' }}>schedule</span>
-                  Lời mời có hiệu lực đến {formatExpiryDate(invitationResult.expiresAt)}.
-                </p>
-                <p className="text-sm" style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
-                  <span className="material-icons-round" style={{ fontSize: '14px', verticalAlign: 'middle', marginRight: '4px' }}>chat</span>
-                  Hãy gửi liên kết này cho HLV qua Zalo, Messenger hoặc phương thức liên lạc khác.
-                </p>
+      <Modal isOpen={isInviting} onClose={loading ? () => {} : handleCloseInvitationResult}>
+        <ModalHeader title={invitationResult ? 'Đã tạo lời mời HLV' : 'Tạo lời mời mới'} onClose={loading ? () => {} : handleCloseInvitationResult} />
+        <ModalBody>
+          {invitationResult ? (
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <span className="material-icons-round text-success" style={{ fontSize: '24px' }}>check_circle</span>
+                <h3 className="font-semibold text-success">Thành công!</h3>
               </div>
-            ) : (
-              /* Invitation form */
-              <div>
-                <h3 className="font-semibold mb-4">Tạo lời mời mới</h3>
-                {error && <div className="text-warning mb-4 text-sm font-medium p-3 bg-warning/10 rounded">{error}</div>}
-                <form onSubmit={handleInvite} className="flex gap-4 items-end flex-wrap">
-                  <div style={{ flex: '1 1 250px' }}>
-                    <Input 
-                      label="Email Google"
-                      type="email" 
-                      value={email} 
-                      onChange={e => setEmail(e.target.value)} 
-                      required 
-                    />
-                  </div>
-                  <div style={{ flex: '1 1 200px' }}>
-                    <Select 
-                      label="Vai trò"
-                      value={role} 
-                      onChange={(e) => setRole(e.target.value as OrganizationRole)}
-                      options={[
-                        { value: 'assistant_coach', label: 'HLV phụ' },
-                        { value: 'head_coach', label: 'HLV trưởng' },
-                        ...(currentUserRole === 'owner' ? [{ value: 'admin', label: 'Quản trị viên' }] : [])
-                      ]}
-                    />
-                  </div>
-                  <Button type="submit" isLoading={loading} variant="success">
-                    Tạo lời mời
-                  </Button>
-                </form>
+              
+              <p className="text-sm mb-4 text-secondary">
+                Gửi liên kết này cho HLV để tham gia:
+              </p>
+
+              <div className="bg-surface-hover p-3 rounded-md mb-4 border border-light break-all text-[13px] font-mono text-main">
+                {invitationResult.url}
               </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+
+              <div className="flex gap-3 items-center flex-wrap mb-4">
+                <Button
+                  variant={copySuccess ? 'success' : 'primary'}
+                  size="sm"
+                  onClick={() => handleCopyLink(invitationResult.url)}
+                  leftIcon={<span className="material-icons-round" style={{ fontSize: '18px' }}>{copySuccess ? 'done' : 'content_copy'}</span>}
+                >
+                  {copySuccess ? 'Đã sao chép!' : 'Sao chép liên kết'}
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleCloseInvitationResult}>
+                  Đóng
+                </Button>
+              </div>
+
+              {copyError && (
+                <div className="text-warning text-sm mb-3 p-2 bg-warning/10 rounded">
+                  Không thể tự động sao chép. Vui lòng chọn và copy liên kết phía trên thủ công.
+                </div>
+              )}
+
+              <p className="text-sm text-secondary">
+                <span className="material-icons-round text-[14px] align-middle mr-1">schedule</span>
+                Lời mời có hiệu lực đến {formatExpiryDate(invitationResult.expiresAt)}.
+              </p>
+              <p className="text-sm text-secondary mt-1">
+                <span className="material-icons-round text-[14px] align-middle mr-1">chat</span>
+                Hãy gửi liên kết này cho HLV qua Zalo, Messenger hoặc phương thức liên lạc khác.
+              </p>
+            </div>
+          ) : (
+            <div>
+              {error && <div className="text-danger mb-4 text-sm font-medium p-3 bg-danger/10 rounded">{error}</div>}
+              <form id="invite-form" onSubmit={handleInvite} className="flex flex-col gap-4">
+                <Input 
+                  label="Email Google"
+                  type="email" 
+                  value={email} 
+                  onChange={e => setEmail(e.target.value)} 
+                  required 
+                />
+                <Select 
+                  label="Vai trò"
+                  value={role} 
+                  onChange={(e) => setRole(e.target.value as OrganizationRole)}
+                  options={[
+                    { value: 'assistant_coach', label: 'HLV phụ' },
+                    { value: 'head_coach', label: 'HLV trưởng' },
+                    ...(currentUserRole === 'owner' ? [{ value: 'admin', label: 'Quản trị viên' }] : [])
+                  ]}
+                />
+              </form>
+            </div>
+          )}
+        </ModalBody>
+        {!invitationResult && (
+          <ModalFooter>
+            <Button variant="secondary" onClick={handleCloseInvitationResult} disabled={loading}>Hủy</Button>
+            <Button type="submit" form="invite-form" isLoading={loading} variant="primary">Tạo lời mời</Button>
+          </ModalFooter>
+        )}
+      </Modal>
 
       {/* Tabs */}
       <div className="flex gap-6 mb-6" style={{ borderBottom: '1px solid var(--border-light)' }}>
