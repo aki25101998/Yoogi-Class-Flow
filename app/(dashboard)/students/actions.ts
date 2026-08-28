@@ -4,7 +4,7 @@ import { createClient } from '@/utils/supabase/server';
 import { getCurrentOrganizationContext } from '@/services/organization.service';
 import { revalidatePath } from 'next/cache';
 
-export async function addStudentAction(data: { name: string; phone?: string; parent_name?: string; parent_phone?: string; dob?: string }) {
+export async function addStudentAction(data: { name: string; phone?: string; parent_name?: string; parent_phone?: string; dob?: string; current_belt_id?: string | null; venue_id?: string | null }) {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
@@ -17,6 +17,8 @@ export async function addStudentAction(data: { name: string; phone?: string; par
     parent_name: data.parent_name,
     parent_phone: data.parent_phone,
     dob: data.dob,
+    current_belt_id: data.current_belt_id || null,
+    venue_id: data.venue_id || null,
     status: 'active'
   });
 
@@ -36,6 +38,7 @@ export async function updateStudentAction(
     dob?: string; 
     status?: string;
     current_belt_id?: string | null;
+    venue_id?: string | null;
   },
   newClassId?: string
 ) {

@@ -14,7 +14,7 @@ export function useStudents(organizationId: string | undefined) {
       if (!organizationId) return [];
       const { data, error } = await supabase
         .from('students')
-        .select('*, organization_belts(name), class_students(id, class_id, status, venue_classes(name, start_time, end_time, venues(name)))')
+        .select('*, organization_belts(name), venues(name), class_students(id, class_id, status, venue_classes(name, start_time, end_time, venues(name)))')
         .eq('organization_id', organizationId)
         .order('created_at', { ascending: false });
       
@@ -70,11 +70,32 @@ export function useStudents(organizationId: string | undefined) {
     enabled: !!organizationId,
   });
 
+  const {
+    data: availableVenues = [],
+    isLoading: isVenuesLoading,
+  } = useQuery({
+    queryKey: ['availableVenues', organizationId],
+    queryFn: async () => {
+      if (!organizationId) return [];
+      const { data, error } = await supabase
+        .from('venues')
+        .select('id, name')
+        .eq('organization_id', organizationId)
+        .eq('status', 'active')
+        .order('name');
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!organizationId,
+  });
+
   return {
     students,
     availableClasses,
     availableBelts,
-    isLoading: isStudentsLoading || isClassesLoading || isBeltsLoading,
+    availableVenues,
+    isLoading: isStudentsLoading || isClassesLoading || isBeltsLoading || isVenuesLoading,
     error: studentsError,
   };
 }

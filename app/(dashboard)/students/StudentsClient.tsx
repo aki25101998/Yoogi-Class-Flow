@@ -36,13 +36,13 @@ export default function StudentsClient() {
   const organizationId = context?.organization?.id;
   const currentUserRole = context?.membership?.role;
 
-  const { students, availableClasses, availableBelts, isLoading } = useStudents(organizationId);
+  const { students, availableClasses, availableBelts, availableVenues, isLoading } = useStudents(organizationId);
   const queryClient = useQueryClient();
 
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ 
-    name: '', phone: '', parent_name: '', parent_phone: '', dob: '', status: 'active', current_belt_id: '' 
+    name: '', phone: '', parent_name: '', parent_phone: '', dob: '', status: 'active', current_belt_id: '', venue_id: '' 
   });
   
   const [editingClassId, setEditingClassId] = useState<string>('');
@@ -53,7 +53,7 @@ export default function StudentsClient() {
   const isAdminOrOwner = currentUserRole === 'admin' || currentUserRole === 'owner';
 
   const resetForm = () => {
-    setFormData({ name: '', phone: '', parent_name: '', parent_phone: '', dob: '', status: 'active', current_belt_id: '' });
+    setFormData({ name: '', phone: '', parent_name: '', parent_phone: '', dob: '', status: 'active', current_belt_id: '', venue_id: '' });
     setEditingClassId('');
     setIsAdding(false);
     setEditingId(null);
@@ -71,7 +71,8 @@ export default function StudentsClient() {
     
     const submitData = {
       ...formData,
-      current_belt_id: formData.current_belt_id === '' ? null : formData.current_belt_id
+      current_belt_id: formData.current_belt_id === '' ? null : formData.current_belt_id,
+      venue_id: formData.venue_id === '' ? null : formData.venue_id
     };
     
     if (editingId) {
@@ -110,7 +111,8 @@ export default function StudentsClient() {
       parent_phone: student.parent_phone || '',
       dob: student.dob || '',
       status: student.status || 'active',
-      current_belt_id: student.current_belt_id || ''
+      current_belt_id: student.current_belt_id || '',
+      venue_id: student.venue_id || ''
     });
     
     // Tìm lớp active hiện tại
@@ -147,35 +149,6 @@ export default function StudentsClient() {
               onChange={e => setFormData({...formData, name: e.target.value})} 
             />
             
-            {editingId && (
-              <>
-                <Select 
-                  label="Lớp hiện tại"
-                  value={editingClassId} 
-                  onChange={e => setEditingClassId(e.target.value)} 
-                  options={[
-                    { value: '', label: '-- Chưa có lớp --' },
-                    ...availableClasses.map((c: any) => ({ 
-                      value: c.id, 
-                      label: `${c.name} (${c.venues?.name || 'Không rõ chi nhánh'})` 
-                    }))
-                  ]}
-                />
-                <Select 
-                  label="Đai hiện tại"
-                  value={formData.current_belt_id} 
-                  onChange={e => setFormData({...formData, current_belt_id: e.target.value})} 
-                  options={[
-                    { value: '', label: 'Chưa có đai' },
-                    ...availableBelts.map((belt: any) => ({
-                      value: belt.id,
-                      label: belt.name
-                    }))
-                  ]}
-                />
-              </>
-            )}
-
             <Input 
               label="Số điện thoại" 
               value={formData.phone} 
@@ -193,6 +166,47 @@ export default function StudentsClient() {
                 onChange={e => setFormData({...formData, parent_phone: e.target.value})} 
               />
             </div>
+
+            {editingId && (
+              <Select 
+                label="Lớp hiện tại"
+                value={editingClassId} 
+                onChange={e => setEditingClassId(e.target.value)} 
+                options={[
+                  { value: '', label: '-- Chưa có lớp --' },
+                  ...availableClasses.map((c: any) => ({ 
+                    value: c.id, 
+                    label: `${c.name} (${c.venues?.name || 'Không rõ chi nhánh'})` 
+                  }))
+                ]}
+              />
+            )}
+            
+            <Select 
+              label="Đai hiện tại"
+              value={formData.current_belt_id} 
+              onChange={e => setFormData({...formData, current_belt_id: e.target.value})} 
+              options={[
+                { value: '', label: 'Chưa có đai' },
+                ...availableBelts.map((belt: any) => ({
+                  value: belt.id,
+                  label: belt.name
+                }))
+              ]}
+            />
+
+            <Select 
+              label="Địa điểm học"
+              value={formData.venue_id} 
+              onChange={e => setFormData({...formData, venue_id: e.target.value})} 
+              options={[
+                { value: '', label: 'Chọn địa điểm' },
+                ...availableVenues.map((venue: any) => ({
+                  value: venue.id,
+                  label: venue.name
+                }))
+              ]}
+            />
           </form>
         </ModalBody>
         <ModalFooter>
@@ -217,7 +231,7 @@ export default function StudentsClient() {
           {students.map((student: any) => {
             const activeClass = student.class_students && student.class_students.length > 0 ? student.class_students[0] : null;
             const currentClassName = activeClass ? activeClass.venue_classes?.name : 'Chưa xếp lớp';
-            const currentVenueName = activeClass ? (activeClass.venue_classes?.venues?.name || 'Không rõ') : 'N/A';
+            const currentVenueName = activeClass ? (activeClass.venue_classes?.venues?.name || 'Không rõ') : (student.venues?.name || 'Chưa chọn địa điểm');
 
             return (
               <Card key={student.id}>
