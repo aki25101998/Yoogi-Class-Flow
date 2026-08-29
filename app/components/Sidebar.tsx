@@ -55,6 +55,8 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
   const queryClient = useQueryClient();
   
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [isWorkspaceDropdownOpen, setIsWorkspaceDropdownOpen] = useState(false);
+  const [isSwitchingWorkspace, setIsSwitchingWorkspace] = useState(false);
 
   useEffect(() => {
     // Read theme from localStorage or document on mount
@@ -129,7 +131,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
       ></div>
 
       <nav className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-header" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div className="sidebar-header" style={{ height: 'auto', padding: '20px 16px 24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div className="sidebar-logo">
               <span className="material-icons-round" style={{ fontSize: '1.2rem' }}>sports_martial_arts</span>
@@ -139,42 +141,167 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
             </div>
           </div>
           
-          {context?.allMemberships && context.allMemberships.length > 0 ? (
-            <select 
-              value={context.organization?.id || ''} 
-              onChange={async (e) => {
-                const orgId = e.target.value;
-                queryClient.clear(); // Clear all queries to prevent data leakage
-                await switchWorkspace(orgId);
-              }}
-              style={{
+          <div style={{ position: 'relative' }}>
+            {context?.allMemberships && context.allMemberships.length > 1 ? (
+              <>
+                <button
+                  onClick={() => !isSwitchingWorkspace && setIsWorkspaceDropdownOpen(!isWorkspaceDropdownOpen)}
+                  disabled={isSwitchingWorkspace}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    padding: '10px 12px',
+                    background: 'var(--surface-hover)',
+                    border: '1px solid var(--border-light)',
+                    borderRadius: 'var(--radius-md)',
+                    cursor: isSwitchingWorkspace ? 'wait' : 'pointer',
+                    transition: 'all 0.2s ease',
+                    textAlign: 'left'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSwitchingWorkspace) {
+                      e.currentTarget.style.borderColor = 'var(--border)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSwitchingWorkspace) {
+                      e.currentTarget.style.borderColor = 'var(--border-light)';
+                    }
+                  }}
+                >
+                  <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                    Workspace
+                  </span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', paddingRight: '8px' }}>
+                      <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {context.organization?.name || 'Unknown'}
+                      </span>
+                      <span style={{ fontSize: '12px', fontWeight: 400, color: 'var(--text-secondary)' }}>
+                        {isSwitchingWorkspace ? 'Đang chuyển...' : displayRole}
+                      </span>
+                    </div>
+                    {isSwitchingWorkspace ? (
+                      <span className="material-icons-round" style={{ fontSize: '18px', color: 'var(--text-secondary)' }}>sync</span>
+                    ) : (
+                      <span className="material-icons-round" style={{ fontSize: '18px', color: 'var(--text-secondary)' }}>unfold_more</span>
+                    )}
+                  </div>
+                </button>
+
+                {isWorkspaceDropdownOpen && (
+                  <>
+                    <div 
+                      style={{ position: 'fixed', inset: 0, zIndex: 99 }} 
+                      onClick={() => setIsWorkspaceDropdownOpen(false)}
+                    />
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      marginTop: '4px',
+                      background: 'var(--surface)',
+                      border: '1px solid var(--border-light)',
+                      borderRadius: 'var(--radius-md)',
+                      boxShadow: 'var(--shadow-lg)',
+                      zIndex: 100,
+                      maxHeight: '300px',
+                      overflowY: 'auto',
+                      padding: '4px'
+                    }}>
+                      <div style={{ padding: '8px 12px', fontSize: '10px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                        Chọn Workspace
+                      </div>
+                      {context.allMemberships.map((m: any) => {
+                        const mRole = m.role === 'owner' ? 'Owner' : m.role === 'admin' ? 'Admin' : m.role === 'head_coach' ? 'Head Coach' : 'Assistant Coach';
+                        const isActive = m.organization_id === context.organization?.id;
+                        return (
+                          <button
+                            key={m.organization_id}
+                            onClick={async () => {
+                              setIsWorkspaceDropdownOpen(false);
+                              if (isActive) return;
+                              setIsSwitchingWorkspace(true);
+                              try {
+                                queryClient.clear();
+                                await switchWorkspace(m.organization_id);
+                              } catch (e) {
+                                console.error(e);
+                                setIsSwitchingWorkspace(false);
+                              }
+                            }}
+                            style={{
+                              width: '100%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '8px 12px',
+                              background: isActive ? 'var(--primary-light)' : 'transparent',
+                              border: 'none',
+                              borderRadius: 'var(--radius-sm)',
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              transition: 'background 0.2s',
+                              marginBottom: '2px'
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!isActive) e.currentTarget.style.background = 'var(--surface-hover)';
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!isActive) e.currentTarget.style.background = 'transparent';
+                            }}
+                          >
+                            <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', paddingRight: '8px' }}>
+                              <span style={{ 
+                                fontSize: '13px', 
+                                fontWeight: isActive ? 600 : 500, 
+                                color: isActive ? 'var(--primary)' : 'var(--text-main)',
+                                whiteSpace: 'nowrap', 
+                                overflow: 'hidden', 
+                                textOverflow: 'ellipsis' 
+                              }}>
+                                {m.organization.name}
+                              </span>
+                              <span style={{ fontSize: '12px', color: isActive ? 'var(--primary)' : 'var(--text-secondary)', opacity: isActive ? 0.8 : 1 }}>
+                                {mRole}
+                              </span>
+                            </div>
+                            {isActive && (
+                              <span className="material-icons-round" style={{ fontSize: '16px', color: 'var(--primary)' }}>check</span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </>
+            ) : (
+              <div style={{
                 width: '100%',
-                padding: '8px',
-                borderRadius: '8px',
-                border: '1px solid var(--border-light)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                padding: '10px 12px',
                 background: 'var(--surface-hover)',
-                color: 'var(--text-main)',
-                fontSize: '0.9rem',
-                fontWeight: 500,
-                outline: 'none',
-                cursor: 'pointer',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden'
-              }}
-            >
-              {context.allMemberships.map((m: any) => (
-                <option key={m.organization_id} value={m.organization_id}>
-                  {m.organization.name} - {m.role === 'owner' ? 'Owner' : m.role === 'admin' ? 'Admin' : m.role === 'head_coach' ? 'Head Coach' : 'Assistant Coach'}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <div className="sidebar-brand" style={{ fontSize: '0.9rem', marginTop: '8px' }}>
-              {context?.organization?.name || 'Chấm Công HLV'}
-              <small>{displayRole}</small>
-            </div>
-          )}
+                border: '1px solid var(--border-light)',
+                borderRadius: 'var(--radius-md)'
+              }}>
+                <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                  Workspace
+                </span>
+                <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>
+                  {context?.organization?.name || 'Unknown'}
+                </span>
+                <span style={{ fontSize: '12px', fontWeight: 400, color: 'var(--text-secondary)' }}>
+                  {displayRole}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="sidebar-nav">
