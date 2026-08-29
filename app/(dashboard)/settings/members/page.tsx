@@ -20,19 +20,24 @@ export default async function MembersPage() {
 
   const supabase = await createClient();
 
-  const { data: members } = await supabase
+  const membersQuery = supabase
     .from('organization_members')
     .select('*, profiles(name, email)')
     .eq('organization_id', context.organization.id)
     .neq('status', 'removed')
     .order('created_at', { ascending: false });
 
-  const { data: invitations } = await supabase
+  const invitationsQuery = supabase
     .from('organization_invitations')
     .select('*')
     .eq('organization_id', context.organization.id)
     .eq('status', 'pending')
     .order('created_at', { ascending: false });
+
+  const [{ data: members }, { data: invitations }] = await Promise.all([
+    membersQuery,
+    invitationsQuery
+  ]);
 
   return (
     <div style={{ padding: '24px' }}>
