@@ -7,44 +7,74 @@ import { usePayroll } from '@/hooks/usePayroll';
 import { useDashboardContext } from '../DashboardProvider';
 import SalaryBreakdownModal from './components/SalaryBreakdownModal';
 import type { SalarySnapshot, MonthlyPayrollResult } from '@/types/salary';
+import styles from './PayrollClient.module.css';
 
 // UI Components
-import { PageHeader } from '@/app/components/ui/PageHeader';
 import { Button } from '@/app/components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
-import { EmptyState } from '@/app/components/ui/EmptyState';
 import { Badge } from '@/app/components/ui/Badge';
-import { Table, Thead, Tbody, Tr, Th, Td } from '@/app/components/ui/Table';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/app/components/ui/Modal';
 import { Input } from '@/app/components/ui/Input';
 
-type TabKey = 'payroll' | 'rules' | 'profiles' | 'history';
+// ─────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────
+function formatVND(n: number) {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
+  return n.toLocaleString('vi-VN');
+}
 
+function formatFullVND(n: number) {
+  return n.toLocaleString('vi-VN');
+}
+
+function getCurrentMonthLabel() {
+  const d = new Date();
+  return `Tháng ${d.getMonth() + 1}/${d.getFullYear()}`;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Skeleton
+// ─────────────────────────────────────────────────────────────
 function PayrollSkeleton() {
   return (
-    <div className="grid gap-6 animate-pulse">
-      {[1, 2].map((i) => (
-        <Card key={i}>
-          <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-light pb-4">
-            <div>
-              <div className="h-6 bg-surface-hover rounded w-32 mb-2"></div>
-              <div className="h-4 bg-surface-hover rounded w-48"></div>
+    <div className={styles.payrollPage}>
+      {/* Overview skeleton */}
+      <div className={styles.overviewCard}>
+        <div className={styles.overviewHeader}>
+          <div className={`${styles.skeletonBar} ${styles.skeletonPulse}`} style={{ width: 180, height: 14 }} />
+          <div className={`${styles.skeletonBar} ${styles.skeletonPulse}`} style={{ width: 100, height: 14 }} />
+        </div>
+        <div className={styles.overviewHero} style={{ paddingBottom: 0 }}>
+          <div className={`${styles.skeletonBar} ${styles.skeletonPulse}`} style={{ width: 100, height: 12, marginBottom: 8 }} />
+          <div className={`${styles.skeletonBar} ${styles.skeletonPulse}`} style={{ width: 200, height: 36 }} />
+        </div>
+        <div className={styles.overviewGrid}>
+          {[1, 2, 3].map(i => (
+            <div key={i} className={`${styles.overviewKPI} ${styles.skeletonPulse}`} style={{ minHeight: 64 }} />
+          ))}
+        </div>
+      </div>
+      {/* Trainer skeletons */}
+      {[1, 2, 3].map(i => (
+        <div key={i} className={styles.trainerCard}>
+          <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div className={`${styles.skeletonBar} ${styles.skeletonPulse}`} style={{ width: 40, height: 40, borderRadius: '50%' }} />
+            <div style={{ flex: 1 }}>
+              <div className={`${styles.skeletonBar} ${styles.skeletonPulse}`} style={{ width: 140, height: 16, marginBottom: 6 }} />
+              <div className={`${styles.skeletonBar} ${styles.skeletonPulse}`} style={{ width: 100, height: 12 }} />
             </div>
-            <div className="text-left sm:text-right">
-              <div className="h-4 bg-surface-hover rounded w-24 mb-2"></div>
-              <div className="h-8 bg-surface-hover rounded w-32 mb-2"></div>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <div className="h-4 bg-surface-hover rounded w-40 mb-4"></div>
-            <div className="h-32 bg-surface-hover rounded w-full"></div>
-          </CardContent>
-        </Card>
+            <div className={`${styles.skeletonBar} ${styles.skeletonPulse}`} style={{ width: 80, height: 16 }} />
+          </div>
+        </div>
       ))}
     </div>
   );
 }
 
+// ─────────────────────────────────────────────────────────────
+// Main Component
+// ─────────────────────────────────────────────────────────────
 export default function PayrollClient() {
   const { context } = useDashboardContext();
   const organizationId = context?.organization?.id;
@@ -83,7 +113,7 @@ export default function PayrollClient() {
 
   const isAdminOrOwner = currentUserRole === 'admin' || currentUserRole === 'owner';
 
-  // Nhóm các session theo coach
+  // ── Data Processing ──
   const rawPayrollData = useMemo(() => {
     return coaches.map((coach: any) => {
       const sessions = salarySessions.filter((s: any) => s.coach_id === coach.id);
@@ -133,6 +163,7 @@ export default function PayrollClient() {
     });
   }, [rawPayrollData, searchTerm, statusFilter]);
 
+  // ── Action handlers (unchanged logic) ──
   const handleApprove = async (sessionId: string) => {
     setError('');
     setLoading(true);
@@ -248,310 +279,399 @@ export default function PayrollClient() {
     }
   };
 
-  return (
-    <div className="flex-col gap-6">
-      <PageHeader 
-        title="Quản lý Lương (Payroll)" 
-        description="Quản lý tính lương và thanh toán cho các huấn luyện viên"
-      />
+  const toggleCoach = (coachId: string) => {
+    setExpandedCoachId(prev => prev === coachId ? null : coachId);
+  };
 
-      {/* Navigation links to sub-pages */}
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-        <Button variant="primary" size="sm" leftIcon={<span className="material-icons-round" style={{ fontSize: '16px' }}>payments</span>}>
-          Bảng lương
-        </Button>
-        <a href="/payroll/salary-rules" style={{ textDecoration: 'none' }}>
-          <Button variant="outline" size="sm" leftIcon={<span className="material-icons-round" style={{ fontSize: '16px' }}>rule</span>}>
-            Quy tắc lương
-          </Button>
-        </a>
-        <a href="/payroll/salary-profiles" style={{ textDecoration: 'none' }}>
-          <Button variant="outline" size="sm" leftIcon={<span className="material-icons-round" style={{ fontSize: '16px' }}>person</span>}>
-            Hồ sơ lương
-          </Button>
-        </a>
+  // ─────────────────────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────────────────────
+  if (isFetching) {
+    return (
+      <div className={styles.payrollPage}>
+        <div className={styles.pageHeader}>
+          <div className={styles.pageHeaderTop}>
+            <div className={styles.pageHeaderInfo}>
+              <h1>Bảng lương</h1>
+              <p>Quản lý và theo dõi lương của các huấn luyện viên</p>
+            </div>
+          </div>
+        </div>
+        <PayrollSkeleton />
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.payrollPage}>
+
+      {/* ═══════════════════════════════════════════════════════
+          HEADER
+          ═══════════════════════════════════════════════════════ */}
+      <div className={styles.pageHeader}>
+        <div className={styles.pageHeaderTop}>
+          <div className={styles.pageHeaderInfo}>
+            <h1>Bảng lương</h1>
+            <p>Quản lý và theo dõi lương của các huấn luyện viên</p>
+          </div>
+          <div className={styles.pageTabs}>
+            <span className={`${styles.pageTab} ${styles.pageTabActive}`}>
+              <span className={`material-icons-round ${styles.pageTabIcon}`}>payments</span>
+              Bảng lương
+            </span>
+            <a href="/payroll/salary-rules" className={styles.pageTab}>
+              <span className={`material-icons-round ${styles.pageTabIcon}`}>rule</span>
+              Quy tắc lương
+            </a>
+            <a href="/payroll/salary-profiles" className={styles.pageTab}>
+              <span className={`material-icons-round ${styles.pageTabIcon}`}>person</span>
+              Hồ sơ lương
+            </a>
+          </div>
+        </div>
       </div>
 
-      {error && <div className="text-danger mb-4 text-sm font-medium">{error}</div>}
-      {success && <div className="text-success mb-4 text-sm font-medium">{success}</div>}
-
-      {isFetching ? (
-        <PayrollSkeleton />
-      ) : (
-        <div className="flex flex-col gap-6">
-          
-          {/* TỔNG QUAN LƯƠNG THÁNG - GLOBAL */}
-          <Card>
-            <CardHeader className="pb-2 border-b border-light">
-              <CardTitle className="text-sm font-semibold text-secondary uppercase tracking-wider">
-                Tổng quan lương tháng (Tất cả HLV)
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4 pb-4">
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="p-3 sm:p-4 rounded-md border border-light bg-surface-hover">
-                  <div className="text-xs sm:text-sm text-secondary mb-1">Tổng lương tính</div>
-                  <div className="text-lg sm:text-xl font-bold text-main">
-                    {globalKPIs.totalCalculated.toLocaleString('vi-VN')} đ
-                  </div>
-                </div>
-                <div className="p-3 sm:p-4 rounded-md border border-warning/30 bg-warning/5">
-                  <div className="text-xs sm:text-sm text-warning font-medium mb-1">Chờ duyệt</div>
-                  <div className="text-lg sm:text-xl font-bold text-warning">
-                    {globalKPIs.totalUnapproved.toLocaleString('vi-VN')} đ
-                  </div>
-                </div>
-                <div className="p-3 sm:p-4 rounded-md border border-primary/30 bg-primary/5">
-                  <div className="text-xs sm:text-sm text-primary font-medium mb-1">Cần thanh toán</div>
-                  <div className="text-lg sm:text-xl font-bold text-primary">
-                    {globalKPIs.totalApproved.toLocaleString('vi-VN')} đ
-                  </div>
-                </div>
-                <div className="p-3 sm:p-4 rounded-md border border-success/30 bg-success/5">
-                  <div className="text-xs sm:text-sm text-success font-medium mb-1">Đã thanh toán</div>
-                  <div className="text-lg sm:text-xl font-bold text-success">
-                    {globalKPIs.totalPaid.toLocaleString('vi-VN')} đ
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* SEARCH & FILTER */}
-          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-            <div className="w-full sm:w-1/3 relative">
-              <span className="material-icons-round text-secondary absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">search</span>
-              <Input 
-                placeholder="Tìm HLV theo tên..." 
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-              <Button size="sm" variant={statusFilter === 'all' ? 'primary' : 'outline'} onClick={() => setStatusFilter('all')}>Tất cả</Button>
-              <Button size="sm" variant={statusFilter === 'pending_approval' ? 'primary' : 'outline'} onClick={() => setStatusFilter('pending_approval')}>Chờ duyệt</Button>
-              <Button size="sm" variant={statusFilter === 'to_pay' ? 'primary' : 'outline'} onClick={() => setStatusFilter('to_pay')}>Cần thanh toán</Button>
-              <Button size="sm" variant={statusFilter === 'paid' ? 'primary' : 'outline'} onClick={() => setStatusFilter('paid')}>Đã thanh toán</Button>
-            </div>
-          </div>
-
-          {/* COACH LIST - ACCORDION */}
-          <div className="flex flex-col gap-3">
-            {payrollData.length === 0 ? (
-              <EmptyState 
-                title="Không tìm thấy HLV" 
-                description="Không có HLV nào khớp với bộ lọc hiện tại." 
-                icon="search_off"
-              />
-            ) : (
-              payrollData.map((data: any) => {
-                const isExpanded = expandedCoachId === data.coach.id;
-                
-                return (
-                  <Card key={data.coach.id} className="overflow-hidden transition-all duration-200" style={{ borderColor: isExpanded ? 'var(--primary)' : undefined }}>
-                    {/* ACCORDION HEADER (Always visible) */}
-                    <div 
-                      className={`flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 sm:p-4 cursor-pointer hover:bg-surface-hover/50 transition-colors ${isExpanded ? 'bg-surface-hover border-b border-light' : ''}`}
-                      onClick={() => setExpandedCoachId(isExpanded ? null : data.coach.id)}
-                    >
-                      <div className="flex items-center gap-3 w-full sm:w-auto mb-3 sm:mb-0">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">
-                          {data.coach.name.charAt(0)}
-                        </div>
-                        <div>
-                          <div className="font-bold text-main">{data.coach.name}</div>
-                          <div className="text-xs text-secondary mt-0.5">{Number(data.config.per_session).toLocaleString('vi-VN')}đ / buổi</div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 sm:gap-6">
-                        <div className="flex gap-4 sm:gap-6 text-sm">
-                          <div className="hidden sm:flex flex-col items-end">
-                            <span className="text-xs text-secondary">Tổng tháng</span>
-                            <span className="font-semibold text-main">{data.totalCalculatedAmount.toLocaleString('vi-VN')}đ</span>
-                          </div>
-                          <div className="flex flex-col items-start sm:items-end">
-                            <span className="text-xs text-secondary">Cần thanh toán</span>
-                            <span className={`font-bold ${data.approvedAmount > 0 ? 'text-primary' : 'text-main'}`}>
-                              {data.approvedAmount.toLocaleString('vi-VN')}đ
-                            </span>
-                          </div>
-                        </div>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="shrink-0 p-1 sm:px-3"
-                          onClick={(e) => { e.stopPropagation(); setExpandedCoachId(isExpanded ? null : data.coach.id); }}
-                        >
-                          <span className="hidden sm:inline mr-1">{isExpanded ? 'Đóng lại' : 'Xem chi tiết'}</span>
-                          <span className={`material-icons-round transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
-                            expand_more
-                          </span>
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* ACCORDION BODY (Expanded details) */}
-                    {isExpanded && (
-                      <div className="animate-in slide-in-from-top-2 fade-in duration-200">
-                        {/* Cấu hình & Hành động row */}
-                        <div className="flex flex-col lg:flex-row border-b border-light bg-surface/50">
-                          <div className="p-4 lg:p-5 flex-1 border-b lg:border-b-0 lg:border-r border-light">
-                            <div className="flex justify-between items-center mb-3">
-                              <h4 className="text-sm font-semibold text-secondary uppercase tracking-wider m-0">Cấu hình lương</h4>
-                              {isAdminOrOwner && (
-                                <Button variant="ghost" size="sm" onClick={() => openConfigModal(data)} className="h-7 text-xs">
-                                  Sửa
-                                </Button>
-                              )}
-                            </div>
-                            <div className="flex gap-4">
-                              <div>
-                                <span className="text-xs text-secondary block mb-0.5">Lương/buổi</span>
-                                <span className="font-medium text-main">{Number(data.config.per_session).toLocaleString('vi-VN')} đ</span>
-                              </div>
-                              {Number(data.config.per_student) > 0 && (
-                                <div>
-                                  <span className="text-xs text-secondary block mb-0.5">Lương/học viên</span>
-                                  <span className="font-medium text-success">+{Number(data.config.per_student).toLocaleString('vi-VN')} đ</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <div className="p-4 lg:p-5 flex-1">
-                            <h4 className="text-sm font-semibold text-secondary uppercase tracking-wider mb-3">Thao tác nhanh</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {isAdminOrOwner && (
-                                <Button 
-                                  onClick={() => handlePay(data.coach.id, data.approvedAmount, data.approvedSessions.map((s:any)=>s.id))}
-                                  variant="primary"
-                                  size="sm"
-                                  disabled={loading || data.approvedSessions.length === 0}
-                                  isLoading={loading}
-                                >
-                                  Thanh toán ({data.approvedSessions.length})
-                                </Button>
-                              )}
-                              {isAdminOrOwner && (
-                                <Button
-                                  onClick={() => handleBulkApprove(data.unapprovedSessions.map((s: any) => s.id))}
-                                  variant="secondary"
-                                  size="sm"
-                                  disabled={loading || data.unapprovedSessions.length === 0}
-                                >
-                                  Duyệt ({data.unapprovedSessions.length})
-                                </Button>
-                              )}
-                              <Button 
-                                onClick={() => handleViewMonthly(data.coach.id)}
-                                variant="outline"
-                                size="sm"
-                                disabled={monthlyLoading && monthlyCoach === data.coach.id}
-                                isLoading={monthlyLoading && monthlyCoach === data.coach.id}
-                              >
-                                Xem tổng hợp
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* SESSIONS DETAILS (Compact) */}
-                        <div className="p-4 lg:p-5">
-                          <h4 className="text-sm font-semibold text-secondary uppercase tracking-wider mb-3">
-                            Chi tiết {data.sessions.length} buổi dạy
-                          </h4>
-                          {data.sessions.length === 0 ? (
-                            <div className="bg-surface-hover rounded-md p-4 text-center text-secondary text-sm border border-light border-dashed">
-                              Chưa có buổi dạy nào được ghi nhận trong tháng này.
-                            </div>
-                          ) : (
-                            <div className="overflow-x-auto rounded-md border border-light">
-                              <Table>
-                                <Thead className="bg-surface-hover/50">
-                                  <Tr>
-                                    <Th className="py-2 text-xs">Ngày</Th>
-                                    <Th className="py-2 text-xs">Lớp</Th>
-                                    <Th className="py-2 text-xs">Trạng thái</Th>
-                                    <Th className="py-2 text-xs text-right">Lương tính</Th>
-                                    {isAdminOrOwner && <Th className="py-2 text-xs text-right">Thao tác</Th>}
-                                  </Tr>
-                                </Thead>
-                                <Tbody>
-                                  {data.sessions.map((s: any) => {
-                                    const hasSnapshot = s.salary_config_snapshot && (s.status === 'approved' || s.status === 'paid');
-                                    return (
-                                      <Tr key={s.id} className="text-sm">
-                                        <Td className="py-2">{new Date(s.date).toLocaleDateString('vi-VN')}</Td>
-                                        <Td className="py-2 max-w-[150px] truncate" title={s.venue_classes?.name}>{s.venue_classes?.name || '---'}</Td>
-                                        <Td className="py-2">{getStatusBadge(s.status)}</Td>
-                                        <Td className="py-2 text-right font-medium">
-                                          {s.status === 'checked_in' ? (
-                                            <span className="text-muted">
-                                              {Number(s.calculated_salary || 0).toLocaleString('vi-VN')} đ
-                                            </span>
-                                          ) : (
-                                            <span
-                                              style={{
-                                                cursor: hasSnapshot ? 'pointer' : 'default',
-                                                textDecoration: hasSnapshot ? 'underline' : 'none',
-                                                color: hasSnapshot ? 'var(--primary)' : 'inherit',
-                                              }}
-                                              onClick={() => hasSnapshot && openBreakdown(s, data.coach.name)}
-                                              title={hasSnapshot ? 'Xem chi tiết tính lương' : ''}
-                                            >
-                                              {Number(s.calculated_salary || 0).toLocaleString('vi-VN')} đ
-                                            </span>
-                                          )}
-                                        </Td>
-                                        {isAdminOrOwner && (
-                                          <Td className="py-2 text-right">
-                                            <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
-                                              {s.status === 'checked_in' && (
-                                                <>
-                                                  <Button 
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => handleApprove(s.id)}
-                                                    disabled={loading}
-                                                    className="h-7 px-2 text-xs"
-                                                  >
-                                                    Duyệt
-                                                  </Button>
-                                                  <Button
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    onClick={() => handleReject(s.id)}
-                                                    disabled={loading}
-                                                    className="h-7 px-1"
-                                                  >
-                                                    <span className="material-icons-round" style={{ fontSize: '14px', color: 'var(--danger)' }}>close</span>
-                                                  </Button>
-                                                </>
-                                              )}
-                                            </div>
-                                          </Td>
-                                        )}
-                                      </Tr>
-                                    );
-                                  })}
-                                </Tbody>
-                              </Table>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </Card>
-                );
-              })
-            )}
-          </div>
+      {/* Alert bars */}
+      {error && (
+        <div className={`${styles.alertBar} ${styles.alertError}`}>
+          <span className="material-icons-round" style={{ fontSize: 18 }}>error_outline</span>
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className={`${styles.alertBar} ${styles.alertSuccess}`}>
+          <span className="material-icons-round" style={{ fontSize: 18 }}>check_circle_outline</span>
+          {success}
         </div>
       )}
 
-      {/* Salary Config Modal (legacy) */}
+      {/* ═══════════════════════════════════════════════════════
+          MONTHLY OVERVIEW
+          ═══════════════════════════════════════════════════════ */}
+      <div className={styles.overviewCard}>
+        <div className={styles.overviewHeader}>
+          <span className={styles.overviewTitle}>Tổng quan lương tháng</span>
+          <span className={styles.overviewMonth}>{getCurrentMonthLabel()}</span>
+        </div>
+        <div className={styles.overviewHero}>
+          <div className={styles.overviewHeroLabel}>Tổng lương</div>
+          <div className={styles.overviewHeroAmount}>{formatFullVND(globalKPIs.totalCalculated)} đ</div>
+        </div>
+        <div className={styles.overviewGrid}>
+          <div className={`${styles.overviewKPI} ${styles.kpiWarning}`}>
+            <div className={styles.kpiLabel}>
+              <span className={styles.kpiDot} />
+              Chờ duyệt
+            </div>
+            <div className={styles.kpiValue}>{formatFullVND(globalKPIs.totalUnapproved)} đ</div>
+          </div>
+          <div className={`${styles.overviewKPI} ${styles.kpiPrimary}`}>
+            <div className={styles.kpiLabel}>
+              <span className={styles.kpiDot} />
+              Cần thanh toán
+            </div>
+            <div className={styles.kpiValue}>{formatFullVND(globalKPIs.totalApproved)} đ</div>
+          </div>
+          <div className={`${styles.overviewKPI} ${styles.kpiSuccess}`}>
+            <div className={styles.kpiLabel}>
+              <span className={styles.kpiDot} />
+              Đã thanh toán
+            </div>
+            <div className={styles.kpiValue}>{formatFullVND(globalKPIs.totalPaid)} đ</div>
+          </div>
+        </div>
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════
+          SEARCH & FILTER
+          ═══════════════════════════════════════════════════════ */}
+      <div className={styles.toolbar}>
+        <div className={styles.searchWrapper}>
+          <span className={`material-icons-round ${styles.searchIcon}`}>search</span>
+          <input
+            type="text"
+            className={styles.searchInput}
+            placeholder="Tìm HLV theo tên..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className={styles.filterGroup}>
+          {([
+            { key: 'all', label: 'Tất cả' },
+            { key: 'pending_approval', label: 'Chờ duyệt' },
+            { key: 'to_pay', label: 'Cần thanh toán' },
+            { key: 'paid', label: 'Đã thanh toán' },
+          ] as const).map(f => (
+            <button
+              key={f.key}
+              className={`${styles.filterPill} ${statusFilter === f.key ? styles.filterPillActive : ''}`}
+              onClick={() => setStatusFilter(f.key)}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════
+          TRAINER LIST
+          ═══════════════════════════════════════════════════════ */}
+      <div className={styles.trainerList}>
+        {payrollData.length === 0 ? (
+          <div className={styles.globalEmpty}>
+            <span className={`material-icons-round ${styles.globalEmptyIcon}`}>
+              {rawPayrollData.length === 0 ? 'group' : 'search_off'}
+            </span>
+            <div className={styles.globalEmptyTitle}>
+              {rawPayrollData.length === 0 ? 'Chưa có HLV' : 'Không tìm thấy HLV'}
+            </div>
+            <div className={styles.globalEmptyDesc}>
+              {rawPayrollData.length === 0
+                ? 'Chưa có huấn luyện viên nào trong hệ thống để tính lương.'
+                : 'Không có HLV nào khớp với bộ lọc hiện tại.'}
+            </div>
+          </div>
+        ) : (
+          payrollData.map((data: any) => {
+            const isExpanded = expandedCoachId === data.coach.id;
+            
+            return (
+              <div
+                key={data.coach.id}
+                className={`${styles.trainerCard} ${isExpanded ? styles.trainerCardExpanded : ''}`}
+              >
+                {/* ── Collapsed header row ── */}
+                <div
+                  className={`${styles.trainerHeader} ${isExpanded ? styles.trainerHeaderExpanded : ''}`}
+                  onClick={() => toggleCoach(data.coach.id)}
+                >
+                  <div className={styles.avatar}>
+                    {data.coach.name.charAt(0).toUpperCase()}
+                  </div>
+                  
+                  <div className={styles.trainerInfo}>
+                    <div className={styles.trainerName}>{data.coach.name}</div>
+                    <div className={styles.trainerSub}>
+                      {formatFullVND(Number(data.config.per_session))} đ / buổi
+                      {/* Mobile inline stats */}
+                      <span className={styles.trainerStatMobile} style={{ display: 'none' }}>
+                        <span className={styles.trainerStatLabel}> · </span>
+                        <span className={styles.trainerStatValue}>{formatFullVND(data.totalCalculatedAmount)} đ</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className={`${styles.trainerStat} ${styles.trainerStatHidden}`}>
+                    <div className={styles.trainerStatLabel}>Tổng tháng</div>
+                    <div className={styles.trainerStatValue}>{formatFullVND(data.totalCalculatedAmount)} đ</div>
+                  </div>
+
+                  <div className={styles.trainerStat}>
+                    <div className={styles.trainerStatLabel}>Cần thanh toán</div>
+                    <div className={`${styles.trainerStatValue} ${data.approvedAmount > 0 ? styles.trainerStatPrimary : ''}`}>
+                      {formatFullVND(data.approvedAmount)} đ
+                    </div>
+                  </div>
+
+                  <button
+                    className={styles.chevronBtn}
+                    onClick={(e) => { e.stopPropagation(); toggleCoach(data.coach.id); }}
+                    aria-label={isExpanded ? 'Thu gọn' : 'Mở rộng'}
+                  >
+                    <span className={`material-icons-round ${styles.chevronIcon} ${isExpanded ? styles.chevronIconOpen : ''}`}>
+                      expand_more
+                    </span>
+                  </button>
+                </div>
+
+                {/* ── Expanded body ── */}
+                {isExpanded && (
+                  <div className={styles.expandedBody}>
+                    <div className={styles.detailSections}>
+                      {/* Config + Detail KPIs */}
+                      <div className={styles.detailTopRow}>
+                        <div className={styles.detailConfig}>
+                          <div className={styles.detailConfigHeader}>
+                            <span className={styles.sectionLabel}>Cấu hình lương</span>
+                            {isAdminOrOwner && (
+                              <Button variant="ghost" size="sm" onClick={() => openConfigModal(data)} style={{ height: 28, fontSize: '0.75rem' }}>
+                                <span className="material-icons-round" style={{ fontSize: 14, marginRight: 4 }}>edit</span>
+                                Sửa
+                              </Button>
+                            )}
+                          </div>
+                          <div className={styles.configItem}>
+                            <span className={styles.configItemLabel}>Lương theo buổi</span>
+                            <span className={styles.configItemValue}>{formatFullVND(Number(data.config.per_session))} đ</span>
+                          </div>
+                          {Number(data.config.per_student) > 0 && (
+                            <div className={styles.configItem}>
+                              <span className={styles.configItemLabel}>Lương theo học viên</span>
+                              <span className={styles.configItemValueSmall}>+{formatFullVND(Number(data.config.per_student))} đ / học viên</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className={styles.detailKPIGrid}>
+                          <div className={styles.detailKPI}>
+                            <div className={styles.detailKPILabel}>Đã tính</div>
+                            <div className={styles.detailKPIValue}>{formatVND(data.totalCalculatedAmount)} đ</div>
+                          </div>
+                          <div className={styles.detailKPI}>
+                            <div className={styles.detailKPILabel} style={{ color: 'var(--warning)' }}>Chờ duyệt</div>
+                            <div className={styles.detailKPIValue} style={{ color: 'var(--warning)' }}>{formatVND(data.unapprovedAmount)} đ</div>
+                          </div>
+                          <div className={styles.detailKPI}>
+                            <div className={styles.detailKPILabel} style={{ color: 'var(--primary)' }}>Cần thanh toán</div>
+                            <div className={styles.detailKPIValue} style={{ color: 'var(--primary)' }}>{formatVND(data.approvedAmount)} đ</div>
+                          </div>
+                          <div className={styles.detailKPI}>
+                            <div className={styles.detailKPILabel} style={{ color: 'var(--success)' }}>Đã thanh toán</div>
+                            <div className={styles.detailKPIValue} style={{ color: 'var(--success)' }}>{formatVND(data.paidAmount)} đ</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Actions row */}
+                      <div className={styles.actionsRow}>
+                        <span className={styles.sectionLabel}>Thao tác nhanh</span>
+                        <div className={styles.actionsGroup}>
+                          {isAdminOrOwner && (
+                            <Button 
+                              onClick={() => handlePay(data.coach.id, data.approvedAmount, data.approvedSessions.map((s:any)=>s.id))}
+                              variant="primary"
+                              size="sm"
+                              disabled={loading || data.approvedSessions.length === 0}
+                              isLoading={loading}
+                              leftIcon={<span className="material-icons-round" style={{ fontSize: 16 }}>payments</span>}
+                            >
+                              Thanh toán ({data.approvedSessions.length})
+                            </Button>
+                          )}
+                          {isAdminOrOwner && (
+                            <Button
+                              onClick={() => handleBulkApprove(data.unapprovedSessions.map((s: any) => s.id))}
+                              variant="secondary"
+                              size="sm"
+                              disabled={loading || data.unapprovedSessions.length === 0}
+                              leftIcon={<span className="material-icons-round" style={{ fontSize: 16 }}>done_all</span>}
+                            >
+                              Duyệt tất cả ({data.unapprovedSessions.length})
+                            </Button>
+                          )}
+                          <Button 
+                            onClick={() => handleViewMonthly(data.coach.id)}
+                            variant="outline"
+                            size="sm"
+                            disabled={monthlyLoading && monthlyCoach === data.coach.id}
+                            isLoading={monthlyLoading && monthlyCoach === data.coach.id}
+                            leftIcon={<span className="material-icons-round" style={{ fontSize: 16 }}>summarize</span>}
+                          >
+                            Xem tổng hợp
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Sessions */}
+                      <div className={styles.sessionsSection}>
+                        <div className={styles.sessionsHeader}>
+                          <span className={styles.sessionsTitle}>Chi tiết buổi dạy</span>
+                          <span className={styles.sessionsCount}>{data.sessions.length} buổi trong tháng</span>
+                        </div>
+                        
+                        {data.sessions.length === 0 ? (
+                          <div className={styles.emptyState}>
+                            <span className={`material-icons-round ${styles.emptyIcon}`}>event_busy</span>
+                            <div className={styles.emptyTitle}>Chưa có buổi dạy</div>
+                            <div className={styles.emptyDesc}>Chưa có dữ liệu điểm danh trong tháng này.</div>
+                          </div>
+                        ) : (
+                          <div style={{ overflowX: 'auto' }}>
+                            <table className={styles.sessionsTable}>
+                              <thead>
+                                <tr>
+                                  <th>Ngày</th>
+                                  <th>Lớp</th>
+                                  <th>Trạng thái</th>
+                                  <th style={{ textAlign: 'right' }}>Lương</th>
+                                  {isAdminOrOwner && <th style={{ textAlign: 'right' }}>Thao tác</th>}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {data.sessions.map((s: any) => {
+                                  const hasSnapshot = s.salary_config_snapshot && (s.status === 'approved' || s.status === 'paid');
+                                  return (
+                                    <tr key={s.id}>
+                                      <td>{new Date(s.date).toLocaleDateString('vi-VN')}</td>
+                                      <td style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={s.venue_classes?.name}>
+                                        {s.venue_classes?.name || '—'}
+                                      </td>
+                                      <td>{getStatusBadge(s.status)}</td>
+                                      <td className={styles.tdRight} style={{ fontWeight: 600 }}>
+                                        {s.status === 'checked_in' ? (
+                                          <span style={{ color: 'var(--text-muted)' }}>
+                                            {formatFullVND(Number(s.calculated_salary || 0))} đ
+                                          </span>
+                                        ) : hasSnapshot ? (
+                                          <span
+                                            className={styles.salaryLink}
+                                            onClick={() => openBreakdown(s, data.coach.name)}
+                                            title="Xem chi tiết tính lương"
+                                          >
+                                            {formatFullVND(Number(s.calculated_salary || 0))} đ
+                                          </span>
+                                        ) : (
+                                          <span>{formatFullVND(Number(s.calculated_salary || 0))} đ</span>
+                                        )}
+                                      </td>
+                                      {isAdminOrOwner && (
+                                        <td className={styles.tdActions}>
+                                          {s.status === 'checked_in' && (
+                                            <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                                              <Button 
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => handleApprove(s.id)}
+                                                disabled={loading}
+                                                style={{ height: 28, fontSize: '0.75rem', padding: '0 10px' }}
+                                              >
+                                                Duyệt
+                                              </Button>
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => handleReject(s.id)}
+                                                disabled={loading}
+                                                style={{ height: 28, padding: '0 4px' }}
+                                              >
+                                                <span className="material-icons-round" style={{ fontSize: 14, color: 'var(--danger)' }}>close</span>
+                                              </Button>
+                                            </div>
+                                          )}
+                                        </td>
+                                      )}
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════
+          MODALS (unchanged)
+          ═══════════════════════════════════════════════════════ */}
+
+      {/* Salary Config Modal */}
       <Modal isOpen={!!configModalCoach} onClose={loading ? () => {} : () => setConfigModalCoach(null)}>
         <ModalHeader title={`Cấu hình lương: ${configModalCoach?.name}`} onClose={loading ? () => {} : () => setConfigModalCoach(null)} />
         <ModalBody>
