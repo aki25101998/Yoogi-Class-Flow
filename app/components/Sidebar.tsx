@@ -17,21 +17,19 @@ const ADMIN_NAV = [
     { icon: 'people', label: 'Huấn luyện viên', route: '/coaches', permission: 'manage_coaches' },
     { icon: 'school', label: 'Học viên', route: '/students', permission: 'manage_students' },
     { icon: 'class', label: 'Lớp học', submenus: [
-        { label: 'Lớp học', route: '/classes', permission: 'manage_classes', exact: true },
-        { label: 'Địa điểm', route: '/venues', permission: 'manage_venues', exact: true }
+        { label: 'Lớp học', route: '/classes', permission: 'manage_classes' },
+        { label: 'Địa điểm', route: '/venues', permission: 'manage_venues' }
     ]},
     { icon: 'calendar_month', label: 'Lịch dạy', submenus: [
-        { label: 'Lịch', route: '/schedule', permission: 'manage_schedule', exact: true },
-        { label: 'Buổi học', route: '/schedule', permission: 'manage_schedule', exact: true },
-        { label: 'Điểm danh', route: '/attendance', permission: 'manage_attendance', exact: true }
+        { label: 'Lịch', route: '/schedule', permission: 'manage_schedule' },
+        { label: 'Điểm danh', route: '/attendance', permission: 'manage_attendance' }
     ]}
   ]},
   { section: 'TÀI CHÍNH', items: [
     { icon: 'payments', label: 'Bảng lương', route: '/payroll', permission: 'view_payroll' },
     { icon: 'receipt_long', label: 'Tài chính', submenus: [
-        { label: 'Tổng quan', route: '/finance', permission: 'manage_finance', exact: true },
         { label: 'Học phí', route: '/tuition', permission: 'manage_tuition' },
-        { label: 'Sổ quỹ', route: '/finance', permission: 'manage_finance', exact: true }
+        { label: 'Sổ quỹ', route: '/finance', permission: 'manage_finance' }
     ]}
   ]},
   { section: 'HỆ THỐNG', items: [
