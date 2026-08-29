@@ -1,5 +1,5 @@
 import VenuesClient from './VenuesClient';
 
 export default function VenuesPage() {
-  return ;
+  return <VenuesClient />;
 }

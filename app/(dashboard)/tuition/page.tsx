@@ -1,5 +1,5 @@
 import TuitionClient from './TuitionClient';
 
 export default function TuitionPage() {
-  return ;
+  return <TuitionClient />;
 }

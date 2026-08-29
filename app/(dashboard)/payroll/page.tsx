@@ -1,5 +1,5 @@
 import PayrollClient from './PayrollClient';
 
 export default function PayrollPage() {
-  return ;
+  return <PayrollClient />;
 }

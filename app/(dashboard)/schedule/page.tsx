@@ -1,5 +1,5 @@
 import ScheduleClient from './ScheduleClient';
 
 export default function SchedulePage() {
-  return ;
+  return <ScheduleClient />;
 }
