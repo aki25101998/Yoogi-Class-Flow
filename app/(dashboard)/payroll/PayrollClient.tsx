@@ -87,8 +87,10 @@ export default function PayrollClient() {
     const approvedSessions = sessions.filter((s: any) => s.status === 'approved');
     const paidSessions = sessions.filter((s: any) => s.status === 'paid');
     
-    const approvedAmount = approvedSessions.reduce((acc: number, s: any) => acc + Number(s.calculated_salary), 0);
-    const paidAmount = paidSessions.reduce((acc: number, s: any) => acc + Number(s.calculated_salary), 0);
+    const unapprovedAmount = unapprovedSessions.reduce((acc: number, s: any) => acc + Number(s.calculated_salary || 0), 0);
+    const approvedAmount = approvedSessions.reduce((acc: number, s: any) => acc + Number(s.calculated_salary || 0), 0);
+    const paidAmount = paidSessions.reduce((acc: number, s: any) => acc + Number(s.calculated_salary || 0), 0);
+    const totalCalculatedAmount = unapprovedAmount + approvedAmount + paidAmount;
     
     return {
       coach,
@@ -97,8 +99,10 @@ export default function PayrollClient() {
       unapprovedSessions,
       approvedSessions,
       paidSessions,
+      unapprovedAmount,
       approvedAmount,
-      paidAmount
+      paidAmount,
+      totalCalculatedAmount
     };
   });
 
@@ -249,163 +253,201 @@ export default function PayrollClient() {
       ) : (
         <div className="grid gap-6">
           {payrollData.map((data: any) => (
-            <Card key={data.coach.id}>
-              <CardContent className="p-5 flex flex-col gap-4 border-b border-light">
-                {/* Top Row: Name and Config */}
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-bold text-main">HLV: {data.coach.name}</h3>
-                  {isAdminOrOwner && (
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => openConfigModal(data)}
-                      leftIcon={<span className="material-icons-round text-sm">settings</span>}
-                    >
-                      Cấu hình
-                    </Button>
-                  )}
-                </div>
+            <Card key={data.coach.id} className="overflow-hidden">
+              {/* HEADER ROW */}
+              <div className="flex flex-row justify-between items-center p-5 border-b border-light bg-surface-hover/30">
+                <h3 className="text-lg font-bold text-main m-0">
+                  HLV: {data.coach.name}
+                </h3>
+                {isAdminOrOwner && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => openConfigModal(data)}
+                    leftIcon={<span className="material-icons-round text-sm">settings</span>}
+                  >
+                    Cấu hình
+                  </Button>
+                )}
+              </div>
 
-                {/* Salary Info */}
-                <div>
-                  <div className="text-sm text-secondary mb-1">Lương cơ bản</div>
-                  <div className="font-medium">
-                    {Number(data.config.per_session).toLocaleString('vi-VN')} đ/buổi
-                    {Number(data.config.per_student) > 0 && ` + ${Number(data.config.per_student).toLocaleString('vi-VN')} đ/học viên`}
+              <div className="flex flex-col">
+                {/* CẤU HÌNH LƯƠNG */}
+                <div className="p-5 border-b border-light">
+                  <h4 className="text-sm font-semibold text-secondary uppercase tracking-wider mb-3">
+                    Cấu hình lương
+                  </h4>
+                  <div className="flex flex-col sm:flex-row gap-6">
+                    <div className="flex flex-col">
+                      <span className="text-sm text-secondary mb-1">Lương theo buổi</span>
+                      <span className="font-medium text-main text-lg">{Number(data.config.per_session).toLocaleString('vi-VN')} đ <span className="text-sm text-secondary font-normal">/ buổi</span></span>
+                    </div>
+                    {Number(data.config.per_student) > 0 && (
+                      <div className="flex flex-col">
+                        <span className="text-sm text-secondary mb-1">Lương theo học viên</span>
+                        <span className="font-medium text-success text-lg">+{Number(data.config.per_student).toLocaleString('vi-VN')} đ <span className="text-sm text-secondary font-normal">/ học viên</span></span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Action Boxes */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
-                  <div className="p-4 rounded-md border border-light bg-surface-hover">
-                    <div className="text-sm text-secondary mb-1">Cần thanh toán</div>
-                    <div className="text-2xl font-bold text-danger mb-3">
-                      {data.approvedAmount.toLocaleString('vi-VN')} đ
+                {/* TỔNG QUAN LƯƠNG THÁNG */}
+                <div className="p-5 border-b border-light">
+                  <h4 className="text-sm font-semibold text-secondary uppercase tracking-wider mb-4">
+                    Tổng quan lương tháng
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="p-4 rounded-md border border-light bg-surface-hover">
+                      <div className="text-sm text-secondary mb-1">Đã tính lương</div>
+                      <div className="text-xl font-bold text-main">
+                        {data.totalCalculatedAmount.toLocaleString('vi-VN')} đ
+                      </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {isAdminOrOwner && data.unapprovedSessions.length > 0 && (
-                      <Button
-                        onClick={() => handleBulkApprove(data.unapprovedSessions.map((s: any) => s.id))}
-                        variant="outline"
-                        size="sm"
-                        disabled={loading}
-                        leftIcon={<span className="material-icons-round" style={{ fontSize: '16px' }}>done_all</span>}
-                      >
-                        Duyệt tất cả ({data.unapprovedSessions.length})
-                      </Button>
-                    )}
-                    {isAdminOrOwner && data.approvedSessions.length > 0 && (
+                    <div className="p-4 rounded-md border border-light bg-surface-hover">
+                      <div className="text-sm text-secondary mb-1">Chờ duyệt</div>
+                      <div className="text-xl font-bold text-warning">
+                        {data.unapprovedAmount.toLocaleString('vi-VN')} đ
+                      </div>
+                    </div>
+                    <div className="p-4 rounded-md border border-primary/30 bg-primary/5">
+                      <div className="text-sm text-primary font-medium mb-1">Cần thanh toán</div>
+                      <div className="text-xl font-bold text-primary">
+                        {data.approvedAmount.toLocaleString('vi-VN')} đ
+                      </div>
+                    </div>
+                    <div className="p-4 rounded-md border border-light bg-surface-hover">
+                      <div className="text-sm text-secondary mb-1">Đã thanh toán</div>
+                      <div className="text-xl font-bold text-success">
+                        {data.paidAmount.toLocaleString('vi-VN')} đ
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ACTION ROW */}
+                <div className="p-5 border-b border-light bg-surface-hover/30">
+                  <h4 className="text-sm font-semibold text-secondary uppercase tracking-wider mb-3">
+                    Hành động
+                  </h4>
+                  <div className="flex flex-wrap gap-3">
+                    {isAdminOrOwner && (
                       <Button 
                         onClick={() => handlePay(data.coach.id, data.approvedAmount, data.approvedSessions.map((s:any)=>s.id))}
-                        variant="success"
-                        size="sm"
-                        disabled={loading}
+                        variant="primary"
+                        disabled={loading || data.approvedSessions.length === 0}
                         isLoading={loading}
-                        leftIcon={<span className="material-icons-round" style={{ fontSize: '16px' }}>payments</span>}
+                        leftIcon={<span className="material-icons-round" style={{ fontSize: '18px' }}>payments</span>}
                       >
                         Thanh toán
                       </Button>
                     )}
-                  </div>
-                </div>
-                  
-                  <div className="p-4 rounded-md border border-light bg-surface-hover flex flex-col justify-between">
-                    <div>
-                      <div className="text-sm text-secondary mb-1">Tổng hợp tháng</div>
-                      <div className="text-sm text-main mb-3">Xem toàn bộ lịch sử điểm danh và tính lương trong tháng.</div>
-                    </div>
-                    <div>
-                      <Button 
-                        onClick={() => handleViewMonthly(data.coach.id)}
+                    {isAdminOrOwner && (
+                      <Button
+                        onClick={() => handleBulkApprove(data.unapprovedSessions.map((s: any) => s.id))}
                         variant="secondary"
-                        size="sm"
-                        disabled={monthlyLoading && monthlyCoach === data.coach.id}
-                        isLoading={monthlyLoading && monthlyCoach === data.coach.id}
-                        leftIcon={<span className="material-icons-round" style={{ fontSize: '16px' }}>calendar_month</span>}
+                        disabled={loading || data.unapprovedSessions.length === 0}
+                        leftIcon={<span className="material-icons-round" style={{ fontSize: '18px' }}>done_all</span>}
                       >
-                        Xem tổng hợp
+                        Duyệt tất cả {data.unapprovedSessions.length > 0 ? `(${data.unapprovedSessions.length})` : ''}
                       </Button>
-                    </div>
+                    )}
+                    <Button 
+                      onClick={() => handleViewMonthly(data.coach.id)}
+                      variant="outline"
+                      disabled={monthlyLoading && monthlyCoach === data.coach.id}
+                      isLoading={monthlyLoading && monthlyCoach === data.coach.id}
+                      leftIcon={<span className="material-icons-round" style={{ fontSize: '18px' }}>summarize</span>}
+                    >
+                      Xem tổng hợp
+                    </Button>
                   </div>
                 </div>
-              </CardContent>
-              
-              <CardContent className="p-5">
-                <h4 className="font-semibold text-main mb-3 text-base flex items-center gap-2">
-                  <span className="material-icons-round text-primary text-sm">history</span>
-                  Chi tiết buổi dạy
-                </h4>
-                {data.sessions.length === 0 ? (
-                  <p className="text-muted text-sm italic">Chưa có dữ liệu điểm danh.</p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <Thead>
-                        <Tr>
-                          <Th>Ngày</Th>
-                          <Th>Lớp</Th>
-                          <Th>Trạng thái</Th>
-                          <Th className="text-right">Lương tính</Th>
-                          {isAdminOrOwner && <Th className="text-right">Thao tác</Th>}
-                        </Tr>
-                      </Thead>
-                      <Tbody>
-                        {data.sessions.map((s: any) => {
-                          const hasSnapshot = s.salary_config_snapshot && (s.status === 'approved' || s.status === 'paid');
-                          return (
-                            <Tr key={s.id}>
-                              <Td>{s.date}</Td>
-                              <Td>{s.venue_classes?.name || '---'}</Td>
-                              <Td>{getStatusBadge(s.status)}</Td>
-                              <Td className="text-right font-medium">
-                                {s.status === 'checked_in' ? '---' : (
-                                  <span
-                                    style={{
-                                      cursor: hasSnapshot ? 'pointer' : 'default',
-                                      textDecoration: hasSnapshot ? 'underline' : 'none',
-                                      color: hasSnapshot ? 'var(--primary)' : 'inherit',
-                                    }}
-                                    onClick={() => hasSnapshot && openBreakdown(s, data.coach.name)}
-                                    title={hasSnapshot ? 'Xem chi tiết tính lương' : ''}
-                                  >
-                                    {Number(s.calculated_salary || 0).toLocaleString('vi-VN')} đ
-                                  </span>
-                                )}
-                              </Td>
-                              {isAdminOrOwner && (
-                                <Td className="text-right">
-                                  <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
-                                    {s.status === 'checked_in' && (
-                                      <>
-                                        <Button 
-                                          size="sm"
-                                          variant="outline"
-                                          onClick={() => handleApprove(s.id)}
-                                          disabled={loading}
-                                        >
-                                          Duyệt
-                                        </Button>
-                                        <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          onClick={() => handleReject(s.id)}
-                                          disabled={loading}
-                                        >
-                                          <span className="material-icons-round" style={{ fontSize: '16px', color: 'var(--danger)' }}>close</span>
-                                        </Button>
-                                      </>
-                                    )}
-                                  </div>
+                
+                {/* SESSIONS DETAILS */}
+                <div className="p-5">
+                  <h4 className="text-sm font-semibold text-secondary uppercase tracking-wider mb-4">
+                    Chi tiết buổi dạy
+                  </h4>
+                  {data.sessions.length === 0 ? (
+                    <EmptyState 
+                      title="Chưa có dữ liệu điểm danh" 
+                      description="Chưa có buổi dạy nào được ghi nhận trong tháng này." 
+                      icon="event_busy"
+                    />
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <Thead>
+                          <Tr>
+                            <Th>Ngày</Th>
+                            <Th>Lớp</Th>
+                            <Th>Trạng thái</Th>
+                            <Th className="text-right">Lương tính</Th>
+                            {isAdminOrOwner && <Th className="text-right">Thao tác</Th>}
+                          </Tr>
+                        </Thead>
+                        <Tbody>
+                          {data.sessions.map((s: any) => {
+                            const hasSnapshot = s.salary_config_snapshot && (s.status === 'approved' || s.status === 'paid');
+                            return (
+                              <Tr key={s.id}>
+                                <Td>{s.date}</Td>
+                                <Td>{s.venue_classes?.name || '---'}</Td>
+                                <Td>{getStatusBadge(s.status)}</Td>
+                                <Td className="text-right font-medium">
+                                  {s.status === 'checked_in' ? (
+                                    <span className="text-muted">
+                                      {Number(s.calculated_salary || 0).toLocaleString('vi-VN')} đ
+                                    </span>
+                                  ) : (
+                                    <span
+                                      style={{
+                                        cursor: hasSnapshot ? 'pointer' : 'default',
+                                        textDecoration: hasSnapshot ? 'underline' : 'none',
+                                        color: hasSnapshot ? 'var(--primary)' : 'inherit',
+                                      }}
+                                      onClick={() => hasSnapshot && openBreakdown(s, data.coach.name)}
+                                      title={hasSnapshot ? 'Xem chi tiết tính lương' : ''}
+                                    >
+                                      {Number(s.calculated_salary || 0).toLocaleString('vi-VN')} đ
+                                    </span>
+                                  )}
                                 </Td>
-                              )}
-                            </Tr>
-                          );
-                        })}
-                      </Tbody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
+                                {isAdminOrOwner && (
+                                  <Td className="text-right">
+                                    <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
+                                      {s.status === 'checked_in' && (
+                                        <>
+                                          <Button 
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => handleApprove(s.id)}
+                                            disabled={loading}
+                                          >
+                                            Duyệt
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => handleReject(s.id)}
+                                            disabled={loading}
+                                          >
+                                            <span className="material-icons-round" style={{ fontSize: '16px', color: 'var(--danger)' }}>close</span>
+                                          </Button>
+                                        </>
+                                      )}
+                                    </div>
+                                  </Td>
+                                )}
+                              </Tr>
+                            );
+                          })}
+                        </Tbody>
+                      </Table>
+                    </div>
+                  )}
+                </div>
+              </div>
             </Card>
           ))}
           {payrollData.length === 0 && (
