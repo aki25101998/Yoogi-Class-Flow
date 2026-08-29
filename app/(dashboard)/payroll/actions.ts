@@ -11,7 +11,7 @@ export async function approveSalarySessionAction(sessionId: string) {
   const supabase = await createClient();
   
   // Fetch session details
-  const { data: session } = await supabase.from('teacher_salary_sessions')
+  const { data: session } = await supabase.from('class_sessions')
     .select('class_id, coach_id, date, calculated_salary')
     .eq('id', sessionId)
     .single();
@@ -31,24 +31,27 @@ export async function approveSalarySessionAction(sessionId: string) {
   let studentsPresentCount = 0;
   
   if (perStudent > 0 && session.class_id) {
-    // Fetch student attendance
-    const { data: attendance } = await supabase.from('student_attendance')
-      .select('records')
-      .eq('class_id', session.class_id)
-      .eq('date', session.date)
-      .single();
+    // Fetch student attendance from new table
+    const { count } = await supabase.from('student_session_attendance')
+      .select('id', { count: 'exact', head: true })
+      .eq('session_id', sessionId)
+      .eq('status', 'present');
       
-    if (attendance && attendance.records) {
-      studentsPresentCount = (attendance.records as any[]).filter(r => r.status === 'present').length;
-    }
+    studentsPresentCount = count || 0;
   }
 
   const calculatedAmount = Number(perSession) + (studentsPresentCount * Number(perStudent));
 
-  const { error } = await supabase.from('teacher_salary_sessions')
+  const { error } = await supabase.from('class_sessions')
     .update({
       status: 'approved',
       calculated_salary: calculatedAmount,
+      salary_config_snapshot: {
+        per_session: perSession,
+        per_student: perStudent,
+        students_present: studentsPresentCount,
+        calculated_amount: calculatedAmount
+      },
       approved_by: context.membership?.user_id || null,
       approved_at: new Date().toISOString()
     })
@@ -62,30 +65,27 @@ export async function approveSalarySessionAction(sessionId: string) {
 }
 
 export async function payCoachSalaryAction(coachId: string, amount: number, sessionIds: string[]) {
+  // We completely ignore the 'amount' parameter from the client for security.
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
   const supabase = await createClient();
   
-  // Create finance transaction
-  const { error: financeError } = await supabase.from('finance_transactions').insert({
-    organization_id: context.organization.id,
-    type: 'expense',
-    category: 'payroll',
-    amount: amount,
-    date: new Date().toISOString().split('T')[0],
-    description: `Thanh toán lương cho HLV (Coach ID: ${coachId})`
+  // Call RPC to atomically calculate, create finance transaction, and mark paid
+  const { data, error } = await supabase.rpc('pay_approved_salary_sessions', {
+    p_organization_id: context.organization.id,
+    p_coach_id: coachId,
+    p_session_ids: sessionIds,
+    p_created_by: context.membership?.user_id || null
   });
 
-  if (financeError) return { success: false, error: financeError.message };
+  if (error) {
+    return { success: false, error: error.message };
+  }
 
-  // Update sessions as paid
-  const { error: updateError } = await supabase.from('teacher_salary_sessions')
-    .update({ status: 'paid' })
-    .in('id', sessionIds)
-    .eq('organization_id', context.organization.id);
-    
-  if (updateError) return { success: false, error: updateError.message };
+  if (data && data.success === false) {
+    return { success: false, error: data.error || 'Failed to process payment' };
+  }
 
   revalidatePath('/payroll');
   return { success: true };

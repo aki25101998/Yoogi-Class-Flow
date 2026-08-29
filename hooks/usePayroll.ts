@@ -41,7 +41,7 @@ export function usePayroll(organizationId: string | undefined) {
     queryFn: async () => {
       if (!organizationId) return [];
       const { data, error } = await supabase
-        .from('teacher_salary_sessions')
+        .from('class_sessions')
         .select('*, venue_classes(name)')
         .eq('organization_id', organizationId)
         .order('date', { ascending: false });

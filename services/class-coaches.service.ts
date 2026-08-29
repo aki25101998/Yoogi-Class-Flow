@@ -11,6 +11,20 @@ export async function assignCoachToClass(classId: string, coachId: string, role:
 
   const supabase = await createClient();
 
+  // Verify coach belongs to organization and is active
+  const { data: coachData } = await supabase.from('coaches')
+    .select('status')
+    .eq('id', coachId)
+    .eq('organization_id', context.organization.id)
+    .single();
+
+  if (!coachData) {
+    return { success: false, error: 'Huấn luyện viên không tồn tại trong tổ chức.' };
+  }
+  if (coachData.status !== 'active') {
+    return { success: false, error: 'Huấn luyện viên này hiện đang không hoạt động.' };
+  }
+
   // If HEAD_COACH, check if there's already one, because a class can only have 1 HEAD_COACH
   if (role === 'HEAD_COACH') {
     const { data: existingHead } = await supabase.from('class_coaches')
