@@ -4,10 +4,10 @@
 ALTER TABLE public.teacher_salary_sessions RENAME TO class_sessions;
 
 ALTER TABLE public.class_sessions
-ADD COLUMN schedule_id UUID REFERENCES public.schedules(organization_id, id) ON DELETE SET NULL,
+ADD COLUMN schedule_id UUID REFERENCES public.schedules(id) ON DELETE SET NULL,
 ADD COLUMN start_time TEXT,
 ADD COLUMN end_time TEXT,
-ADD COLUMN original_coach_id UUID REFERENCES public.coaches(organization_id, id) ON DELETE SET NULL,
+ADD COLUMN original_coach_id UUID REFERENCES public.coaches(id) ON DELETE SET NULL,
 ADD COLUMN cancelled_at TIMESTAMPTZ,
 ADD COLUMN cancelled_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
 ADD COLUMN cancel_reason TEXT;
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS public.student_session_attendance (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   organization_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
   session_id UUID NOT NULL REFERENCES public.class_sessions(id) ON DELETE CASCADE,
-  student_id UUID NOT NULL REFERENCES public.students(organization_id, id) ON DELETE CASCADE,
+  student_id UUID NOT NULL REFERENCES public.students(id) ON DELETE CASCADE,
   status TEXT DEFAULT 'present' CHECK (status IN ('present', 'absent', 'late', 'excused')),
   note TEXT,
   marked_at TIMESTAMPTZ DEFAULT NOW(),
@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS public.student_session_attendance (
 CREATE TABLE IF NOT EXISTS public.payroll_payments (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   organization_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
-  coach_id UUID NOT NULL REFERENCES public.coaches(organization_id, id) ON DELETE CASCADE,
+  coach_id UUID NOT NULL REFERENCES public.coaches(id) ON DELETE CASCADE,
   amount NUMERIC NOT NULL,
   finance_transaction_id UUID REFERENCES public.finance_transactions(id) ON DELETE CASCADE,
   created_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
