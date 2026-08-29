@@ -157,7 +157,10 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
                 fontSize: '0.9rem',
                 fontWeight: 500,
                 outline: 'none',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden'
               }}
             >
               {context.allMemberships.map((m: any) => (

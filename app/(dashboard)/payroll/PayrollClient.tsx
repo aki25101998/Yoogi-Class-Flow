@@ -250,33 +250,40 @@ export default function PayrollClient() {
         <div className="grid gap-6">
           {payrollData.map((data: any) => (
             <Card key={data.coach.id}>
-              <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-light pb-4">
+              <CardContent className="p-5 flex flex-col gap-4 border-b border-light">
+                {/* Top Row: Name and Config */}
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-bold text-main">HLV: {data.coach.name}</h3>
+                  {isAdminOrOwner && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => openConfigModal(data)}
+                      leftIcon={<span className="material-icons-round text-sm">settings</span>}
+                    >
+                      Cấu hình
+                    </Button>
+                  )}
+                </div>
+
+                {/* Salary Info */}
                 <div>
-                  <CardTitle className="text-xl flex items-center gap-2">
-                    {data.coach.name}
-                    {isAdminOrOwner && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => openConfigModal(data)}
-                        leftIcon={<span className="material-icons-round text-sm">settings</span>}
-                      >
-                        Cấu hình
-                      </Button>
-                    )}
-                  </CardTitle>
-                  <div className="text-secondary text-sm mt-1">
-                    Cơ bản: {Number(data.config.per_session).toLocaleString('vi-VN')} đ/buổi
+                  <div className="text-sm text-secondary mb-1">Lương cơ bản</div>
+                  <div className="font-medium">
+                    {Number(data.config.per_session).toLocaleString('vi-VN')} đ/buổi
                     {Number(data.config.per_student) > 0 && ` + ${Number(data.config.per_student).toLocaleString('vi-VN')} đ/học viên`}
                   </div>
                 </div>
-                <div className="text-left sm:text-right">
-                  <div className="text-sm text-secondary">Cần thanh toán</div>
-                  <div className="text-2xl font-bold text-danger mb-2">
-                    {data.approvedAmount.toLocaleString('vi-VN')} đ
-                  </div>
-                  <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                    {isAdminOrOwner && data.unapprovedSessions.length > 0 && (
+
+                {/* Action Boxes */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                  <div className="p-4 rounded-md border border-light bg-surface-hover">
+                    <div className="text-sm text-secondary mb-1">Cần thanh toán</div>
+                    <div className="text-2xl font-bold text-danger mb-3">
+                      {data.approvedAmount.toLocaleString('vi-VN')} đ
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {isAdminOrOwner && data.unapprovedSessions.length > 0 && (
                       <Button
                         onClick={() => handleBulkApprove(data.unapprovedSessions.map((s: any) => s.id))}
                         variant="outline"
@@ -299,19 +306,35 @@ export default function PayrollClient() {
                         Thanh toán
                       </Button>
                     )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleViewMonthly(data.coach.id)}
-                      leftIcon={<span className="material-icons-round" style={{ fontSize: '16px' }}>summarize</span>}
-                    >
-                      Tổng hợp tháng
-                    </Button>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <h4 className="font-semibold text-main mb-3 text-base">Chi tiết buổi dạy</h4>
+                  
+                  <div className="p-4 rounded-md border border-light bg-surface-hover flex flex-col justify-between">
+                    <div>
+                      <div className="text-sm text-secondary mb-1">Tổng hợp tháng</div>
+                      <div className="text-sm text-main mb-3">Xem toàn bộ lịch sử điểm danh và tính lương trong tháng.</div>
+                    </div>
+                    <div>
+                      <Button 
+                        onClick={() => handleViewMonthly(data.coach.id)}
+                        variant="secondary"
+                        size="sm"
+                        disabled={monthlyLoading && monthlyCoach === data.coach.id}
+                        isLoading={monthlyLoading && monthlyCoach === data.coach.id}
+                        leftIcon={<span className="material-icons-round" style={{ fontSize: '16px' }}>calendar_month</span>}
+                      >
+                        Xem tổng hợp
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+              
+              <CardContent className="p-5">
+                <h4 className="font-semibold text-main mb-3 text-base flex items-center gap-2">
+                  <span className="material-icons-round text-primary text-sm">history</span>
+                  Chi tiết buổi dạy
+                </h4>
                 {data.sessions.length === 0 ? (
                   <p className="text-muted text-sm italic">Chưa có dữ liệu điểm danh.</p>
                 ) : (
