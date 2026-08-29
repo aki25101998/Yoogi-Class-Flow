@@ -1,8 +1,12 @@
 import { createClient } from '@/utils/supabase/server';
 import { OrganizationContext } from '@/types/organization';
 
+import { cookies } from 'next/headers';
+
 export async function getCurrentOrganizationContext(): Promise<OrganizationContext | null> {
   const supabase = await createClient();
+  const cookieStore = cookies();
+  const workspaceId = cookieStore.get('yoogi_workspace_id')?.value;
   
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError || !userData?.user) {
@@ -18,29 +22,35 @@ export async function getCurrentOrganizationContext(): Promise<OrganizationConte
 
   if (!profile) return null;
 
-  // Get active membership
-  const { data: membership } = await supabase
+  // Get all active memberships
+  const { data: allMemberships } = await supabase
     .from('organization_members')
     .select('*, organization:organizations(*)')
     .eq('user_id', profile.id)
-    .eq('status', 'active')
-    .single();
+    .eq('status', 'active');
 
-  if (!membership) return null;
+  if (!allMemberships || allMemberships.length === 0) return null;
+
+  // Find the active membership based on cookie, or default to the first one
+  let activeMembership = allMemberships.find(m => m.organization_id === workspaceId);
+  if (!activeMembership) {
+    activeMembership = allMemberships[0];
+  }
 
   // Get coach profile if exists
   const { data: coach } = await supabase
     .from('coaches')
     .select('*')
-    .eq('organization_member_id', membership.id)
+    .eq('organization_member_id', activeMembership.id)
     .single();
 
   return {
-    organization: membership.organization,
-    membership: membership,
+    organization: activeMembership.organization,
+    membership: activeMembership,
     profile: profile,
     coach: coach || null,
-    permissions: membership.permissions || []
+    permissions: activeMembership.permissions || [],
+    allMemberships: allMemberships
   };
 }
 

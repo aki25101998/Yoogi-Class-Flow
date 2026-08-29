@@ -7,6 +7,7 @@ import { createClient } from "@/utils/supabase/client";
 import { useDashboardContext } from "@/app/(dashboard)/DashboardProvider";
 import { useQueryClient } from "@tanstack/react-query";
 import { prefetchRouteData } from "@/utils/prefetch";
+import { switchWorkspace } from "@/app/actions/workspace.actions";
 
 const ADMIN_NAV = [
   { section: 'Tổng quan', items: [
@@ -128,14 +129,49 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
       ></div>
 
       <nav className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-header">
-          <div className="sidebar-logo">
-            <span className="material-icons-round" style={{ fontSize: '1.2rem' }}>sports_martial_arts</span>
+        <div className="sidebar-header" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div className="sidebar-logo">
+              <span className="material-icons-round" style={{ fontSize: '1.2rem' }}>sports_martial_arts</span>
+            </div>
+            <div className="sidebar-brand" style={{ margin: 0 }}>
+              YOOGI
+            </div>
           </div>
-          <div className="sidebar-brand">
-            {context?.organization?.name || 'Chấm Công HLV'}
-            <small>{displayRole}</small>
-          </div>
+          
+          {context?.allMemberships && context.allMemberships.length > 0 ? (
+            <select 
+              value={context.organization?.id || ''} 
+              onChange={async (e) => {
+                const orgId = e.target.value;
+                queryClient.clear(); // Clear all queries to prevent data leakage
+                await switchWorkspace(orgId);
+              }}
+              style={{
+                width: '100%',
+                padding: '8px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-light)',
+                background: 'var(--surface-hover)',
+                color: 'var(--text-main)',
+                fontSize: '0.9rem',
+                fontWeight: 500,
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              {context.allMemberships.map((m: any) => (
+                <option key={m.organization_id} value={m.organization_id}>
+                  {m.organization.name} - {m.role === 'owner' ? 'Owner' : m.role === 'admin' ? 'Admin' : m.role === 'head_coach' ? 'Head Coach' : 'Assistant Coach'}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="sidebar-brand" style={{ fontSize: '0.9rem', marginTop: '8px' }}>
+              {context?.organization?.name || 'Chấm Công HLV'}
+              <small>{displayRole}</small>
+            </div>
+          )}
         </div>
 
         <div className="sidebar-nav">

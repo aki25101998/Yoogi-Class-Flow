@@ -55,4 +55,5 @@ export interface OrganizationContext {
   profile: any | null; // Replace with Profile type if available
   coach: any | null;   // Replace with Coach type if available
   permissions: string[];
+  allMemberships?: (OrganizationMember & { organization: Organization })[];
 }
