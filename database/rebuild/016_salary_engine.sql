@@ -86,9 +86,9 @@ CREATE TABLE IF NOT EXISTS public.salary_rules (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   
-  -- Foreign keys with composite keys for org isolation
-  FOREIGN KEY (organization_id, scope_class_id) REFERENCES public.venue_classes(organization_id, id) ON DELETE SET NULL,
-  FOREIGN KEY (organization_id, scope_coach_id) REFERENCES public.coaches(organization_id, id) ON DELETE CASCADE
+  -- Foreign keys
+  FOREIGN KEY (scope_class_id) REFERENCES public.venue_classes(id) ON DELETE SET NULL,
+  FOREIGN KEY (scope_coach_id) REFERENCES public.coaches(id) ON DELETE CASCADE
 );
 
 -- Validation: amount must be >= 0 for non-deduction types
@@ -135,7 +135,7 @@ CREATE TABLE IF NOT EXISTS public.salary_profiles (
   coach_id UUID NOT NULL,
   rule_id UUID NOT NULL REFERENCES public.salary_rules(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  FOREIGN KEY (organization_id, coach_id) REFERENCES public.coaches(organization_id, id) ON DELETE CASCADE,
+  FOREIGN KEY (coach_id) REFERENCES public.coaches(id) ON DELETE CASCADE,
   UNIQUE(coach_id, rule_id)
 );
 
@@ -183,7 +183,7 @@ CREATE TABLE IF NOT EXISTS public.salary_adjustments (
   approved_at TIMESTAMPTZ,
   created_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  FOREIGN KEY (organization_id, coach_id) REFERENCES public.coaches(organization_id, id) ON DELETE CASCADE
+  FOREIGN KEY (coach_id) REFERENCES public.coaches(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_salary_adjustments_coach ON public.salary_adjustments(coach_id);
