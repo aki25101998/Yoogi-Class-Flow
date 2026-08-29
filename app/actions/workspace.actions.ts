@@ -34,6 +34,9 @@ export async function switchWorkspace(organizationId: string) {
     return { success: false, error: 'You do not have an active membership in this organization' };
   }
 
+  // Update last_active_workspace
+  await supabase.from('profiles').update({ last_active_workspace: organizationId }).eq('id', profile.id);
+
   // Set the cookie
   cookies().set('yoogi_workspace_id', organizationId, {
     path: '/',

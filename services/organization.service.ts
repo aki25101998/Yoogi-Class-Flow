@@ -31,10 +31,21 @@ export async function getCurrentOrganizationContext(): Promise<OrganizationConte
 
   if (!allMemberships || allMemberships.length === 0) return null;
 
-  // Find the active membership based on cookie, or default to the first one
+  // Find the active membership based on cookie, or default to the last_active_workspace
   let activeMembership = allMemberships.find(m => m.organization_id === workspaceId);
+  
+  if (!activeMembership && profile.last_active_workspace) {
+    activeMembership = allMemberships.find(m => m.organization_id === profile.last_active_workspace);
+  }
+
   if (!activeMembership) {
-    activeMembership = allMemberships[0];
+    // Deterministic fallback: earliest joined organization
+    activeMembership = [...allMemberships].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())[0];
+    
+    // Update last_active_workspace so it persists
+    if (activeMembership) {
+      await supabase.from('profiles').update({ last_active_workspace: activeMembership.organization_id }).eq('id', profile.id);
+    }
   }
 
   // Get coach profile if exists
@@ -67,17 +78,6 @@ export async function createOrganization(name: string, slug: string): Promise<{ 
 
   if (!profile) return { success: false, error: 'Profile not found' };
 
-  // Check if they already have an active membership
-  const { data: existingMembership } = await supabase
-    .from('organization_members')
-    .select('*')
-    .eq('user_id', profile.id)
-    .eq('status', 'active');
-
-  if (existingMembership && existingMembership.length > 0) {
-    return { success: false, error: 'You are already part of an organization' };
-  }
-
   // Create organization
   const { data: org, error: orgError } = await supabase
     .from('organizations')
@@ -109,23 +109,9 @@ export async function createOrganization(name: string, slug: string): Promise<{ 
     return { success: false, error: memberError.message };
   }
 
-  // Create corresponding coach record for the owner
-  const { data: member } = await supabase
-    .from('organization_members')
-    .select('id')
-    .eq('organization_id', org.id)
-    .eq('user_id', profile.id)
-    .single();
-
-  if (member) {
-    await supabase.from('coaches').insert([{
-      organization_id: org.id,
-      organization_member_id: member.id,
-      role: 'admin', // maps owner to admin for coach role
-      status: 'active',
-      permissions
-    }]);
-  }
+  // Update last_active_workspace and set cookie for immediate switch
+  await supabase.from('profiles').update({ last_active_workspace: org.id }).eq('id', profile.id);
+  cookies().set('yoogi_workspace_id', org.id, { path: '/' });
 
   return { success: true };
 }

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 export async function requireRole(role: string) {
   const { user, coach } = await requireAuth();
   
-  if (coach.role !== role && coach.role !== 'admin') {
+  if (coach.role !== role && coach.role !== 'admin' && coach.role !== 'owner') {
     redirect("/dashboard?error=forbidden");
   }
   
@@ -14,7 +14,7 @@ export async function requireRole(role: string) {
 export async function requirePermission(permission: string) {
   const { user, coach } = await requireAuth();
   
-  if (coach.role === 'admin') {
+  if (coach.role === 'admin' || coach.role === 'owner') {
     return { user, coach };
   }
   

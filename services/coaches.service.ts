@@ -46,9 +46,9 @@ export const CoachesService = {
       cccd: coachData.cccd || '',
       level: coachData.level || '',
       membership_number: coachData.membership_number || '',
-      role: coachData.role || member.role,
-      permissions: coachData.permissions || member.permissions || [],
-      status: coachData.status || member.status,
+      role: member.role,
+      permissions: member.permissions || [],
+      status: coachData.status,
     } as Coach;
   },
   
@@ -64,9 +64,7 @@ export const CoachesService = {
         cccd, 
         level, 
         membership_number, 
-        role, 
         status, 
-        permissions,
         organization_members (
           role,
           status,
@@ -96,9 +94,9 @@ export const CoachesService = {
         cccd: coach.cccd || '',
         level: coach.level || '',
         membership_number: coach.membership_number || '',
-        role: coach.role || member?.role,
-        permissions: coach.permissions || member?.permissions || [],
-        status: coach.status || member?.status,
+        role: member?.role,
+        permissions: member?.permissions || [],
+        status: coach.status,
       } as Coach;
     });
   }
