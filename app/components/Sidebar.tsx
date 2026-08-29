@@ -131,7 +131,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
       ></div>
 
       <nav className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-header" style={{ height: 'auto', padding: '20px 16px 24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <div className="sidebar-header" style={{ height: 'auto', padding: '16px 16px 20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div className="sidebar-logo">
               <span className="material-icons-round" style={{ fontSize: '1.2rem' }}>sports_martial_arts</span>
@@ -149,13 +149,14 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
                   disabled={isSwitchingWorkspace}
                   style={{
                     width: '100%',
+                    height: '40px',
                     display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start',
-                    padding: '10px 12px',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0 12px',
                     background: 'var(--surface-hover)',
                     border: '1px solid var(--border-light)',
-                    borderRadius: 'var(--radius-md)',
+                    borderRadius: '8px',
                     cursor: isSwitchingWorkspace ? 'wait' : 'pointer',
                     transition: 'all 0.2s ease',
                     textAlign: 'left'
@@ -171,24 +172,20 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
                     }
                   }}
                 >
-                  <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '4px' }}>
-                    Workspace
-                  </span>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', paddingRight: '8px' }}>
-                      <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {context.organization?.name || 'Unknown'}
-                      </span>
-                      <span style={{ fontSize: '12px', fontWeight: 400, color: 'var(--text-secondary)' }}>
-                        {isSwitchingWorkspace ? 'Đang chuyển...' : displayRole}
-                      </span>
-                    </div>
-                    {isSwitchingWorkspace ? (
-                      <span className="material-icons-round" style={{ fontSize: '18px', color: 'var(--text-secondary)' }}>sync</span>
-                    ) : (
-                      <span className="material-icons-round" style={{ fontSize: '18px', color: 'var(--text-secondary)' }}>unfold_more</span>
-                    )}
+                  <div style={{ display: 'flex', alignItems: 'center', overflow: 'hidden', whiteSpace: 'nowrap', paddingRight: '8px', flex: 1 }}>
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-main)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {context.organization?.name || 'Unknown'}
+                    </span>
+                    <span style={{ color: 'var(--text-muted)', margin: '0 6px', fontWeight: 600 }}>·</span>
+                    <span style={{ fontSize: '13px', fontWeight: 400, color: 'var(--text-secondary)', flexShrink: 0 }}>
+                      {isSwitchingWorkspace ? 'Đang chuyển...' : displayRole}
+                    </span>
                   </div>
+                  {isSwitchingWorkspace ? (
+                    <span className="material-icons-round" style={{ fontSize: '18px', color: 'var(--text-secondary)', flexShrink: 0 }}>sync</span>
+                  ) : (
+                    <span className="material-icons-round" style={{ fontSize: '18px', color: 'var(--text-secondary)', flexShrink: 0 }}>arrow_drop_down</span>
+                  )}
                 </button>
 
                 {isWorkspaceDropdownOpen && (
@@ -205,7 +202,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
                       marginTop: '4px',
                       background: 'var(--surface)',
                       border: '1px solid var(--border-light)',
-                      borderRadius: 'var(--radius-md)',
+                      borderRadius: '8px',
                       boxShadow: 'var(--shadow-lg)',
                       zIndex: 100,
                       maxHeight: '300px',
@@ -282,23 +279,23 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
             ) : (
               <div style={{
                 width: '100%',
+                height: '40px',
                 display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-start',
-                padding: '10px 12px',
+                alignItems: 'center',
+                padding: '0 12px',
                 background: 'var(--surface-hover)',
                 border: '1px solid var(--border-light)',
-                borderRadius: 'var(--radius-md)'
+                borderRadius: '8px'
               }}>
-                <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '4px' }}>
-                  Workspace
-                </span>
-                <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>
-                  {context?.organization?.name || 'Unknown'}
-                </span>
-                <span style={{ fontSize: '12px', fontWeight: 400, color: 'var(--text-secondary)' }}>
-                  {displayRole}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', width: '100%' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-main)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {context?.organization?.name || 'Unknown'}
+                  </span>
+                  <span style={{ color: 'var(--text-muted)', margin: '0 6px', fontWeight: 600 }}>·</span>
+                  <span style={{ fontSize: '13px', fontWeight: 400, color: 'var(--text-secondary)', flexShrink: 0 }}>
+                    {displayRole}
+                  </span>
+                </div>
               </div>
             )}
           </div>
