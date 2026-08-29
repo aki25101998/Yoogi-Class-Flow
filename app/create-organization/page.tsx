@@ -6,7 +6,6 @@ import { createOrganizationAction } from './actions';
 
 export default function CreateOrganizationPage() {
   const [name, setName] = useState('');
-  const [slug, setSlug] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -15,19 +14,13 @@ export default function CreateOrganizationPage() {
     e.preventDefault();
     setError('');
     
-    if (!name || !slug) {
-      setError('Vui lòng nhập đầy đủ tên và slug.');
-      return;
-    }
-    
-    // basic slug validation
-    if (!/^[a-z0-9-]+$/.test(slug)) {
-      setError('Slug chỉ được chứa chữ cái viết thường, số và dấu gạch ngang.');
+    if (!name) {
+      setError('Vui lòng nhập tên tổ chức.');
       return;
     }
 
     setLoading(true);
-    const result = await createOrganizationAction(name, slug);
+    const result = await createOrganizationAction(name);
     if (result.success) {
       router.push('/dashboard');
     } else {
@@ -51,7 +44,7 @@ export default function CreateOrganizationPage() {
         )}
 
         <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '16px' }}>
+          <div style={{ marginBottom: '24px' }}>
             <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Tên tổ chức</label>
             <input 
               type="text" 
@@ -61,19 +54,6 @@ export default function CreateOrganizationPage() {
               style={{ width: '100%', padding: '10px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--surface)', color: 'var(--text-main)' }}
               disabled={loading}
             />
-          </div>
-          
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Slug (đường dẫn)</label>
-            <input 
-              type="text" 
-              value={slug} 
-              onChange={e => setSlug(e.target.value.toLowerCase())}
-              placeholder="VD: yoogi-taekwondo"
-              style={{ width: '100%', padding: '10px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--surface)', color: 'var(--text-main)' }}
-              disabled={loading}
-            />
-            <small style={{ color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>Dùng làm đường dẫn duy nhất cho tổ chức của bạn.</small>
           </div>
 
           <button 

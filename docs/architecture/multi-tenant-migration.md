@@ -32,7 +32,7 @@ Bảng `coaches` hiện đang là trung tâm của database, được tham chi�
 
 1. **`organizations`**
    - Định nghĩa một khách hàng (trung tâm, câu lạc bộ).
-   - Chứa `id`, `name`, `slug`, `owner_id`, thông tin subscription.
+   - Chứa `id`, `name`, `owner_id`, thông tin subscription.
    - Tuyệt đối cô lập dữ liệu giữa các organizations.
 
 2. **`profiles`** (hoặc tái sử dụng `users` nếu đã có)

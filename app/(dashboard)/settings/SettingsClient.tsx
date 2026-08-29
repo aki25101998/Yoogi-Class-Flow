@@ -18,8 +18,7 @@ export default function SettingsClient() {
   const currentUserRole = context?.membership?.role;
 
   const [formData, setFormData] = useState({ 
-    name: organization?.name || '', 
-    slug: organization?.slug || '' 
+    name: organization?.name || ''
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -73,22 +72,7 @@ export default function SettingsClient() {
               onChange={e => setFormData({...formData, name: e.target.value})} 
             />
             
-            <div>
-              <label className="block mb-2 text-sm font-medium text-main">URL tĩnh (Slug)</label>
-              <div className="flex items-center">
-                <span className="px-3 py-2 bg-surface-hover border border-light border-r-0 rounded-l-md text-secondary text-sm h-10 flex items-center">
-                  https://app.com/
-                </span>
-                <input 
-                  required 
-                  disabled={!isAdminOrOwner}
-                  value={formData.slug} 
-                  onChange={e => setFormData({...formData, slug: e.target.value})} 
-                  className="flex-1 px-3 py-2 border border-light rounded-r-md text-main focus:outline-none focus:ring-2 focus:ring-primary h-10"
-                />
-              </div>
-              <p className="text-xs text-secondary mt-1">Được dùng để truy cập không gian làm việc của bạn.</p>
-            </div>
+
             
             <div>
               <label className="block mb-2 text-sm font-medium text-main">Gói dịch vụ (Subscription)</label>

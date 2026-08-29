@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 CREATE TABLE IF NOT EXISTS public.organizations (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
-  slug TEXT UNIQUE,
+
   owner_id UUID REFERENCES public.profiles(id),
   subscription_plan TEXT DEFAULT 'starter',
   subscription_status TEXT DEFAULT 'trial',

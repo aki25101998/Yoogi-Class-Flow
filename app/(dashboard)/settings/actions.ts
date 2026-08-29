@@ -4,7 +4,7 @@ import { createClient } from '@/utils/supabase/server';
 import { getCurrentOrganizationContext } from '@/services/organization.service';
 import { revalidatePath } from 'next/cache';
 
-export async function updateOrganizationAction(data: { name: string; slug: string }) {
+export async function updateOrganizationAction(data: { name: string }) {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
@@ -20,9 +20,6 @@ export async function updateOrganizationAction(data: { name: string; slug: strin
     .eq('id', context.organization.id);
 
   if (error) {
-    if (error.code === '23505') { // unique violation for slug
-      return { success: false, error: 'Slug này đã được sử dụng. Vui lòng chọn slug khác.' };
-    }
     return { success: false, error: error.message };
   }
   

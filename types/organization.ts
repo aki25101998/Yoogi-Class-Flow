@@ -5,7 +5,6 @@ export type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'revoked';
 export interface Organization {
   id: string;
   name: string;
-  slug: string;
   owner_id: string;
   subscription_plan: string;
   subscription_status: string;

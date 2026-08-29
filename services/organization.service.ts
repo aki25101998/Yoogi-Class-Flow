@@ -65,7 +65,7 @@ export async function getCurrentOrganizationContext(): Promise<OrganizationConte
   };
 }
 
-export async function createOrganization(name: string, slug: string): Promise<{ success: boolean; error?: string }> {
+export async function createOrganization(name: string): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
   const { data: userData } = await supabase.auth.getUser();
   if (!userData?.user) return { success: false, error: 'Not authenticated' };
@@ -81,7 +81,7 @@ export async function createOrganization(name: string, slug: string): Promise<{ 
   // Create organization
   const { data: org, error: orgError } = await supabase
     .from('organizations')
-    .insert([{ name, slug, owner_id: profile.id }])
+    .insert([{ name, owner_id: profile.id }])
     .select()
     .single();
 
