@@ -149,3 +149,27 @@ export async function unenrollStudentAction(studentId: string, classId: string) 
   revalidatePath('/students');
   return { success: true };
 }
+
+export async function importStudentsBatchAction(students: any[]) {
+  const context = await getCurrentOrganizationContext();
+  if (!context || !context.organization) return { success: false, error: 'Access Denied' };
+
+  const supabase = await createClient();
+  
+  const { data, error } = await supabase.rpc('import_students_batch', {
+    p_org_id: context.organization.id,
+    p_students: students,
+    p_summary: `Import Excel ${students.length} học viên`
+  });
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  if (data && data.success) {
+    revalidatePath('/students');
+    return { success: true, count: data.count };
+  }
+
+  return { success: false, error: data?.error || 'Unknown error during import' };
+}

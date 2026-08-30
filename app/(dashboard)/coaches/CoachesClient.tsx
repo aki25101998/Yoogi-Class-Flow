@@ -8,11 +8,15 @@ import {
   removeMemberAction,
   suspendMemberAction,
   reactivateMemberAction,
-  changeRoleAction
+  changeRoleAction,
+  importCoachesBatchAction
 } from './actions';
 import { OrganizationRole } from '@/types/organization';
 import { useCoaches } from '@/hooks/useCoaches';
 import { useDashboardContext } from '../DashboardProvider';
+import { ImportModal } from '@/app/components/excel/ImportModal';
+import { ExportButton } from '@/app/components/excel/ExportButton';
+import { CoachesImportDef, CoachesExportDef } from '@/services/excel/definitions/coaches.def';
 
 // UI Components
 import { PageHeader } from '@/app/components/ui/PageHeader';
@@ -70,6 +74,7 @@ export default function CoachesClient() {
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<'active' | 'invitations' | 'suspended'>('active');
+  const [showImport, setShowImport] = useState(false);
   const [isInviting, setIsInviting] = useState(false);
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<OrganizationRole>('assistant_coach');
@@ -195,14 +200,36 @@ export default function CoachesClient() {
         title="Huấn luyện viên" 
         description="Quản lý danh sách huấn luyện viên và phân quyền"
         primaryAction={isAdminOrOwner ? (
-          <Button 
-            onClick={() => { setIsInviting(!isInviting); setInvitationResult(null); setError(''); }}
-            leftIcon={<span className="material-icons-round">person_add</span>}
-          >
-            Mời HLV
-          </Button>
-        ) : undefined}
+          <div className="flex gap-2">
+            <ExportButton data={activeMembers} definition={CoachesExportDef} />
+            <Button 
+              variant="outline" 
+              onClick={() => setShowImport(true)}
+              leftIcon={<span className="material-icons-round">upload_file</span>}
+            >
+              Import Excel
+            </Button>
+            <Button 
+              onClick={() => { setIsInviting(!isInviting); setInvitationResult(null); setError(''); }}
+              leftIcon={<span className="material-icons-round">person_add</span>}
+            >
+              Mời HLV
+            </Button>
+          </div>
+        ) : (
+          <ExportButton data={activeMembers} definition={CoachesExportDef} />
+        )}
       />
+
+      {showImport && (
+        <ImportModal
+          isOpen={showImport}
+          onClose={() => setShowImport(false)}
+          definition={CoachesImportDef}
+          existingRecords={members}
+          onImport={importCoachesBatchAction}
+        />
+      )}
 
       <Modal isOpen={isInviting} onClose={loading ? () => {} : handleCloseInvitationResult}>
         <ModalHeader title={invitationResult ? 'Đã tạo lời mời HLV' : 'Tạo lời mời mới'} onClose={loading ? () => {} : handleCloseInvitationResult} />

@@ -78,3 +78,27 @@ export async function deleteVenueAction(id: string) {
   revalidatePath('/venues');
   return { success: true };
 }
+
+export async function importVenuesBatchAction(venues: any[]) {
+  const context = await getCurrentOrganizationContext();
+  if (!context || !context.organization) return { success: false, error: 'Access Denied' };
+
+  const supabase = await createClient();
+  
+  const { data, error } = await supabase.rpc('import_venues_batch', {
+    p_org_id: context.organization.id,
+    p_venues: venues,
+    p_summary: `Import Excel ${venues.length} địa điểm`
+  });
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  if (data && data.success) {
+    revalidatePath('/venues');
+    return { success: true, count: data.count };
+  }
+
+  return { success: false, error: data?.error || 'Unknown error during import' };
+}

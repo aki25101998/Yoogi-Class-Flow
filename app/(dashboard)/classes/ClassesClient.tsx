@@ -5,6 +5,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { addClassAction, updateClassAction, enrollStudentAction, unenrollStudentAction } from './actions';
 import { useClasses } from '@/hooks/useClasses';
 import { useDashboardContext } from '../DashboardProvider';
+import { ExportButton } from '@/app/components/excel/ExportButton';
+import { ClassesExportDef } from '@/services/excel/definitions/classes.def';
 
 // UI Components
 import { PageHeader } from '@/app/components/ui/PageHeader';
@@ -135,16 +137,28 @@ export default function ClassesClient() {
     classes.find((c: any) => c.id === studentModalClassId)?.class_students?.filter((cs: any) => cs.status === 'active') || [] 
     : [];
 
+  const exportData = classes.map((c: any) => ({
+    ...c,
+    venueName: c.venues?.name || '',
+    coachName: c.class_coaches?.map((cc:any) => cc.coaches?.organization_members?.profiles?.name).join(', ') || '',
+    studentCount: c.class_students?.filter((cs:any) => cs.status === 'active').length || 0
+  }));
+
   return (
     <div className="flex-col gap-6">
       <PageHeader 
         title="Quản lý Lớp học" 
         description="Quản lý danh sách lớp học và phân công huấn luyện viên phụ trách"
         primaryAction={isAdminOrOwner ? (
-          <Button onClick={openAddModal} leftIcon={<span className="material-icons-round">add</span>}>
-            Tạo Lớp
-          </Button>
-        ) : undefined}
+          <div className="flex gap-2">
+            <ExportButton data={exportData} definition={ClassesExportDef} />
+            <Button onClick={openAddModal} leftIcon={<span className="material-icons-round">add</span>}>
+              Tạo Lớp
+            </Button>
+          </div>
+        ) : (
+          <ExportButton data={exportData} definition={ClassesExportDef} />
+        )}
       />
 
       {isLoading ? (

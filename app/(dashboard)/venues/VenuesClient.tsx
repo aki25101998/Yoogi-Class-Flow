@@ -2,9 +2,12 @@
 
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { addVenueAction, updateVenueAction, deleteVenueAction } from './actions';
+import { addVenueAction, updateVenueAction, deleteVenueAction, importVenuesBatchAction } from './actions';
 import { useVenues } from '@/hooks/useVenues';
 import { useDashboardContext } from '../DashboardProvider';
+import { ImportModal } from '@/app/components/excel/ImportModal';
+import { ExportButton } from '@/app/components/excel/ExportButton';
+import { VenuesImportDef, VenuesExportDef } from '@/services/excel/definitions/venues.def';
 
 // UI Components
 import { PageHeader } from '@/app/components/ui/PageHeader';
@@ -41,6 +44,7 @@ export default function VenuesClient() {
   const queryClient = useQueryClient();
 
   const [isAdding, setIsAdding] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', address: '', status: 'active' });
   const [error, setError] = useState('');
@@ -97,14 +101,36 @@ export default function VenuesClient() {
         title="Quản lý Địa điểm" 
         description="Quản lý danh sách các địa điểm, cơ sở đào tạo của trung tâm"
         primaryAction={isAdminOrOwner ? (
-          <Button 
-            onClick={() => setIsAdding(true)}
-            leftIcon={<span className="material-icons-round">add_location</span>}
-          >
-            Thêm Địa Điểm
-          </Button>
-        ) : undefined}
+          <div className="flex gap-2">
+            <ExportButton data={venues} definition={VenuesExportDef} />
+            <Button 
+              variant="outline" 
+              onClick={() => setShowImport(true)}
+              leftIcon={<span className="material-icons-round">upload_file</span>}
+            >
+              Import Excel
+            </Button>
+            <Button 
+              onClick={() => setIsAdding(true)}
+              leftIcon={<span className="material-icons-round">add_location</span>}
+            >
+              Thêm Địa Điểm
+            </Button>
+          </div>
+        ) : (
+          <ExportButton data={venues} definition={VenuesExportDef} />
+        )}
       />
+
+      {showImport && (
+        <ImportModal
+          isOpen={showImport}
+          onClose={() => setShowImport(false)}
+          definition={VenuesImportDef}
+          existingRecords={venues}
+          onImport={importVenuesBatchAction}
+        />
+      )}
 
       <Modal isOpen={isAdding || !!editingId} onClose={loading ? () => {} : resetForm}>
         <ModalHeader title={editingId ? 'Sửa thông tin địa điểm' : 'Thêm địa điểm mới'} onClose={loading ? () => {} : resetForm} />

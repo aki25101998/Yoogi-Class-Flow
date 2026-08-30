@@ -9,6 +9,8 @@ import { useDashboardContext } from '../DashboardProvider';
 import SalaryBreakdownModal from './components/SalaryBreakdownModal';
 import type { SalarySnapshot, MonthlyPayrollResult } from '@/types/salary';
 import styles from './PayrollClient.module.css';
+import { ExportButton } from '@/app/components/excel/ExportButton';
+import { PayrollExportDef } from '@/services/excel/definitions/payroll.def';
 
 // UI Components
 import { Button } from '@/app/components/ui/Button';
@@ -164,6 +166,20 @@ export default function PayrollClient() {
     });
   }, [rawPayrollData, searchTerm, statusFilter]);
 
+  const exportData = useMemo(() => {
+    return rawPayrollData.map(d => ({
+      period: getCurrentMonthLabel(),
+      coachName: d.coach.name,
+      total_classes: d.sessions.length,
+      base_salary: d.totalCalculatedAmount,
+      allowance: 0,
+      bonus: 0,
+      deduction: 0,
+      total_salary: d.totalCalculatedAmount,
+      status: d.unapprovedAmount > 0 ? 'draft' : (d.approvedAmount > 0 ? 'approved' : (d.totalCalculatedAmount > 0 ? 'paid' : 'draft'))
+    }));
+  }, [rawPayrollData]);
+
   // ── Action handlers (unchanged logic) ──
   const handleApprove = async (sessionId: string) => {
     setError('');
@@ -315,19 +331,24 @@ export default function PayrollClient() {
             <h1>Bảng lương</h1>
             <p>Quản lý và theo dõi lương của các huấn luyện viên</p>
           </div>
-          <div className={styles.pageTabs}>
-            <span className={`${styles.pageTab} ${styles.pageTabActive}`}>
-              <span className={`material-icons-round ${styles.pageTabIcon}`}>payments</span>
-              Bảng lương
-            </span>
-            <a href="/payroll/salary-rules" className={styles.pageTab}>
-              <span className={`material-icons-round ${styles.pageTabIcon}`}>rule</span>
-              Quy tắc lương
-            </a>
-            <a href="/payroll/salary-profiles" className={styles.pageTab}>
-              <span className={`material-icons-round ${styles.pageTabIcon}`}>person</span>
-              Hồ sơ lương
-            </a>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {isAdminOrOwner && (
+              <ExportButton data={exportData} definition={PayrollExportDef} />
+            )}
+            <div className={styles.pageTabs}>
+              <span className={`${styles.pageTab} ${styles.pageTabActive}`}>
+                <span className={`material-icons-round ${styles.pageTabIcon}`}>payments</span>
+                Bảng lương
+              </span>
+              <a href="/payroll/salary-rules" className={styles.pageTab}>
+                <span className={`material-icons-round ${styles.pageTabIcon}`}>rule</span>
+                Quy tắc lương
+              </a>
+              <a href="/payroll/salary-profiles" className={styles.pageTab}>
+                <span className={`material-icons-round ${styles.pageTabIcon}`}>person</span>
+                Hồ sơ lương
+              </a>
+            </div>
           </div>
         </div>
       </div>

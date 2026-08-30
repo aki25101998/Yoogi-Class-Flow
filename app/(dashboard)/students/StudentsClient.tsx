@@ -2,9 +2,12 @@
 
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { addStudentAction, updateStudentAction, deleteStudentAction } from './actions';
+import { addStudentAction, updateStudentAction, deleteStudentAction, importStudentsBatchAction } from './actions';
 import { useStudents } from '@/hooks/useStudents';
 import { useDashboardContext } from '../DashboardProvider';
+import { ImportModal } from '@/app/components/excel/ImportModal';
+import { ExportButton } from '@/app/components/excel/ExportButton';
+import { StudentsImportDef, StudentsExportDef } from '@/services/excel/definitions/students.def';
 
 // UI Components
 import { PageHeader } from '@/app/components/ui/PageHeader';
@@ -40,6 +43,7 @@ export default function StudentsClient() {
   const queryClient = useQueryClient();
 
   const [isAdding, setIsAdding] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ 
     name: '', phone: '', parent_name: '', parent_phone: '', dob: '', status: 'active', current_belt_id: '', venue_id: '' 
@@ -128,14 +132,36 @@ export default function StudentsClient() {
         title="Quản lý Học viên" 
         description="Quản lý hồ sơ cơ bản và thông tin võ thuật của học viên"
         primaryAction={isAdminOrOwner ? (
-          <Button 
-            onClick={() => setIsAdding(true)}
-            leftIcon={<span className="material-icons-round">person_add</span>}
-          >
-            Thêm Học Viên
-          </Button>
-        ) : undefined}
+          <div className="flex gap-2">
+            <ExportButton data={students} definition={StudentsExportDef} />
+            <Button 
+              variant="outline" 
+              onClick={() => setShowImport(true)}
+              leftIcon={<span className="material-icons-round">upload_file</span>}
+            >
+              Import Excel
+            </Button>
+            <Button 
+              onClick={() => setIsAdding(true)}
+              leftIcon={<span className="material-icons-round">person_add</span>}
+            >
+              Thêm Học Viên
+            </Button>
+          </div>
+        ) : (
+          <ExportButton data={students} definition={StudentsExportDef} />
+        )}
       />
+
+      {showImport && (
+        <ImportModal
+          isOpen={showImport}
+          onClose={() => setShowImport(false)}
+          definition={StudentsImportDef}
+          existingRecords={students}
+          onImport={importStudentsBatchAction}
+        />
+      )}
 
       <Modal isOpen={isAdding || !!editingId} onClose={loading ? () => {} : resetForm}>
         <ModalHeader title={editingId ? 'Sửa thông tin học viên' : 'Thêm học viên mới'} onClose={loading ? () => {} : resetForm} />

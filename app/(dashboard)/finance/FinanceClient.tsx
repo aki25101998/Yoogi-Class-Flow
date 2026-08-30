@@ -6,6 +6,8 @@ import { getBusinessDateString } from '@/utils/date';
 import { addTransactionAction, deleteTransactionAction } from './actions';
 import { useFinance } from '@/hooks/useFinance';
 import { useDashboardContext } from '../DashboardProvider';
+import { ExportButton } from '@/app/components/excel/ExportButton';
+import { FinanceExportDef } from '@/services/excel/definitions/finance.def';
 
 // UI Components
 import { PageHeader } from '@/app/components/ui/PageHeader';
@@ -87,13 +89,18 @@ export default function FinanceClient() {
         title="Quản lý Tài chính" 
         description="Theo dõi dòng tiền thu chi của trung tâm"
         primaryAction={isAdminOrOwner ? (
-          <Button 
-            onClick={() => setIsAdding(true)}
-            leftIcon={<span className="material-icons-round">add_circle_outline</span>}
-          >
-            Thêm Giao Dịch
-          </Button>
-        ) : undefined}
+          <div className="flex gap-2">
+            <ExportButton data={transactions} definition={FinanceExportDef} />
+            <Button 
+              onClick={() => setIsAdding(true)}
+              leftIcon={<span className="material-icons-round">add_circle_outline</span>}
+            >
+              Thêm Giao Dịch
+            </Button>
+          </div>
+        ) : (
+          <ExportButton data={transactions} definition={FinanceExportDef} />
+        )}
       />
 
       {isFetching ? (

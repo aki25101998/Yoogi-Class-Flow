@@ -6,6 +6,8 @@ import { saveAttendanceAction } from './actions';
 import { useAttendance, AttendanceSessionInfo } from '@/hooks/useAttendance';
 import { useDashboardContext } from '../DashboardProvider';
 import { getBusinessDateString } from '@/utils/date';
+import { ExportButton } from '@/app/components/excel/ExportButton';
+import { AttendanceExportDef } from '@/services/excel/definitions/attendance.def';
 
 // UI Components
 import { PageHeader } from '@/app/components/ui/PageHeader';
@@ -100,11 +102,25 @@ export default function AttendanceClient() {
     }
   };
 
+  const exportData = selectedSession ? attendanceRecords.map(r => {
+    const student = selectedSession.students.find((s:any) => s.student_id === r.student_id);
+    return {
+      studentName: student?.name || '',
+      className: selectedSession.className,
+      date: selectedDate,
+      status: r.status,
+      note: r.note
+    };
+  }) : [];
+
   return (
     <div className="flex-col gap-6">
       <PageHeader 
         title="Điểm danh" 
         description="Quản lý điểm danh hàng ngày của các lớp học"
+        primaryAction={
+          <ExportButton data={exportData} definition={AttendanceExportDef} disabled={!selectedSession || attendanceRecords.length === 0} />
+        }
       />
 
       {isFetching ? (
