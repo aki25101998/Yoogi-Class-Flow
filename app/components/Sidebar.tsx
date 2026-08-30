@@ -36,7 +36,8 @@ const ADMIN_NAV = [
     { icon: 'settings', label: 'Cài đặt', submenus: [
         { label: 'Thông tin trung tâm', route: '/settings', permission: 'manage_settings', exact: true },
         { label: 'Thành viên', route: '/settings/members', permission: 'manage_members' },
-        { label: 'Cấp đai', route: '/settings/belts', permission: 'manage_settings' }
+        { label: 'Cấp đai', route: '/settings/belts', permission: 'manage_settings' },
+        { label: 'Lịch sử phiên bản', route: '/settings/version-history', permission: 'manage_settings' }
     ]}
   ]}
 ];
@@ -401,63 +402,29 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
         </div>
 
         <div className="sidebar-footer">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '16px', padding: '0 8px' }}>
-            <Link 
-              href="/settings/version-history"
-              onClick={() => setIsSidebarOpen(false)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '10px 12px',
-                color: 'var(--text-secondary)',
-                textDecoration: 'none',
-                borderRadius: '8px',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = 'var(--text-main)';
-                e.currentTarget.style.background = 'var(--surface-hover)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = 'var(--text-secondary)';
-                e.currentTarget.style.background = 'transparent';
-              }}
-            >
-              <span className="material-icons-round" style={{ fontSize: '20px' }}>history</span>
-              <span style={{ fontSize: '13px', fontWeight: 500 }}>Lịch sử phiên bản</span>
-            </Link>
-
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', padding: '0 4px' }}>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+              {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+            </span>
             <button 
               onClick={toggleTheme}
               style={{
+                background: 'var(--surface-hover)',
+                border: '1px solid var(--border-light)',
+                borderRadius: 'var(--radius-md)',
+                width: '32px',
+                height: '32px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px',
-                padding: '10px 12px',
-                color: 'var(--text-secondary)',
-                background: 'transparent',
-                border: 'none',
-                borderRadius: '8px',
+                justifyContent: 'center',
+                color: 'var(--text-main)',
                 cursor: 'pointer',
-                transition: 'all 0.2s',
-                width: '100%',
-                textAlign: 'left'
+                transition: 'all 0.2s'
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = 'var(--text-main)';
-                e.currentTarget.style.background = 'var(--surface-hover)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = 'var(--text-secondary)';
-                e.currentTarget.style.background = 'transparent';
-              }}
+              title={theme === 'dark' ? 'Chuyển sang Light Mode' : 'Chuyển sang Dark Mode'}
             >
-              <span className="material-icons-round" style={{ fontSize: '20px' }}>
+              <span className="material-icons-round" style={{ fontSize: '1.25rem' }}>
                 {theme === 'dark' ? 'light_mode' : 'dark_mode'}
-              </span>
-              <span style={{ fontSize: '13px', fontWeight: 500 }}>
-                {theme === 'dark' ? 'Light mode' : 'Dark mode'}
               </span>
             </button>
           </div>
