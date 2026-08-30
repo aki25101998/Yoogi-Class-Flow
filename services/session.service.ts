@@ -125,17 +125,16 @@ export async function cancelSession(organizationId: string, classId: string, dat
   }
 
   // Otherwise try to find by scheduleId
-  let query = supabase.from('class_sessions')
-    .select('id')
-    .eq('organization_id', organizationId)
-    .eq('class_id', classId)
-    .eq('date', dateStr);
-    
-  if (scheduleId) {
-    query = query.eq('schedule_id', scheduleId);
+  if (!scheduleId) {
+    return { error: { message: 'Không thể xác định ca học. Vui lòng cung cấp mã lịch học hoặc mã ca học.' } };
   }
 
-  const { data: existing } = await query.maybeSingle();
+  const { data: existing } = await supabase.from('class_sessions')
+    .select('id')
+    .eq('organization_id', organizationId)
+    .eq('schedule_id', scheduleId)
+    .eq('date', dateStr)
+    .maybeSingle();
 
   if (existing) {
     return await supabase.from('class_sessions')
@@ -164,17 +163,16 @@ export async function overrideCoach(organizationId: string, classId: string, dat
       .eq('organization_id', organizationId);
   }
 
-  let query = supabase.from('class_sessions')
+  if (!scheduleId) {
+    return { error: { message: 'Không thể xác định ca học. Vui lòng cung cấp mã lịch học hoặc mã ca học.' } };
+  }
+
+  const { data: existing } = await supabase.from('class_sessions')
     .select('id')
     .eq('organization_id', organizationId)
-    .eq('class_id', classId)
-    .eq('date', dateStr);
-    
-  if (scheduleId) {
-    query = query.eq('schedule_id', scheduleId);
-  }
-  
-  const { data: existing } = await query.maybeSingle();
+    .eq('schedule_id', scheduleId)
+    .eq('date', dateStr)
+    .maybeSingle();
 
   if (existing) {
     return await supabase.from('class_sessions')

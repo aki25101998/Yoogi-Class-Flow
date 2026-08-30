@@ -85,11 +85,8 @@ export default function AttendanceClient() {
     
     setLoading(true);
     const res = await saveAttendanceAction(
-      selectedSession.classId, 
-      selectedDate, 
-      attendanceRecords,
-      selectedSession.scheduleId,
-      selectedSession.sessionId
+      selectedSession.sessionId as string,
+      attendanceRecords
     );
     setLoading(false);
     
@@ -212,16 +209,25 @@ export default function AttendanceClient() {
               </Tbody>
             </Table>
           </div>
-          <div className="p-4 bg-surface-hover border-t border-light flex justify-end">
-            <Button 
-              onClick={handleSave} 
-              disabled={selectedSession.students.length === 0 || loading || selectedSession.status === 'cancelled'} 
-              isLoading={loading}
-              variant="primary"
-              leftIcon={<span className="material-icons-round">save</span>}
-            >
-              Lưu Điểm Danh
-            </Button>
+          <div className="p-4 bg-surface-hover border-t border-light flex justify-between items-center">
+            {!selectedSession.sessionId && (
+              <span className="text-sm text-warning font-medium flex items-center gap-1">
+                <span className="material-icons-round text-warning text-base">info</span>
+                Bạn cần báo cáo Check-in hoặc Chọn trạng thái cho ca học trước khi điểm danh.
+              </span>
+            )}
+            <div className={!selectedSession.sessionId ? "" : "ml-auto"}>
+              <Button 
+                onClick={handleSave} 
+                disabled={!selectedSession.sessionId || selectedSession.students.length === 0 || loading || selectedSession.status === 'cancelled'} 
+                isLoading={loading}
+                variant="primary"
+                leftIcon={<span className="material-icons-round">save</span>}
+                title={!selectedSession.sessionId ? "Bạn cần Check-in ca học này trước khi điểm danh" : ""}
+              >
+                Lưu Điểm Danh
+              </Button>
+            </div>
           </div>
         </Card>
       ) : (
