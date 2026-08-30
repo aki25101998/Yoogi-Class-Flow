@@ -13,10 +13,12 @@ BEGIN
     FROM information_schema.columns
     WHERE table_schema = 'public' 
       AND table_name = p_table 
-      AND column_name != 'id';
+      -- SECURITY: Immutable fields that should never be updated via dynamic restore
+      AND column_name NOT IN ('id', 'organization_id', 'created_at', 'created_by');
     
+    -- SECURITY: Must include organization_id = $3 to guarantee boundary isolation
     RETURN 'UPDATE public.' || quote_ident(p_table) || ' t SET ' || v_cols || 
-           ' FROM jsonb_populate_record(null::public.' || quote_ident(p_table) || ', $1) p WHERE t.id = $2';
+           ' FROM jsonb_populate_record(null::public.' || quote_ident(p_table) || ', $1) p WHERE t.id = $2 AND t.organization_id = $3';
 END;
 $$;
 
@@ -73,13 +75,16 @@ BEGIN
         BEGIN
             IF v_change.operation = 'INSERT' THEN
                 -- Inverse is DELETE
-                EXECUTE format('DELETE FROM public.%I WHERE id = %L', v_change.table_name, v_change.record_id);
+                -- SECURITY: Append organization_id condition
+                EXECUTE format('DELETE FROM public.%I WHERE id = %L AND organization_id = %L', v_change.table_name, v_change.record_id, p_org_id);
             ELSIF v_change.operation = 'DELETE' THEN
                 -- Inverse is INSERT
-                EXECUTE format('INSERT INTO public.%I SELECT * FROM jsonb_populate_record(null::public.%I, $1)', v_change.table_name, v_change.table_name) USING v_change.before_data;
+                -- SECURITY: Force override organization_id in the payload
+                EXECUTE format('INSERT INTO public.%I SELECT * FROM jsonb_populate_record(null::public.%I, $1)', v_change.table_name, v_change.table_name) 
+                USING v_change.before_data || jsonb_build_object('organization_id', p_org_id);
             ELSIF v_change.operation = 'UPDATE' THEN
                 -- Inverse is UPDATE with before_data
-                EXECUTE public.build_dynamic_update(v_change.table_name) USING v_change.before_data, v_change.record_id;
+                EXECUTE public.build_dynamic_update(v_change.table_name) USING v_change.before_data, v_change.record_id, p_org_id;
             END IF;
         EXCEPTION WHEN OTHERS THEN
             -- In a real scenario, foreign key violations during partial inverse might occur if 
@@ -109,21 +114,31 @@ DECLARE
     v_restore_version_id UUID;
     v_profile_id UUID;
     v_exists BOOLEAN;
+    v_current_org_id UUID;
 BEGIN
-    -- 1. Check Permissions (Admin for now, could be refined based on table)
+    -- 1. Check Permissions
     IF NOT public.is_org_admin(p_org_id) THEN
         RETURN json_build_object('success', false, 'error', 'Permission denied.');
     END IF;
 
-    -- 2. Prevent SQL Injection on table name by verifying it exists
-    IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = p_table_name) THEN
-        RETURN json_build_object('success', false, 'error', 'Bảng không hợp lệ.');
+    -- 2. SECURITY: Table Whitelist (Prevent targeting arbitrary tables)
+    IF p_table_name NOT IN (
+        'venues', 'venue_classes', 'class_coaches', 'students', 'class_students', 
+        'schedules', 'attendance', 'student_session_attendance', 'teacher_salaries', 
+        'tuition', 'finance_transactions', 'class_sessions'
+    ) THEN
+        RAISE EXCEPTION 'Bảng % không được phép khôi phục.', p_table_name;
     END IF;
 
-    -- 3. Get profile
+    -- 3. SECURITY: Validate payload organization_id
+    IF (p_state->>'organization_id')::UUID != p_org_id THEN
+        RAISE EXCEPTION 'Dữ liệu không thuộc về Organization hiện tại. Không thể khôi phục.';
+    END IF;
+
+    -- 4. Get profile
     SELECT id INTO v_profile_id FROM public.profiles WHERE auth_user_id = auth.uid() LIMIT 1;
 
-    -- 4. Create RESTORE version context
+    -- 5. Create RESTORE version context
     INSERT INTO public.version_history (
         organization_id, version_number, summary, action_type, created_by
     ) VALUES (
@@ -136,16 +151,24 @@ BEGIN
 
     PERFORM set_config('app.current_version_id', v_restore_version_id::text, true);
 
-    -- 5. Execute Restore
-    EXECUTE format('SELECT EXISTS(SELECT 1 FROM public.%I WHERE id = %L)', p_table_name, p_record_id) INTO v_exists;
+    -- 6. SECURITY: Check current record if exists
+    EXECUTE format('SELECT organization_id FROM public.%I WHERE id = %L', p_table_name, p_record_id) INTO v_current_org_id;
+    
+    v_exists := v_current_org_id IS NOT NULL;
 
     BEGIN
         IF v_exists THEN
+            -- SECURITY: Validate current record ownership
+            IF v_current_org_id != p_org_id THEN
+                RAISE EXCEPTION 'Bản ghi hiện tại thuộc về Organization khác. Không thể ghi đè.';
+            END IF;
             -- Update
-            EXECUTE public.build_dynamic_update(p_table_name) USING p_state, p_record_id;
+            EXECUTE public.build_dynamic_update(p_table_name) USING p_state, p_record_id, p_org_id;
         ELSE
             -- Insert
-            EXECUTE format('INSERT INTO public.%I SELECT * FROM jsonb_populate_record(null::public.%I, $1)', p_table_name, p_table_name) USING p_state;
+            -- SECURITY: Force override organization_id just in case
+            EXECUTE format('INSERT INTO public.%I SELECT * FROM jsonb_populate_record(null::public.%I, $1)', p_table_name, p_table_name) 
+            USING p_state || jsonb_build_object('organization_id', p_org_id);
         END IF;
     EXCEPTION WHEN OTHERS THEN
         RAISE EXCEPTION 'Lỗi khi khôi phục record: %', SQLERRM;

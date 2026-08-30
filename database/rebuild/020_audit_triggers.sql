@@ -48,6 +48,11 @@ BEGIN
         v_after_data := NULL;
     END IF;
 
+    -- Security Validation: Organization ID is MANDATORY
+    IF v_org_id IS NULL THEN
+        RAISE EXCEPTION 'Audit failed: Missing organization_id on record %', v_record_id;
+    END IF;
+
     -- 2. Identify User
     v_user_id := auth.uid();
     IF v_user_id IS NOT NULL THEN
