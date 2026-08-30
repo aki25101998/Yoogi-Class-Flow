@@ -74,20 +74,7 @@ export async function saveAttendanceAction(classId: string, date: string, record
 
   if (upsertError) return { success: false, error: upsertError.message };
 
-  // For backward compatibility until full UI rewrite, we still save to student_attendance jsonb
-  const { data: existingJSONB } = await supabase
-    .from('student_attendance')
-    .select('id')
-    .eq('class_id', classId)
-    .eq('date', date)
-    .eq('organization_id', context.organization.id)
-    .single();
 
-  if (existingJSONB) {
-    await supabase.from('student_attendance').update({ records, updated_at: new Date().toISOString() }).eq('id', existingJSONB.id);
-  } else {
-    await supabase.from('student_attendance').insert({ organization_id: context.organization.id, class_id: classId, date, records });
-  }
   
   revalidatePath('/attendance');
   return { success: true };

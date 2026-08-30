@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { saveAttendanceAction } from './actions';
 import { useAttendance } from '@/hooks/useAttendance';
 import { useDashboardContext } from '../DashboardProvider';
+import { getBusinessDateString } from '@/utils/date';
 
 // UI Components
 import { PageHeader } from '@/app/components/ui/PageHeader';
@@ -17,12 +18,12 @@ import { Table, Thead, Tbody, Tr, Th, Td } from '@/app/components/ui/Table';
 export default function AttendanceClient() {
   const { context } = useDashboardContext();
   const organizationId = context?.organization?.id;
-
-  const { classes, allStudentAttendance, isLoading: isFetching } = useAttendance(organizationId);
   const queryClient = useQueryClient();
 
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(getBusinessDateString());
   const [selectedClassId, setSelectedClassId] = useState('');
+  
+  const { classes, allStudentAttendance, isLoading: isFetching } = useAttendance(organizationId, selectedDate);
   const [attendanceRecords, setAttendanceRecords] = useState<any[]>([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');

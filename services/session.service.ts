@@ -14,9 +14,9 @@ export interface ClassSession {
   date: string; // YYYY-MM-DD
   startTime: string;
   endTime: string;
-  status: 'pending' | 'cancelled' | 'checked_in' | 'approved' | 'rejected' | 'paid' | 'scheduled'; // 'scheduled' is for override without checkin yet
+  status: 'pending' | 'cancelled' | 'checked_in' | 'approved' | 'rejected' | 'paid' | 'scheduled';
   checkInTime?: string;
-  scheduleId: string;
+  scheduleId?: string; // Made optional for ad-hoc sessions
 }
 
 export async function getSessionsForDate(organizationId: string, dateStr: string, filterCoachId?: string): Promise<ClassSession[]> {
@@ -27,36 +27,27 @@ export async function getSessionsForDate(organizationId: string, dateStr: string
   const dayOfWeek = dateObj.getDay(); // 0 (Sun) to 6 (Sat)
 
   // 2. Fetch periodic schedules
-  let scheduleQuery = supabase
+  const { data: schedules } = await supabase
     .from('schedules')
     .select('*, venue_classes(name), coaches(organization_members(profiles(name))), venues(name)')
     .eq('organization_id', organizationId)
     .eq('status', 'active')
     .eq('day_of_week', dayOfWeek);
-    
-  // If we filter by coach, we should NOT filter the periodic schedule directly because the coach might be a substitute (which is in teacher_salary_sessions).
-  // Or their periodic schedule might be substituted by someone else!
-  // So we fetch all schedules for the org, then filter later.
-  const { data: schedules } = await scheduleQuery;
 
-  // 3. Fetch exceptions / check-ins (class_sessions)
+  // 3. Fetch exceptions / check-ins (class_sessions) including ad-hoc
   const { data: sessionRecords } = await supabase
     .from('class_sessions')
-    .select('*, coaches(organization_members(profiles(name)))')
+    .select('*, coaches(organization_members(profiles(name))), venue_classes(name, venue_id, venues(name))')
     .eq('organization_id', organizationId)
     .eq('date', dateStr);
 
   const results: ClassSession[] = [];
-  const scheduleMap = new Map((schedules || []).map(s => [s.id, s]));
+  const processedSessionIds = new Set<string>();
 
-  // Merge logic:
-  // We match class_sessions to schedules via class_id.
-  // Wait, class_sessions only has class_id and coach_id. It doesn't have schedule_id.
-  // So a session record belongs to a class. 
-  // Let's iterate through schedules.
+  // 4. Merge periodic schedules
   for (const s of (schedules || [])) {
-    // Find if there is a session record for this class_id
-    const record = (sessionRecords || []).find(r => r.class_id === s.class_id);
+    // Find if there is a session record for this schedule
+    const record = (sessionRecords || []).find(r => r.schedule_id === s.id);
 
     const baseSession: ClassSession = {
       isVirtual: true,
@@ -76,25 +67,41 @@ export async function getSessionsForDate(organizationId: string, dateStr: string
     };
 
     if (record) {
+      processedSessionIds.add(record.id);
       baseSession.isVirtual = false;
       baseSession.sessionId = record.id;
       baseSession.currentCoachId = record.coach_id;
       baseSession.currentCoachName = record.coaches?.organization_members?.profiles?.name || '';
       baseSession.status = record.status as any;
       baseSession.checkInTime = record.check_in_time;
+      baseSession.startTime = record.start_time || s.start_time;
+      baseSession.endTime = record.end_time || s.end_time;
     }
 
     results.push(baseSession);
   }
 
-  // What if there is a class_session for a class that is NOT in today's periodic schedule?
-  // (Maybe an extra class added manually on this date).
+  // 5. Add Ad-hoc sessions (sessions not linked to the day's active schedules)
   for (const r of (sessionRecords || [])) {
-    // If we didn't process it yet
-    if (!results.some(res => res.classId === r.class_id)) {
-      // We need class info, but we don't have it loaded if it wasn't in schedule.
-      // So let's fetch class info for ad-hoc sessions if needed, but for now we assume sessions are mostly from schedules.
-      // For a robust system, we should have a separate query for ad-hoc classes.
+    if (!processedSessionIds.has(r.id)) {
+      results.push({
+        isVirtual: false,
+        sessionId: r.id,
+        classId: r.class_id,
+        className: r.venue_classes?.name || '',
+        originalCoachId: r.original_coach_id || r.coach_id,
+        currentCoachId: r.coach_id,
+        originalCoachName: r.coaches?.organization_members?.profiles?.name || '',
+        currentCoachName: r.coaches?.organization_members?.profiles?.name || '',
+        venueId: r.venue_classes?.venue_id || '',
+        venueName: r.venue_classes?.venues?.name || '',
+        date: r.date,
+        startTime: r.start_time || '',
+        endTime: r.end_time || '',
+        status: r.status as any,
+        checkInTime: r.check_in_time,
+        scheduleId: r.schedule_id || undefined,
+      });
     }
   }
 
@@ -103,30 +110,41 @@ export async function getSessionsForDate(organizationId: string, dateStr: string
   }
 
   // Sort by start_time
-  return results.sort((a, b) => a.startTime.localeCompare(b.startTime));
+  return results.sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
 }
 
-export async function cancelSession(organizationId: string, classId: string, dateStr: string) {
+export async function cancelSession(organizationId: string, classId: string, dateStr: string, scheduleId?: string, sessionId?: string) {
   const supabase = await createClient();
-  // insert or update class_sessions
-  const { data: existing } = await supabase.from('class_sessions')
+  
+  if (sessionId) {
+    return await supabase.from('class_sessions')
+      .update({ status: 'cancelled', cancelled_at: new Date().toISOString() })
+      .eq('id', sessionId)
+      .eq('organization_id', organizationId);
+  }
+
+  // Otherwise try to find by scheduleId
+  let query = supabase.from('class_sessions')
     .select('id')
     .eq('organization_id', organizationId)
     .eq('class_id', classId)
-    .eq('date', dateStr)
-    .single();
+    .eq('date', dateStr);
+    
+  if (scheduleId) {
+    query = query.eq('schedule_id', scheduleId);
+  }
+
+  const { data: existing } = await query.maybeSingle();
 
   if (existing) {
     return await supabase.from('class_sessions')
-      .update({ 
-        status: 'cancelled',
-        cancelled_at: new Date().toISOString()
-      })
+      .update({ status: 'cancelled', cancelled_at: new Date().toISOString() })
       .eq('id', existing.id);
   } else {
     return await supabase.from('class_sessions').insert({
       organization_id: organizationId,
       class_id: classId,
+      schedule_id: scheduleId || null,
       date: dateStr,
       status: 'cancelled',
       coach_id: null,
@@ -135,14 +153,27 @@ export async function cancelSession(organizationId: string, classId: string, dat
   }
 }
 
-export async function overrideCoach(organizationId: string, classId: string, dateStr: string, newCoachId: string) {
+export async function overrideCoach(organizationId: string, classId: string, dateStr: string, newCoachId: string, scheduleId?: string, sessionId?: string) {
   const supabase = await createClient();
-  const { data: existing } = await supabase.from('class_sessions')
+  
+  if (sessionId) {
+    return await supabase.from('class_sessions')
+      .update({ status: 'scheduled', coach_id: newCoachId })
+      .eq('id', sessionId)
+      .eq('organization_id', organizationId);
+  }
+
+  let query = supabase.from('class_sessions')
     .select('id')
     .eq('organization_id', organizationId)
     .eq('class_id', classId)
-    .eq('date', dateStr)
-    .single();
+    .eq('date', dateStr);
+    
+  if (scheduleId) {
+    query = query.eq('schedule_id', scheduleId);
+  }
+  
+  const { data: existing } = await query.maybeSingle();
 
   if (existing) {
     return await supabase.from('class_sessions')
@@ -152,6 +183,7 @@ export async function overrideCoach(organizationId: string, classId: string, dat
     return await supabase.from('class_sessions').insert({
       organization_id: organizationId,
       class_id: classId,
+      schedule_id: scheduleId || null,
       date: dateStr,
       status: 'scheduled',
       coach_id: newCoachId

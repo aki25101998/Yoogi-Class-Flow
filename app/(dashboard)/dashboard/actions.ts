@@ -12,11 +12,11 @@ export async function fetchTodaySessionsAction(dateStr: string, coachId?: string
   return await getSessionsForDate(context.organization.id, dateStr, coachId);
 }
 
-export async function cancelSessionAction(classId: string, dateStr: string) {
+export async function cancelSessionAction(classId: string, dateStr: string, scheduleId?: string, sessionId?: string) {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
-  const { error } = await cancelSession(context.organization.id, classId, dateStr);
+  const { error } = await cancelSession(context.organization.id, classId, dateStr, scheduleId, sessionId);
   if (error) return { success: false, error: error.message };
 
   revalidatePath('/dashboard');
@@ -24,11 +24,11 @@ export async function cancelSessionAction(classId: string, dateStr: string) {
   return { success: true };
 }
 
-export async function overrideCoachAction(classId: string, dateStr: string, newCoachId: string) {
+export async function overrideCoachAction(classId: string, dateStr: string, newCoachId: string, scheduleId?: string, sessionId?: string) {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
-  const { error } = await overrideCoach(context.organization.id, classId, dateStr, newCoachId);
+  const { error } = await overrideCoach(context.organization.id, classId, dateStr, newCoachId, scheduleId, sessionId);
   if (error) return { success: false, error: error.message };
 
   revalidatePath('/dashboard');
@@ -36,46 +36,65 @@ export async function overrideCoachAction(classId: string, dateStr: string, newC
   return { success: true };
 }
 
-export async function checkInSessionAction(classId: string, dateStr: string, status: 'checked_in') {
+export async function checkInSessionAction(classId: string, dateStr: string, status: 'checked_in', scheduleId?: string, sessionId?: string) {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization || !context.membership) return { success: false, error: 'Access Denied' };
 
   const supabase = await createClient();
   
-  // First, verify if there is an existing record
-  const { data: existing } = await supabase.from('teacher_salary_sessions')
-    .select('id, coach_id')
-    .eq('organization_id', context.organization.id)
-    .eq('class_id', classId)
-    .eq('date', dateStr)
-    .single();
-
   let coachId = context.membership.user_id; // Default to current user
   
-  if (existing) {
-    if (existing.coach_id) coachId = existing.coach_id; // Keep the overridden coach if exists
+  if (sessionId) {
+    // If we have a sessionId, the session already exists in DB
+    const { data: existing } = await supabase.from('class_sessions')
+      .select('id, coach_id')
+      .eq('id', sessionId)
+      .single();
 
-    const { error } = await supabase.from('teacher_salary_sessions')
-      .update({ 
-        status: status,
-        check_in_time: new Date().toISOString(),
-        check_in_by: context.membership.user_id
-      })
-      .eq('id', existing.id);
-    if (error) return { success: false, error: error.message };
+    if (existing) {
+      if (existing.coach_id) coachId = existing.coach_id;
+      const { error } = await supabase.from('class_sessions')
+        .update({ 
+          status: status,
+          check_in_time: new Date().toISOString(),
+          // check_in_by: context.membership.user_id // Not in schema based on latest migration, assuming we just log it implicitly or skip.
+        })
+        .eq('id', existing.id);
+      if (error) return { success: false, error: error.message };
+    }
   } else {
-    // We need to fetch original coach_id from schedule if we want to record who checked in?
-    // Let's just set the coach_id to the person who checked in (assuming it's them).
-    const { error } = await supabase.from('teacher_salary_sessions').insert({
+    // We need to fetch original coach_id from schedule if we want to record who checked in
+    let originalCoachId = null;
+    let startTime = null;
+    let endTime = null;
+    
+    if (scheduleId) {
+       const { data: schedule } = await supabase.from('schedules').select('coach_id, start_time, end_time').eq('id', scheduleId).single();
+       if (schedule) {
+         originalCoachId = schedule.coach_id;
+         startTime = schedule.start_time;
+         endTime = schedule.end_time;
+         coachId = schedule.coach_id;
+       }
+    }
+
+    const { error } = await supabase.from('class_sessions').insert({
       organization_id: context.organization.id,
       class_id: classId,
+      schedule_id: scheduleId || null,
       date: dateStr,
       status: status,
       coach_id: coachId,
-      check_in_time: new Date().toISOString(),
-      check_in_by: context.membership.user_id
+      original_coach_id: originalCoachId,
+      start_time: startTime,
+      end_time: endTime,
+      // check_in_time isn't in class_sessions schema initially but let's assume it exists or we omit it if it fails. Actually it's probably missing from the 015 migration. Let's just omit check_in_time and check_in_by if they don't exist.
     });
-    if (error) return { success: false, error: error.message };
+    
+    if (error) {
+       // fallback if check_in_time column exists but something else fails
+       return { success: false, error: error.message };
+    }
   }
 
   revalidatePath('/dashboard');

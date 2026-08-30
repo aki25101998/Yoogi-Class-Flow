@@ -543,18 +543,12 @@ BEGIN
   LOOP
     -- Verify status is approved
     IF v_session.status != 'approved' THEN
-      RETURN json_build_object(
-        'success', false,
-        'error', 'Session ' || v_session.id || ' is not in approved status (current: ' || v_session.status || ')'
-      );
+      RAISE EXCEPTION 'Session % is not in approved status (current: %)', v_session.id, v_session.status;
     END IF;
     
     -- Verify not already paid via payroll_payment_sessions
     IF EXISTS (SELECT 1 FROM public.payroll_payment_sessions WHERE session_id = v_session.id) THEN
-      RETURN json_build_object(
-        'success', false,
-        'error', 'Session ' || v_session.id || ' has already been paid'
-      );
+      RAISE EXCEPTION 'Session % has already been paid', v_session.id;
     END IF;
 
     v_total_amount := v_total_amount + COALESCE(v_session.calculated_salary, 0);
@@ -563,10 +557,7 @@ BEGIN
 
   -- Verify we found all requested sessions
   IF v_session_count != array_length(v_deduplicated_ids, 1) THEN
-    RETURN json_build_object(
-      'success', false,
-      'error', 'Some sessions were not found or do not belong to this coach/organization'
-    );
+    RAISE EXCEPTION 'Some sessions were not found or do not belong to this coach/organization';
   END IF;
 
   -- 2. Create Finance Transaction
@@ -631,11 +622,6 @@ BEGIN
     'finance_transaction_id', v_finance_txn_id,
     'total_amount', v_total_amount,
     'session_count', v_session_count
-  );
-EXCEPTION WHEN OTHERS THEN
-  RETURN json_build_object(
-    'success', false,
-    'error', SQLERRM
   );
 END;
 $$;

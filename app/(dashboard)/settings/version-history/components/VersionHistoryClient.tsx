@@ -7,6 +7,8 @@ import { useDashboardContext } from "@/app/(dashboard)/DashboardProvider";
 import VersionDetailModal from "./VersionDetailModal";
 import RestoreConfirmation from "./RestoreConfirmation";
 
+import { getBusinessDate } from '@/utils/date';
+
 const formatDateStr = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const formatDisplay = (d: Date) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 const formatTime = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
@@ -108,8 +110,10 @@ export default function VersionHistoryClient() {
   });
 
   const getDisplayDate = (dateStr: string) => {
-    const today = formatDateStr(new Date());
-    const yesterday = formatDateStr(new Date(Date.now() - 86400000));
+    const today = formatDateStr(getBusinessDate());
+    const yesterdayDate = getBusinessDate();
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterday = formatDateStr(yesterdayDate);
     
     if (dateStr === today) return "Hôm nay";
     if (dateStr === yesterday) return "Hôm qua";
@@ -195,24 +199,10 @@ export default function VersionHistoryClient() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-main)' }}>
-                          {formatTime(new Date(version.created_at))}
+                          {formatTime(new Date(version.created_at))} — {profile?.name || 'Hệ thống'}
                         </span>
-                        <span style={{ color: 'var(--text-muted)' }}>—</span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          {profile?.avatar_url ? (
-                            <img src={profile.avatar_url} alt="" style={{ width: '18px', height: '18px', borderRadius: '50%' }} />
-                          ) : (
-                            <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 600 }}>
-                              {profile?.name ? profile.name.charAt(0).toUpperCase() : '?'}
-                            </div>
-                          )}
-                          <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
-                            {profile?.name || 'Người dùng ẩn danh'}
-                          </span>
-                        </div>
                       </div>
-                      
-                      <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                      <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', background: 'var(--surface)', border: '1px solid var(--border-light)', padding: '2px 8px', borderRadius: '12px' }}>
                         #{version.version_number}
                       </span>
                     </div>

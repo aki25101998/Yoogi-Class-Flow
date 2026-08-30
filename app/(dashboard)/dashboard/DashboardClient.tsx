@@ -6,6 +6,7 @@ import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useTodaySessions } from '@/hooks/useTodaySessions';
 import { cancelSessionAction, overrideCoachAction, checkInSessionAction } from './actions';
 import { useClasses } from '@/hooks/useClasses';
+import { getBusinessDate, getBusinessDateString } from '@/utils/date';
 
 // UI Components
 import { PageHeader } from '@/app/components/ui/PageHeader';
@@ -39,8 +40,8 @@ export default function DashboardClient() {
   const { availableCoaches } = useClasses(organizationId);
 
   // We format date as YYYY-MM-DD for the backend
-  const todayObj = new Date();
-  const dateStr = todayObj.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+  const todayObj = getBusinessDate();
+  const dateStr = getBusinessDateString(); // YYYY-MM-DD format
   const displayDate = todayObj.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
   // If coach, filter their sessions. If admin, show all
@@ -57,10 +58,10 @@ export default function DashboardClient() {
     queryClient.invalidateQueries({ queryKey: ['todaySessions', organizationId, dateStr, coachIdFilter] });
   };
 
-  const handleCancelSession = async (classId: string) => {
+  const handleCancelSession = async (session: any) => {
     if (confirm('Bạn có chắc chắn muốn hủy buổi học này? Hệ thống sẽ ghi nhận trạng thái Hủy.')) {
       setLoading(true);
-      const res = await cancelSessionAction(classId, dateStr);
+      const res = await cancelSessionAction(session.classId, dateStr, session.scheduleId, session.sessionId);
       setLoading(false);
       if (res.success) handleSuccess();
       else alert(res.error || 'Lỗi khi hủy buổi học');
@@ -72,7 +73,13 @@ export default function DashboardClient() {
     if (!overrideModalSession || !selectedNewCoachId) return;
     
     setLoading(true);
-    const res = await overrideCoachAction(overrideModalSession.classId, dateStr, selectedNewCoachId);
+    const res = await overrideCoachAction(
+      overrideModalSession.classId, 
+      dateStr, 
+      selectedNewCoachId, 
+      overrideModalSession.scheduleId, 
+      overrideModalSession.sessionId
+    );
     setLoading(false);
     
     if (res.success) {
@@ -84,10 +91,10 @@ export default function DashboardClient() {
     }
   };
 
-  const handleCheckIn = async (classId: string) => {
+  const handleCheckIn = async (session: any) => {
     if (confirm('Xác nhận Check-in cho buổi học này?')) {
       setLoading(true);
-      const res = await checkInSessionAction(classId, dateStr, 'checked_in');
+      const res = await checkInSessionAction(session.classId, dateStr, 'checked_in', session.scheduleId, session.sessionId);
       setLoading(false);
       if (res.success) handleSuccess();
       else alert(res.error || 'Lỗi khi Check-in');
@@ -240,7 +247,7 @@ export default function DashboardClient() {
                             size="sm" 
                             className="text-danger hover:bg-danger-bg" 
                             disabled={loading}
-                            onClick={() => handleCancelSession(s.classId)}
+                            onClick={() => handleCancelSession(s)}
                           >
                             Hủy Buổi
                           </Button>
@@ -253,7 +260,7 @@ export default function DashboardClient() {
                           variant="primary" 
                           size="sm" 
                           disabled={loading}
-                          onClick={() => handleCheckIn(s.classId)}
+                          onClick={() => handleCheckIn(s)}
                         >
                           Check-in
                         </Button>
