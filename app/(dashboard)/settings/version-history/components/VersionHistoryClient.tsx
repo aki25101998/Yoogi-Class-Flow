@@ -241,7 +241,7 @@ export default function VersionHistoryClient() {
           isCurrent={versions[0]?.id === selectedVersionId}
           isAdminOrOwner={isAdminOrOwner}
           onClose={() => setSelectedVersionId(null)}
-          onRestoreRequest={(version) => {
+          onRestoreRequest={(version: any) => {
             setSelectedVersionId(null);
             setVersionToRestore(version);
           }}
