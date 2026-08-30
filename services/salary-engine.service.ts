@@ -7,6 +7,7 @@
 // ============================================================
 
 import { createClient } from '@/utils/supabase/server';
+import { getBusinessDate, getBusinessDateString, parseBusinessDate } from '@/utils/date';
 import type {
   SalaryRule,
   SalaryRuleTier,
@@ -200,8 +201,8 @@ export async function previewSalaryCalculation(
     classType: params.classType || null,
     venueId: params.venueId || '',
     venueName: '',
-    date: params.date || new Date().toISOString().split('T')[0],
-    dayOfWeek: params.dayOfWeek ?? new Date().getDay(),
+    date: params.date || getBusinessDateString(),
+    dayOfWeek: params.dayOfWeek ?? getBusinessDate().getDay(),
     startTime: params.startTime || '18:00',
     endTime: params.endTime || '20:00',
     sessionStatus: 'checked_in',
@@ -274,7 +275,7 @@ async function buildSessionContext(
   const cls = (session as any).venue_classes;
   const venue = cls?.venues;
   const sessionDate = session.date;
-  const dateObj = new Date(sessionDate + 'T00:00:00');
+  const dateObj = parseBusinessDate(sessionDate);
 
   // 2. Resolve coach role from class_coaches
   let coachRole: CoachRole | null = null;
@@ -904,8 +905,14 @@ function timeToMinutes(time: string): number {
  * Get last day of a month in YYYY-MM-DD format.
  */
 function getLastDayOfMonth(month: string): string {
-  const [year, m] = month.split('-').map(Number);
-  const lastDay = new Date(year, m, 0).getDate();
+  const [yStr, mStr] = month.split('-');
+  const y = parseInt(yStr);
+  const m = parseInt(mStr);
+  // Construct a date at the end of the month safely in the local timezone
+  // Since we just need the last day of the month:
+  // new Date(y, m, 0) gives the last day of month 'm-1' which is correct in JS. 
+  // For timezones, the number of days in a month is constant regardless of timezone.
+  const lastDay = new Date(y, m, 0).getDate();
   return `${month}-${String(lastDay).padStart(2, '0')}`;
 }
 

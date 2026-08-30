@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useDashboardContext } from '../DashboardProvider';
+import { getBusinessDate } from '@/utils/date';
 import { useTodaySessions } from '@/hooks/useTodaySessions';
 import { checkInSessionAction } from '../dashboard/actions';
 import { useQueryClient } from '@tanstack/react-query';
@@ -18,7 +19,7 @@ export default function MyCheckinClient() {
   const organizationId = context?.organization?.id;
   const coachId = context?.membership?.user_id;
 
-  const todayObj = new Date();
+  const todayObj = getBusinessDate();
   const dateStr = todayObj.toLocaleDateString('en-CA');
   const displayDate = todayObj.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 

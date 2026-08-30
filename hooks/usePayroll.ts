@@ -26,6 +26,9 @@ export function usePayroll(organizationId: string | undefined) {
     queryKey: ['salaryConfigs', organizationId],
     queryFn: async () => {
       if (!organizationId) return [];
+      // @LEGACY: teacher_salaries is maintained for backward compatibility.
+      // The true source of truth is now salary_rules + Salary Engine.
+      // This will be migrated to use salary_rules natively in the UI later.
       const { data, error } = await supabase
         .from('teacher_salaries')
         .select('*')

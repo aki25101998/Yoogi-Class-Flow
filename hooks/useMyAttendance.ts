@@ -9,7 +9,7 @@ export function useMyAttendance(organizationId: string | undefined, coachId: str
     queryFn: async () => {
       if (!organizationId || !coachId) return [];
       const { data, error } = await supabase
-        .from('teacher_salary_sessions')
+        .from('class_sessions')
         .select('*, venue_classes(name)')
         .eq('organization_id', organizationId)
         .eq('coach_id', coachId)

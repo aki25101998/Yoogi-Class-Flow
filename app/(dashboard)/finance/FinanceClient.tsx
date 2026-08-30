@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { getBusinessDateString } from '@/utils/date';
 import { addTransactionAction, deleteTransactionAction } from './actions';
 import { useFinance } from '@/hooks/useFinance';
 import { useDashboardContext } from '../DashboardProvider';
@@ -38,7 +39,7 @@ export default function FinanceClient() {
   const queryClient = useQueryClient();
 
   const [isAdding, setIsAdding] = useState(false);
-  const [formData, setFormData] = useState({ type: 'income', category: '', amount: 0, date: new Date().toISOString().split('T')[0], description: '' });
+  const [formData, setFormData] = useState({ type: 'income', category: '', amount: 0, date: getBusinessDateString(), description: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -49,7 +50,7 @@ export default function FinanceClient() {
   const balance = totalIncome - totalExpense;
 
   const resetForm = () => {
-    setFormData({ type: 'income', category: '', amount: 0, date: new Date().toISOString().split('T')[0], description: '' });
+    setFormData({ type: 'income', category: '', amount: 0, date: getBusinessDateString(), description: '' });
     setIsAdding(false);
     setError('');
   };

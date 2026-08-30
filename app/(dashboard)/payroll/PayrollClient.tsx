@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { approveSalarySessionAction, payCoachSalaryAction, updateSalaryConfigAction, rejectSalarySessionAction, bulkApproveSessionsAction, getMonthlyPayrollAction } from './actions';
 import { usePayroll } from '@/hooks/usePayroll';
+import { getBusinessDate, getBusinessDateString, parseBusinessDate } from '@/utils/date';
 import { useDashboardContext } from '../DashboardProvider';
 import SalaryBreakdownModal from './components/SalaryBreakdownModal';
 import type { SalarySnapshot, MonthlyPayrollResult } from '@/types/salary';
@@ -29,7 +30,7 @@ function formatFullVND(n: number) {
 }
 
 function getCurrentMonthLabel() {
-  const d = new Date();
+  const d = getBusinessDate();
   return `Tháng ${d.getMonth() + 1}/${d.getFullYear()}`;
 }
 
@@ -107,7 +108,7 @@ export default function PayrollClient() {
 
   // Monthly summary state
   const [monthlyCoach, setMonthlyCoach] = useState<string | null>(null);
-  const [monthlyMonth, setMonthlyMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [monthlyMonth, setMonthlyMonth] = useState(getBusinessDateString().slice(0, 7));
   const [monthlyResult, setMonthlyResult] = useState<MonthlyPayrollResult | null>(null);
   const [monthlyLoading, setMonthlyLoading] = useState(false);
 
@@ -602,7 +603,7 @@ export default function PayrollClient() {
                                   const hasSnapshot = s.salary_config_snapshot && (s.status === 'approved' || s.status === 'paid');
                                   return (
                                     <tr key={s.id}>
-                                      <td>{new Date(s.date).toLocaleDateString('vi-VN')}</td>
+                                      <td>{parseBusinessDate(s.date).toLocaleDateString('vi-VN')}</td>
                                       <td style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={s.venue_classes?.name}>
                                         {s.venue_classes?.name || '—'}
                                       </td>

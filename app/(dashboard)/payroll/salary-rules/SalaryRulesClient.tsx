@@ -9,6 +9,7 @@ import {
   deactivateSalaryRuleAction,
 } from './actions';
 
+import { getBusinessDateString } from '@/utils/date';
 import { PageHeader } from '@/app/components/ui/PageHeader';
 import { Button } from '@/app/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
@@ -40,7 +41,7 @@ const DEFAULT_FORM: CreateSalaryRuleInput = {
   merge_mode: 'ADD',
   priority: 10,
   amount: 0,
-  effective_from: new Date().toISOString().split('T')[0],
+  effective_from: getBusinessDateString(),
 };
 
 export default function SalaryRulesClient() {

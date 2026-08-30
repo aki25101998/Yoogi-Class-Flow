@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server';
 import { getCurrentOrganizationContext } from '@/services/organization.service';
+import { getBusinessDateString } from '@/utils/date';
 import { revalidatePath } from 'next/cache';
 import type {
   CreateSalaryRuleInput,
@@ -282,7 +283,7 @@ export async function deactivateSalaryRuleAction(ruleId: string) {
     .from('salary_rules')
     .update({
       status: 'inactive',
-      effective_to: new Date().toISOString().split('T')[0],
+      effective_to: getBusinessDateString(),
       updated_at: new Date().toISOString(),
     })
     .eq('id', ruleId)

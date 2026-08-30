@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server';
 import { getCurrentOrganizationContext } from '@/services/organization.service';
+import { getBusinessDateString } from '@/utils/date';
 import { calculateSessionSalary, calculateMonthlyPayroll } from '@/services/salary-engine.service';
 import { revalidatePath } from 'next/cache';
 
@@ -268,7 +269,7 @@ export async function updateSalaryConfigAction(coachId: string, perSession: numb
       merge_mode: 'ADD',
       priority: 40,
       amount: perSession,
-      effective_from: new Date().toISOString().split('T')[0],
+      effective_from: getBusinessDateString(),
       status: 'active',
       created_by: context.profile?.id || null,
     }).select().single();
@@ -306,7 +307,7 @@ export async function updateSalaryConfigAction(coachId: string, perSession: numb
       merge_mode: 'ADD',
       priority: 40,
       amount: perStudent,
-      effective_from: new Date().toISOString().split('T')[0],
+      effective_from: getBusinessDateString(),
       status: 'active',
       created_by: context.profile?.id || null,
     }).select().single();

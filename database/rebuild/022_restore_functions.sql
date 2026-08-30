@@ -70,7 +70,7 @@ BEGIN
         JOIN public.version_history vh ON vh.id = vc.version_id
         WHERE vh.organization_id = p_org_id 
           AND vh.version_number > p_target_version_number
-        ORDER BY vh.version_number DESC, vc.created_at DESC
+        ORDER BY vh.version_number DESC, vc.sequence_id DESC
     LOOP
         BEGIN
             IF v_change.operation = 'INSERT' THEN

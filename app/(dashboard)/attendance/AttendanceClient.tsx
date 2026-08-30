@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { saveAttendanceAction } from './actions';
-import { useAttendance } from '@/hooks/useAttendance';
+import { useAttendance, AttendanceSessionInfo } from '@/hooks/useAttendance';
 import { useDashboardContext } from '../DashboardProvider';
 import { getBusinessDateString } from '@/utils/date';
 
@@ -21,39 +21,50 @@ export default function AttendanceClient() {
   const queryClient = useQueryClient();
 
   const [selectedDate, setSelectedDate] = useState(getBusinessDateString());
-  const [selectedClassId, setSelectedClassId] = useState('');
+  const [selectedSessionIdx, setSelectedSessionIdx] = useState<number | ''>('');
   
-  const { classes, allStudentAttendance, isLoading: isFetching } = useAttendance(organizationId, selectedDate);
+  const { sessions, isLoading: isFetching } = useAttendance(organizationId, selectedDate);
   const [attendanceRecords, setAttendanceRecords] = useState<any[]>([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const selectedClass = classes.find((c: any) => c.id === selectedClassId);
+  const selectedSession: AttendanceSessionInfo | undefined = typeof selectedSessionIdx === 'number' ? sessions[selectedSessionIdx] : undefined;
 
   useEffect(() => {
-    if (!selectedClassId) {
+    setSelectedSessionIdx('');
+  }, [selectedDate, sessions.length]);
+
+  useEffect(() => {
+    if (!selectedSession) {
       setAttendanceRecords([]);
       return;
     }
     
-    // Check if we have existing attendance for this date and class
-    const existingLog = allStudentAttendance.find((a: any) => a.class_id === selectedClassId && a.date === selectedDate);
-    
-    if (existingLog && existingLog.records) {
-      setAttendanceRecords(existingLog.records);
-    } else {
-      // Default to all present
-      if (selectedClass && selectedClass.class_students) {
-        const defaultRecords = selectedClass.class_students.map((cs: any) => ({
-          student_id: cs.student_id,
-          status: 'pending', // pending, present, absent, excused
+    if (selectedSession.attendanceRecords && selectedSession.attendanceRecords.length > 0) {
+      // If we have DB records, use them but ensure all students in class are represented
+      // so if a student enrolled after the attendance was taken, they show up as 'pending'
+      const existingMap = new Map(selectedSession.attendanceRecords.map(r => [r.student_id, r]));
+      
+      const mergedRecords = selectedSession.students.map(s => {
+        const existing = existingMap.get(s.student_id);
+        return existing || {
+          student_id: s.student_id,
+          status: 'pending',
           note: ''
-        }));
-        setAttendanceRecords(defaultRecords);
-      }
+        };
+      });
+      setAttendanceRecords(mergedRecords);
+    } else {
+      // Default to all pending
+      const defaultRecords = selectedSession.students.map(s => ({
+        student_id: s.student_id,
+        status: 'pending',
+        note: ''
+      }));
+      setAttendanceRecords(defaultRecords);
     }
-  }, [selectedClassId, selectedDate, allStudentAttendance, selectedClass]);
+  }, [selectedSession]);
 
   const handleStatusChange = (studentId: string, status: string) => {
     setAttendanceRecords(prev => prev.map(r => r.student_id === studentId ? { ...r, status } : r));
@@ -70,15 +81,23 @@ export default function AttendanceClient() {
   const handleSave = async () => {
     setError('');
     setSuccess('');
-    if (!selectedClassId || !selectedDate) return;
+    if (!selectedSession || !selectedDate) return;
     
     setLoading(true);
-    const res = await saveAttendanceAction(selectedClassId, selectedDate, attendanceRecords);
+    const res = await saveAttendanceAction(
+      selectedSession.classId, 
+      selectedDate, 
+      attendanceRecords,
+      selectedSession.scheduleId,
+      selectedSession.sessionId
+    );
     setLoading(false);
+    
     if (res.success) {
       setSuccess('Đã lưu điểm danh!');
       setTimeout(() => setSuccess(''), 3000);
-      queryClient.invalidateQueries({ queryKey: ['studentAttendance', organizationId] });
+      queryClient.invalidateQueries({ queryKey: ['attendanceData', organizationId, selectedDate] });
+      queryClient.invalidateQueries({ queryKey: ['todaySessions'] }); // also invalidate dashboard
     } else {
       setError(res.error || 'Lỗi khi lưu điểm danh');
     }
@@ -108,12 +127,15 @@ export default function AttendanceClient() {
             </div>
             <div className="flex-1 w-full">
               <Select 
-                label="Lớp học"
-                value={selectedClassId} 
-                onChange={e => setSelectedClassId(e.target.value)}
+                label="Ca học"
+                value={selectedSessionIdx} 
+                onChange={e => setSelectedSessionIdx(e.target.value === '' ? '' : Number(e.target.value))}
                 options={[
-                  { value: '', label: '-- Chọn lớp --' },
-                  ...classes.map((c: any) => ({ value: c.id, label: `${c.name} (${c.start_time}-${c.end_time})` }))
+                  { value: '', label: '-- Chọn ca học --' },
+                  ...sessions.map((s, idx) => ({ 
+                    value: String(idx), 
+                    label: `${s.className} (${s.startTime || '??'}-${s.endTime || '??'}) ${s.status === 'cancelled' ? '[Đã hủy]' : ''}` 
+                  }))
                 ]}
               />
             </div>
@@ -124,16 +146,16 @@ export default function AttendanceClient() {
       {error && <div className="text-danger text-sm font-medium">{error}</div>}
       {success && <div className="text-success text-sm font-medium">{success}</div>}
 
-      {selectedClassId ? (
+      {selectedSession ? (
         <Card>
           <div className="overflow-x-auto">
             <div className="flex justify-between items-center p-4 border-b border-light">
-              <h3 className="font-semibold text-main">Danh sách học viên ({selectedClass?.class_students?.length || 0})</h3>
+              <h3 className="font-semibold text-main">Danh sách học viên ({selectedSession.students.length})</h3>
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={handleMarkAllPresent}
-                disabled={selectedClass?.class_students?.length === 0}
+                disabled={selectedSession.students.length === 0}
                 leftIcon={<span className="material-icons-round">done_all</span>}
               >
                 Tất cả có mặt
@@ -148,29 +170,30 @@ export default function AttendanceClient() {
                 </Tr>
               </Thead>
               <Tbody>
-                {selectedClass?.class_students?.length === 0 ? (
+                {selectedSession.students.length === 0 ? (
                   <Tr>
                     <Td colSpan={3} className="text-center text-muted italic py-8">
                       Lớp chưa có học viên.
                     </Td>
                   </Tr>
                 ) : (
-                  selectedClass?.class_students?.map((cs: any) => {
-                    const record = attendanceRecords.find(r => r.student_id === cs.student_id);
+                  selectedSession.students.map((student: any) => {
+                    const record = attendanceRecords.find(r => r.student_id === student.student_id);
                     if (!record) return null;
                     
                     return (
-                      <Tr key={cs.student_id}>
-                        <Td className="font-medium text-main">{cs.students?.name}</Td>
+                      <Tr key={student.student_id}>
+                        <Td className="font-medium text-main">{student.name}</Td>
                         <Td>
                           <Select 
                             value={record.status} 
-                            onChange={(e) => handleStatusChange(cs.student_id, e.target.value)}
+                            onChange={(e) => handleStatusChange(student.student_id, e.target.value)}
                             options={[
                               { value: 'pending', label: 'Chưa điểm danh' },
                               { value: 'present', label: 'Có mặt' },
                               { value: 'absent', label: 'Vắng' },
-                              { value: 'excused', label: 'Có phép' }
+                              { value: 'excused', label: 'Có phép' },
+                              { value: 'late', label: 'Đi muộn' }
                             ]}
                           />
                         </Td>
@@ -179,7 +202,7 @@ export default function AttendanceClient() {
                             type="text" 
                             placeholder="Ghi chú..." 
                             value={record.note} 
-                            onChange={(e) => handleNoteChange(cs.student_id, e.target.value)}
+                            onChange={(e) => handleNoteChange(student.student_id, e.target.value)}
                           />
                         </Td>
                       </Tr>
@@ -192,7 +215,7 @@ export default function AttendanceClient() {
           <div className="p-4 bg-surface-hover border-t border-light flex justify-end">
             <Button 
               onClick={handleSave} 
-              disabled={selectedClass?.class_students?.length === 0 || loading} 
+              disabled={selectedSession.students.length === 0 || loading || selectedSession.status === 'cancelled'} 
               isLoading={loading}
               variant="primary"
               leftIcon={<span className="material-icons-round">save</span>}
@@ -203,8 +226,8 @@ export default function AttendanceClient() {
         </Card>
       ) : (
         <EmptyState 
-          title="Chưa chọn lớp" 
-          description="Vui lòng chọn ngày và lớp học để tiến hành điểm danh." 
+          title="Chưa chọn ca học" 
+          description="Vui lòng chọn ngày và ca học để tiến hành điểm danh." 
           icon="event_available"
         />
       )}

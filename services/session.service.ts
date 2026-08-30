@@ -1,4 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
+import { parseBusinessDate } from '@/utils/date';
 
 export interface ClassSession {
   isVirtual: boolean; // True if it's generated from schedule and not yet saved in DB
@@ -23,7 +24,7 @@ export async function getSessionsForDate(organizationId: string, dateStr: string
   const supabase = await createClient();
   
   // 1. Get day of week
-  const dateObj = new Date(dateStr);
+  const dateObj = parseBusinessDate(dateStr);
   const dayOfWeek = dateObj.getDay(); // 0 (Sun) to 6 (Sat)
 
   // 2. Fetch periodic schedules

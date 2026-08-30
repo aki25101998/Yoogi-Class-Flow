@@ -7,12 +7,10 @@ import { useDashboardContext } from "@/app/(dashboard)/DashboardProvider";
 import VersionDetailModal from "./VersionDetailModal";
 import RestoreConfirmation from "./RestoreConfirmation";
 
-import { getBusinessDate } from '@/utils/date';
+import { getBusinessDate, formatBusinessDateVN, formatBusinessTime, getBusinessDateString } from '@/utils/date';
+import { PageHeader } from '@/app/components/ui/PageHeader';
 
-const formatDateStr = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-const formatDisplay = (d: Date) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-const formatTime = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-
+// Removed local formatters in favor of imported business timezone ones
 export default function VersionHistoryClient() {
   const { context, userData } = useDashboardContext();
   const queryClient = useQueryClient();
@@ -101,23 +99,31 @@ export default function VersionHistoryClient() {
     );
   }
 
-  // Group by date
   const groupedVersions: Record<string, any[]> = {};
   versions.forEach(v => {
-    const dateStr = formatDateStr(new Date(v.created_at));
+    // v.created_at is TIMESTAMPTZ, so we convert it to the business timezone date string
+    // for grouping. A simple way is to parse it into business Date and extract YYYY-MM-DD.
+    // wait, getBusinessDate() trick doesn't work for arbitrary strings.
+    // Let's use formatBusinessDateVN and split.
+    const displayDate = formatBusinessDateVN(v.created_at); // DD/MM/YYYY
+    const [dd, mm, yyyy] = displayDate.split('/');
+    const dateStr = `${yyyy}-${mm}-${dd}`;
+    
     if (!groupedVersions[dateStr]) groupedVersions[dateStr] = [];
     groupedVersions[dateStr].push(v);
   });
 
   const getDisplayDate = (dateStr: string) => {
-    const today = formatDateStr(getBusinessDate());
+    const today = getBusinessDateString();
     const yesterdayDate = getBusinessDate();
     yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-    const yesterday = formatDateStr(yesterdayDate);
+    const yesterday = yesterdayDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }); // YYYY-MM-DD
     
     if (dateStr === today) return "Hôm nay";
     if (dateStr === yesterday) return "Hôm qua";
-    return formatDisplay(new Date(dateStr));
+    // dateStr is YYYY-MM-DD, convert to DD/MM/YYYY
+    const [y, m, d] = dateStr.split('-');
+    return `${d}/${m}/${y}`;
   };
 
   return (
@@ -199,7 +205,7 @@ export default function VersionHistoryClient() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-main)' }}>
-                          {formatTime(new Date(version.created_at))} — {profile?.name || 'Hệ thống'}
+                          {formatBusinessTime(version.created_at)} — {profile?.name || 'Hệ thống'}
                         </span>
                       </div>
                       <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', background: 'var(--surface)', border: '1px solid var(--border-light)', padding: '2px 8px', borderRadius: '12px' }}>

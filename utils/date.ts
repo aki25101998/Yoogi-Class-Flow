@@ -38,3 +38,28 @@ export function parseBusinessDate(dateString: string, timezone: string = DEFAULT
   // Since we usually just pass date strings directly to DB, we mainly need the string representation.
   return new Date(`${dateString}T00:00:00`);
 }
+
+/**
+ * Formats a Date object or string into HH:MM according to the business timezone.
+ */
+export function formatBusinessTime(date: Date | string, timezone: string = DEFAULT_TIMEZONE): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return new Intl.DateTimeFormat('vi-VN', {
+    timeZone: timezone,
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(d);
+}
+
+/**
+ * Formats a Date object or string into DD/MM/YYYY according to the business timezone.
+ */
+export function formatBusinessDateVN(date: Date | string, timezone: string = DEFAULT_TIMEZONE): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return new Intl.DateTimeFormat('vi-VN', {
+    timeZone: timezone,
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(d);
+}

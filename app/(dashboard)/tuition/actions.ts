@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server';
 import { getCurrentOrganizationContext } from '@/services/organization.service';
+import { getBusinessDateString } from '@/utils/date';
 import { revalidatePath } from 'next/cache';
 
 export async function addTuitionAction(data: { student_id: string; class_id: string; amount: number; due_date: string }) {
@@ -74,7 +75,7 @@ export async function recordPaymentAction(id: string, paymentAmount: number) {
     type: 'income',
     category: 'tuition',
     amount: paymentAmount,
-    date: new Date().toISOString().split('T')[0],
+    date: getBusinessDateString(),
     description: `Thanh toán học phí cho ID: ${id}`,
     reference_id: id
   });
