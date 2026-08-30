@@ -16,6 +16,7 @@ DECLARE
     v_record_id UUID;
     v_before_data JSONB;
     v_after_data JSONB;
+    v_summary TEXT;
 BEGIN
     -- Only capture for business operations, ignore if disabled
     IF current_setting('app.disable_audit', true) = 'true' THEN
@@ -69,8 +70,6 @@ BEGIN
     -- 4. If no context, create a new version history (Auto-Grouping for single REST calls)
     IF v_version_id IS NULL THEN
         -- Get custom summary if provided via headers
-        DECLARE
-            v_summary TEXT;
         BEGIN
             v_summary := current_setting('request.headers', true)::jsonb->>'x-version-summary';
         EXCEPTION WHEN OTHERS THEN
