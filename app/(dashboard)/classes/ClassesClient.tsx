@@ -5,7 +5,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { addClassAction, updateClassAction, enrollStudentAction, unenrollStudentAction } from './actions';
 import { useClasses } from '@/hooks/useClasses';
 import { useDashboardContext } from '../DashboardProvider';
-import { ExportButton } from '@/app/components/excel/ExportButton';
+import dynamic from 'next/dynamic';
+const ExportButton = dynamic(() => import('@/app/components/excel/ExportButton').then(mod => mod.ExportButton), { ssr: false });
 import { ClassesExportDef } from '@/services/excel/definitions/classes.def';
 
 // UI Components

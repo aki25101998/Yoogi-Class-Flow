@@ -6,7 +6,8 @@ import { getBusinessDateString } from '@/utils/date';
 import { addTransactionAction, deleteTransactionAction } from './actions';
 import { useFinance } from '@/hooks/useFinance';
 import { useDashboardContext } from '../DashboardProvider';
-import { ExportButton } from '@/app/components/excel/ExportButton';
+import dynamic from 'next/dynamic';
+const ExportButton = dynamic(() => import('@/app/components/excel/ExportButton').then(mod => mod.ExportButton), { ssr: false });
 import { FinanceExportDef } from '@/services/excel/definitions/finance.def';
 
 // UI Components

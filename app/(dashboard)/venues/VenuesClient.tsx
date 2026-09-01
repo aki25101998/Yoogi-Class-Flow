@@ -5,8 +5,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { addVenueAction, updateVenueAction, deleteVenueAction, importVenuesBatchAction } from './actions';
 import { useVenues } from '@/hooks/useVenues';
 import { useDashboardContext } from '../DashboardProvider';
-import { ImportModal } from '@/app/components/excel/ImportModal';
-import { ExportButton } from '@/app/components/excel/ExportButton';
+import dynamic from 'next/dynamic';
+const ImportModal = dynamic(() => import('@/app/components/excel/ImportModal').then(mod => mod.ImportModal), { ssr: false });
+const ExportButton = dynamic(() => import('@/app/components/excel/ExportButton').then(mod => mod.ExportButton), { ssr: false });
 import { VenuesImportDef, VenuesExportDef } from '@/services/excel/definitions/venues.def';
 
 // UI Components

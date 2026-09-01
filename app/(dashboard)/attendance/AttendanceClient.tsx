@@ -6,7 +6,8 @@ import { saveAttendanceAction } from './actions';
 import { useAttendance, AttendanceSessionInfo } from '@/hooks/useAttendance';
 import { useDashboardContext } from '../DashboardProvider';
 import { getBusinessDateString } from '@/utils/date';
-import { ExportButton } from '@/app/components/excel/ExportButton';
+import dynamic from 'next/dynamic';
+const ExportButton = dynamic(() => import('@/app/components/excel/ExportButton').then(mod => mod.ExportButton), { ssr: false });
 import { AttendanceExportDef } from '@/services/excel/definitions/attendance.def';
 
 // UI Components

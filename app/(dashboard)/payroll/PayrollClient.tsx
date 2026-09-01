@@ -9,7 +9,8 @@ import { useDashboardContext } from '../DashboardProvider';
 import SalaryBreakdownModal from './components/SalaryBreakdownModal';
 import type { SalarySnapshot, MonthlyPayrollResult } from '@/types/salary';
 import styles from './PayrollClient.module.css';
-import { ExportButton } from '@/app/components/excel/ExportButton';
+import dynamic from 'next/dynamic';
+const ExportButton = dynamic(() => import('@/app/components/excel/ExportButton').then(mod => mod.ExportButton), { ssr: false });
 import { PayrollExportDef } from '@/services/excel/definitions/payroll.def';
 
 // UI Components

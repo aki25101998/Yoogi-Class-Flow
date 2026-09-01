@@ -25,40 +25,38 @@ export const prefetchRouteData = (
       queryClient.prefetchQuery({
         queryKey: ['schedules', organizationId],
         queryFn: async () => {
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from('schedules')
             .select('*, venue_classes(name), coaches(id, organization_members(profiles(name))), venues(name)')
             .eq('organization_id', organizationId)
+            .eq('status', 'active')
             .order('start_time', { ascending: true });
+          if (error) throw error;
           return data || [];
         }
       });
       break;
 
     case '/attendance':
-      queryClient.prefetchQuery({
-        queryKey: ['attendanceClasses', organizationId],
-        queryFn: async () => {
-          const { data } = await supabase
-            .from('venue_classes')
-            .select('*, class_students(student_id, students(name))')
-            .eq('organization_id', organizationId)
-            .eq('status', 'active');
-          return data || [];
-        }
-      });
+      // Attendance data depends heavily on the currently selected date (defaulting to today).
+      // Since prefetching doesn't have the date context easily accessible without duplicating logic,
+      // we defer fetching to the AttendanceClient component to avoid cache pollution.
       break;
 
     case '/students':
       queryClient.prefetchQuery({
         queryKey: ['students', organizationId],
         queryFn: async () => {
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from('students')
-            .select('*, class_students(venue_classes(name))')
+            .select('*, organization_belts(name), venues(name), class_students(id, class_id, status, venue_classes(name, start_time, end_time, venues(name)))')
             .eq('organization_id', organizationId)
             .order('created_at', { ascending: false });
-          return data || [];
+          if (error) throw error;
+          return data?.map(student => ({
+            ...student,
+            class_students: student.class_students?.filter((cs: any) => cs.status === 'active') || []
+          })) || [];
         }
       });
       break;
@@ -67,11 +65,11 @@ export const prefetchRouteData = (
       queryClient.prefetchQuery({
         queryKey: ['classes', organizationId],
         queryFn: async () => {
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from('venue_classes')
-            .select('*, venues(name), class_coaches(*, coaches(id, organization_members(profiles(name))))')
-            .eq('organization_id', organizationId)
-            .order('created_at', { ascending: false });
+            .select('*, venues(name), class_coaches(*, coaches(id, organization_members(profiles(name)))), class_students(id, student_id, status, students(name, phone))')
+            .eq('organization_id', organizationId);
+          if (error) throw error;
           return data || [];
         }
       });

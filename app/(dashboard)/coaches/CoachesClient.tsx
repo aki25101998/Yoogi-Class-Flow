@@ -14,8 +14,9 @@ import {
 import { OrganizationRole } from '@/types/organization';
 import { useCoaches } from '@/hooks/useCoaches';
 import { useDashboardContext } from '../DashboardProvider';
-import { ImportModal } from '@/app/components/excel/ImportModal';
-import { ExportButton } from '@/app/components/excel/ExportButton';
+import dynamic from 'next/dynamic';
+const ImportModal = dynamic(() => import('@/app/components/excel/ImportModal').then(mod => mod.ImportModal), { ssr: false });
+const ExportButton = dynamic(() => import('@/app/components/excel/ExportButton').then(mod => mod.ExportButton), { ssr: false });
 import { CoachesImportDef, CoachesExportDef } from '@/services/excel/definitions/coaches.def';
 
 // UI Components
