@@ -138,27 +138,27 @@ export default function BeltsClient() {
         </ModalFooter>
       </Modal>
 
-      <div className="bg-surface rounded-lg border border-light overflow-hidden">
+      <div className="bg-surface rounded-lg border border-light overflow-x-auto">
         {isLoading ? (
           <div className="p-8 text-center text-secondary">Đang tải...</div>
         ) : belts.length === 0 ? (
           <div className="p-8 text-center text-secondary">Chưa có cấp đai nào. Hãy tạo cấp đai đầu tiên.</div>
         ) : (
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse min-w-[600px]">
             <thead>
               <tr className="border-b border-light bg-surface-hover">
-                <th className="p-4 font-medium text-secondary text-sm">Thứ tự</th>
-                <th className="p-4 font-medium text-secondary text-sm">Tên cấp đai</th>
-                <th className="p-4 font-medium text-secondary text-sm">Trạng thái</th>
+                <th className="p-4 font-medium text-secondary text-sm text-left">Thứ tự</th>
+                <th className="p-4 font-medium text-secondary text-sm text-left">Tên cấp đai</th>
+                <th className="p-4 font-medium text-secondary text-sm text-left">Trạng thái</th>
                 <th className="p-4 font-medium text-secondary text-sm text-right">Hành động</th>
               </tr>
             </thead>
             <tbody>
               {belts.map((belt) => (
                 <tr key={belt.id} className="border-b border-light last:border-b-0 hover:bg-surface-hover/50">
-                  <td className="p-4 text-main">{belt.display_order}</td>
-                  <td className="p-4 font-medium text-main">{belt.name}</td>
-                  <td className="p-4">
+                  <td className="p-4 text-main text-left">{belt.display_order}</td>
+                  <td className="p-4 font-medium text-main text-left">{belt.name}</td>
+                  <td className="p-4 text-left">
                     <Badge variant={belt.is_active ? 'success' : 'default'}>
                       {belt.is_active ? 'Đang dùng' : 'Tạm ẩn'}
                     </Badge>
