@@ -4,13 +4,31 @@ import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { CoachesService } from '@/services/coaches.service';
 
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+const getExtensionFromMimeType = (mimeType: string) => {
+  switch (mimeType) {
+    case 'image/jpeg': return 'jpg';
+    case 'image/png': return 'png';
+    case 'image/webp': return 'webp';
+    default: return 'jpg';
+  }
+};
+
+const getFormString = (formData: FormData, key: string): string | null => {
+  const val = formData.get(key);
+  if (typeof val === 'string') return val.trim();
+  return null;
+};
+
 export async function updateMyCoachProfile(formData: FormData) {
   try {
     const supabase = await createClient();
     const { data: userData, error: userError } = await supabase.auth.getUser();
 
     if (userError || !userData?.user) {
-      return { success: false, error: 'Not authenticated' };
+      return { success: false, error: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.' };
     }
 
     const authUserId = userData.user.id;
@@ -18,27 +36,35 @@ export async function updateMyCoachProfile(formData: FormData) {
     // Get current profile & coach ID using the existing service
     const currentCoach = await CoachesService.getCoachByAuthId(authUserId);
     if (!currentCoach) {
-      return { success: false, error: 'Coach profile not found' };
+      return { success: false, error: 'Không tìm thấy hồ sơ huấn luyện viên.' };
     }
 
-    // Extract data from formData
-    const name = formData.get('name') as string;
-    const phone = formData.get('phone') as string;
-    const cccd = formData.get('cccd') as string;
-    const level = formData.get('level') as string;
-    const membershipNumber = formData.get('membership_number') as string;
-    const avatarFile = formData.get('avatar') as File | null;
+    // Extract data from formData and validate type
+    const name = getFormString(formData, 'name');
+    const phone = getFormString(formData, 'phone');
+    const cccd = getFormString(formData, 'cccd');
+    const level = getFormString(formData, 'level');
+    const membershipNumber = getFormString(formData, 'membership_number');
+    const avatarFile = formData.get('avatar');
 
-    if (!name || name.trim() === '') {
-      return { success: false, error: 'Họ và tên không được để trống' };
+    if (!name || name === '') {
+      return { success: false, error: 'Họ và tên không được để trống.' };
     }
 
     let avatarUrl = currentCoach.avatar_url;
 
     // Handle avatar upload if present
-    if (avatarFile && avatarFile.size > 0) {
-      // Create a unique filename
-      const fileExt = avatarFile.name.split('.').pop();
+    if (avatarFile instanceof File && avatarFile.size > 0) {
+      if (avatarFile.size > MAX_FILE_SIZE) {
+        return { success: false, error: 'Ảnh đại diện không được vượt quá 2MB.' };
+      }
+      
+      if (!ALLOWED_MIME_TYPES.includes(avatarFile.type)) {
+        return { success: false, error: 'Định dạng ảnh không được hỗ trợ (chỉ chấp nhận JPG, PNG, WEBP).' };
+      }
+
+      // Create a unique filename based on mimetype instead of client filename
+      const fileExt = getExtensionFromMimeType(avatarFile.type);
       const fileName = `${authUserId}-${crypto.randomUUID()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
 
@@ -47,13 +73,12 @@ export async function updateMyCoachProfile(formData: FormData) {
         .upload(filePath, avatarFile, {
           cacheControl: '3600',
           upsert: true,
+          contentType: avatarFile.type,
         });
 
       if (uploadError) {
         console.error('Upload avatar error:', uploadError);
-        // We'll continue even if upload fails, but it's better to return an error in real apps.
-        // Or create the bucket if it doesn't exist? Since we can't create bucket here easily without service key, 
-        // we assume the bucket 'avatars' exists and is public.
+        return { success: false, error: 'Không thể tải ảnh đại diện lên. Vui lòng thử lại.' };
       } else {
         const { data: publicUrlData } = supabase.storage
           .from('avatars')
@@ -71,13 +96,13 @@ export async function updateMyCoachProfile(formData: FormData) {
       .single();
 
     if (!profile) {
-      return { success: false, error: 'Profile not found' };
+      return { success: false, error: 'Không tìm thấy thông tin tài khoản.' };
     }
 
     const { error: profileUpdateError } = await supabase
       .from('profiles')
       .update({
-        name: name.trim(),
+        name: name,
         avatar_url: avatarUrl,
         updated_at: new Date().toISOString(),
       })
@@ -85,24 +110,26 @@ export async function updateMyCoachProfile(formData: FormData) {
 
     if (profileUpdateError) {
       console.error('Profile update error:', profileUpdateError);
-      return { success: false, error: 'Failed to update profile data' };
+      return { success: false, error: 'Lỗi khi cập nhật thông tin tài khoản.' };
     }
 
     // Update coaches table
     const { error: coachUpdateError } = await supabase
       .from('coaches')
       .update({
-        phone: phone ? phone.trim() : null,
-        cccd: cccd ? cccd.trim() : null,
-        level: level ? level.trim() : null,
-        membership_number: membershipNumber ? membershipNumber.trim() : null,
+        phone: phone || null,
+        cccd: cccd || null,
+        level: level || null,
+        membership_number: membershipNumber || null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', currentCoach.id);
 
     if (coachUpdateError) {
       console.error('Coach update error:', coachUpdateError);
-      return { success: false, error: 'Failed to update coach data' };
+      // Even if coach update fails but profile update succeeded, we should report error.
+      // A transaction would be better, but we stick to existing architecture.
+      return { success: false, error: 'Lỗi khi cập nhật thông tin huấn luyện viên.' };
     }
 
     // Revalidate paths
@@ -112,6 +139,6 @@ export async function updateMyCoachProfile(formData: FormData) {
     return { success: true, avatarUrl };
   } catch (error: any) {
     console.error('updateMyCoachProfile error:', error);
-    return { success: false, error: 'An unexpected error occurred' };
+    return { success: false, error: 'Đã xảy ra lỗi không xác định. Vui lòng thử lại.' };
   }
 }

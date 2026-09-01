@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDashboardContext } from '../DashboardProvider';
 import { updateMyCoachProfile } from '@/app/actions/profile.actions';
+import { OrganizationRole } from '@/types/organization';
 
 // UI Components
 import { PageHeader } from '@/app/components/ui/PageHeader';
@@ -73,6 +74,8 @@ export default function ProfileFormClient() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     setError('');
     setSuccess('');
     setIsSubmitting(true);
@@ -102,7 +105,7 @@ export default function ProfileFormClient() {
       setTimeout(() => setSuccess(''), 3000);
       router.refresh();
     } else {
-      setError(res.error || 'Lỗi khi cập nhật hồ sơ');
+      setError(res.error || 'Lỗi khi cập nhật hồ sơ. Vui lòng thử lại.');
     }
     
     setIsSubmitting(false);
@@ -117,69 +120,27 @@ export default function ProfileFormClient() {
         description="Quản lý thông tin cá nhân và hồ sơ huấn luyện viên của bạn."
       />
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-6)' }}>
+      <div className="flex flex-wrap gap-6">
         {/* Cột trái: Thông tin hiển thị */}
-        <div style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+        <div className="flex-[1_1_300px] flex flex-col gap-6">
           <Card>
-            <CardContent style={{ padding: 'var(--space-8) var(--space-6)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div 
-                style={{
-                  position: 'relative',
-                  marginBottom: 'var(--space-5)',
-                  display: 'flex',
-                  justifyContent: 'center'
-                }}
-              >
+            <CardContent className="py-8 px-6 flex flex-col items-center">
+              <div className="relative mb-5 flex justify-center">
                 <div 
-                  style={{
-                    width: '128px',
-                    height: '128px',
-                    borderRadius: '50%',
-                    border: '4px solid var(--surface)',
-                    overflow: 'hidden',
-                    backgroundColor: 'var(--surface-hover)',
-                    boxShadow: 'var(--shadow-lg)',
-                    position: 'relative',
-                    cursor: 'pointer',
-                    transition: 'transform 0.2s'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.05)';
-                    const overlay = e.currentTarget.querySelector('.avatar-overlay') as HTMLElement;
-                    if (overlay) overlay.style.opacity = '1';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)';
-                    const overlay = e.currentTarget.querySelector('.avatar-overlay') as HTMLElement;
-                    if (overlay) overlay.style.opacity = '0';
-                  }}
+                  className="w-32 h-32 rounded-full border-4 border-surface overflow-hidden bg-surface-hover shadow-lg relative cursor-pointer transition-transform duration-200 hover:scale-105 group"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   {avatarPreview ? (
-                    <img src={avatarPreview} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
                   ) : (
-                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                    <div className="w-full h-full flex items-center justify-center text-5xl font-semibold text-muted">
                       {displayName.charAt(0).toUpperCase()}
                     </div>
                   )}
                   
-                  <div 
-                    className="avatar-overlay"
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      opacity: 0,
-                      transition: 'opacity 0.2s',
-                      gap: '4px'
-                    }}
-                  >
-                    <span className="material-icons-round" style={{ color: 'white', fontSize: '24px' }}>photo_camera</span>
-                    <span style={{ color: 'white', fontSize: '12px', fontWeight: 500 }}>Thay đổi</span>
+                  <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 gap-1">
+                    <span className="material-icons-round text-white text-2xl">photo_camera</span>
+                    <span className="text-white text-xs font-medium">Thay đổi</span>
                   </div>
                 </div>
                 
@@ -192,27 +153,10 @@ export default function ProfileFormClient() {
                       setAvatarPreview(profile?.avatar_url || null);
                       if (fileInputRef.current) fileInputRef.current.value = '';
                     }}
-                    style={{
-                      position: 'absolute',
-                      bottom: '4px',
-                      right: '0',
-                      backgroundColor: 'var(--danger)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '50%',
-                      padding: '6px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      boxShadow: 'var(--shadow-md)',
-                      transition: 'background-color 0.2s'
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--danger-hover)'}
-                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--danger)'}
+                    className="absolute bottom-1 right-0 bg-danger text-white border-none rounded-full p-1.5 flex items-center justify-center cursor-pointer shadow-md transition-colors duration-200 hover:bg-danger-hover z-10"
                     title="Xóa ảnh đã chọn"
                   >
-                    <span className="material-icons-round" style={{ fontSize: '16px' }}>close</span>
+                    <span className="material-icons-round text-base">close</span>
                   </button>
                 )}
               </div>
@@ -220,29 +164,30 @@ export default function ProfileFormClient() {
               <input 
                 type="file" 
                 ref={fileInputRef}
-                style={{ display: 'none' }}
+                className="hidden"
                 accept="image/*"
                 onChange={handleAvatarChange}
+                aria-label="Tải ảnh đại diện"
               />
               
-              <div style={{ width: '100%', textAlign: 'center' }}>
-                <h3 style={{ fontWeight: 700, fontSize: '1.25rem', color: 'var(--text-main)', marginBottom: '8px' }}>{displayName}</h3>
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
-                  <RoleBadge role={profile.role as any} />
+              <div className="w-full text-center">
+                <h3 className="font-bold text-xl text-main mb-2">{displayName}</h3>
+                <div className="flex justify-center mb-5">
+                  <RoleBadge role={profile.role as OrganizationRole} />
                 </div>
                 
                 <Button 
                   type="button" 
                   variant="outline" 
-                  style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
-                  leftIcon={<span className="material-icons-round" style={{ fontSize: '16px' }}>cloud_upload</span>}
+                  className="w-full flex justify-center"
+                  leftIcon={<span className="material-icons-round text-base">cloud_upload</span>}
                   onClick={() => fileInputRef.current?.click()}
                 >
                   Tải ảnh mới lên
                 </Button>
                 {avatarFile && (
-                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '0 8px' }} title={avatarFile.name}>
-                    Đã chọn: <span style={{ color: 'var(--text-main)', fontWeight: 500 }}>{avatarFile.name}</span>
+                  <div className="text-xs text-secondary mt-2 overflow-hidden text-ellipsis whitespace-nowrap px-2" title={avatarFile.name}>
+                    Đã chọn: <span className="text-main font-medium">{avatarFile.name}</span>
                   </div>
                 )}
               </div>
@@ -256,11 +201,12 @@ export default function ProfileFormClient() {
             <CardContent className="pt-4 flex flex-col gap-3 text-sm">
               <div className="flex justify-between border-b border-light pb-2">
                 <span className="text-secondary">Email</span>
-                <span className="font-medium text-main">{profile.email || user?.email}</span>
+                <span className="font-medium text-main truncate max-w-[200px]" title={profile.email || user?.email}>{profile.email || user?.email}</span>
               </div>
               <div className="flex justify-between border-b border-light pb-2">
                 <span className="text-secondary">Vai trò</span>
-                <span className="font-medium text-main" style={{ textTransform: 'uppercase' }}>{profile.role}</span>
+                {/* Rely on RoleBadge logic for uppercase label natively, or just display raw if not in ROLE_LABELS */}
+                <span className="font-medium text-main uppercase">{profile.role}</span>
               </div>
               <div className="flex justify-between border-b border-light pb-2">
                 <span className="text-secondary">Cơ sở</span>
@@ -277,19 +223,19 @@ export default function ProfileFormClient() {
         </div>
 
         {/* Cột phải: Form chỉnh sửa */}
-        <div style={{ flex: '2 1 500px' }}>
+        <div className="flex-[2_1_500px]">
           <Card>
             <CardHeader className="border-b border-light pb-4">
               <CardTitle>Chỉnh sửa hồ sơ</CardTitle>
             </CardHeader>
             
             <CardContent className="pt-6">
-              {error && <div className="text-danger mb-4 text-sm bg-danger-bg p-3 rounded-md">{error}</div>}
-              {success && <div className="text-success mb-4 text-sm bg-success-bg p-3 rounded-md">{success}</div>}
+              {error && <div className="text-danger mb-4 text-sm bg-danger-bg p-3 rounded-md" role="alert">{error}</div>}
+              {success && <div className="text-success mb-4 text-sm bg-success-bg p-3 rounded-md" role="alert">{success}</div>}
               
               <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-6)' }}>
-                  <div style={{ flex: '1 1 calc(50% - 12px)' }}>
+                <div className="flex flex-wrap gap-6">
+                  <div className="flex-[1_1_calc(50%-12px)] min-w-[200px]">
                     <Input 
                       label="Họ và tên"
                       required 
@@ -297,28 +243,28 @@ export default function ProfileFormClient() {
                       onChange={e => setFormData({...formData, name: e.target.value})} 
                     />
                   </div>
-                  <div style={{ flex: '1 1 calc(50% - 12px)' }}>
+                  <div className="flex-[1_1_calc(50%-12px)] min-w-[200px]">
                     <Input 
                       label="Số điện thoại"
                       value={formData.phone} 
                       onChange={e => setFormData({...formData, phone: e.target.value})} 
                     />
                   </div>
-                  <div style={{ flex: '1 1 calc(50% - 12px)' }}>
+                  <div className="flex-[1_1_calc(50%-12px)] min-w-[200px]">
                     <Input 
                       label="Số CCCD"
                       value={formData.cccd} 
                       onChange={e => setFormData({...formData, cccd: e.target.value})} 
                     />
                   </div>
-                  <div style={{ flex: '1 1 calc(50% - 12px)' }}>
+                  <div className="flex-[1_1_calc(50%-12px)] min-w-[200px]">
                     <Input 
                       label="Mã hội viên"
                       value={formData.membership_number} 
                       onChange={e => setFormData({...formData, membership_number: e.target.value})} 
                     />
                   </div>
-                  <div style={{ flex: '1 1 calc(50% - 12px)' }}>
+                  <div className="flex-[1_1_calc(50%-12px)] min-w-[200px]">
                     <Input 
                       label="Cấp đai"
                       value={formData.level} 
@@ -327,7 +273,7 @@ export default function ProfileFormClient() {
                   </div>
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-light flex justify-end gap-3">
+                <div className="mt-4 pt-4 border-t border-light flex justify-end gap-3 flex-wrap">
                   <Button 
                     type="button" 
                     variant="outline"
@@ -366,3 +312,4 @@ export default function ProfileFormClient() {
     </div>
   );
 }
+
