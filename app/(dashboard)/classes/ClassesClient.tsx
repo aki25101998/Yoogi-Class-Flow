@@ -329,9 +329,11 @@ export default function ClassesClient() {
             <p className="text-muted text-sm italic">Lớp chưa có học viên nào.</p>
           ) : (
             <ul className="flex-col gap-2 max-h-64 overflow-y-auto">
-              {activeStudentsInModal.map((assignment: any) => (
+              {activeStudentsInModal.map((assignment: any) => {
+                const studentName = assignment.students?.name || availableStudents.find((s: any) => s.id === assignment.student_id)?.name || 'Không rõ tên';
+                return (
                 <li key={assignment.id} className="flex justify-between items-center p-3 bg-background rounded-md border border-light">
-                  <span className="font-medium text-main">{assignment.students?.name}</span>
+                  <span className="font-medium text-main">{studentName}</span>
                   <Button 
                     variant="ghost" 
                     size="sm"
@@ -343,7 +345,7 @@ export default function ClassesClient() {
                     Xóa
                   </Button>
                 </li>
-              ))}
+              )})}
             </ul>
           )}
         </ModalBody>

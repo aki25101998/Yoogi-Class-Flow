@@ -5,17 +5,18 @@ export function usePayroll(organizationId: string | undefined) {
   const supabase = createClient();
 
   const { data: coaches = [], isLoading: isCoachesLoading } = useQuery({
-    queryKey: ['payrollCoaches', organizationId],
+    queryKey: ['activeCoaches', organizationId],
     queryFn: async () => {
       if (!organizationId) return [];
       const { data, error } = await supabase
         .from('coaches')
-        .select('id, organization_members(profiles(name))')
+        .select('id, role, organization_members(profiles(name))')
         .eq('organization_id', organizationId)
         .eq('status', 'active');
       if (error) throw error;
       return (data || []).map((coach: any) => ({
         id: coach.id,
+        role: coach.role,
         name: coach.organization_members?.profiles?.name || 'Unknown'
       }));
     },

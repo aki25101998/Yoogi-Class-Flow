@@ -30,7 +30,7 @@ export function useSchedule(organizationId: string | undefined) {
       if (!organizationId) return [];
       const { data, error } = await supabase
         .from('venue_classes')
-        .select('id, name')
+        .select('id, name, start_time, end_time, venues(name)')
         .eq('organization_id', organizationId)
         .eq('status', 'active');
       if (error) throw error;
@@ -45,7 +45,7 @@ export function useSchedule(organizationId: string | undefined) {
       if (!organizationId) return [];
       const { data, error } = await supabase
         .from('coaches')
-        .select('id, organization_members(profiles(name))')
+        .select('id, role, organization_members(profiles(name))')
         .eq('organization_id', organizationId)
         .eq('status', 'active');
       if (error) throw error;
@@ -65,7 +65,8 @@ export function useSchedule(organizationId: string | undefined) {
         .from('venues')
         .select('id, name')
         .eq('organization_id', organizationId)
-        .eq('status', 'active');
+        .eq('status', 'active')
+        .order('name');
       if (error) throw error;
       return data || [];
     },

@@ -21,14 +21,29 @@ export function useCoaches(organizationId: string | undefined) {
         
       if (membersError) throw membersError;
       
-      const memberWithClassCount = await Promise.all((membersData || []).map(async (m: any) => {
+      const coachIds = (membersData || [])
+        .map((m: any) => m.coaches?.[0]?.id)
+        .filter(Boolean);
+
+      let classCountsByCoach: Record<string, number> = {};
+      if (coachIds.length > 0) {
+        const { data: classCoachesData } = await supabase
+          .from('class_coaches')
+          .select('coach_id')
+          .in('coach_id', coachIds);
+          
+        if (classCoachesData) {
+          classCountsByCoach = classCoachesData.reduce((acc: Record<string, number>, row: any) => {
+            acc[row.coach_id] = (acc[row.coach_id] || 0) + 1;
+            return acc;
+          }, {});
+        }
+      }
+      
+      const memberWithClassCount = (membersData || []).map((m: any) => {
         let classCount = 0;
         if (m.coaches && m.coaches.length > 0) {
-           const coachId = m.coaches[0].id;
-           const { count } = await supabase.from('class_coaches')
-             .select('*', { count: 'exact', head: true })
-             .eq('coach_id', coachId);
-           classCount = count || 0;
+           classCount = classCountsByCoach[m.coaches[0].id] || 0;
         }
         
         // Unified data structure for the UI
@@ -38,7 +53,7 @@ export function useCoaches(organizationId: string | undefined) {
           email: m.profiles?.email || '-',
           classCount
         };
-      }));
+      });
       
       return memberWithClassCount;
     },

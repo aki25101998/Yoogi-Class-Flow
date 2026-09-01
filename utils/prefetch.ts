@@ -49,7 +49,7 @@ export const prefetchRouteData = (
         queryFn: async () => {
           const { data, error } = await supabase
             .from('students')
-            .select('*, organization_belts(name), venues(name), class_students(id, class_id, status, venue_classes(name, start_time, end_time, venues(name)))')
+            .select('*, organization_belts(name), venues(name), class_students(id, class_id, status, venue_classes(name, venues(name)))')
             .eq('organization_id', organizationId)
             .order('created_at', { ascending: false });
           if (error) throw error;
@@ -67,7 +67,7 @@ export const prefetchRouteData = (
         queryFn: async () => {
           const { data, error } = await supabase
             .from('venue_classes')
-            .select('*, venues(name), class_coaches(*, coaches(id, organization_members(profiles(name)))), class_students(id, student_id, status, students(name, phone))')
+            .select('*, venues(name), class_coaches(*, coaches(id, organization_members(profiles(name)))), class_students(id, student_id, status)')
             .eq('organization_id', organizationId);
           if (error) throw error;
           return data || [];

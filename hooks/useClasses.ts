@@ -14,7 +14,7 @@ export function useClasses(organizationId: string | undefined) {
       if (!organizationId) return [];
       const { data, error } = await supabase
         .from('venue_classes')
-        .select('*, venues(name), class_coaches(*, coaches(id, organization_members(profiles(name)))), class_students(id, student_id, status, students(name, phone))')
+        .select('*, venues(name), class_coaches(*, coaches(id, organization_members(profiles(name)))), class_students(id, student_id, status)')
         .eq('organization_id', organizationId);
       
       if (error) throw error;
@@ -27,7 +27,7 @@ export function useClasses(organizationId: string | undefined) {
     data: availableCoaches = [],
     isLoading: isCoachesLoading,
   } = useQuery({
-    queryKey: ['availableCoaches', organizationId],
+    queryKey: ['activeCoaches', organizationId],
     queryFn: async () => {
       if (!organizationId) return [];
       const { data, error } = await supabase
@@ -52,14 +52,15 @@ export function useClasses(organizationId: string | undefined) {
     data: availableVenues = [],
     isLoading: isVenuesLoading,
   } = useQuery({
-    queryKey: ['availableVenues', organizationId],
+    queryKey: ['activeVenues', organizationId],
     queryFn: async () => {
       if (!organizationId) return [];
       const { data, error } = await supabase
         .from('venues')
         .select('id, name')
         .eq('organization_id', organizationId)
-        .eq('status', 'active');
+        .eq('status', 'active')
+        .order('name');
       
       if (error) throw error;
       return data || [];
@@ -71,14 +72,15 @@ export function useClasses(organizationId: string | undefined) {
     data: availableStudents = [],
     isLoading: isStudentsLoading,
   } = useQuery({
-    queryKey: ['availableStudents', organizationId],
+    queryKey: ['activeStudents', organizationId],
     queryFn: async () => {
       if (!organizationId) return [];
       const { data, error } = await supabase
         .from('students')
         .select('id, name, phone, class_students(status)')
-        .eq('organization_id', organizationId)
-        .eq('status', 'active');
+        .eq('organization_id', organizationId);
+      
+      // We removed .eq('status', 'active') to ensure we can map names for inactive students too
       
       if (error) throw error;
       return data || [];

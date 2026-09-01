@@ -14,7 +14,7 @@ export function useStudents(organizationId: string | undefined) {
       if (!organizationId) return [];
       const { data, error } = await supabase
         .from('students')
-        .select('*, organization_belts(name), venues(name), class_students(id, class_id, status, venue_classes(name, start_time, end_time, venues(name)))')
+        .select('*, organization_belts(name), venues(name), class_students(id, class_id, status, venue_classes(name, venues(name)))')
         .eq('organization_id', organizationId)
         .order('created_at', { ascending: false });
       
@@ -35,7 +35,7 @@ export function useStudents(organizationId: string | undefined) {
     data: availableClasses = [],
     isLoading: isClassesLoading,
   } = useQuery({
-    queryKey: ['availableClasses', organizationId],
+    queryKey: ['activeClasses', organizationId],
     queryFn: async () => {
       if (!organizationId) return [];
       const { data, error } = await supabase
@@ -54,7 +54,7 @@ export function useStudents(organizationId: string | undefined) {
     data: availableBelts = [],
     isLoading: isBeltsLoading,
   } = useQuery({
-    queryKey: ['availableBelts', organizationId],
+    queryKey: ['activeBelts', organizationId],
     queryFn: async () => {
       if (!organizationId) return [];
       const { data, error } = await supabase
@@ -74,7 +74,7 @@ export function useStudents(organizationId: string | undefined) {
     data: availableVenues = [],
     isLoading: isVenuesLoading,
   } = useQuery({
-    queryKey: ['availableVenues', organizationId],
+    queryKey: ['activeVenues', organizationId],
     queryFn: async () => {
       if (!organizationId) return [];
       const { data, error } = await supabase
