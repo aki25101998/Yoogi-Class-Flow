@@ -121,46 +121,65 @@ export default function ProfileFormClient() {
         {/* Cột trái: Thông tin hiển thị */}
         <div style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
           <Card>
-            <CardContent className="pt-6 flex flex-col items-center">
+            <CardContent style={{ padding: 'var(--space-8) var(--space-6)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <div 
                 style={{
-                  width: '120px',
-                  height: '120px',
-                  borderRadius: '50%',
-                  border: '4px solid var(--surface)',
-                  overflow: 'hidden',
-                  backgroundColor: 'var(--surface-hover)',
-                  boxShadow: 'var(--shadow-sm)',
-                  marginBottom: 'var(--space-4)',
                   position: 'relative',
-                  cursor: 'pointer'
+                  marginBottom: 'var(--space-5)',
+                  display: 'flex',
+                  justifyContent: 'center'
                 }}
-                onClick={() => fileInputRef.current?.click()}
-                onMouseEnter={(e) => {
-                  const overlay = e.currentTarget.querySelector('.avatar-overlay') as HTMLElement;
-                  if (overlay) overlay.style.opacity = '1';
-                }}
-                onMouseLeave={(e) => {
-                  const overlay = e.currentTarget.querySelector('.avatar-overlay') as HTMLElement;
-                  if (overlay) overlay.style.opacity = '0';
-                }}
-            <CardContent className="pt-8 pb-6 flex flex-col items-center">
-              <div className="relative group mb-5">
+              >
                 <div 
-                  className="w-32 h-32 rounded-full border-4 border-surface overflow-hidden bg-surface-hover shadow-lg relative cursor-pointer mx-auto transition-transform hover:scale-105 duration-200"
+                  style={{
+                    width: '128px',
+                    height: '128px',
+                    borderRadius: '50%',
+                    border: '4px solid var(--surface)',
+                    overflow: 'hidden',
+                    backgroundColor: 'var(--surface-hover)',
+                    boxShadow: 'var(--shadow-lg)',
+                    position: 'relative',
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.05)';
+                    const overlay = e.currentTarget.querySelector('.avatar-overlay') as HTMLElement;
+                    if (overlay) overlay.style.opacity = '1';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    const overlay = e.currentTarget.querySelector('.avatar-overlay') as HTMLElement;
+                    if (overlay) overlay.style.opacity = '0';
+                  }}
                   onClick={() => fileInputRef.current?.click()}
                 >
                   {avatarPreview ? (
-                    <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                    <img src={avatarPreview} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-5xl font-semibold text-text-muted bg-surface-hover">
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem', fontWeight: 600, color: 'var(--text-muted)' }}>
                       {displayName.charAt(0).toUpperCase()}
                     </div>
                   )}
                   
-                  <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 gap-1">
-                    <span className="material-icons-round text-white text-2xl">photo_camera</span>
-                    <span className="text-white text-xs font-medium">Thay đổi</span>
+                  <div 
+                    className="avatar-overlay"
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      opacity: 0,
+                      transition: 'opacity 0.2s',
+                      gap: '4px'
+                    }}
+                  >
+                    <span className="material-icons-round" style={{ color: 'white', fontSize: '24px' }}>photo_camera</span>
+                    <span style={{ color: 'white', fontSize: '12px', fontWeight: 500 }}>Thay đổi</span>
                   </div>
                 </div>
                 
@@ -173,10 +192,27 @@ export default function ProfileFormClient() {
                       setAvatarPreview(profile?.avatar_url || null);
                       if (fileInputRef.current) fileInputRef.current.value = '';
                     }}
-                    className="absolute bottom-1 right-0 bg-danger text-white rounded-full p-1.5 shadow-md hover:bg-danger-hover transition-colors"
+                    style={{
+                      position: 'absolute',
+                      bottom: '4px',
+                      right: '0',
+                      backgroundColor: 'var(--danger)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '50%',
+                      padding: '6px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      boxShadow: 'var(--shadow-md)',
+                      transition: 'background-color 0.2s'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--danger-hover)'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--danger)'}
                     title="Xóa ảnh đã chọn"
                   >
-                    <span className="material-icons-round text-sm block">close</span>
+                    <span className="material-icons-round" style={{ fontSize: '16px' }}>close</span>
                   </button>
                 )}
               </div>
@@ -184,28 +220,29 @@ export default function ProfileFormClient() {
               <input 
                 type="file" 
                 ref={fileInputRef}
-                className="hidden" 
+                style={{ display: 'none' }}
                 accept="image/*"
                 onChange={handleAvatarChange}
-                style={{ display: 'none' }}
               />
               
-              <div className="text-center w-full">
-                <h3 className="font-bold text-xl text-main">{displayName}</h3>
-                <div className="mt-2 mb-5 flex justify-center"><RoleBadge role={profile.role as any} /></div>
+              <div style={{ width: '100%', textAlign: 'center' }}>
+                <h3 style={{ fontWeight: 700, fontSize: '1.25rem', color: 'var(--text-main)', marginBottom: '8px' }}>{displayName}</h3>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+                  <RoleBadge role={profile.role as any} />
+                </div>
                 
                 <Button 
                   type="button" 
                   variant="outline" 
-                  className="w-full text-sm"
-                  leftIcon={<span className="material-icons-round text-sm">cloud_upload</span>}
+                  style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
+                  leftIcon={<span className="material-icons-round" style={{ fontSize: '16px' }}>cloud_upload</span>}
                   onClick={() => fileInputRef.current?.click()}
                 >
                   Tải ảnh mới lên
                 </Button>
                 {avatarFile && (
-                  <div className="text-xs text-secondary mt-2 truncate px-2" title={avatarFile.name}>
-                    Đã chọn: <span className="text-main font-medium">{avatarFile.name}</span>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '0 8px' }} title={avatarFile.name}>
+                    Đã chọn: <span style={{ color: 'var(--text-main)', fontWeight: 500 }}>{avatarFile.name}</span>
                   </div>
                 )}
               </div>
