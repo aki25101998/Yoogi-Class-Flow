@@ -198,6 +198,13 @@ CREATE POLICY "Coaches can view finance_transactions in their org" ON public.fin
 
 -- Belts
 DROP POLICY IF EXISTS "Admin can do all on organization_belts" ON public.organization_belts;
-CREATE POLICY "Admin can do all on organization_belts" ON public.organization_belts FOR ALL USING (public.is_org_admin(organization_id));
 DROP POLICY IF EXISTS "Everyone can view belts in their org" ON public.organization_belts;
-CREATE POLICY "Everyone can view belts in their org" ON public.organization_belts FOR SELECT USING (organization_id IN (SELECT public.get_user_organizations()));
+DROP POLICY IF EXISTS "Admin can insert organization_belts" ON public.organization_belts;
+DROP POLICY IF EXISTS "Admin can update organization_belts" ON public.organization_belts;
+DROP POLICY IF EXISTS "Admin can delete organization_belts" ON public.organization_belts;
+DROP POLICY IF EXISTS "Members can view organization_belts" ON public.organization_belts;
+
+CREATE POLICY "Admin can insert organization_belts" ON public.organization_belts FOR INSERT WITH CHECK (public.is_org_admin(organization_id));
+CREATE POLICY "Admin can update organization_belts" ON public.organization_belts FOR UPDATE USING (public.is_org_admin(organization_id)) WITH CHECK (public.is_org_admin(organization_id));
+CREATE POLICY "Admin can delete organization_belts" ON public.organization_belts FOR DELETE USING (public.is_org_admin(organization_id));
+CREATE POLICY "Members can view organization_belts" ON public.organization_belts FOR SELECT USING (organization_id IN (SELECT public.get_user_organizations()));

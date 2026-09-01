@@ -23,13 +23,22 @@ export async function addBeltAction(data: { name: string; display_order: number;
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
+  if (context.membership?.role !== 'admin' && context.membership?.role !== 'owner') {
+    return { success: false, error: 'Bạn không có quyền thực hiện thao tác này.' };
+  }
+
   const supabase = await createClient();
   const { error } = await supabase.from('organization_belts').insert({
-    organization_id: context.organization.id,
-    ...data
+    name: data.name,
+    display_order: data.display_order,
+    is_active: data.is_active,
+    organization_id: context.organization.id
   });
 
-  if (error) return { success: false, error: error.message };
+  if (error) {
+    console.error('addBeltAction error:', error);
+    return { success: false, error: 'Không thể thêm cấp đai. Lỗi hệ thống hoặc sai quyền.' };
+  }
   
   revalidatePath('/settings/belts');
   return { success: true };
@@ -39,13 +48,23 @@ export async function updateBeltAction(id: string, data: { name?: string; displa
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
+  if (context.membership?.role !== 'admin' && context.membership?.role !== 'owner') {
+    return { success: false, error: 'Bạn không có quyền thực hiện thao tác này.' };
+  }
+
+  const safeData = { ...data };
+  delete (safeData as any).organization_id;
+
   const supabase = await createClient();
   const { error } = await supabase.from('organization_belts')
-    .update(data)
+    .update(safeData)
     .eq('id', id)
     .eq('organization_id', context.organization.id);
 
-  if (error) return { success: false, error: error.message };
+  if (error) {
+    console.error('updateBeltAction error:', error);
+    return { success: false, error: 'Không thể sửa cấp đai. Lỗi hệ thống hoặc sai quyền.' };
+  }
   
   revalidatePath('/settings/belts');
   return { success: true };
@@ -55,13 +74,20 @@ export async function deleteBeltAction(id: string) {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
+  if (context.membership?.role !== 'admin' && context.membership?.role !== 'owner') {
+    return { success: false, error: 'Bạn không có quyền thực hiện thao tác này.' };
+  }
+
   const supabase = await createClient();
   const { error } = await supabase.from('organization_belts')
     .delete()
     .eq('id', id)
     .eq('organization_id', context.organization.id);
 
-  if (error) return { success: false, error: error.message };
+  if (error) {
+    console.error('deleteBeltAction error:', error);
+    return { success: false, error: 'Không thể xóa cấp đai. Lỗi hệ thống hoặc sai quyền.' };
+  }
   
   revalidatePath('/settings/belts');
   return { success: true };
