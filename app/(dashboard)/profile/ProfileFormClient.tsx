@@ -117,26 +117,68 @@ export default function ProfileFormClient() {
         description="Quản lý thông tin cá nhân và hồ sơ huấn luyện viên của bạn."
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-6)' }}>
         {/* Cột trái: Thông tin hiển thị */}
-        <div className="col-span-1 flex flex-col gap-6">
+        <div style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
           <Card>
             <CardContent className="pt-6 flex flex-col items-center">
               <div 
-                className="w-32 h-32 rounded-full border-4 border-surface overflow-hidden bg-surface-hover shadow-sm mb-4 relative group cursor-pointer"
+                style={{
+                  width: '120px',
+                  height: '120px',
+                  borderRadius: '50%',
+                  border: '4px solid var(--surface)',
+                  overflow: 'hidden',
+                  backgroundColor: 'var(--surface-hover)',
+                  boxShadow: 'var(--shadow-sm)',
+                  marginBottom: 'var(--space-4)',
+                  position: 'relative',
+                  cursor: 'pointer'
+                }}
                 onClick={() => fileInputRef.current?.click()}
-              >
-                {avatarPreview ? (
-                  <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-4xl font-semibold text-text-muted">
-                    {displayName.charAt(0).toUpperCase()}
+                onMouseEnter={(e) => {
+                  const overlay = e.currentTarget.querySelector('.avatar-overlay') as HTMLElement;
+                  if (overlay) overlay.style.opacity = '1';
+                }}
+                onMouseLeave={(e) => {
+                  const overlay = e.currentTarget.querySelector('.avatar-overlay') as HTMLElement;
+                  if (overlay) overlay.style.opacity = '0';
+                }}
+            <CardContent className="pt-8 pb-6 flex flex-col items-center">
+              <div className="relative group mb-5">
+                <div 
+                  className="w-32 h-32 rounded-full border-4 border-surface overflow-hidden bg-surface-hover shadow-lg relative cursor-pointer mx-auto transition-transform hover:scale-105 duration-200"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {avatarPreview ? (
+                    <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-5xl font-semibold text-text-muted bg-surface-hover">
+                      {displayName.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  
+                  <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 gap-1">
+                    <span className="material-icons-round text-white text-2xl">photo_camera</span>
+                    <span className="text-white text-xs font-medium">Thay đổi</span>
                   </div>
-                )}
-                
-                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <span className="material-icons-round text-white">photo_camera</span>
                 </div>
+                
+                {avatarFile && (
+                  <button 
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setAvatarFile(null);
+                      setAvatarPreview(profile?.avatar_url || null);
+                      if (fileInputRef.current) fileInputRef.current.value = '';
+                    }}
+                    className="absolute bottom-1 right-0 bg-danger text-white rounded-full p-1.5 shadow-md hover:bg-danger-hover transition-colors"
+                    title="Xóa ảnh đã chọn"
+                  >
+                    <span className="material-icons-round text-sm block">close</span>
+                  </button>
+                )}
               </div>
               
               <input 
@@ -145,11 +187,27 @@ export default function ProfileFormClient() {
                 className="hidden" 
                 accept="image/*"
                 onChange={handleAvatarChange}
+                style={{ display: 'none' }}
               />
               
-              <div className="text-center">
-                <h3 className="font-semibold text-lg text-main">{displayName}</h3>
-                <div className="mt-2"><RoleBadge role={profile.role as any} /></div>
+              <div className="text-center w-full">
+                <h3 className="font-bold text-xl text-main">{displayName}</h3>
+                <div className="mt-2 mb-5 flex justify-center"><RoleBadge role={profile.role as any} /></div>
+                
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="w-full text-sm"
+                  leftIcon={<span className="material-icons-round text-sm">cloud_upload</span>}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Tải ảnh mới lên
+                </Button>
+                {avatarFile && (
+                  <div className="text-xs text-secondary mt-2 truncate px-2" title={avatarFile.name}>
+                    Đã chọn: <span className="text-main font-medium">{avatarFile.name}</span>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -182,7 +240,7 @@ export default function ProfileFormClient() {
         </div>
 
         {/* Cột phải: Form chỉnh sửa */}
-        <div className="col-span-1 md:col-span-2">
+        <div style={{ flex: '2 1 500px' }}>
           <Card>
             <CardHeader className="border-b border-light pb-4">
               <CardTitle>Chỉnh sửa hồ sơ</CardTitle>
@@ -193,37 +251,43 @@ export default function ProfileFormClient() {
               {success && <div className="text-success mb-4 text-sm bg-success-bg p-3 rounded-md">{success}</div>}
               
               <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Input 
-                    label="Họ và tên"
-                    required 
-                    value={formData.name} 
-                    onChange={e => setFormData({...formData, name: e.target.value})} 
-                  />
-                  
-                  <Input 
-                    label="Số điện thoại"
-                    value={formData.phone} 
-                    onChange={e => setFormData({...formData, phone: e.target.value})} 
-                  />
-                  
-                  <Input 
-                    label="Số CCCD"
-                    value={formData.cccd} 
-                    onChange={e => setFormData({...formData, cccd: e.target.value})} 
-                  />
-                  
-                  <Input 
-                    label="Mã hội viên"
-                    value={formData.membership_number} 
-                    onChange={e => setFormData({...formData, membership_number: e.target.value})} 
-                  />
-                  
-                  <Input 
-                    label="Cấp đai"
-                    value={formData.level} 
-                    onChange={e => setFormData({...formData, level: e.target.value})} 
-                  />
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-6)' }}>
+                  <div style={{ flex: '1 1 calc(50% - 12px)' }}>
+                    <Input 
+                      label="Họ và tên"
+                      required 
+                      value={formData.name} 
+                      onChange={e => setFormData({...formData, name: e.target.value})} 
+                    />
+                  </div>
+                  <div style={{ flex: '1 1 calc(50% - 12px)' }}>
+                    <Input 
+                      label="Số điện thoại"
+                      value={formData.phone} 
+                      onChange={e => setFormData({...formData, phone: e.target.value})} 
+                    />
+                  </div>
+                  <div style={{ flex: '1 1 calc(50% - 12px)' }}>
+                    <Input 
+                      label="Số CCCD"
+                      value={formData.cccd} 
+                      onChange={e => setFormData({...formData, cccd: e.target.value})} 
+                    />
+                  </div>
+                  <div style={{ flex: '1 1 calc(50% - 12px)' }}>
+                    <Input 
+                      label="Mã hội viên"
+                      value={formData.membership_number} 
+                      onChange={e => setFormData({...formData, membership_number: e.target.value})} 
+                    />
+                  </div>
+                  <div style={{ flex: '1 1 calc(50% - 12px)' }}>
+                    <Input 
+                      label="Cấp đai"
+                      value={formData.level} 
+                      onChange={e => setFormData({...formData, level: e.target.value})} 
+                    />
+                  </div>
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-light flex justify-end gap-3">
