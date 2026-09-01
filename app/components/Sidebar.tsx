@@ -430,15 +430,27 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
           </div>
           
           <div className="sidebar-user">
-            {user?.user_metadata?.avatar_url ? (
-              <img src={user.user_metadata.avatar_url} alt="Avatar" className="user-avatar" referrerPolicy="no-referrer" />
-            ) : (
-              <div className="user-avatar-placeholder">{displayName.charAt(0).toUpperCase()}</div>
-            )}
-            <div className="user-info">
-              <div className="user-name">{displayName}</div>
-              <div className="user-role">{displayRole}</div>
-            </div>
+            <Link 
+              href="/profile" 
+              onClick={() => setIsSidebarOpen(false)}
+              className="flex items-center gap-2 flex-1 min-w-0"
+              style={{ textDecoration: 'none', color: 'inherit' }}
+            >
+              {context?.profile?.avatar_url || userData?.avatar_url || user?.user_metadata?.avatar_url ? (
+                <img 
+                  src={context?.profile?.avatar_url || userData?.avatar_url || user?.user_metadata?.avatar_url} 
+                  alt="Avatar" 
+                  className="user-avatar" 
+                  referrerPolicy="no-referrer" 
+                />
+              ) : (
+                <div className="user-avatar-placeholder">{displayName.charAt(0).toUpperCase()}</div>
+              )}
+              <div className="user-info">
+                <div className="user-name hover:text-primary transition-colors">{displayName}</div>
+                <div className="user-role">{displayRole}</div>
+              </div>
+            </Link>
             <button className="btn-logout" onClick={handleLogout} title="Đăng xuất">
               <span className="material-icons-round">logout</span>
             </button>
