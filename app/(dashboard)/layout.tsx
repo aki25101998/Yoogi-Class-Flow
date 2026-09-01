@@ -8,8 +8,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, coach: userData } = await requireAuth();
-  const context = await getCurrentOrganizationContext();
+  const { user, coach: userData, context } = await requireAuth();
 
   return (
     <DashboardProvider user={user} userData={userData} context={context}>

@@ -78,6 +78,6 @@ export function useSchedule(organizationId: string | undefined) {
     classes,
     coaches,
     venues,
-    isLoading: isSchedulesLoading || isClassesLoading || isCoachesLoading || isVenuesLoading,
+    isLoading: isSchedulesLoading,
   };
 }

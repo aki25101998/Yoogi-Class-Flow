@@ -7,21 +7,21 @@ export async function getCurrentCoach() {
   const { data: authData, error: authError } = await supabase.auth.getUser();
   
   if (authError || !authData?.user) {
-    return { user: null, coach: null, error: authError || new Error("Not authenticated") };
+    return { user: null, coach: null, context: null, error: authError || new Error("Not authenticated") };
   }
 
   const user = authData.user;
   
-  const context = await getCurrentOrganizationContext();
+  const context = await getCurrentOrganizationContext(user.id);
 
   if (!context) {
-    return { user, coach: null, error: new Error("No active organization found") };
+    return { user, coach: null, context: null, error: new Error("No active organization found") };
   }
 
   const { membership, profile, coach: coachProfile, permissions } = context;
 
   if (!membership || !profile) {
-    return { user, coach: null, error: new Error("Invalid organization context") };
+    return { user, coach: null, context: null, error: new Error("Invalid organization context") };
   }
 
   // Construct compatibility coach object for frontend
@@ -41,5 +41,5 @@ export async function getCurrentCoach() {
     avatar_url: profile.avatar_url || ''
   };
 
-  return { user, coach, error: null };
+  return { user, coach, context, error: null };
 }

@@ -95,7 +95,7 @@ export function useStudents(organizationId: string | undefined) {
     availableClasses,
     availableBelts,
     availableVenues,
-    isLoading: isStudentsLoading || isClassesLoading || isBeltsLoading || isVenuesLoading,
+    isLoading: isStudentsLoading,
     error: studentsError,
   };
 }

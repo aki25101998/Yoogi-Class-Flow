@@ -93,7 +93,7 @@ export function useClasses(organizationId: string | undefined) {
     availableCoaches,
     availableVenues,
     availableStudents,
-    isLoading: isClassesLoading || isCoachesLoading || isVenuesLoading || isStudentsLoading,
+    isLoading: isClassesLoading,
     error: classesError,
   };
 }

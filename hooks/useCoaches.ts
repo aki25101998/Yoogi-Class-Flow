@@ -82,7 +82,7 @@ export function useCoaches(organizationId: string | undefined) {
   return {
     members,
     invitations,
-    isLoading: isMembersLoading || isInvitationsLoading,
+    isLoading: isMembersLoading,
     error: membersError,
   };
 }

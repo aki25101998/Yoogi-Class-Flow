@@ -3,21 +3,25 @@ import { OrganizationContext } from '@/types/organization';
 
 import { cookies } from 'next/headers';
 
-export async function getCurrentOrganizationContext(): Promise<OrganizationContext | null> {
+export async function getCurrentOrganizationContext(prefetchedUserId?: string): Promise<OrganizationContext | null> {
   const supabase = await createClient();
   const cookieStore = cookies();
   const workspaceId = cookieStore.get('yoogi_workspace_id')?.value;
   
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData?.user) {
-    return null;
+  let userId = prefetchedUserId;
+  if (!userId) {
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError || !userData?.user) {
+      return null;
+    }
+    userId = userData.user.id;
   }
 
   // Get Profile
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')
-    .eq('auth_user_id', userData.user.id)
+    .eq('auth_user_id', userId)
     .single();
 
   if (!profile) return null;

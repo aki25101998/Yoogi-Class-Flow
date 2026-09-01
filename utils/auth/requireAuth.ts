@@ -2,7 +2,7 @@ import { getCurrentCoach } from "./getCurrentCoach";
 import { redirect } from "next/navigation";
 
 export async function requireAuth() {
-  const { user, coach } = await getCurrentCoach();
+  const { user, coach, context } = await getCurrentCoach();
   
   if (!user) {
     redirect("/login");
@@ -12,5 +12,5 @@ export async function requireAuth() {
     redirect("/login?error=unauthorized");
   }
   
-  return { user, coach };
+  return { user, coach, context };
 }
