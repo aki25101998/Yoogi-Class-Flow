@@ -36,7 +36,7 @@ export function RoleBadge({ role, onClick, className = '' }: RoleBadgeProps) {
   return (
     <Badge
       variant={variant}
-      className={`!normal-case tracking-normal !px-2.5 ${onClick ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''} ${className}`}
+      className={`uppercase font-bold tracking-normal !px-2.5 ${onClick ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''} ${className}`}
       onClick={onClick}
       title={ROLE_DESCRIPTIONS[role] || label}
     >
