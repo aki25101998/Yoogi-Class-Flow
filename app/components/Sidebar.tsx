@@ -212,7 +212,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
   };
 
   const displayName = context?.profile?.name || userData?.name || user?.user_metadata?.full_name || 'User';
-  const displayRole = role === 'owner' ? 'Owner' : role === 'admin' ? 'Admin' : role === 'head_coach' ? 'Head Coach' : 'Assistant Coach';
+  const displayRole = role === 'owner' ? 'OWNER' : role === 'admin' ? 'ADMIN' : role === 'head_coach' ? 'HEAD COACH' : 'ASSISTANT COACH';
 
   const multiWorkspace = context?.allMemberships && context.allMemberships.length > 1;
 
@@ -306,7 +306,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
                     Chọn Workspace
                   </div>
                   {context.allMemberships.map((m: any) => {
-                    const mRole = m.role === 'owner' ? 'Owner' : m.role === 'admin' ? 'Admin' : m.role === 'head_coach' ? 'Head Coach' : 'Assistant Coach';
+                    const mRole = m.role === 'owner' ? 'OWNER' : m.role === 'admin' ? 'ADMIN' : m.role === 'head_coach' ? 'HEAD COACH' : 'ASSISTANT COACH';
                     const isActive = m.organization_id === context.organization?.id;
                     return (
                       <button

@@ -260,7 +260,7 @@ export default function ProfileFormClient() {
               </div>
               <div className="flex justify-between border-b border-light pb-2">
                 <span className="text-secondary">Vai trò</span>
-                <span className="font-medium text-main uppercase">{profile.role}</span>
+                <span className="font-medium text-main" style={{ textTransform: 'uppercase' }}>{profile.role}</span>
               </div>
               <div className="flex justify-between border-b border-light pb-2">
                 <span className="text-secondary">Cơ sở</span>
