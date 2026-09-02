@@ -195,33 +195,31 @@ export default function StudentsClient() {
               onChange={e => setFormData({...formData, name: e.target.value})} 
             />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input 
-                label="Ngày sinh *" 
-                type="date"
-                required 
-                value={formData.dob} 
-                onChange={e => setFormData({...formData, dob: e.target.value})} 
-              />
-              <Input 
-                label="Số điện thoại" 
-                value={formData.phone} 
-                onChange={e => setFormData({...formData, phone: e.target.value})} 
-              />
-            </div>
+            <Input 
+              label="Ngày sinh *" 
+              type="date"
+              required 
+              value={formData.dob} 
+              onChange={e => setFormData({...formData, dob: e.target.value})} 
+            />
+
+            <Input 
+              label="Số điện thoại" 
+              value={formData.phone} 
+              onChange={e => setFormData({...formData, phone: e.target.value})} 
+            />
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input 
-                label="Tên phụ huynh" 
-                value={formData.parent_name} 
-                onChange={e => setFormData({...formData, parent_name: e.target.value})} 
-              />
-              <Input 
-                label="SĐT phụ huynh" 
-                value={formData.parent_phone} 
-                onChange={e => setFormData({...formData, parent_phone: e.target.value})} 
-              />
-            </div>
+            <Input 
+              label="Tên phụ huynh" 
+              value={formData.parent_name} 
+              onChange={e => setFormData({...formData, parent_name: e.target.value})} 
+            />
+
+            <Input 
+              label="SĐT phụ huynh" 
+              value={formData.parent_phone} 
+              onChange={e => setFormData({...formData, parent_phone: e.target.value})} 
+            />
 
             {editingId && (
               <Select 
