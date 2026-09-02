@@ -187,99 +187,83 @@ export default function StudentsClient() {
               <span>{error}</span>
             </div>
           )}
-          <form id="student-form" onSubmit={handleSubmit} className="flex flex-col gap-6">
-            
-            {/* THÔNG TIN CƠ BẢN */}
-            <div className="flex flex-col gap-5">
-              <h4 className="text-sm font-semibold text-secondary uppercase tracking-wider mb-1 border-b border-border pb-2">Thông tin cơ bản</h4>
-              
-              <div className="flex flex-col gap-5">
-                <Input 
-                  label="Tên học viên *" 
-                  required 
-                  value={formData.name} 
-                  onChange={e => setFormData({...formData, name: e.target.value})} 
-                />
-                <Input 
-                  label="Ngày sinh *" 
-                  type="date"
-                  required 
-                  value={formData.dob} 
-                  onChange={e => setFormData({...formData, dob: e.target.value})} 
-                />
-                <Input 
-                  label="Số điện thoại" 
-                  value={formData.phone} 
-                  onChange={e => setFormData({...formData, phone: e.target.value})} 
-                />
-              </div>
+          <form id="student-form" onSubmit={handleSubmit} style={{ display: 'grid', gap: '16px' }}>
+            <Input 
+              label="Tên học viên *" 
+              required 
+              value={formData.name} 
+              onChange={e => setFormData({...formData, name: e.target.value})} 
+            />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input 
+                label="Ngày sinh *" 
+                type="date"
+                required 
+                value={formData.dob} 
+                onChange={e => setFormData({...formData, dob: e.target.value})} 
+              />
+              <Input 
+                label="Số điện thoại" 
+                value={formData.phone} 
+                onChange={e => setFormData({...formData, phone: e.target.value})} 
+              />
             </div>
             
-            {/* THÔNG TIN PHỤ HUYNH */}
-            <div className="flex flex-col gap-5">
-              <h4 className="text-sm font-semibold text-secondary uppercase tracking-wider mb-1 border-b border-border pb-2">Thông tin phụ huynh</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <Input 
-                  label="Tên phụ huynh" 
-                  value={formData.parent_name} 
-                  onChange={e => setFormData({...formData, parent_name: e.target.value})} 
-                />
-                <Input 
-                  label="SĐT phụ huynh" 
-                  value={formData.parent_phone} 
-                  onChange={e => setFormData({...formData, parent_phone: e.target.value})} 
-                />
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input 
+                label="Tên phụ huynh" 
+                value={formData.parent_name} 
+                onChange={e => setFormData({...formData, parent_name: e.target.value})} 
+              />
+              <Input 
+                label="SĐT phụ huynh" 
+                value={formData.parent_phone} 
+                onChange={e => setFormData({...formData, parent_phone: e.target.value})} 
+              />
             </div>
 
-            {/* THÔNG TIN HỌC TẬP */}
-            <div className="flex flex-col gap-5">
-              <h4 className="text-sm font-semibold text-secondary uppercase tracking-wider mb-1 border-b border-border pb-2">Thông tin học tập</h4>
-              
-              <div className="flex flex-col gap-5">
-                {editingId && (
-                  <Select 
-                    label="Lớp hiện tại"
-                    value={editingClassId} 
-                    onChange={e => setEditingClassId(e.target.value)} 
-                    options={[
-                      { value: '', label: '-- Chưa có lớp --' },
-                      ...availableClasses.map((c: any) => ({ 
-                        value: c.id, 
-                        label: `${c.name} (${c.venues?.name || 'Không rõ chi nhánh'})` 
-                      }))
-                    ]}
-                  />
-                )}
-                
-                <Select 
-                  label="Đai hiện tại"
-                  value={formData.current_belt_id} 
-                  onChange={e => setFormData({...formData, current_belt_id: e.target.value})} 
-                  options={[
-                    { value: '', label: 'Chưa có đai' },
-                    ...availableBelts.map((belt: any) => ({
-                      value: belt.id,
-                      label: belt.name
-                    }))
-                  ]}
-                />
+            {editingId && (
+              <Select 
+                label="Lớp hiện tại"
+                value={editingClassId} 
+                onChange={e => setEditingClassId(e.target.value)} 
+                options={[
+                  { value: '', label: '-- Chưa có lớp --' },
+                  ...availableClasses.map((c: any) => ({ 
+                    value: c.id, 
+                    label: `${c.name} (${c.venues?.name || 'Không rõ chi nhánh'})` 
+                  }))
+                ]}
+              />
+            )}
 
-                <Select 
-                  label="Địa điểm học *"
-                  required
-                  value={formData.venue_id} 
-                  onChange={e => setFormData({...formData, venue_id: e.target.value})} 
-                  options={[
-                    { value: '', label: 'Chọn địa điểm' },
-                    ...availableVenues.map((venue: any) => ({
-                      value: venue.id,
-                      label: venue.name
-                    }))
-                  ]}
-                />
-              </div>
-            </div>
+            <Select 
+              label="Địa điểm học *"
+              required
+              value={formData.venue_id} 
+              onChange={e => setFormData({...formData, venue_id: e.target.value})} 
+              options={[
+                { value: '', label: '-- Chọn địa điểm --' },
+                ...availableVenues.map((venue: any) => ({
+                  value: venue.id,
+                  label: venue.name
+                }))
+              ]}
+            />
+            
+            <Select 
+              label="Đai hiện tại"
+              value={formData.current_belt_id} 
+              onChange={e => setFormData({...formData, current_belt_id: e.target.value})} 
+              options={[
+                { value: '', label: '-- Chọn đai --' },
+                ...availableBelts.map((belt: any) => ({
+                  value: belt.id,
+                  label: belt.name
+                }))
+              ]}
+            />
           </form>
         </ModalBody>
         <ModalFooter>
