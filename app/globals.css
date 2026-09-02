@@ -69,10 +69,10 @@
 }
 
 [data-theme="dark"] {
-  /* Color Palette - Red/Black Theme */
-  --primary: #DC2626; /* Red 600 */
-  --primary-hover: #EF4444; /* Red 500 */
-  --primary-light: rgba(220, 38, 38, 0.12); /* Accent for active states */
+  /* Color Palette - Indigo/Dark Theme */
+  --primary: #6366f1; /* Indigo 500 (Same as light mode) */
+  --primary-hover: #818cf8; /* Indigo 400 (Lighter on hover) */
+  --primary-light: rgba(99, 102, 241, 0.15); /* Accent for active states */
   
   --secondary: #A1A1AA; /* Zinc 400 */
   --secondary-hover: #D4D4D8; /* Zinc 300 */
@@ -108,7 +108,7 @@
   /* Borders & Dividers */
   --border-light: #27272A;
   --border: #3F3F46;
-  --border-focus: #DC2626; /* Use red for focus ring */
+  --border-focus: var(--primary); /* Use primary color for focus ring */
   
   /* System */
   color-scheme: dark;
