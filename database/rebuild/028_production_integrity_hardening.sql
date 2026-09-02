@@ -20,6 +20,9 @@ EXCEPTION WHEN duplicate_table THEN NULL;
 END $$;
 
 -- 1b. students.current_belt_id — add composite FK to organization_belts
+-- First make sure the column exists (in case db reset wasn't run after it was added to 006)
+ALTER TABLE public.students 
+ADD COLUMN IF NOT EXISTS current_belt_id UUID;
 -- First drop the simple FK if it exists
 DO $$ BEGIN
   -- Check if the old simple FK exists and drop it
