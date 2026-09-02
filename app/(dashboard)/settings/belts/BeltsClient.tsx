@@ -7,6 +7,9 @@ import { Button } from '@/app/components/ui/Button';
 import { Input, Select } from '@/app/components/ui/Input';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/app/components/ui/Modal';
 import { Badge } from '@/app/components/ui/Badge';
+import { Card } from '@/app/components/ui/Card';
+import { Table, Thead, Tbody, Tr, Th, Td } from '@/app/components/ui/Table';
+import { EmptyState } from '@/app/components/ui/EmptyState';
 
 export default function BeltsClient() {
   const [belts, setBelts] = useState<any[]>([]);
@@ -138,56 +141,62 @@ export default function BeltsClient() {
         </ModalFooter>
       </Modal>
 
-      <div className="bg-surface rounded-lg border border-light overflow-x-auto">
-        {isLoading ? (
+      {isLoading ? (
+        <Card>
           <div className="p-8 text-center text-secondary">Đang tải...</div>
-        ) : belts.length === 0 ? (
-          <div className="p-8 text-center text-secondary">Chưa có cấp đai nào. Hãy tạo cấp đai đầu tiên.</div>
-        ) : (
-          <table className="w-full text-left border-collapse min-w-[600px]">
-            <thead>
-              <tr className="border-b border-light bg-surface-hover">
-                <th className="p-4 font-medium text-secondary text-sm text-left">Thứ tự</th>
-                <th className="p-4 font-medium text-secondary text-sm text-left">Tên cấp đai</th>
-                <th className="p-4 font-medium text-secondary text-sm text-left">Trạng thái</th>
-                <th className="p-4 font-medium text-secondary text-sm text-right">Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {belts.map((belt) => (
-                <tr key={belt.id} className="border-b border-light last:border-b-0 hover:bg-surface-hover/50">
-                  <td className="p-4 text-main text-left">{belt.display_order}</td>
-                  <td className="p-4 font-medium text-main text-left">{belt.name}</td>
-                  <td className="p-4 text-left">
-                    <Badge variant={belt.is_active ? 'success' : 'default'}>
-                      {belt.is_active ? 'Đang dùng' : 'Tạm ẩn'}
-                    </Badge>
-                  </td>
-                  <td className="p-4 text-right">
-                    <div className="flex gap-2 justify-end">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleEdit(belt)}
-                      >
-                        Sửa
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="text-danger hover:bg-danger-bg"
-                        onClick={() => handleDelete(belt.id)}
-                      >
-                        Xóa
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+        </Card>
+      ) : belts.length === 0 ? (
+        <EmptyState 
+          title="Chưa có cấp đai" 
+          description="Chưa có cấp đai nào trong hệ thống. Hãy tạo cấp đai đầu tiên." 
+          icon="sports_martial_arts"
+        />
+      ) : (
+        <Card>
+          <div className="overflow-x-auto">
+            <Table>
+              <Thead>
+                <Tr>
+                  <Th>Thứ tự</Th>
+                  <Th>Tên cấp đai</Th>
+                  <Th>Trạng thái</Th>
+                  <Th className="text-right font-semibold">Hành động</Th>
+                </Tr>
+              </Thead>
+              <Tbody>
+                {belts.map((belt) => (
+                  <Tr key={belt.id}>
+                    <Td className="font-medium text-main">{belt.display_order}</Td>
+                    <Td>{belt.name}</Td>
+                    <Td>
+                      <Badge variant={belt.is_active ? 'success' : 'default'}>
+                        {belt.is_active ? 'Đang dùng' : 'Tạm ẩn'}
+                      </Badge>
+                    </Td>
+                    <Td className="text-right whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleEdit(belt)}
+                          className="text-sm font-semibold text-primary hover:opacity-80 transition-opacity"
+                        >
+                          Sửa
+                        </button>
+                        <span className="text-secondary/40 select-none">|</span>
+                        <button
+                          onClick={() => handleDelete(belt.id)}
+                          className="text-sm font-medium text-danger hover:opacity-80 transition-opacity"
+                        >
+                          Xóa
+                        </button>
+                      </div>
+                    </Td>
+                  </Tr>
+                ))}
+              </Tbody>
+            </Table>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
