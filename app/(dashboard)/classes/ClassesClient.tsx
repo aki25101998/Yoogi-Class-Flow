@@ -62,6 +62,7 @@ export default function ClassesClient() {
 
   const handleSuccess = () => {
     queryClient.invalidateQueries({ queryKey: ['classes', organizationId] });
+    queryClient.invalidateQueries({ queryKey: ['activeClasses', organizationId] });
   };
 
   const openAddModal = () => {

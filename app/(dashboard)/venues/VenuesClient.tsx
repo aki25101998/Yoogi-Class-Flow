@@ -62,6 +62,7 @@ export default function VenuesClient() {
 
   const handleSuccess = () => {
     queryClient.invalidateQueries({ queryKey: ['venues', organizationId] });
+    queryClient.invalidateQueries({ queryKey: ['activeVenues', organizationId] });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
