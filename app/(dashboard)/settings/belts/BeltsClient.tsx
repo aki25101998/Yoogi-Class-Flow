@@ -177,26 +177,28 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
             ) : (
               // ADD BULK FORM
               <>
-                <div className="grid grid-cols-[minmax(0,1fr)_32px] gap-x-2 gap-y-3 items-center w-full">
-                  <div className="flex items-center">
-                    <label className="block text-sm font-medium text-main m-0">Tên cấp đai *</label>
+                <div className="flex flex-col gap-3 w-full">
+                  {/* Label row: label left, + button right */}
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-main">Tên cấp đai *</label>
+                    <button 
+                      type="button"
+                      onClick={() => setBeltNames(prev => [...prev, ''])} 
+                      className="w-8 h-8 flex items-center justify-center rounded-md bg-transparent border-none text-secondary hover:bg-action-primary/8 hover:text-action-primary active:bg-action-primary/15 transition-colors disabled:opacity-50 disabled:cursor-not-allowed outline-none focus-visible:ring-2 focus-visible:ring-action-primary/40 focus-visible:ring-offset-1"
+                      title="Thêm cấp đai"
+                      aria-label="Thêm cấp đai"
+                      disabled={loading}
+                    >
+                      <span className="material-icons-round text-[18px]">add</span>
+                    </button>
                   </div>
-                  <button 
-                    type="button"
-                    onClick={() => setBeltNames(prev => [...prev, ''])} 
-                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-transparent border border-border/50 text-secondary hover:bg-action-primary/10 hover:text-action-primary hover:border-action-primary/30 active:bg-action-primary active:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed outline-none focus-visible:ring-2 focus-visible:ring-action-primary/50"
-                    title="Thêm cấp đai"
-                    aria-label="Thêm cấp đai"
-                    disabled={loading}
-                  >
-                    <span className="material-icons-round text-[18px]">add</span>
-                  </button>
                   
+                  {/* Input rows: input stretches, × button on the right */}
                   {beltNames.map((name, index) => (
-                    <div key={index} className="contents">
+                    <div key={index} className="flex items-center gap-2">
                       <Input 
                         required 
-                        className="w-full m-0"
+                        className="flex-1 min-w-0 m-0"
                         value={name} 
                         onChange={e => {
                           const newNames = [...beltNames];
@@ -214,7 +216,7 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
                             newNames.splice(index, 1);
                             setBeltNames(newNames);
                           }}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg bg-transparent text-secondary hover:bg-danger-bg hover:text-action-danger active:bg-action-danger active:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed outline-none focus-visible:ring-2 focus-visible:ring-action-danger/50"
+                          className="shrink-0 w-8 h-8 flex items-center justify-center rounded-md bg-transparent border-none text-secondary hover:bg-action-danger/8 hover:text-action-danger active:bg-action-danger/15 transition-colors disabled:opacity-50 disabled:cursor-not-allowed outline-none focus-visible:ring-2 focus-visible:ring-action-danger/40 focus-visible:ring-offset-1"
                           title="Xóa dòng"
                           aria-label={`Xóa cấp đai ${index + 1}`}
                           disabled={loading}
@@ -222,7 +224,7 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
                           <span className="material-icons-round text-[18px]">close</span>
                         </button>
                       ) : (
-                        <div className="w-8 h-8"></div>
+                        <div className="shrink-0 w-8 h-8" />
                       )}
                     </div>
                   ))}
