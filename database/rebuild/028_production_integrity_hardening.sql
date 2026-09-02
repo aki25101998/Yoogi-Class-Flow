@@ -57,6 +57,15 @@ END $$;
 
 -- 1c. students.venue_id — add composite FK to venues
 DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'venues_org_id_key' OR (conrelid = 'public.venues'::regclass AND contype = 'u' AND array_length(conkey, 1) = 2)
+  ) THEN
+    ALTER TABLE public.venues ADD CONSTRAINT venues_org_id_key UNIQUE(organization_id, id);
+  END IF;
+EXCEPTION WHEN duplicate_table THEN NULL;
+END $$;
+
+DO $$ BEGIN
   -- Drop simple FK if exists
   IF EXISTS (
     SELECT 1 FROM pg_constraint 
@@ -98,6 +107,15 @@ EXCEPTION WHEN duplicate_table THEN NULL;
 END $$;
 
 -- 1e. student_session_attendance — add composite FK to students
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'students_org_id_key' OR (conrelid = 'public.students'::regclass AND contype = 'u' AND array_length(conkey, 1) = 2)
+  ) THEN
+    ALTER TABLE public.students ADD CONSTRAINT students_org_id_key UNIQUE(organization_id, id);
+  END IF;
+EXCEPTION WHEN duplicate_table THEN NULL;
+END $$;
+
 DO $$ BEGIN
   -- Drop simple FK to students if exists
   IF EXISTS (
@@ -158,6 +176,15 @@ EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
 -- 1g. payroll_payments — add composite FK to coaches
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'coaches_org_id_key' OR (conrelid = 'public.coaches'::regclass AND contype = 'u' AND array_length(conkey, 1) = 2)
+  ) THEN
+    ALTER TABLE public.coaches ADD CONSTRAINT coaches_org_id_key UNIQUE(organization_id, id);
+  END IF;
+EXCEPTION WHEN duplicate_table THEN NULL;
+END $$;
+
 DO $$ BEGIN
   -- Drop simple FK if exists
   IF EXISTS (
