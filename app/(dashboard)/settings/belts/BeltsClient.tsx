@@ -177,14 +177,14 @@ export default function BeltsClient() {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => handleEdit(belt)}
-                          className="text-sm font-semibold text-primary hover:opacity-80 transition-opacity"
+                          className="text-action text-action-primary"
                         >
                           Sửa
                         </button>
                         <span className="text-secondary/40 select-none">|</span>
                         <button
                           onClick={() => handleDelete(belt.id)}
-                          className="text-sm font-medium text-danger hover:opacity-80 transition-opacity"
+                          className="text-action text-action-danger"
                         >
                           Xóa
                         </button>
