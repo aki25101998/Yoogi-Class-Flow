@@ -32,14 +32,15 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
   };
 
   const resetForm = () => {
-    setFormData({ name: '', display_order: belts.length + 1, is_active: true });
+    setFormData({ name: '', display_order: 1, is_active: true });
     setIsAdding(false);
     setEditingId(null);
     setError('');
   };
 
   const handleOpenAdd = () => {
-    setFormData({ name: '', display_order: belts.length + 1, is_active: true });
+    // Only used for visual default, server ignores it for adds
+    setFormData({ name: '', display_order: belts.length > 0 ? Math.max(...belts.map(b => b.display_order || 0)) + 1 : 1, is_active: true });
     setIsAdding(true);
   };
 
@@ -58,31 +59,44 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
     setError('');
     setLoading(true);
     
-    let res;
-    if (editingId) {
-      res = await updateBeltAction(editingId, formData);
-    } else {
-      res = await addBeltAction(formData);
-    }
-    
-    setLoading(false);
-    if (res.success) {
-      resetForm();
-      fetchBelts();
-    } else {
-      setError(res.error || 'Lỗi khi lưu cấp đai');
+    try {
+      let res;
+      if (editingId) {
+        res = await updateBeltAction(editingId, formData);
+      } else {
+        res = await addBeltAction(formData);
+      }
+      
+      if (res.success) {
+        // Fetch fresh data immediately and wait for it
+        await fetchBelts();
+        resetForm(); // Close modal after state is updated
+      } else {
+        setError(res.error || 'Lỗi khi lưu cấp đai');
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Đã xảy ra lỗi không xác định.');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('Bạn có chắc muốn xóa cấp đai này? Việc này có thể ảnh hưởng đến các học viên đang có đai này. Khuyên dùng: Chuyển trạng thái sang "Tạm ẩn".')) {
       setLoading(true);
-      const res = await deleteBeltAction(id);
-      setLoading(false);
-      if (res.success) {
-        fetchBelts();
-      } else {
-        alert(res.error || 'Lỗi khi xóa');
+      try {
+        const res = await deleteBeltAction(id);
+        if (res.success) {
+          await fetchBelts();
+        } else {
+          alert(res.error || 'Lỗi khi xóa');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Lỗi hệ thống khi xóa.');
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -117,8 +131,10 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
               label="Thứ tự hiển thị" 
               type="number"
               required 
+              disabled={!editingId} // Disable if adding, let server handle it
               value={formData.display_order} 
               onChange={e => setFormData({...formData, display_order: parseInt(e.target.value) || 0})} 
+              helperText={!editingId ? "Thứ tự sẽ được tự động tính ở cuối danh sách" : "Thay đổi thứ tự sẽ tự động sắp xếp lại các cấp đai khác"}
             />
             <Select 
               label="Trạng thái" 
