@@ -183,7 +183,7 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
                           {!(currentUserRole === 'admin' && m.role === 'owner') && (
                             <button
                               onClick={() => handleOpenRoleModal(m)}
-                              className="text-sm font-semibold text-primary hover:opacity-80 transition-opacity disabled:opacity-50"
+                              className="text-action text-action-primary"
                               disabled={loading}
                             >
                               Chỉnh sửa
@@ -194,7 +194,7 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
                           )}
                           <button
                             onClick={() => handleRemove(m.id)}
-                            className="text-sm font-medium text-danger hover:opacity-80 transition-opacity disabled:opacity-50"
+                            className="text-action text-action-danger"
                             disabled={loading}
                           >
                             Xóa
@@ -218,7 +218,7 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
                       {isAdminOrOwner && (
                         <button
                           onClick={() => handleRevoke(inv.id)}
-                          className="text-sm font-medium text-danger hover:opacity-80 transition-opacity disabled:opacity-50"
+                          className="text-action text-action-danger"
                           disabled={loading}
                         >
                           Thu hồi
