@@ -186,7 +186,7 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
                               className="text-action text-action-primary"
                               disabled={loading}
                             >
-                              Chỉnh sửa
+                              Sửa
                             </button>
                           )}
                           {!(currentUserRole === 'admin' && m.role === 'owner') && (
