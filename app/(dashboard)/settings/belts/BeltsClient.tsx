@@ -177,57 +177,55 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
             ) : (
               // ADD BULK FORM
               <>
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-medium text-main">Tên cấp đai *</label>
-                    <button 
-                      type="button"
-                      onClick={() => setBeltNames(prev => [...prev, ''])} 
-                      className="w-8 h-8 flex items-center justify-center rounded-lg border border-action-primary/20 bg-action-primary/10 hover:bg-action-primary hover:text-white transition-colors text-action-primary disabled:opacity-50 disabled:cursor-not-allowed outline-none focus-visible:ring-2 focus-visible:ring-action-primary/50"
-                      title="Thêm cấp đai"
-                      aria-label="Thêm cấp đai"
-                      disabled={loading}
-                    >
-                      <span className="material-icons-round text-[18px]">add</span>
-                    </button>
+                <div className="grid grid-cols-[minmax(0,1fr)_32px] gap-x-2 gap-y-3 items-center w-full">
+                  <div className="flex items-center">
+                    <label className="block text-sm font-medium text-main m-0">Tên cấp đai *</label>
                   </div>
+                  <button 
+                    type="button"
+                    onClick={() => setBeltNames(prev => [...prev, ''])} 
+                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-transparent border border-border/50 text-secondary hover:bg-action-primary/10 hover:text-action-primary hover:border-action-primary/30 active:bg-action-primary active:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed outline-none focus-visible:ring-2 focus-visible:ring-action-primary/50"
+                    title="Thêm cấp đai"
+                    aria-label="Thêm cấp đai"
+                    disabled={loading}
+                  >
+                    <span className="material-icons-round text-[18px]">add</span>
+                  </button>
                   
-                  <div className="flex flex-col gap-3">
-                    {beltNames.map((name, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <div className="flex-1 min-w-0">
-                          <Input 
-                            required 
-                            className="w-full"
-                            value={name} 
-                            onChange={e => {
-                              const newNames = [...beltNames];
-                              newNames[index] = e.target.value;
-                              setBeltNames(newNames);
-                            }} 
-                            placeholder={`Tên cấp đai ${index + 1}`}
-                            disabled={loading}
-                          />
-                        </div>
-                        {beltNames.length > 1 && (
-                          <button 
-                            type="button"
-                            onClick={() => {
-                              const newNames = [...beltNames];
-                              newNames.splice(index, 1);
-                              setBeltNames(newNames);
-                            }}
-                            className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg bg-transparent text-secondary hover:bg-danger-bg hover:text-action-danger transition-colors disabled:opacity-50 disabled:cursor-not-allowed outline-none focus-visible:ring-2 focus-visible:ring-action-danger/50"
-                            title="Xóa dòng"
-                            aria-label={`Xóa cấp đai ${index + 1}`}
-                            disabled={loading}
-                          >
-                            <span className="material-icons-round text-[18px]">close</span>
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                  {beltNames.map((name, index) => (
+                    <div key={index} className="contents">
+                      <Input 
+                        required 
+                        className="w-full m-0"
+                        value={name} 
+                        onChange={e => {
+                          const newNames = [...beltNames];
+                          newNames[index] = e.target.value;
+                          setBeltNames(newNames);
+                        }} 
+                        placeholder={`Tên cấp đai ${index + 1}`}
+                        disabled={loading}
+                      />
+                      {beltNames.length > 1 ? (
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            const newNames = [...beltNames];
+                            newNames.splice(index, 1);
+                            setBeltNames(newNames);
+                          }}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg bg-transparent text-secondary hover:bg-danger-bg hover:text-action-danger active:bg-action-danger active:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed outline-none focus-visible:ring-2 focus-visible:ring-action-danger/50"
+                          title="Xóa dòng"
+                          aria-label={`Xóa cấp đai ${index + 1}`}
+                          disabled={loading}
+                        >
+                          <span className="material-icons-round text-[18px]">close</span>
+                        </button>
+                      ) : (
+                        <div className="w-8 h-8"></div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </>
             )}
