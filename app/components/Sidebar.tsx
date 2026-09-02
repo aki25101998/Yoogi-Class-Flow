@@ -15,11 +15,7 @@ const ADMIN_NAV = [
   ]},
   { section: 'VẬN HÀNH', items: [
     { icon: 'people', label: 'Huấn luyện viên', route: '/coaches', permission: 'manage_coaches' },
-    { icon: 'school', label: 'Học viên', route: '/students', permission: 'manage_students' },
-    { icon: 'class', label: 'Lớp học', submenus: [
-        { label: 'Lớp học', route: '/classes', permission: 'manage_classes' },
-        { label: 'Địa điểm', route: '/venues', permission: 'manage_venues' }
-    ]},
+    { icon: 'school', label: 'Quản lý Đào tạo', route: '/training', permission: 'manage_venues' },
     { icon: 'calendar_month', label: 'Lịch dạy', submenus: [
         { label: 'Lịch', route: '/schedule', permission: 'manage_schedule' },
         { label: 'Điểm danh', route: '/attendance', permission: 'manage_attendance' }
