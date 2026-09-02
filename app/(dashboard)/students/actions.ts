@@ -8,11 +8,44 @@ export async function addStudentAction(data: { name: string; phone?: string; par
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
+  if (!data.name || data.name.trim().length === 0) {
+    return { success: false, error: 'Tên học viên không được để trống.' };
+  }
+
   const supabase = await createClient();
+  const orgId = context.organization.id;
+
+  // Verify belt belongs to org if provided
+  if (data.current_belt_id) {
+    const { data: belt } = await supabase
+      .from('organization_belts')
+      .select('id')
+      .eq('id', data.current_belt_id)
+      .eq('organization_id', orgId)
+      .single();
+    
+    if (!belt) {
+      return { success: false, error: 'Cấp đai không tồn tại trong tổ chức này.' };
+    }
+  }
+
+  // Verify venue belongs to org if provided
+  if (data.venue_id) {
+    const { data: venue } = await supabase
+      .from('venues')
+      .select('id')
+      .eq('id', data.venue_id)
+      .eq('organization_id', orgId)
+      .single();
+    
+    if (!venue) {
+      return { success: false, error: 'Địa điểm không tồn tại trong tổ chức này.' };
+    }
+  }
   
   const { error } = await supabase.from('students').insert({
-    organization_id: context.organization.id,
-    name: data.name,
+    organization_id: orgId,
+    name: data.name.trim(),
     phone: data.phone,
     parent_name: data.parent_name,
     parent_phone: data.parent_phone,
@@ -45,12 +78,65 @@ export async function updateStudentAction(
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
+  if (!data.name || data.name.trim().length === 0) {
+    return { success: false, error: 'Tên học viên không được để trống.' };
+  }
+
   const supabase = await createClient();
+  const orgId = context.organization.id;
+
+  // Verify belt belongs to org if provided
+  if (data.current_belt_id) {
+    const { data: belt } = await supabase
+      .from('organization_belts')
+      .select('id')
+      .eq('id', data.current_belt_id)
+      .eq('organization_id', orgId)
+      .single();
+    
+    if (!belt) {
+      return { success: false, error: 'Cấp đai không tồn tại trong tổ chức này.' };
+    }
+  }
+
+  // Verify venue belongs to org if provided
+  if (data.venue_id) {
+    const { data: venue } = await supabase
+      .from('venues')
+      .select('id')
+      .eq('id', data.venue_id)
+      .eq('organization_id', orgId)
+      .single();
+    
+    if (!venue) {
+      return { success: false, error: 'Địa điểm không tồn tại trong tổ chức này.' };
+    }
+  }
+
+  // Verify newClassId belongs to org if provided
+  if (newClassId) {
+    const { data: cls } = await supabase
+      .from('venue_classes')
+      .select('id')
+      .eq('id', newClassId)
+      .eq('organization_id', orgId)
+      .single();
+    
+    if (!cls) {
+      return { success: false, error: 'Lớp học không tồn tại trong tổ chức này.' };
+    }
+  }
+
+  // Strip organization_id from data to prevent tampering
+  const safeData = { ...data };
+  delete (safeData as any).organization_id;
+  delete (safeData as any).id;
+  safeData.name = safeData.name.trim();
   
   const { error } = await supabase.from('students')
-    .update(data)
+    .update(safeData)
     .eq('id', id)
-    .eq('organization_id', context.organization.id);
+    .eq('organization_id', orgId);
 
   if (error) return { success: false, error: error.message };
 
@@ -62,7 +148,7 @@ export async function updateStudentAction(
       .select('id, class_id')
       .eq('student_id', id)
       .eq('status', 'active')
-      .eq('organization_id', context.organization.id);
+      .eq('organization_id', orgId);
 
     // If there's an existing class and it's different from the new one
     const currentClassId = currentActive && currentActive.length > 0 ? currentActive[0].class_id : null;
@@ -75,7 +161,7 @@ export async function updateStudentAction(
           .update({ status: 'dropped' })
           .eq('student_id', id)
           .eq('status', 'active')
-          .eq('organization_id', context.organization.id);
+          .eq('organization_id', orgId);
       }
       
       // If a new class was selected (not empty), enroll the student
@@ -83,7 +169,7 @@ export async function updateStudentAction(
         await supabase
           .from('class_students')
           .insert({
-            organization_id: context.organization.id,
+            organization_id: orgId,
             student_id: id,
             class_id: newClassId,
             status: 'active'
@@ -118,9 +204,37 @@ export async function enrollStudentAction(studentId: string, classId: string) {
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
   const supabase = await createClient();
+  const orgId = context.organization.id;
+
+  // Verify student and class belong to org
+  const { data: student } = await supabase
+    .from('students')
+    .select('id, status')
+    .eq('id', studentId)
+    .eq('organization_id', orgId)
+    .single();
+
+  if (!student) {
+    return { success: false, error: 'Học viên không tồn tại trong tổ chức này.' };
+  }
+
+  if (student.status !== 'active') {
+    return { success: false, error: 'Học viên này hiện đang không hoạt động.' };
+  }
+
+  const { data: cls } = await supabase
+    .from('venue_classes')
+    .select('id')
+    .eq('id', classId)
+    .eq('organization_id', orgId)
+    .single();
+
+  if (!cls) {
+    return { success: false, error: 'Lớp học không tồn tại trong tổ chức này.' };
+  }
   
   const { error } = await supabase.from('class_students').insert({
-    organization_id: context.organization.id,
+    organization_id: orgId,
     student_id: studentId,
     class_id: classId,
     status: 'active'
@@ -138,8 +252,9 @@ export async function unenrollStudentAction(studentId: string, classId: string) 
 
   const supabase = await createClient();
   
+  // Use UPDATE (soft delete) instead of DELETE to preserve history
   const { error } = await supabase.from('class_students')
-    .delete()
+    .update({ status: 'dropped' })
     .eq('student_id', studentId)
     .eq('class_id', classId)
     .eq('organization_id', context.organization.id);

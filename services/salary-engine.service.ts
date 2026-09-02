@@ -142,16 +142,17 @@ export async function calculateMonthlyPayroll(
     .gte('created_at', `${month}-01T00:00:00`)
     .lt('created_at', `${getNextMonth(month)}-01T00:00:00`);
 
+  // §7.5 — Only count 'approved' adjustments in payroll (not 'pending')
   const bonuses = (adjustments || [])
-    .filter((a: any) => a.adjustment_type === 'BONUS' && a.status !== 'rejected')
+    .filter((a: any) => a.adjustment_type === 'BONUS' && a.status === 'approved')
     .reduce((sum: number, a: any) => sum + Number(a.amount), 0);
 
   const allowances = (adjustments || [])
-    .filter((a: any) => a.adjustment_type === 'ALLOWANCE' && a.status !== 'rejected')
+    .filter((a: any) => a.adjustment_type === 'ALLOWANCE' && a.status === 'approved')
     .reduce((sum: number, a: any) => sum + Number(a.amount), 0);
 
   const deductions = (adjustments || [])
-    .filter((a: any) => a.adjustment_type === 'DEDUCTION' && a.status !== 'rejected')
+    .filter((a: any) => a.adjustment_type === 'DEDUCTION' && a.status === 'approved')
     .reduce((sum: number, a: any) => sum + Number(a.amount), 0);
 
   const grossPayroll = fixedMonthly + totalSessionSalary + bonuses + allowances - deductions;
@@ -212,12 +213,13 @@ export async function previewSalaryCalculation(
     grossRevenue: null,
   };
 
-  // Fetch names if IDs provided
+  // Fetch names if IDs provided — with org ownership verification
   const supabase = await createClient();
   if (params.classId) {
     const { data: cls } = await supabase.from('venue_classes')
       .select('name, class_type')
       .eq('id', params.classId)
+      .eq('organization_id', organizationId)
       .single();
     if (cls) {
       context.className = cls.name || '';
@@ -228,6 +230,7 @@ export async function previewSalaryCalculation(
     const { data: venue } = await supabase.from('venues')
       .select('name')
       .eq('id', params.venueId)
+      .eq('organization_id', organizationId)
       .single();
     if (venue) context.venueName = venue.name || '';
   }

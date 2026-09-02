@@ -118,6 +118,26 @@ export async function cancelSession(organizationId: string, classId: string, dat
   const supabase = await createClient();
   
   if (sessionId) {
+    // §4.4 — Validate session can be cancelled (state machine enforced at DB level too)
+    const { data: session } = await supabase
+      .from('class_sessions')
+      .select('id, status')
+      .eq('id', sessionId)
+      .eq('organization_id', organizationId)
+      .single();
+
+    if (!session) {
+      return { error: { message: 'Không tìm thấy ca học hoặc không thuộc tổ chức này.' } };
+    }
+
+    if (session.status === 'approved' || session.status === 'paid') {
+      return { error: { message: `Không thể hủy buổi học ở trạng thái "${session.status}". Vui lòng liên hệ quản trị viên.` } };
+    }
+
+    if (session.status === 'cancelled') {
+      return { error: { message: 'Buổi học này đã được hủy trước đó.' } };
+    }
+
     return await supabase.from('class_sessions')
       .update({ status: 'cancelled', cancelled_at: new Date().toISOString() })
       .eq('id', sessionId)
@@ -130,13 +150,16 @@ export async function cancelSession(organizationId: string, classId: string, dat
   }
 
   const { data: existing } = await supabase.from('class_sessions')
-    .select('id')
+    .select('id, status')
     .eq('organization_id', organizationId)
     .eq('schedule_id', scheduleId)
     .eq('date', dateStr)
     .maybeSingle();
 
   if (existing) {
+    if (existing.status === 'approved' || existing.status === 'paid') {
+      return { error: { message: `Không thể hủy buổi học ở trạng thái "${existing.status}".` } };
+    }
     return await supabase.from('class_sessions')
       .update({ status: 'cancelled', cancelled_at: new Date().toISOString() })
       .eq('id', existing.id);
@@ -155,8 +178,40 @@ export async function cancelSession(organizationId: string, classId: string, dat
 
 export async function overrideCoach(organizationId: string, classId: string, dateStr: string, newCoachId: string, scheduleId?: string, sessionId?: string) {
   const supabase = await createClient();
+
+  // §4.3 — Verify coach exists, is active, and belongs to org
+  const { data: coach } = await supabase
+    .from('coaches')
+    .select('id, status')
+    .eq('id', newCoachId)
+    .eq('organization_id', organizationId)
+    .single();
+
+  if (!coach) {
+    return { error: { message: 'Huấn luyện viên không tồn tại trong tổ chức này.' } };
+  }
+
+  if (coach.status !== 'active') {
+    return { error: { message: 'Huấn luyện viên này hiện đang không hoạt động.' } };
+  }
   
   if (sessionId) {
+    // §4.4 — Block override for approved/paid sessions
+    const { data: session } = await supabase
+      .from('class_sessions')
+      .select('id, status')
+      .eq('id', sessionId)
+      .eq('organization_id', organizationId)
+      .single();
+
+    if (!session) {
+      return { error: { message: 'Không tìm thấy ca học.' } };
+    }
+
+    if (session.status === 'approved' || session.status === 'paid') {
+      return { error: { message: `Không thể thay đổi HLV cho buổi học ở trạng thái "${session.status}".` } };
+    }
+
     return await supabase.from('class_sessions')
       .update({ status: 'scheduled', coach_id: newCoachId })
       .eq('id', sessionId)
@@ -168,13 +223,16 @@ export async function overrideCoach(organizationId: string, classId: string, dat
   }
 
   const { data: existing } = await supabase.from('class_sessions')
-    .select('id')
+    .select('id, status')
     .eq('organization_id', organizationId)
     .eq('schedule_id', scheduleId)
     .eq('date', dateStr)
     .maybeSingle();
 
   if (existing) {
+    if (existing.status === 'approved' || existing.status === 'paid') {
+      return { error: { message: `Không thể thay đổi HLV cho buổi học ở trạng thái "${existing.status}".` } };
+    }
     return await supabase.from('class_sessions')
       .update({ status: 'scheduled', coach_id: newCoachId })
       .eq('id', existing.id);

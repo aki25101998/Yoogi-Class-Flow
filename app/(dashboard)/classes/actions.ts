@@ -17,12 +17,29 @@ export async function addClassAction(data: { name: string; venue_id: string; sta
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
+  if (!data.name || data.name.trim().length === 0) {
+    return { success: false, error: 'Tên lớp học không được để trống.' };
+  }
+
   const supabase = await createClient();
+  const orgId = context.organization.id;
+
+  // Verify venue belongs to org
+  const { data: venue } = await supabase
+    .from('venues')
+    .select('id')
+    .eq('id', data.venue_id)
+    .eq('organization_id', orgId)
+    .single();
+
+  if (!venue) {
+    return { success: false, error: 'Địa điểm không tồn tại trong tổ chức này.' };
+  }
   
   const { data: newClass, error } = await supabase.from('venue_classes').insert({
-    organization_id: context.organization.id,
+    organization_id: orgId,
     venue_id: data.venue_id,
-    name: data.name,
+    name: data.name.trim(),
     status: data.status,
     start_time: '18:00', // default or could be inputs
     end_time: '20:00'
@@ -41,26 +58,42 @@ export async function updateClassAction(id: string, data: { name: string; venue_
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
+  if (!data.name || data.name.trim().length === 0) {
+    return { success: false, error: 'Tên lớp học không được để trống.' };
+  }
+
   const supabase = await createClient();
+  const orgId = context.organization.id;
+
+  // Verify venue belongs to org
+  const { data: venue } = await supabase
+    .from('venues')
+    .select('id')
+    .eq('id', data.venue_id)
+    .eq('organization_id', orgId)
+    .single();
+
+  if (!venue) {
+    return { success: false, error: 'Địa điểm không tồn tại trong tổ chức này.' };
+  }
   
   const { error } = await supabase.from('venue_classes')
     .update({
-      name: data.name,
+      name: data.name.trim(),
       venue_id: data.venue_id,
       status: data.status
     })
     .eq('id', id)
-    .eq('organization_id', context.organization.id);
+    .eq('organization_id', orgId);
 
   if (error) return { success: false, error: error.message };
 
   // Remove existing coaches and re-assign (simplest way to update)
-  await supabase.from('class_coaches').delete().eq('class_id', id);
+  await supabase.from('class_coaches').delete().eq('class_id', id).eq('organization_id', orgId);
 
   if (data.head_coach_id) await assignCoachToClass(id, data.head_coach_id, 'HEAD_COACH');
   if (data.assistant_coach_id) await assignCoachToClass(id, data.assistant_coach_id, 'ASSISTANT_COACH');
 
-  revalidatePath('/classes');
   revalidatePath('/classes');
   return { success: true };
 }
@@ -70,12 +103,41 @@ export async function enrollStudentAction(classId: string, studentId: string) {
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
   const supabase = await createClient();
+  const orgId = context.organization.id;
+
+  // §2.2 — Verify student exists, active, same org
+  const { data: student } = await supabase
+    .from('students')
+    .select('id, status')
+    .eq('id', studentId)
+    .eq('organization_id', orgId)
+    .single();
+
+  if (!student) {
+    return { success: false, error: 'Học viên không tồn tại trong tổ chức này.' };
+  }
+
+  if (student.status !== 'active') {
+    return { success: false, error: 'Học viên này hiện đang không hoạt động. Vui lòng kích hoạt lại trước khi đăng ký lớp.' };
+  }
+
+  // Verify class exists, same org
+  const { data: cls } = await supabase
+    .from('venue_classes')
+    .select('id, status')
+    .eq('id', classId)
+    .eq('organization_id', orgId)
+    .single();
+
+  if (!cls) {
+    return { success: false, error: 'Lớp học không tồn tại trong tổ chức này.' };
+  }
   
   const { data: existing } = await supabase.from('class_students')
     .select('id, status')
     .eq('class_id', classId)
     .eq('student_id', studentId)
-    .eq('organization_id', context.organization.id)
+    .eq('organization_id', orgId)
     .single();
 
   if (existing) {
@@ -85,7 +147,7 @@ export async function enrollStudentAction(classId: string, studentId: string) {
     if (error) return { success: false, error: error.message };
   } else {
     const { error } = await supabase.from('class_students').insert({
-      organization_id: context.organization.id,
+      organization_id: orgId,
       class_id: classId,
       student_id: studentId,
       status: 'active'
@@ -93,8 +155,6 @@ export async function enrollStudentAction(classId: string, studentId: string) {
     if (error) return { success: false, error: error.message };
   }
 
-  // Also drop them from any other active classes, since students usually belong to one class per org, or we can just leave it as is if they can belong to multiple.
-  // The students edit UI handles dropping others. We will just enroll here.
   revalidatePath('/classes');
   return { success: true };
 }

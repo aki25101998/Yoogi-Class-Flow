@@ -27,9 +27,13 @@ export async function addBeltAction(data: { name: string; display_order: number;
     return { success: false, error: 'Bạn không có quyền thực hiện thao tác này.' };
   }
 
+  if (!data.name || data.name.trim().length === 0) {
+    return { success: false, error: 'Tên cấp đai không được để trống.' };
+  }
+
   const supabase = await createClient();
   const { error } = await supabase.from('organization_belts').insert({
-    name: data.name,
+    name: data.name.trim(),
     display_order: data.display_order,
     is_active: data.is_active,
     organization_id: context.organization.id
@@ -55,6 +59,10 @@ export async function updateBeltAction(id: string, data: { name?: string; displa
   const safeData = { ...data };
   delete (safeData as any).organization_id;
 
+  if (safeData.name !== undefined && safeData.name.trim().length === 0) {
+    return { success: false, error: 'Tên cấp đai không được để trống.' };
+  }
+
   const supabase = await createClient();
   const { error } = await supabase.from('organization_belts')
     .update(safeData)
@@ -79,10 +87,26 @@ export async function deleteBeltAction(id: string) {
   }
 
   const supabase = await createClient();
+  const orgId = context.organization.id;
+
+  // §11.1 — Block deletion if any student is using this belt
+  const { count: studentsUsingBelt } = await supabase
+    .from('students')
+    .select('id', { count: 'exact', head: true })
+    .eq('current_belt_id', id)
+    .eq('organization_id', orgId);
+
+  if (studentsUsingBelt && studentsUsingBelt > 0) {
+    return { 
+      success: false, 
+      error: `Không thể xóa: Có ${studentsUsingBelt} học viên đang sử dụng cấp đai này. Vui lòng hủy kích hoạt thay vì xóa.` 
+    };
+  }
+
   const { error } = await supabase.from('organization_belts')
     .delete()
     .eq('id', id)
-    .eq('organization_id', context.organization.id);
+    .eq('organization_id', orgId);
 
   if (error) {
     console.error('deleteBeltAction error:', error);
