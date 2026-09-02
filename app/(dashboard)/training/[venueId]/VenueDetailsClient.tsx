@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { useDashboardContext } from '../../DashboardProvider';
 import { useTrainingVenueDetails, useTrainingFormLookups } from '@/hooks/useTrainingManagement';
-import { addClassAction, updateClassAction, addStudentAction } from '../actions';
+import { addClassAction, updateClassAction, addStudentAction, updateStudentAction } from '../actions';
 
 import { PageHeader } from '@/app/components/ui/PageHeader';
 import { Button } from '@/app/components/ui/Button';
@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Ca
 import { EmptyState } from '@/app/components/ui/EmptyState';
 import { Badge } from '@/app/components/ui/Badge';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/app/components/ui/Modal';
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableHeader, TableRow } from '@/app/components/ui/Table';
 
 export default function VenueDetailsClient({ venueId }: { venueId: string }) {
   const router = useRouter();
@@ -35,6 +36,7 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
 
   // Student Modal State
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
+  const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
   const [studentForm, setStudentForm] = useState({ name: '', phone: '', parent_name: '', parent_phone: '', dob: '', current_belt_id: '', class_id: '' });
 
   const [error, setError] = useState('');
@@ -46,6 +48,7 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
     setIsClassModalOpen(false);
     setIsStudentModalOpen(false);
     setEditingClassId(null);
+    setEditingStudentId(null);
     setError('');
   };
 
@@ -122,15 +125,41 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
       class_id: studentForm.class_id || undefined,
     };
 
-    const res = await addStudentAction(payload);
-    setLoading(false);
-    
-    if (res.success) {
-      resetForms();
-      handleSuccess();
+    if (editingStudentId) {
+      const res = await updateStudentAction(editingStudentId, payload, payload.class_id);
+      setLoading(false);
+      
+      if (res.success) {
+        resetForms();
+        handleSuccess();
+      } else {
+        setError(res.error || 'Lỗi khi cập nhật học viên');
+      }
     } else {
-      setError(res.error || 'Lỗi khi thêm học viên');
+      const res = await addStudentAction(payload);
+      setLoading(false);
+      
+      if (res.success) {
+        resetForms();
+        handleSuccess();
+      } else {
+        setError(res.error || 'Lỗi khi thêm học viên');
+      }
     }
+  };
+
+  const handleEditStudent = (student: any) => {
+    setEditingStudentId(student.id);
+    setStudentForm({
+      name: student.name || '',
+      phone: student.phone || '',
+      parent_name: student.parent_name || '',
+      parent_phone: student.parent_phone || '',
+      dob: student.dob || '',
+      current_belt_id: student.organization_belts?.id || '',
+      class_id: student.class_id || ''
+    });
+    setIsStudentModalOpen(true);
   };
 
   if (isVenueLoading) {
@@ -153,7 +182,9 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
   }
 
   const classes = venue.classes || [];
-  const totalStudents = classes.reduce((acc: number, c: any) => acc + c.studentsCount, 0);
+  const activeClassesCount = classes.filter((c: any) => c.status === 'active').length;
+  const students = venue.students || [];
+  const totalStudents = students.length;
 
   return (
     <div className="flex-col gap-6">
@@ -189,8 +220,8 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
         <Card className="bg-primary/5 border-primary/20">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-sm text-secondary font-medium uppercase tracking-wider mb-1">Tổng số lớp</p>
-              <h3 className="text-2xl font-bold text-primary">{classes.length}</h3>
+              <p className="text-sm text-secondary font-medium uppercase tracking-wider mb-1">Lớp đang hoạt động</p>
+              <h3 className="text-2xl font-bold text-primary">{activeClassesCount}</h3>
             </div>
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
               <span className="material-icons-round">class</span>
@@ -266,7 +297,7 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
                   <div className="flex gap-2">
                     <Link href={`/training/${venueId}/classes/${cls.id}`} className="flex-1">
                       <Button variant="primary" className="w-full justify-center">
-                        Xem Học Viên
+                        Xem lớp
                       </Button>
                     </Link>
                     {isAdminOrOwner && (
@@ -284,6 +315,75 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
               </Card>
             ))}
           </div>
+        )}
+      </div>
+
+      <div className="mt-8">
+        <h3 className="text-lg font-bold text-main mb-4">Học viên tại địa điểm</h3>
+        {students.length === 0 ? (
+          <EmptyState 
+            title="Chưa có học viên nào tại địa điểm này" 
+            description="Bấm 'Thêm Học Viên' để ghi danh học viên mới." 
+            icon="people"
+          />
+        ) : (
+          <TableContainer>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Tên học viên</TableHead>
+                  <TableHead>Ngày sinh</TableHead>
+                  <TableHead>SĐT / Phụ huynh</TableHead>
+                  <TableHead>Lớp</TableHead>
+                  <TableHead>Cấp đai</TableHead>
+                  <TableHead>Trạng thái</TableHead>
+                  {isAdminOrOwner && <TableHead className="w-20"></TableHead>}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {students.map((student: any) => (
+                  <TableRow key={student.id}>
+                    <TableCell className="font-medium text-main">{student.name}</TableCell>
+                    <TableCell>{new Date(student.dob).toLocaleDateString('vi-VN')}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        {student.phone && <span>{student.phone}</span>}
+                        {student.parent_phone && <span className="text-sm text-secondary">PH: {student.parent_phone}</span>}
+                        {!student.phone && !student.parent_phone && <span className="text-secondary italic">Chưa cập nhật</span>}
+                      </div>
+                    </TableCell>
+                    <TableCell>{student.class_name || <span className="text-secondary italic">Chưa xếp lớp</span>}</TableCell>
+                    <TableCell>
+                      {student.organization_belts ? (
+                        <Badge variant="info">{student.organization_belts.name}</Badge>
+                      ) : (
+                        <span className="text-secondary italic">Chưa có</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={student.status === 'active' ? 'success' : 'default'}>
+                        {student.status === 'active' ? 'Hoạt động' : 'Ngừng hoạt động'}
+                      </Badge>
+                    </TableCell>
+                    {isAdminOrOwner && (
+                      <TableCell>
+                        <div className="flex justify-end">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleEditStudent(student)}
+                            title="Sửa học viên"
+                          >
+                            <span className="material-icons-round text-secondary hover:text-primary">edit</span>
+                          </Button>
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         )}
       </div>
 
@@ -344,7 +444,7 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
 
       {/* Student Modal */}
       <Modal isOpen={isStudentModalOpen} onClose={loading ? () => {} : resetForms}>
-        <ModalHeader title="Thêm học viên mới" onClose={loading ? () => {} : resetForms} />
+        <ModalHeader title={editingStudentId ? 'Sửa học viên' : 'Thêm học viên mới'} onClose={loading ? () => {} : resetForms} />
         <ModalBody>
           {error && (
             <div className="bg-danger-bg border border-danger text-danger px-4 py-3 rounded-md text-sm mb-5 flex items-center gap-2">

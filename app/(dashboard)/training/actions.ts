@@ -80,6 +80,17 @@ export async function addClassAction(data: { name: string; venue_id: string; sta
   const supabase = await createClient();
   const orgId = context.organization.id;
   
+  const { data: venue, error: venueError } = await supabase
+    .from('venues')
+    .select('id')
+    .eq('id', data.venue_id)
+    .eq('organization_id', orgId)
+    .single();
+
+  if (venueError || !venue) {
+    return { success: false, error: 'Địa điểm không thuộc tổ chức hiện tại.' };
+  }
+
   const { data: newClass, error } = await supabase.from('venue_classes').insert({
     organization_id: orgId,
     venue_id: data.venue_id,
@@ -109,6 +120,28 @@ export async function updateClassAction(id: string, data: { name: string; venue_
   const supabase = await createClient();
   const orgId = context.organization.id;
   
+  const { data: venue, error: venueError } = await supabase
+    .from('venues')
+    .select('id')
+    .eq('id', data.venue_id)
+    .eq('organization_id', orgId)
+    .single();
+
+  if (venueError || !venue) {
+    return { success: false, error: 'Địa điểm không thuộc tổ chức hiện tại.' };
+  }
+
+  const { data: existingClass, error: classError } = await supabase
+    .from('venue_classes')
+    .select('id')
+    .eq('id', id)
+    .eq('organization_id', orgId)
+    .single();
+
+  if (classError || !existingClass) {
+    return { success: false, error: 'Lớp không tồn tại hoặc không thuộc tổ chức hiện tại.' };
+  }
+
   const { error } = await supabase.from('venue_classes')
     .update({
       name: data.name.trim(),
@@ -148,6 +181,36 @@ export async function addStudentAction(data: { name: string; phone?: string; par
   const supabase = await createClient();
   const orgId = context.organization.id;
   
+  const { data: venue, error: venueError } = await supabase
+    .from('venues')
+    .select('id')
+    .eq('id', data.venue_id)
+    .eq('organization_id', orgId)
+    .single();
+
+  if (venueError || !venue) {
+    return { success: false, error: 'Địa điểm không thuộc tổ chức hiện tại.' };
+  }
+
+  if (data.class_id) {
+    const { data: classData, error: classError } = await supabase
+      .from('venue_classes')
+      .select('id, venue_id, status')
+      .eq('id', data.class_id)
+      .eq('organization_id', orgId)
+      .single();
+    
+    if (classError || !classData) {
+      return { success: false, error: 'Lớp không tồn tại hoặc không thuộc tổ chức hiện tại.' };
+    }
+    if (classData.venue_id !== data.venue_id) {
+      return { success: false, error: 'Lớp không thuộc địa điểm của học viên.' };
+    }
+    if (classData.status !== 'active') {
+      return { success: false, error: 'Lớp không còn hoạt động.' };
+    }
+  }
+
   const { data: newStudent, error } = await supabase.from('students').insert({
     organization_id: orgId,
     name: data.name.trim(),
@@ -208,6 +271,25 @@ export async function updateStudentAction(
   if (error) return { success: false, error: error.message };
 
   if (newClassId !== undefined) {
+    if (newClassId) {
+      const { data: classData, error: classError } = await supabase
+        .from('venue_classes')
+        .select('id, venue_id, status')
+        .eq('id', newClassId)
+        .eq('organization_id', orgId)
+        .single();
+      
+      if (classError || !classData) {
+        return { success: false, error: 'Lớp không tồn tại hoặc không thuộc tổ chức hiện tại.' };
+      }
+      if (classData.venue_id !== data.venue_id) {
+        return { success: false, error: 'Lớp không thuộc địa điểm của học viên.' };
+      }
+      if (classData.status !== 'active') {
+        return { success: false, error: 'Lớp không còn hoạt động.' };
+      }
+    }
+
     const { data: currentActive } = await supabase
       .from('class_students')
       .select('id, class_id')
@@ -218,14 +300,13 @@ export async function updateStudentAction(
     const currentClassId = currentActive && currentActive.length > 0 ? currentActive[0].class_id : null;
 
     if (newClassId !== currentClassId) {
-      if (currentActive && currentActive.length > 0) {
-        await supabase
-          .from('class_students')
-          .update({ status: 'dropped' })
-          .eq('student_id', id)
-          .eq('status', 'active')
-          .eq('organization_id', orgId);
-      }
+      // Ensure any current active classes are dropped (enforce 1 active class rule)
+      await supabase
+        .from('class_students')
+        .update({ status: 'dropped' })
+        .eq('student_id', id)
+        .eq('status', 'active')
+        .eq('organization_id', orgId);
       
       if (newClassId) {
         await supabase

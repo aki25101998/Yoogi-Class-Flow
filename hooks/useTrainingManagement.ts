@@ -96,9 +96,42 @@ export function useTrainingVenueDetails(organizationId: string | undefined, venu
         studentsCount: c.class_students?.filter((s: any) => s.status === 'active').length || 0
       }));
       
+      const activeClassIds = classesData.filter((c: any) => c.status === 'active').map((c: any) => c.id);
+      let venueStudents: any[] = [];
+      
+      if (activeClassIds.length > 0) {
+        const { data: studentsData, error: studentsError } = await supabase
+          .from('class_students')
+          .select(`
+            status,
+            class_id,
+            venue_classes(name),
+            students(id, name, dob, phone, parent_name, parent_phone, status, organization_belts(id, name))
+          `)
+          .in('class_id', activeClassIds)
+          .eq('status', 'active');
+          
+        if (studentsError) throw studentsError;
+
+        const uniqueStudentsMap = new Map();
+        studentsData?.forEach((cs: any) => {
+          if (cs.students && cs.students.status === 'active') {
+            if (!uniqueStudentsMap.has(cs.students.id)) {
+              uniqueStudentsMap.set(cs.students.id, {
+                ...cs.students,
+                class_name: cs.venue_classes?.name,
+                class_id: cs.class_id,
+              });
+            }
+          }
+        });
+        venueStudents = Array.from(uniqueStudentsMap.values());
+      }
+
       return {
         ...venueData,
-        classes: classesWithStats
+        classes: classesWithStats,
+        students: venueStudents
       };
     },
     enabled: !!organizationId && !!venueId,
