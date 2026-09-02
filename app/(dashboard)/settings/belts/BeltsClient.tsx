@@ -178,35 +178,34 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
               // ADD BULK FORM
               <>
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-medium text-main">Tên cấp đai *</label>
-                    <Button 
-                      type="button" 
-                      onClick={() => setBeltNames(prev => [...prev, ''])} 
-                      size="sm" 
-                      variant="secondary" 
-                      title="Thêm cấp đai"
-                      className="!px-2 !py-1 h-auto min-h-0"
-                    >
-                      <span className="material-icons-round text-[18px]">add</span>
-                    </Button>
-                  </div>
+                  <label className="block text-sm font-medium text-main mb-2">Tên cấp đai *</label>
                   
-                  <div className="flex flex-col gap-3 pr-2">
+                  <div className="flex flex-col gap-3">
                     {beltNames.map((name, index) => (
-                      <div key={index} className="relative">
-                        <Input 
-                          required 
-                          className="w-full"
-                          value={name} 
-                          onChange={e => {
-                            const newNames = [...beltNames];
-                            newNames[index] = e.target.value;
-                            setBeltNames(newNames);
-                          }} 
-                          placeholder={`Tên cấp đai ${index + 1}`}
-                        />
-                        {index > 0 && (
+                      <div key={index} className="flex items-start gap-2">
+                        <div className="flex-1 w-full">
+                          <Input 
+                            required 
+                            className="w-full"
+                            value={name} 
+                            onChange={e => {
+                              const newNames = [...beltNames];
+                              newNames[index] = e.target.value;
+                              setBeltNames(newNames);
+                            }} 
+                            placeholder={`Tên cấp đai ${index + 1}`}
+                          />
+                        </div>
+                        {index === beltNames.length - 1 ? (
+                          <button 
+                            type="button"
+                            onClick={() => setBeltNames(prev => [...prev, ''])} 
+                            className="w-[44px] h-[44px] shrink-0 flex items-center justify-center rounded-xl border border-border bg-card hover:bg-secondary/10 transition-colors text-main shadow-sm"
+                            title="Thêm cấp đai"
+                          >
+                            <span className="material-icons-round">add</span>
+                          </button>
+                        ) : (
                           <button 
                             type="button"
                             onClick={() => {
@@ -214,10 +213,10 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
                               newNames.splice(index, 1);
                               setBeltNames(newNames);
                             }}
-                            className="absolute top-1/2 -translate-y-1/2 -right-10 w-8 h-8 flex items-center justify-center rounded-md text-secondary/60 hover:text-danger hover:bg-danger/10 transition-colors"
+                            className="w-[44px] h-[44px] shrink-0 flex items-center justify-center rounded-xl border border-border bg-card hover:bg-danger/10 hover:border-danger/30 hover:text-danger transition-colors text-secondary shadow-sm"
                             title="Xóa"
                           >
-                            <span className="material-icons-round text-[20px]">close</span>
+                            <span className="material-icons-round">close</span>
                           </button>
                         )}
                       </div>
