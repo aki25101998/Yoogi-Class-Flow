@@ -200,7 +200,7 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
                           <button 
                             type="button"
                             onClick={() => setBeltNames(prev => [...prev, ''])} 
-                            className="w-[44px] h-[44px] shrink-0 flex items-center justify-center rounded-xl border border-border bg-card hover:bg-secondary/10 transition-colors text-main shadow-sm"
+                            className="w-[44px] h-[44px] shrink-0 flex items-center justify-center rounded-xl border border-action-primary/20 bg-action-primary/10 hover:bg-action-primary hover:text-white transition-colors text-action-primary shadow-sm"
                             title="Thêm cấp đai"
                           >
                             <span className="material-icons-round">add</span>
@@ -213,7 +213,7 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
                               newNames.splice(index, 1);
                               setBeltNames(newNames);
                             }}
-                            className="w-[44px] h-[44px] shrink-0 flex items-center justify-center rounded-xl border border-border bg-card hover:bg-danger/10 hover:border-danger/30 hover:text-danger transition-colors text-secondary shadow-sm"
+                            className="w-[44px] h-[44px] shrink-0 flex items-center justify-center rounded-xl border border-action-primary/20 bg-action-primary/10 hover:bg-action-primary hover:text-white transition-colors text-action-primary shadow-sm"
                             title="Xóa"
                           >
                             <span className="material-icons-round">close</span>
