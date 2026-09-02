@@ -38,6 +38,7 @@ DECLARE
     v_profile_id UUID;
     v_version_id UUID;
     v_student JSONB;
+    v_venue_id UUID;
     v_success_count INT := 0;
     v_error_count INT := 0;
 BEGIN
@@ -76,6 +77,24 @@ BEGIN
     FOR v_student IN SELECT * FROM jsonb_array_elements(p_students)
     LOOP
         BEGIN
+            -- Resolve venue_id from venue_name
+            v_venue_id := NULL;
+            IF v_student->>'venue_name' IS NOT NULL AND (v_student->>'venue_name') != '' THEN
+                SELECT id INTO v_venue_id FROM public.venues 
+                WHERE organization_id = p_org_id AND name ILIKE (v_student->>'venue_name') LIMIT 1;
+                
+                IF v_venue_id IS NULL THEN
+                    RAISE EXCEPTION 'Không tìm thấy địa điểm học: %', v_student->>'venue_name';
+                END IF;
+            ELSE
+                RAISE EXCEPTION 'Địa điểm học không được để trống.';
+            END IF;
+
+            -- Validate required dob
+            IF v_student->>'dob' IS NULL OR (v_student->>'dob') = '' THEN
+                RAISE EXCEPTION 'Ngày sinh không được để trống đối với học viên: %', COALESCE(v_student->>'name', 'Không xác định');
+            END IF;
+
             INSERT INTO public.students (
                 organization_id,
                 name,
@@ -87,7 +106,8 @@ BEGIN
                 gender,
                 address,
                 note,
-                external_id
+                external_id,
+                venue_id
             ) VALUES (
                 p_org_id,
                 v_student->>'name',
@@ -99,7 +119,8 @@ BEGIN
                 v_student->>'gender',
                 v_student->>'address',
                 v_student->>'note',
-                v_student->>'external_id'
+                v_student->>'external_id',
+                v_venue_id
             );
             v_success_count := v_success_count + 1;
         EXCEPTION WHEN unique_violation THEN

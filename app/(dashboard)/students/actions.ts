@@ -4,12 +4,18 @@ import { createClient } from '@/utils/supabase/server';
 import { getCurrentOrganizationContext } from '@/services/organization.service';
 import { revalidatePath } from 'next/cache';
 
-export async function addStudentAction(data: { name: string; phone?: string; parent_name?: string; parent_phone?: string; dob?: string; current_belt_id?: string | null; venue_id?: string | null }) {
+export async function addStudentAction(data: { name: string; phone?: string; parent_name?: string; parent_phone?: string; dob: string; current_belt_id?: string | null; venue_id: string }) {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
   if (!data.name || data.name.trim().length === 0) {
     return { success: false, error: 'Tên học viên không được để trống.' };
+  }
+  if (!data.dob || data.dob.trim().length === 0) {
+    return { success: false, error: 'Ngày sinh không được để trống.' };
+  }
+  if (!data.venue_id) {
+    return { success: false, error: 'Địa điểm học không được để trống.' };
   }
 
   const supabase = await createClient();
@@ -68,10 +74,10 @@ export async function updateStudentAction(
     phone?: string; 
     parent_name?: string; 
     parent_phone?: string; 
-    dob?: string; 
+    dob: string; 
     status?: string;
     current_belt_id?: string | null;
-    venue_id?: string | null;
+    venue_id: string;
   },
   newClassId?: string
 ) {
@@ -80,6 +86,12 @@ export async function updateStudentAction(
 
   if (!data.name || data.name.trim().length === 0) {
     return { success: false, error: 'Tên học viên không được để trống.' };
+  }
+  if (!data.dob || data.dob.trim().length === 0) {
+    return { success: false, error: 'Ngày sinh không được để trống.' };
+  }
+  if (data.venue_id === null || data.venue_id === undefined || data.venue_id === '') {
+    return { success: false, error: 'Địa điểm học không được để trống.' };
   }
 
   const supabase = await createClient();

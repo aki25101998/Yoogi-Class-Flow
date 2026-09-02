@@ -72,12 +72,26 @@ export default function StudentsClient() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!formData.name.trim()) {
+      setError('Vui lòng nhập họ tên học viên');
+      return;
+    }
+    if (!formData.dob) {
+      setError('Vui lòng chọn ngày sinh');
+      return;
+    }
+    if (!formData.venue_id) {
+      setError('Vui lòng chọn địa điểm học');
+      return;
+    }
+
     setLoading(true);
     
     const submitData = {
       ...formData,
       current_belt_id: formData.current_belt_id === '' ? null : formData.current_belt_id,
-      venue_id: formData.venue_id === '' ? null : formData.venue_id
+      venue_id: formData.venue_id
     };
     
     if (editingId) {
@@ -168,20 +182,29 @@ export default function StudentsClient() {
         <ModalHeader title={editingId ? 'Sửa thông tin học viên' : 'Thêm học viên mới'} onClose={loading ? () => {} : resetForm} />
         <ModalBody>
           {error && <div style={{ color: 'var(--danger)', marginBottom: '16px', fontSize: '0.875rem' }}>{error}</div>}
-          <form id="student-form" onSubmit={handleSubmit} style={{ display: 'grid', gap: '16px' }}>
-            <Input 
-              label="Tên học viên *" 
-              required 
-              value={formData.name} 
-              onChange={e => setFormData({...formData, name: e.target.value})} 
-            />
+          <form id="student-form" onSubmit={handleSubmit} className="grid gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input 
+                label="Tên học viên *" 
+                required 
+                value={formData.name} 
+                onChange={e => setFormData({...formData, name: e.target.value})} 
+              />
+              <Input 
+                label="Ngày sinh *" 
+                type="date"
+                required 
+                value={formData.dob} 
+                onChange={e => setFormData({...formData, dob: e.target.value})} 
+              />
+            </div>
             
             <Input 
               label="Số điện thoại" 
               value={formData.phone} 
               onChange={e => setFormData({...formData, phone: e.target.value})} 
             />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input 
                 label="Tên phụ huynh" 
                 value={formData.parent_name} 
@@ -223,7 +246,8 @@ export default function StudentsClient() {
             />
 
             <Select 
-              label="Địa điểm học"
+              label="Địa điểm học *"
+              required
               value={formData.venue_id} 
               onChange={e => setFormData({...formData, venue_id: e.target.value})} 
               options={[
@@ -298,6 +322,12 @@ export default function StudentsClient() {
                     <div>
                       <h4 className="text-sm font-semibold text-secondary mb-3 uppercase tracking-wider">Thông tin cơ bản</h4>
                       <div className="flex flex-col gap-2">
+                        <div className="flex justify-between">
+                          <span className="text-muted">Ngày sinh:</span>
+                          <span className="font-medium text-main">
+                            {student.dob ? new Date(student.dob).toLocaleDateString('vi-VN') : 'N/A'}
+                          </span>
+                        </div>
                         <div className="flex justify-between">
                           <span className="text-muted">Lớp hiện tại:</span>
                           <span className="font-medium text-main">{currentClassName}</span>

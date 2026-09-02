@@ -35,7 +35,15 @@ export const StudentsImportDef: ImportDefinition = {
       key: 'dob',
       label: 'Ngày sinh',
       type: 'date',
+      required: true,
       aliases: ['DOB', 'Date of Birth', 'Birth Date', 'Ngày sinh bé']
+    },
+    {
+      key: 'venue_name',
+      label: 'Tên địa điểm học',
+      type: 'string',
+      required: true,
+      aliases: ['Địa điểm học', 'Cơ sở', 'Venue', 'Chi nhánh']
     },
     {
       key: 'gender',
