@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { getBeltsAction, addBeltAction, updateBeltAction, deleteBeltAction } from './actions';
+import { getBeltsAction, addBeltsAction, updateBeltAction, deleteBeltAction } from './actions';
 import { PageHeader } from '@/app/components/ui/PageHeader';
 import { Button } from '@/app/components/ui/Button';
 import { Input, Select } from '@/app/components/ui/Input';
@@ -17,10 +17,19 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
   
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ name: '', display_order: 1, is_active: true });
+  
+  // State for Bulk Add
+  const [beltNames, setBeltNames] = useState<string[]>(['']);
+  const [isActive, setIsActive] = useState<boolean>(true);
+  
+  // State for Single Edit
+  const [editFormData, setEditFormData] = useState({ name: '', display_order: 1, is_active: true });
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  // Row level delete loading state
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fetchBelts = async () => {
     setIsRefreshing(true);
@@ -32,21 +41,23 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
   };
 
   const resetForm = () => {
-    setFormData({ name: '', display_order: 1, is_active: true });
+    setBeltNames(['']);
+    setIsActive(true);
+    setEditFormData({ name: '', display_order: 1, is_active: true });
     setIsAdding(false);
     setEditingId(null);
     setError('');
   };
 
   const handleOpenAdd = () => {
-    // Only used for visual default, server ignores it for adds
-    setFormData({ name: '', display_order: belts.length > 0 ? Math.max(...belts.map(b => b.display_order || 0)) + 1 : 1, is_active: true });
+    setBeltNames(['']);
+    setIsActive(true);
     setIsAdding(true);
   };
 
   const handleEdit = (belt: any) => {
     setEditingId(belt.id);
-    setFormData({ 
+    setEditFormData({ 
       name: belt.name, 
       display_order: belt.display_order, 
       is_active: belt.is_active 
@@ -57,22 +68,43 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    
+    if (!editingId) {
+      // Validate bulk add
+      const validNames = beltNames.map(n => n.trim()).filter(n => n.length > 0);
+      if (validNames.length === 0) {
+        setError('Vui lòng nhập ít nhất một tên cấp đai hợp lệ.');
+        return;
+      }
+      const uniqueNames = new Set(validNames);
+      if (uniqueNames.size !== validNames.length) {
+        setError(`Tên cấp đai bị trùng trong danh sách.`);
+        return;
+      }
+    }
+    
     setLoading(true);
     
     try {
-      let res;
       if (editingId) {
-        res = await updateBeltAction(editingId, formData);
+        const res = await updateBeltAction(editingId, editFormData);
+        if (res.success) {
+          await fetchBelts();
+          resetForm();
+        } else {
+          setError(res.error || 'Lỗi khi lưu cấp đai');
+        }
       } else {
-        res = await addBeltAction(formData);
-      }
-      
-      if (res.success) {
-        // Fetch fresh data immediately and wait for it
-        await fetchBelts();
-        resetForm(); // Close modal after state is updated
-      } else {
-        setError(res.error || 'Lỗi khi lưu cấp đai');
+        const res = await addBeltsAction({ names: beltNames, is_active: isActive });
+        if (res.success && res.data) {
+          setBelts(prev => {
+            const newBelts = [...prev, ...res.data];
+            return newBelts.sort((a, b) => a.display_order - b.display_order);
+          });
+          resetForm();
+        } else {
+          setError(res.error || 'Lỗi khi thêm cấp đai');
+        }
       }
     } catch (err) {
       console.error(err);
@@ -84,11 +116,11 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
 
   const handleDelete = async (id: string) => {
     if (confirm('Bạn có chắc muốn xóa cấp đai này? Việc này có thể ảnh hưởng đến các học viên đang có đai này. Khuyên dùng: Chuyển trạng thái sang "Tạm ẩn".')) {
-      setLoading(true);
+      setDeletingId(id);
       try {
         const res = await deleteBeltAction(id);
-        if (res.success) {
-          await fetchBelts();
+        if (res.success && res.data) {
+          setBelts(res.data);
         } else {
           alert(res.error || 'Lỗi khi xóa');
         }
@@ -96,7 +128,7 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
         console.error(err);
         alert('Lỗi hệ thống khi xóa.');
       } finally {
-        setLoading(false);
+        setDeletingId(null);
       }
     }
   };
@@ -121,35 +153,110 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
         <ModalBody>
           {error && <div className="text-danger mb-4 text-sm bg-danger-bg p-3 rounded-md">{error}</div>}
           <form id="belt-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <Input 
-              label="Tên cấp đai *" 
-              required 
-              value={formData.name} 
-              onChange={e => setFormData({...formData, name: e.target.value})} 
-            />
-            <Input 
-              label="Thứ tự hiển thị" 
-              type="number"
-              required 
-              disabled={!editingId} // Disable if adding, let server handle it
-              value={formData.display_order} 
-              onChange={e => setFormData({...formData, display_order: parseInt(e.target.value) || 0})} 
-              helperText={!editingId ? "Thứ tự sẽ được tự động tính ở cuối danh sách" : "Thay đổi thứ tự sẽ tự động sắp xếp lại các cấp đai khác"}
-            />
-            <Select 
-              label="Trạng thái" 
-              value={formData.is_active ? 'true' : 'false'} 
-              onChange={e => setFormData({...formData, is_active: e.target.value === 'true'})}
-              options={[
-                { value: 'true', label: 'Đang dùng' },
-                { value: 'false', label: 'Tạm ẩn' }
-              ]}
-            />
+            
+            {editingId ? (
+              // EDIT FORM
+              <>
+                <Input 
+                  label="Tên cấp đai *" 
+                  required 
+                  value={editFormData.name} 
+                  onChange={e => setEditFormData({...editFormData, name: e.target.value})} 
+                />
+                <Input 
+                  label="Thứ tự hiển thị" 
+                  type="number"
+                  required 
+                  value={editFormData.display_order} 
+                  onChange={e => setEditFormData({...editFormData, display_order: parseInt(e.target.value) || 0})} 
+                  helperText="Thay đổi thứ tự sẽ tự động sắp xếp lại các cấp đai khác"
+                />
+                <Select 
+                  label="Trạng thái" 
+                  value={editFormData.is_active ? 'true' : 'false'} 
+                  onChange={e => setEditFormData({...editFormData, is_active: e.target.value === 'true'})}
+                  options={[
+                    { value: 'true', label: 'Đang dùng' },
+                    { value: 'false', label: 'Tạm ẩn' }
+                  ]}
+                />
+              </>
+            ) : (
+              // ADD BULK FORM
+              <>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-main">Tên cấp đai *</label>
+                    <Button 
+                      type="button" 
+                      onClick={() => setBeltNames(prev => [...prev, ''])} 
+                      size="sm" 
+                      variant="secondary" 
+                      title="Thêm cấp đai"
+                      className="!px-2 !py-1 h-auto min-h-0"
+                    >
+                      <span className="material-icons-round text-[18px]">add</span>
+                    </Button>
+                  </div>
+                  
+                  <div className="flex flex-col gap-3">
+                    {beltNames.map((name, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <div className="flex-1">
+                          <Input 
+                            required 
+                            value={name} 
+                            onChange={e => {
+                              const newNames = [...beltNames];
+                              newNames[index] = e.target.value;
+                              setBeltNames(newNames);
+                            }} 
+                            placeholder={`Tên cấp đai ${index + 1}`}
+                          />
+                        </div>
+                        {index > 0 && (
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              const newNames = [...beltNames];
+                              newNames.splice(index, 1);
+                              setBeltNames(newNames);
+                            }}
+                            className="w-8 h-8 flex items-center justify-center rounded-md text-secondary/60 hover:text-danger hover:bg-danger/10 transition-colors shrink-0"
+                            title="Xóa"
+                          >
+                            <span className="material-icons-round text-[20px]">close</span>
+                          </button>
+                        )}
+                        {index === 0 && beltNames.length > 1 && (
+                           <div className="w-8 h-8 shrink-0"></div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-2">
+                  <Select 
+                    label="Trạng thái" 
+                    value={isActive ? 'true' : 'false'} 
+                    onChange={e => setIsActive(e.target.value === 'true')}
+                    options={[
+                      { value: 'true', label: 'Đang dùng' },
+                      { value: 'false', label: 'Tạm ẩn' }
+                    ]}
+                  />
+                </div>
+              </>
+            )}
+
           </form>
         </ModalBody>
         <ModalFooter>
           <Button type="button" variant="secondary" onClick={resetForm} disabled={loading}>Hủy</Button>
-          <Button type="submit" form="belt-form" isLoading={loading} variant="primary">Lưu</Button>
+          <Button type="submit" form="belt-form" isLoading={loading} variant="primary">
+            Lưu
+          </Button>
         </ModalFooter>
       </Modal>
 
@@ -186,16 +293,24 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
                         <button
                           onClick={() => handleEdit(belt)}
                           className="text-action text-action-primary"
+                          disabled={deletingId === belt.id}
                         >
                           Sửa
                         </button>
                         <span className="text-secondary/40 select-none">|</span>
-                        <button
-                          onClick={() => handleDelete(belt.id)}
-                          className="text-action text-action-danger"
-                        >
-                          Xóa
-                        </button>
+                        {deletingId === belt.id ? (
+                          <span className="text-secondary/60 text-sm flex items-center gap-1">
+                            <span className="material-icons-round animate-spin text-[16px]">autorenew</span> Đang xóa...
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleDelete(belt.id)}
+                            className="text-action text-action-danger"
+                            disabled={deletingId !== null}
+                          >
+                            Xóa
+                          </button>
+                        )}
                       </div>
                     </Td>
                   </Tr>

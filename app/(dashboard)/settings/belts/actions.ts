@@ -21,7 +21,7 @@ export async function getBeltsAction() {
   return { success: true, data };
 }
 
-export async function addBeltAction(data: { name: string; is_active: boolean }) {
+export async function addBeltsAction(data: { names: string[]; is_active: boolean }) {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
@@ -29,8 +29,15 @@ export async function addBeltAction(data: { name: string; is_active: boolean }) 
     return { success: false, error: 'Bạn không có quyền thực hiện thao tác này.' };
   }
 
-  if (!data.name || data.name.trim().length === 0) {
-    return { success: false, error: 'Tên cấp đai không được để trống.' };
+  const validNames = data.names.map(n => n.trim()).filter(n => n.length > 0);
+  if (validNames.length === 0) {
+    return { success: false, error: 'Vui lòng nhập ít nhất một tên cấp đai hợp lệ.' };
+  }
+
+  // Check for duplicate names in the input
+  const uniqueNames = new Set(validNames);
+  if (uniqueNames.size !== validNames.length) {
+    return { success: false, error: 'Có tên cấp đai bị trùng trong danh sách.' };
   }
 
   const supabase = await createClient();
@@ -45,26 +52,33 @@ export async function addBeltAction(data: { name: string; is_active: boolean }) 
     .limit(1)
     .single();
 
-  let newDisplayOrder = 1;
+  let startOrder = 1;
   if (!maxError && maxOrderData) {
-    newDisplayOrder = maxOrderData.display_order + 1;
+    startOrder = maxOrderData.display_order + 1;
   }
 
-  // 2. Insert with newDisplayOrder
-  const { data: createdBelt, error } = await supabase.from('organization_belts').insert({
-    name: data.name.trim(),
-    display_order: newDisplayOrder,
-    is_active: data.is_active,
-    organization_id: orgId
-  }).select().single();
+  const rows = validNames.map((name, index) => ({
+    organization_id: orgId,
+    name,
+    display_order: startOrder + index,
+    is_active: data.is_active
+  }));
+
+  // 2. Insert multiple records
+  const { data: createdBelts, error } = await supabase
+    .from('organization_belts')
+    .insert(rows)
+    .select();
 
   if (error) {
-    console.error('addBeltAction error:', error);
+    console.error('addBeltsAction error:', error);
     return { success: false, error: 'Không thể thêm cấp đai. Lỗi hệ thống hoặc sai quyền.' };
   }
   
+  // NOTE: revalidatePath might not be strictly needed if client does local state update,
+  // but it's good practice to keep server cache in sync
   revalidatePath('/settings/belts');
-  return { success: true, data: createdBelt };
+  return { success: true, data: createdBelts };
 }
 
 export async function updateBeltAction(id: string, data: { name?: string; display_order?: number; is_active?: boolean }) {
@@ -176,18 +190,38 @@ export async function deleteBeltAction(id: string) {
   
   // Normalize remaining belts order
   const { data: remainingBelts } = await supabase.from('organization_belts')
-    .select('id, display_order')
+    .select('*')
     .eq('organization_id', orgId)
     .order('display_order', { ascending: true });
 
+  let finalBelts = remainingBelts || [];
+
   if (remainingBelts) {
+    let needsReorder = false;
     for (let i = 0; i < remainingBelts.length; i++) {
       if (remainingBelts[i].display_order !== i + 1) {
+        needsReorder = true;
+        break;
+      }
+    }
+    
+    if (needsReorder) {
+      for (let i = 0; i < remainingBelts.length; i++) {
         await supabase.from('organization_belts').update({ display_order: i + 1 }).eq('id', remainingBelts[i].id);
+      }
+      
+      // Fetch the updated belts after reordering
+      const { data: updatedRemainingBelts } = await supabase.from('organization_belts')
+        .select('*')
+        .eq('organization_id', orgId)
+        .order('display_order', { ascending: true });
+        
+      if (updatedRemainingBelts) {
+        finalBelts = updatedRemainingBelts;
       }
     }
   }
 
   revalidatePath('/settings/belts');
-  return { success: true };
+  return { success: true, deletedId: id, data: finalBelts };
 }
