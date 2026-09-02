@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { getBeltsAction, addBeltAction, updateBeltAction, deleteBeltAction } from './actions';
 import { PageHeader } from '@/app/components/ui/PageHeader';
 import { Button } from '@/app/components/ui/Button';
@@ -11,9 +11,9 @@ import { Card } from '@/app/components/ui/Card';
 import { Table, Thead, Tbody, Tr, Th, Td } from '@/app/components/ui/Table';
 import { EmptyState } from '@/app/components/ui/EmptyState';
 
-export default function BeltsClient() {
-  const [belts, setBelts] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[] }) {
+  const [belts, setBelts] = useState<any[]>(initialBelts);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -23,17 +23,13 @@ export default function BeltsClient() {
   const [error, setError] = useState('');
 
   const fetchBelts = async () => {
-    setIsLoading(true);
+    setIsRefreshing(true);
     const res = await getBeltsAction();
     if (res.success && res.data) {
       setBelts(res.data);
     }
-    setIsLoading(false);
+    setIsRefreshing(false);
   };
-
-  useEffect(() => {
-    fetchBelts();
-  }, []);
 
   const resetForm = () => {
     setFormData({ name: '', display_order: belts.length + 1, is_active: true });
@@ -141,18 +137,14 @@ export default function BeltsClient() {
         </ModalFooter>
       </Modal>
 
-      {isLoading ? (
-        <Card>
-          <div className="p-8 text-center text-secondary">Đang tải...</div>
-        </Card>
-      ) : belts.length === 0 ? (
+      {belts.length === 0 ? (
         <EmptyState 
           title="Chưa có cấp đai" 
           description="Chưa có cấp đai nào trong hệ thống. Hãy tạo cấp đai đầu tiên." 
           icon="sports_martial_arts"
         />
       ) : (
-        <Card>
+        <Card className={isRefreshing ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}>
           <div className="overflow-x-auto">
             <Table>
               <Thead>
