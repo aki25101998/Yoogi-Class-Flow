@@ -192,22 +192,20 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
                     </Button>
                   </div>
                   
-                  <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-3 pr-2">
                     {beltNames.map((name, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <div className="flex-1 w-full">
-                          <Input 
-                            required 
-                            className="w-full"
-                            value={name} 
-                            onChange={e => {
-                              const newNames = [...beltNames];
-                              newNames[index] = e.target.value;
-                              setBeltNames(newNames);
-                            }} 
-                            placeholder={`Tên cấp đai ${index + 1}`}
-                          />
-                        </div>
+                      <div key={index} className="relative">
+                        <Input 
+                          required 
+                          className="w-full"
+                          value={name} 
+                          onChange={e => {
+                            const newNames = [...beltNames];
+                            newNames[index] = e.target.value;
+                            setBeltNames(newNames);
+                          }} 
+                          placeholder={`Tên cấp đai ${index + 1}`}
+                        />
                         {index > 0 && (
                           <button 
                             type="button"
@@ -216,14 +214,11 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
                               newNames.splice(index, 1);
                               setBeltNames(newNames);
                             }}
-                            className="w-8 h-8 flex items-center justify-center rounded-md text-secondary/60 hover:text-danger hover:bg-danger/10 transition-colors shrink-0"
+                            className="absolute top-1/2 -translate-y-1/2 -right-10 w-8 h-8 flex items-center justify-center rounded-md text-secondary/60 hover:text-danger hover:bg-danger/10 transition-colors"
                             title="Xóa"
                           >
                             <span className="material-icons-round text-[20px]">close</span>
                           </button>
-                        )}
-                        {index === 0 && beltNames.length > 1 && (
-                           <div className="w-8 h-8 shrink-0"></div>
                         )}
                       </div>
                     ))}
