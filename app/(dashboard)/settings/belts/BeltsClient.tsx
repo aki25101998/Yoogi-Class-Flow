@@ -184,7 +184,7 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
                     <button 
                       type="button"
                       onClick={() => setBeltNames(prev => [...prev, ''])} 
-                      className="w-8 h-8 flex items-center justify-center rounded-md bg-transparent border-none text-secondary hover:bg-action-primary/8 hover:text-action-primary active:bg-action-primary/15 transition-colors disabled:opacity-50 disabled:cursor-not-allowed outline-none focus-visible:ring-2 focus-visible:ring-action-primary/40 focus-visible:ring-offset-1"
+                      className="icon-btn icon-btn-add"
                       title="Thêm cấp đai"
                       aria-label="Thêm cấp đai"
                       disabled={loading}
@@ -216,7 +216,7 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
                             newNames.splice(index, 1);
                             setBeltNames(newNames);
                           }}
-                          className="shrink-0 w-8 h-8 flex items-center justify-center rounded-md bg-transparent border-none text-secondary hover:bg-action-danger/8 hover:text-action-danger active:bg-action-danger/15 transition-colors disabled:opacity-50 disabled:cursor-not-allowed outline-none focus-visible:ring-2 focus-visible:ring-action-danger/40 focus-visible:ring-offset-1"
+                          className="shrink-0 icon-btn icon-btn-delete"
                           title="Xóa dòng"
                           aria-label={`Xóa cấp đai ${index + 1}`}
                           disabled={loading}
