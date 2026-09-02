@@ -160,6 +160,7 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
                 <Input 
                   label="Tên cấp đai *" 
                   required 
+                  className="w-full"
                   value={editFormData.name} 
                   onChange={e => setEditFormData({...editFormData, name: e.target.value})} 
                 />
@@ -167,18 +168,10 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
                   label="Thứ tự hiển thị" 
                   type="number"
                   required 
+                  className="w-full"
                   value={editFormData.display_order} 
                   onChange={e => setEditFormData({...editFormData, display_order: parseInt(e.target.value) || 0})} 
                   helperText="Thay đổi thứ tự sẽ tự động sắp xếp lại các cấp đai khác"
-                />
-                <Select 
-                  label="Trạng thái" 
-                  value={editFormData.is_active ? 'true' : 'false'} 
-                  onChange={e => setEditFormData({...editFormData, is_active: e.target.value === 'true'})}
-                  options={[
-                    { value: 'true', label: 'Đang dùng' },
-                    { value: 'false', label: 'Tạm ẩn' }
-                  ]}
                 />
               </>
             ) : (
@@ -202,9 +195,10 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
                   <div className="flex flex-col gap-3">
                     {beltNames.map((name, index) => (
                       <div key={index} className="flex items-center gap-2">
-                        <div className="flex-1">
+                        <div className="flex-1 w-full">
                           <Input 
                             required 
+                            className="w-full"
                             value={name} 
                             onChange={e => {
                               const newNames = [...beltNames];
@@ -234,18 +228,6 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
                       </div>
                     ))}
                   </div>
-                </div>
-
-                <div className="mt-2">
-                  <Select 
-                    label="Trạng thái" 
-                    value={isActive ? 'true' : 'false'} 
-                    onChange={e => setIsActive(e.target.value === 'true')}
-                    options={[
-                      { value: 'true', label: 'Đang dùng' },
-                      { value: 'false', label: 'Tạm ẩn' }
-                    ]}
-                  />
                 </div>
               </>
             )}
