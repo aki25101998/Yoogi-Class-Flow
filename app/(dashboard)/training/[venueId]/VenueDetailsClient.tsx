@@ -2,23 +2,19 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { useDashboardContext } from '../../DashboardProvider';
 import { useTrainingVenueDetails, useTrainingFormLookups } from '@/hooks/useTrainingManagement';
 import { addClassAction, updateClassAction, addStudentAction, updateStudentAction } from '../actions';
 
-import { PageHeader } from '@/app/components/ui/PageHeader';
 import { Button } from '@/app/components/ui/Button';
 import { Input, Select } from '@/app/components/ui/Input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
-import { EmptyState } from '@/app/components/ui/EmptyState';
 import { Badge } from '@/app/components/ui/Badge';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/app/components/ui/Modal';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableHeader, TableRow } from '@/app/components/ui/Table';
+import styles from './VenueDetails.module.css';
 
 export default function VenueDetailsClient({ venueId }: { venueId: string }) {
-  const router = useRouter();
   const { context } = useDashboardContext();
   const organizationId = context?.organization?.id;
   const currentUserRole = context?.membership?.role;
@@ -169,30 +165,42 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
   if (venueError) {
     console.error('Lỗi khi tải thông tin địa điểm (venue query error):', venueError);
     return (
-      <div className="flex-col gap-6">
-        <div className="mb-2">
-          <Link href="/training" className="text-secondary hover:text-primary flex items-center gap-1 text-sm font-medium">
-            <span className="material-icons-round text-sm">arrow_back</span>
-            Quay lại
-          </Link>
+      <div className={styles.venuePage}>
+        <Link href="/training" className={styles.backLink}>
+          <span className={`material-icons-round ${styles.backLinkIcon}`}>arrow_back</span>
+          Quay lại
+        </Link>
+        <div className={styles.pageHeader}>
+          <div className={styles.pageHeaderInfo}>
+            <h1>Lỗi tải dữ liệu</h1>
+          </div>
         </div>
-        <PageHeader title="Lỗi tải dữ liệu" />
-        <EmptyState title="Không thể tải dữ liệu địa điểm" description="Vui lòng thử lại sau hoặc liên hệ hỗ trợ." icon="error" />
+        <div className={styles.emptyCompact}>
+          <span className={`material-icons-round ${styles.emptyIcon}`}>error</span>
+          <div className={styles.emptyTitle}>Không thể tải dữ liệu địa điểm</div>
+          <div className={styles.emptyDesc}>Vui lòng thử lại sau hoặc liên hệ hỗ trợ.</div>
+        </div>
       </div>
     );
   }
 
   if (!venue) {
     return (
-      <div className="flex-col gap-6">
-        <div className="mb-2">
-          <Link href="/training" className="text-secondary hover:text-primary flex items-center gap-1 text-sm font-medium">
-            <span className="material-icons-round text-sm">arrow_back</span>
-            Quay lại
-          </Link>
+      <div className={styles.venuePage}>
+        <Link href="/training" className={styles.backLink}>
+          <span className={`material-icons-round ${styles.backLinkIcon}`}>arrow_back</span>
+          Quay lại
+        </Link>
+        <div className={styles.pageHeader}>
+          <div className={styles.pageHeaderInfo}>
+            <h1>Không tìm thấy địa điểm</h1>
+          </div>
         </div>
-        <PageHeader title="Không tìm thấy địa điểm" />
-        <EmptyState title="Bạn không có quyền truy cập địa điểm này" description="Hoặc địa điểm không tồn tại trên hệ thống." icon="lock" />
+        <div className={styles.emptyCompact}>
+          <span className={`material-icons-round ${styles.emptyIcon}`}>lock</span>
+          <div className={styles.emptyTitle}>Bạn không có quyền truy cập địa điểm này</div>
+          <div className={styles.emptyDesc}>Hoặc địa điểm không tồn tại trên hệ thống.</div>
+        </div>
       </div>
     );
   }
@@ -210,155 +218,180 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
   }
 
   return (
-    <div className="flex-col gap-6">
-      <div className="mb-2">
-        <Link href="/training" className="text-secondary hover:text-primary flex items-center gap-1 text-sm font-medium">
-          <span className="material-icons-round text-sm">arrow_back</span>
-          Quay lại danh sách
-        </Link>
-      </div>
-      <PageHeader 
-        title={venue.name} 
-        description={venue.address || 'Chưa cập nhật địa chỉ'}
-        primaryAction={isAdminOrOwner ? (
-          <div className="flex gap-2">
+    <div className={styles.venuePage}>
+      {/* ═══════════════════════════════════════════════════════
+          BACK LINK
+          ═══════════════════════════════════════════════════════ */}
+      <Link href="/training" className={styles.backLink}>
+        <span className={`material-icons-round ${styles.backLinkIcon}`}>arrow_back</span>
+        Quay lại danh sách
+      </Link>
+
+      {/* ═══════════════════════════════════════════════════════
+          PAGE HEADER (compact, payroll-style)
+          ═══════════════════════════════════════════════════════ */}
+      <div className={styles.pageHeader}>
+        <div className={styles.pageHeaderInfo}>
+          <h1>{venue.name}</h1>
+          <p>{venue.address || 'Chưa cập nhật địa chỉ'}</p>
+        </div>
+        {isAdminOrOwner && (
+          <div className={styles.pageHeaderActions}>
             <Button 
               variant="outline" 
+              size="sm"
               onClick={() => setIsStudentModalOpen(true)}
-              leftIcon={<span className="material-icons-round">person_add</span>}
+              leftIcon={<span className="material-icons-round" style={{ fontSize: 18 }}>person_add</span>}
             >
               Thêm Học Viên
             </Button>
             <Button 
+              size="sm"
               onClick={() => setIsClassModalOpen(true)}
-              leftIcon={<span className="material-icons-round">add_circle</span>}
+              leftIcon={<span className="material-icons-round" style={{ fontSize: 18 }}>add_circle</span>}
             >
               Tạo Lớp
             </Button>
           </div>
-        ) : null}
-      />
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-sm text-secondary font-medium uppercase tracking-wider mb-1">Lớp đang hoạt động</p>
-              <h3 className="text-2xl font-bold text-primary">{activeClassesCount}</h3>
-            </div>
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-              <span className="material-icons-round">class</span>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-success/5 border-success/20">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-sm text-secondary font-medium uppercase tracking-wider mb-1">Tổng học viên</p>
-              <h3 className="text-2xl font-bold text-success">{totalStudents}</h3>
-            </div>
-            <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center text-success">
-              <span className="material-icons-round">school</span>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-sm text-secondary font-medium uppercase tracking-wider mb-1">Trạng thái</p>
-              <h3 className="text-lg font-bold text-main mt-2">
-                <Badge variant={venue.status === 'active' ? 'success' : 'default'}>
-                  {venue.status === 'active' ? 'Đang hoạt động' : 'Ngừng hoạt động'}
-                </Badge>
-              </h3>
-            </div>
-            <div className="w-10 h-10 rounded-full bg-surface-hover flex items-center justify-center text-secondary">
-              <span className="material-icons-round">info</span>
-            </div>
-          </CardContent>
-        </Card>
+        )}
       </div>
 
-      <div className="mt-4">
-        <h3 className="text-lg font-bold text-main mb-4">Danh sách lớp học</h3>
+      {/* ═══════════════════════════════════════════════════════
+          OVERVIEW CARD — Single compact card with 3 KPIs
+          ═══════════════════════════════════════════════════════ */}
+      <div className={styles.overviewCard}>
+        <div className={styles.overviewHeader}>
+          <span className={styles.overviewTitle}>Tổng quan địa điểm</span>
+          <Badge variant={venue.status === 'active' ? 'success' : 'default'}>
+            {venue.status === 'active' ? 'Đang hoạt động' : 'Ngừng hoạt động'}
+          </Badge>
+        </div>
+        <div className={styles.overviewGrid}>
+          <div className={`${styles.kpiItem} ${styles.kpiPrimary}`}>
+            <div className={styles.kpiLabel}>
+              <span className={styles.kpiDot} />
+              Lớp đang hoạt động
+            </div>
+            <div className={styles.kpiValue}>{activeClassesCount}</div>
+          </div>
+          <div className={`${styles.kpiItem} ${styles.kpiSuccess}`}>
+            <div className={styles.kpiLabel}>
+              <span className={styles.kpiDot} />
+              Tổng học viên
+            </div>
+            <div className={styles.kpiValue}>{totalStudents}</div>
+          </div>
+          <div className={`${styles.kpiItem} ${styles.kpiStatus}`}>
+            <div className={styles.kpiLabel}>
+              <span className={styles.kpiDot} />
+              Tổng lớp học
+            </div>
+            <div className={styles.kpiValue}>{classes.length}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════
+          CLASS LIST — Row-based compact layout
+          ═══════════════════════════════════════════════════════ */}
+      <div>
+        <div className={styles.sectionHeader}>
+          <span className={styles.sectionTitle}>Danh sách lớp học</span>
+          <span className={styles.sectionCount}>{classes.length} lớp</span>
+        </div>
         {venue.classesError ? (
-          <div className="bg-danger-bg border border-danger text-danger px-4 py-3 rounded-md text-sm mb-5 flex items-center gap-2">
-            <span className="material-icons-round text-lg">error_outline</span>
-            <span>Không thể tải danh sách lớp học do lỗi dữ liệu. (Xem log để biết thêm chi tiết)</span>
+          <div className={styles.errorBar}>
+            <span className={`material-icons-round ${styles.errorBarIcon}`}>error_outline</span>
+            <span>Không thể tải danh sách lớp học do lỗi dữ liệu.</span>
           </div>
         ) : classes.length === 0 ? (
-          <EmptyState 
-            title="Chưa có lớp học nào" 
-            description="Bấm 'Tạo Lớp' để thêm lớp học mới vào địa điểm này." 
-            icon="event_seat"
-          />
+          <div className={styles.emptyCompact}>
+            <span className={`material-icons-round ${styles.emptyIcon}`}>event_seat</span>
+            <div className={styles.emptyTitle}>Chưa có lớp học nào</div>
+            <div className={styles.emptyDesc}>Bấm &apos;Tạo Lớp&apos; để thêm lớp học mới vào địa điểm này.</div>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className={styles.classList}>
             {classes.map((cls: any) => (
-              <Card key={cls.id} className="hover:border-primary/50 transition-colors">
-                <CardHeader className="pb-3 border-b border-light">
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg text-main">{cls.name}</CardTitle>
-                    <Badge variant={cls.status === 'active' ? 'success' : 'default'}>
-                      {cls.status === 'active' ? 'Hoạt động' : 'Đã đóng'}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <div className="space-y-3 mb-6">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-secondary">HLV trưởng:</span>
-                      <span className="text-sm font-medium text-main">{cls.head_coach?.name || 'Chưa phân công'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-secondary">HLV phụ:</span>
-                      <span className="text-sm font-medium text-main">{cls.assistant_coach?.name || 'Không có'}</span>
-                    </div>
-                    <div className="flex justify-between items-center bg-surface-hover p-2 rounded-md mt-2">
-                      <span className="text-sm text-secondary font-medium">Học viên hiện tại:</span>
-                      <span className="text-base font-bold text-primary">{cls.studentsCount}</span>
-                    </div>
-                  </div>
+              <div key={cls.id} className={styles.classRow}>
+                {/* Class name */}
+                <div className={styles.className}>{cls.name}</div>
 
-                  <div className="flex gap-2">
-                    <Link href={`/training/${venueId}/classes/${cls.id}`} className="flex-1">
-                      <Button variant="primary" className="w-full justify-center">
-                        Xem lớp
-                      </Button>
-                    </Link>
-                    {isAdminOrOwner && (
-                      <Button 
-                        variant="outline" 
-                        onClick={() => handleEditClass(cls)}
-                        className="px-3"
-                        title="Sửa lớp"
-                      >
-                        <span className="material-icons-round text-secondary">edit</span>
-                      </Button>
-                    )}
+                {/* Status badge */}
+                <Badge variant={cls.status === 'active' ? 'success' : 'default'}>
+                  {cls.status === 'active' ? 'Hoạt động' : 'Đã đóng'}
+                </Badge>
+
+                {/* Head coach */}
+                <div className={styles.classCoach}>
+                  <div className={styles.classCoachLabel}>HLV trưởng</div>
+                  <div className={cls.head_coach?.name ? styles.classCoachName : `${styles.classCoachName} ${styles.classCoachEmpty}`}>
+                    {cls.head_coach?.name || 'Chưa phân công'}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+
+                {/* Assistant coach (hidden on tablet) */}
+                <div className={`${styles.classCoach} ${styles.classCoachHideable}`}>
+                  <div className={styles.classCoachLabel}>HLV phụ</div>
+                  <div className={cls.assistant_coach?.name ? styles.classCoachName : `${styles.classCoachName} ${styles.classCoachEmpty}`}>
+                    {cls.assistant_coach?.name || 'Không có'}
+                  </div>
+                </div>
+
+                {/* Student count */}
+                <div className={styles.classStudentCount}>
+                  <div className={styles.classStudentNumber}>{cls.studentsCount}</div>
+                  <div className={styles.classStudentLabel}>Học viên</div>
+                </div>
+
+                {/* Actions */}
+                <div className={styles.classActions}>
+                  <Link href={`/training/${venueId}/classes/${cls.id}`}>
+                    <Button variant="outline" size="sm">Xem lớp</Button>
+                  </Link>
+                  {isAdminOrOwner && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleEditClass(cls)}
+                      title="Sửa lớp"
+                    >
+                      <span className="material-icons-round" style={{ fontSize: 18 }}>edit</span>
+                    </Button>
+                  )}
+                </div>
+
+                {/* Mobile info (visible only on small screens) */}
+                <div className={styles.classMobileInfo}>
+                  <span>HLV: {cls.head_coach?.name || 'Chưa có'}</span>
+                  <span>·</span>
+                  <span>{cls.studentsCount} học viên</span>
+                </div>
+              </div>
             ))}
           </div>
         )}
       </div>
 
-      <div className="mt-8">
-        <h3 className="text-lg font-bold text-main mb-4">Học viên tại địa điểm</h3>
+      {/* ═══════════════════════════════════════════════════════
+          STUDENT TABLE — Kept intact, consistent section heading
+          ═══════════════════════════════════════════════════════ */}
+      <div>
+        <div className={styles.sectionHeader}>
+          <span className={styles.sectionTitle}>Học viên tại địa điểm</span>
+          <span className={styles.sectionCount}>{students.length} học viên</span>
+        </div>
         {venue.studentsError ? (
-          <div className="bg-danger-bg border border-danger text-danger px-4 py-3 rounded-md text-sm mb-5 flex items-center gap-2">
-            <span className="material-icons-round text-lg">error_outline</span>
-            <span>Không thể tải danh sách học viên do lỗi dữ liệu. (Xem log để biết thêm chi tiết)</span>
+          <div className={styles.errorBar}>
+            <span className={`material-icons-round ${styles.errorBarIcon}`}>error_outline</span>
+            <span>Không thể tải danh sách học viên do lỗi dữ liệu.</span>
           </div>
         ) : students.length === 0 ? (
-          <EmptyState 
-            title="Chưa có học viên nào tại địa điểm này" 
-            description="Bấm 'Thêm Học Viên' để ghi danh học viên mới." 
-            icon="people"
-          />
+          <div className={styles.emptyCompact}>
+            <span className={`material-icons-round ${styles.emptyIcon}`}>people</span>
+            <div className={styles.emptyTitle}>Chưa có học viên nào tại địa điểm này</div>
+            <div className={styles.emptyDesc}>Bấm &apos;Thêm Học Viên&apos; để ghi danh học viên mới.</div>
+          </div>
         ) : (
           <TableContainer>
             <Table>

@@ -1,0 +1,415 @@
+/* ==========================================================================
+   VENUE DETAILS — Compact horizontal layout (Payroll-inspired)
+   ========================================================================== */
+
+/* Page wrapper */
+.venuePage {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Back link */
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.15s;
+  margin-bottom: 4px;
+}
+
+.backLink:hover {
+  color: var(--primary);
+}
+
+.backLinkIcon {
+  font-size: 16px !important;
+  line-height: 1;
+}
+
+/* ==========================================================================
+   PAGE HEADER (compact)
+   ========================================================================== */
+.pageHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.pageHeaderInfo h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 2px 0;
+  line-height: 1.3;
+}
+
+.pageHeaderInfo p {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.pageHeaderActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   OVERVIEW CARD — Single compact card with KPIs
+   ========================================================================== */
+.overviewCard {
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.overviewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 0;
+}
+
+.overviewTitle {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.overviewGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 16px 20px 20px;
+}
+
+.kpiItem {
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  background: var(--surface-hover);
+  transition: border-color 0.15s;
+}
+
+.kpiItem:hover {
+  border-color: var(--border);
+}
+
+.kpiLabel {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kpiDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.kpiValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* KPI color variants */
+.kpiPrimary .kpiLabel { color: var(--primary); }
+.kpiPrimary .kpiDot { background: var(--primary); }
+.kpiPrimary .kpiValue { color: var(--primary); }
+.kpiPrimary { border-color: color-mix(in srgb, var(--primary) 25%, transparent); }
+
+.kpiSuccess .kpiLabel { color: var(--success); }
+.kpiSuccess .kpiDot { background: var(--success); }
+.kpiSuccess .kpiValue { color: var(--success); }
+.kpiSuccess { border-color: color-mix(in srgb, var(--success) 25%, transparent); }
+
+.kpiStatus .kpiLabel { color: var(--text-secondary); }
+.kpiStatus .kpiDot { background: var(--text-secondary); }
+.kpiStatus .kpiValue { color: var(--text-main); }
+
+/* ==========================================================================
+   SECTION HEADER — consistent heading for Classes & Students
+   ========================================================================== */
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.sectionTitle {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-main);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sectionCount {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   CLASS LIST — Row-based layout (similar to trainer list)
+   ========================================================================== */
+.classList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.classRow {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.5fr) auto 1fr 1fr auto auto;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.classRow:hover {
+  border-color: var(--border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* Class name */
+.className {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Coach info cell */
+.classCoach {
+  min-width: 0;
+}
+
+.classCoachLabel {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.classCoachName {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.classCoachEmpty {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Student count cell */
+.classStudentCount {
+  text-align: center;
+  min-width: 60px;
+}
+
+.classStudentNumber {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1.2;
+}
+
+.classStudentLabel {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Actions cell */
+.classActions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   COMPACT ERROR BAR
+   ========================================================================== */
+.errorBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  border: 1px solid var(--danger);
+}
+
+.errorBarIcon {
+  font-size: 18px !important;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   COMPACT EMPTY STATE
+   ========================================================================== */
+.emptyCompact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+  text-align: center;
+  border: 1px dashed var(--border-light);
+  border-radius: var(--radius-md);
+  background: var(--surface-hover);
+  max-height: 180px;
+}
+
+.emptyIcon {
+  font-size: 32px !important;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  opacity: 0.5;
+}
+
+.emptyTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.emptyDesc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .classRow {
+    grid-template-columns: minmax(120px, 1.5fr) auto 1fr auto auto;
+    gap: 12px;
+  }
+
+  /* Hide assistant coach on tablet */
+  .classCoachHideable {
+    display: none;
+  }
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .venuePage {
+    gap: 16px;
+  }
+
+  .pageHeader {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .pageHeaderActions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .overviewHeader {
+    padding: 12px 16px 0;
+  }
+
+  .overviewGrid {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    padding: 12px 16px 16px;
+  }
+
+  .kpiValue {
+    font-size: 1.125rem;
+  }
+
+  .classRow {
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    padding: 12px 16px;
+  }
+
+  .classCoach {
+    display: none;
+  }
+
+  .classStudentCount {
+    display: none;
+  }
+
+  /* Show mobile-specific info line */
+  .classMobileInfo {
+    display: flex !important;
+    grid-column: 1 / -1;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    padding-top: 4px;
+    border-top: 1px solid var(--border-light);
+  }
+
+  .classActions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+
+  .sectionHeader {
+    margin-bottom: 8px;
+  }
+}
+
+/* Desktop: hide mobile info */
+@media (min-width: 641px) {
+  .classMobileInfo {
+    display: none !important;
+  }
+}
