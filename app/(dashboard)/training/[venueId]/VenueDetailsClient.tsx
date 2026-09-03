@@ -24,7 +24,7 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
   const currentUserRole = context?.membership?.role;
   const isAdminOrOwner = currentUserRole === 'admin' || currentUserRole === 'owner';
 
-  const { venue, isVenueLoading } = useTrainingVenueDetails(organizationId, venueId);
+  const { venue, isVenueLoading, venueError } = useTrainingVenueDetails(organizationId, venueId);
   const { activeCoaches, activeBelts, activeClassesForVenue } = useTrainingFormLookups(organizationId, venueId);
   
   const queryClient = useQueryClient();
@@ -166,6 +166,22 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
     return <div className="p-8 text-center text-secondary">Đang tải thông tin địa điểm...</div>;
   }
 
+  if (venueError) {
+    console.error('Lỗi khi tải thông tin địa điểm (venue query error):', venueError);
+    return (
+      <div className="flex-col gap-6">
+        <div className="mb-2">
+          <Link href="/training" className="text-secondary hover:text-primary flex items-center gap-1 text-sm font-medium">
+            <span className="material-icons-round text-sm">arrow_back</span>
+            Quay lại
+          </Link>
+        </div>
+        <PageHeader title="Lỗi tải dữ liệu" />
+        <EmptyState title="Không thể tải dữ liệu địa điểm" description="Vui lòng thử lại sau hoặc liên hệ hỗ trợ." icon="error" />
+      </div>
+    );
+  }
+
   if (!venue) {
     return (
       <div className="flex-col gap-6">
@@ -176,7 +192,7 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
           </Link>
         </div>
         <PageHeader title="Không tìm thấy địa điểm" />
-        <EmptyState title="Lỗi" description="Địa điểm không tồn tại hoặc bạn không có quyền truy cập." icon="error" />
+        <EmptyState title="Bạn không có quyền truy cập địa điểm này" description="Hoặc địa điểm không tồn tại trên hệ thống." icon="lock" />
       </div>
     );
   }
@@ -185,6 +201,13 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
   const activeClassesCount = classes.filter((c: any) => c.status === 'active').length;
   const students = venue.students || [];
   const totalStudents = students.length;
+
+  if (venue.classesError) {
+    console.error('Lỗi khi tải danh sách lớp học:', venue.classesError);
+  }
+  if (venue.studentsError) {
+    console.error('Lỗi khi tải danh sách học viên:', venue.studentsError);
+  }
 
   return (
     <div className="flex-col gap-6">
@@ -260,7 +283,12 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
 
       <div className="mt-4">
         <h3 className="text-lg font-bold text-main mb-4">Danh sách lớp học</h3>
-        {classes.length === 0 ? (
+        {venue.classesError ? (
+          <div className="bg-danger-bg border border-danger text-danger px-4 py-3 rounded-md text-sm mb-5 flex items-center gap-2">
+            <span className="material-icons-round text-lg">error_outline</span>
+            <span>Không thể tải danh sách lớp học do lỗi dữ liệu. (Xem log để biết thêm chi tiết)</span>
+          </div>
+        ) : classes.length === 0 ? (
           <EmptyState 
             title="Chưa có lớp học nào" 
             description="Bấm 'Tạo Lớp' để thêm lớp học mới vào địa điểm này." 
@@ -320,7 +348,12 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
 
       <div className="mt-8">
         <h3 className="text-lg font-bold text-main mb-4">Học viên tại địa điểm</h3>
-        {students.length === 0 ? (
+        {venue.studentsError ? (
+          <div className="bg-danger-bg border border-danger text-danger px-4 py-3 rounded-md text-sm mb-5 flex items-center gap-2">
+            <span className="material-icons-round text-lg">error_outline</span>
+            <span>Không thể tải danh sách học viên do lỗi dữ liệu. (Xem log để biết thêm chi tiết)</span>
+          </div>
+        ) : students.length === 0 ? (
           <EmptyState 
             title="Chưa có học viên nào tại địa điểm này" 
             description="Bấm 'Thêm Học Viên' để ghi danh học viên mới." 

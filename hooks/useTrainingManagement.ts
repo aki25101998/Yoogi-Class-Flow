@@ -73,9 +73,15 @@ export function useTrainingVenueDetails(organizationId: string | undefined, venu
         .select('*')
         .eq('id', venueId)
         .eq('organization_id', organizationId)
-        .single();
+        .maybeSingle();
         
       if (venueError) throw venueError;
+      if (!venueData) return null; // Venue doesn't exist or no permission
+      
+      let classesWithStats: any[] = [];
+      let activeClassIds: string[] = [];
+      let classesErrorState = null;
+      let studentsErrorState = null;
       
       const { data: classesData, error: classesError } = await supabase
         .from('venue_classes')
@@ -89,14 +95,16 @@ export function useTrainingVenueDetails(organizationId: string | undefined, venu
         .eq('organization_id', organizationId)
         .order('name');
         
-      if (classesError) throw classesError;
-
-      const classesWithStats = classesData.map((c: any) => ({
-        ...c,
-        studentsCount: c.class_students?.filter((s: any) => s.status === 'active').length || 0
-      }));
+      if (classesError) {
+        classesErrorState = classesError;
+      } else if (classesData) {
+        classesWithStats = classesData.map((c: any) => ({
+          ...c,
+          studentsCount: c.class_students?.filter((s: any) => s.status === 'active').length || 0
+        }));
+        activeClassIds = classesData.filter((c: any) => c.status === 'active').map((c: any) => c.id);
+      }
       
-      const activeClassIds = classesData.filter((c: any) => c.status === 'active').map((c: any) => c.id);
       let venueStudents: any[] = [];
       
       if (activeClassIds.length > 0) {
@@ -111,27 +119,31 @@ export function useTrainingVenueDetails(organizationId: string | undefined, venu
           .in('class_id', activeClassIds)
           .eq('status', 'active');
           
-        if (studentsError) throw studentsError;
-
-        const uniqueStudentsMap = new Map();
-        studentsData?.forEach((cs: any) => {
-          if (cs.students && cs.students.status === 'active') {
-            if (!uniqueStudentsMap.has(cs.students.id)) {
-              uniqueStudentsMap.set(cs.students.id, {
-                ...cs.students,
-                class_name: cs.venue_classes?.name,
-                class_id: cs.class_id,
-              });
+        if (studentsError) {
+          studentsErrorState = studentsError;
+        } else if (studentsData) {
+          const uniqueStudentsMap = new Map();
+          studentsData.forEach((cs: any) => {
+            if (cs.students && cs.students.status === 'active') {
+              if (!uniqueStudentsMap.has(cs.students.id)) {
+                uniqueStudentsMap.set(cs.students.id, {
+                  ...cs.students,
+                  class_name: cs.venue_classes?.name,
+                  class_id: cs.class_id,
+                });
+              }
             }
-          }
-        });
-        venueStudents = Array.from(uniqueStudentsMap.values());
+          });
+          venueStudents = Array.from(uniqueStudentsMap.values());
+        }
       }
 
       return {
         ...venueData,
         classes: classesWithStats,
-        students: venueStudents
+        students: venueStudents,
+        classesError: classesErrorState,
+        studentsError: studentsErrorState
       };
     },
     enabled: !!organizationId && !!venueId,
