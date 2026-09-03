@@ -19,14 +19,17 @@ import { EmptyState } from '@/app/components/ui/EmptyState';
 import { Badge } from '@/app/components/ui/Badge';
 import { Table, Thead, Tbody, Tr, Th, Td } from '@/app/components/ui/Table';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/app/components/ui/Modal';
+import styles from '@/app/styles/page-standard.module.css';
 
 function FinanceSkeleton() {
   return (
     <div className="flex-col gap-6 animate-pulse">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card><CardContent className="h-24 bg-surface-hover"></CardContent></Card>
-        <Card><CardContent className="h-24 bg-surface-hover"></CardContent></Card>
-        <Card><CardContent className="h-24 bg-surface-hover"></CardContent></Card>
+      <div className={styles.overviewCard}>
+        <div className={styles.overviewGrid}>
+          <div className="h-16 bg-surface-hover rounded w-full"></div>
+          <div className="h-16 bg-surface-hover rounded w-full"></div>
+          <div className="h-16 bg-surface-hover rounded w-full"></div>
+        </div>
       </div>
       <Card><CardContent className="h-64 bg-surface-hover mt-6"></CardContent></Card>
     </div>
@@ -108,27 +111,21 @@ export default function FinanceClient() {
         <FinanceSkeleton />
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card>
-              <CardContent>
-                <div className="text-secondary text-sm font-medium mb-2 uppercase tracking-wider">Tổng thu</div>
-                <div className="text-2xl font-bold text-success">{totalIncome.toLocaleString('vi-VN')} đ</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent>
-                <div className="text-secondary text-sm font-medium mb-2 uppercase tracking-wider">Tổng chi</div>
-                <div className="text-2xl font-bold text-danger">{totalExpense.toLocaleString('vi-VN')} đ</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent>
-                <div className="text-secondary text-sm font-medium mb-2 uppercase tracking-wider">Số dư (Lợi nhuận)</div>
-                <div className={`text-2xl font-bold ${balance >= 0 ? 'text-primary' : 'text-danger'}`}>
-                  {balance.toLocaleString('vi-VN')} đ
-                </div>
-              </CardContent>
-            </Card>
+          <div className={styles.overviewCard}>
+            <div className={styles.overviewGrid}>
+              <div className={`${styles.kpiItem} ${styles.kpiSuccess}`}>
+                <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Tổng thu</div>
+                <div className={styles.kpiValue}>{totalIncome.toLocaleString('vi-VN')} đ</div>
+              </div>
+              <div className={`${styles.kpiItem} ${styles.kpiDanger}`}>
+                <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Tổng chi</div>
+                <div className={styles.kpiValue}>{totalExpense.toLocaleString('vi-VN')} đ</div>
+              </div>
+              <div className={`${styles.kpiItem} ${balance >= 0 ? styles.kpiPrimary : styles.kpiDanger}`}>
+                <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Số dư (Lợi nhuận)</div>
+                <div className={styles.kpiValue}>{balance.toLocaleString('vi-VN')} đ</div>
+              </div>
+            </div>
           </div>
 
           <Modal isOpen={isAdding} onClose={loading ? () => {} : resetForm}>
@@ -188,21 +185,27 @@ export default function FinanceClient() {
               title="Chưa có giao dịch" 
               description="Hệ thống chưa ghi nhận dòng tiền nào." 
               icon="receipt_long"
+              compact
             />
           ) : (
-            <Card>
-              <div className="overflow-x-auto">
-                <Table>
-                  <Thead>
-                    <Tr>
-                      <Th>Ngày</Th>
-                      <Th>Danh mục</Th>
-                      <Th>Mô tả</Th>
-                      <Th className="text-right">Số tiền</Th>
-                      {isAdminOrOwner && <Th className="text-right">Thao tác</Th>}
-                    </Tr>
-                  </Thead>
-                  <Tbody>
+            <div className={styles.listContainer}>
+              <div className={styles.sectionHeader}>
+                <h3 className={styles.sectionTitle}>Lịch sử giao dịch</h3>
+                <span className={styles.sectionCount}>{transactions.length} giao dịch</span>
+              </div>
+              <Card>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <Thead>
+                      <Tr>
+                        <Th>Ngày</Th>
+                        <Th>Danh mục</Th>
+                        <Th>Mô tả</Th>
+                        <Th className="text-right">Số tiền</Th>
+                        {isAdminOrOwner && <Th className="text-right">Thao tác</Th>}
+                      </Tr>
+                    </Thead>
+                    <Tbody>
                     {transactions.map((t: any) => {
                       const isIncome = t.type === 'income';
                       return (
@@ -238,6 +241,7 @@ export default function FinanceClient() {
                 </Table>
               </div>
             </Card>
+            </div>
           )}
         </>
       )}

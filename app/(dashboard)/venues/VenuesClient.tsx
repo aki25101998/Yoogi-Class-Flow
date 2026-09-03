@@ -9,6 +9,7 @@ import dynamic from 'next/dynamic';
 const ImportModal = dynamic(() => import('@/app/components/excel/ImportModal').then(mod => mod.ImportModal), { ssr: false });
 const ExportButton = dynamic(() => import('@/app/components/excel/ExportButton').then(mod => mod.ExportButton), { ssr: false });
 import { VenuesImportDef, VenuesExportDef } from '@/services/excel/definitions/venues.def';
+import styles from '@/app/styles/page-standard.module.css';
 
 // UI Components
 import { PageHeader } from '@/app/components/ui/PageHeader';
@@ -179,46 +180,46 @@ export default function VenuesClient() {
           icon="location_off"
         />
       ) : (
-        <div className="flex-col gap-4">
+        <div className={styles.listContainer}>
           {venues.map((venue: any) => (
-            <Card key={venue.id}>
-              <CardContent className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between p-4">
-                <div className="flex items-start gap-4">
-                  <div style={{ backgroundColor: 'var(--surface-hover)', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', display: 'flex', color: 'var(--text-secondary)' }}>
-                    <span className="material-icons-round">place</span>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg text-main">{venue.name}</h3>
-                    <p className="text-secondary text-sm mt-1 mb-2">Địa chỉ: {venue.address || 'Chưa cập nhật'}</p>
-                    <Badge variant={venue.status === 'active' ? 'success' : 'default'}>
-                      {venue.status === 'active' ? 'Hoạt động' : 'Tạm ngưng'}
-                    </Badge>
-                  </div>
+            <div key={venue.id} className={styles.rowItem}>
+              <div className={styles.rowMainInfo}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="material-icons-round text-primary text-[18px]">place</span>
+                  <span className={styles.rowTitle}>{venue.name}</span>
+                  <Badge variant={venue.status === 'active' ? 'success' : 'default'} className="ml-2">
+                    {venue.status === 'active' ? 'Hoạt động' : 'Tạm ngưng'}
+                  </Badge>
                 </div>
-                {isAdminOrOwner && (
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => { setEditingId(venue.id); setFormData(venue); setIsAdding(false); }}
-                      leftIcon={<span className="material-icons-round">edit</span>}
-                    >
-                      Sửa
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="text-danger border-danger hover:bg-danger-bg"
-                      onClick={() => handleDelete(venue.id)}
-                      disabled={loading}
-                      leftIcon={<span className="material-icons-round">delete</span>}
-                    >
-                      Xóa
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                <div className={styles.rowSubTitle}>
+                  Địa chỉ: {venue.address || 'Chưa cập nhật'}
+                </div>
+              </div>
+              {isAdminOrOwner && (
+                <div className={styles.rowActions}>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => { setEditingId(venue.id); setFormData(venue); setIsAdding(false); }}
+                    title="Sửa"
+                    leftIcon={<span className="material-icons-round">edit</span>}
+                  >
+                    Sửa
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    className="text-danger hover:bg-danger-bg"
+                    onClick={() => handleDelete(venue.id)}
+                    disabled={loading}
+                    title="Xóa"
+                    leftIcon={<span className="material-icons-round">delete</span>}
+                  >
+                    Xóa
+                  </Button>
+                </div>
+              )}
+            </div>
           ))}
         </div>
       )}

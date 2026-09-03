@@ -13,6 +13,7 @@ import { Card, CardContent } from '@/app/components/ui/Card';
 import { EmptyState } from '@/app/components/ui/EmptyState';
 import { Button } from '@/app/components/ui/Button';
 import { Badge } from '@/app/components/ui/Badge';
+import styles from '@/app/styles/page-standard.module.css';
 
 export default function MyCheckinClient() {
   const { context } = useDashboardContext();
@@ -63,81 +64,79 @@ export default function MyCheckinClient() {
         description={`Ngày: ${displayDate}`}
       />
       
-      <Card>
-        <CardContent>
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-semibold text-lg text-main">Lịch dạy của bạn ({sessions.length})</h3>
-            <Button variant="ghost" size="sm" onClick={handleSuccess} leftIcon={<span className="material-icons-round">refresh</span>}>Làm mới</Button>
+      <div className={styles.listContainer}>
+        <div className={styles.sectionHeader}>
+          <h3 className={styles.sectionTitle}>Lịch dạy của bạn ({sessions.length})</h3>
+          <Button variant="ghost" size="sm" onClick={handleSuccess} leftIcon={<span className="material-icons-round">refresh</span>}>Làm mới</Button>
+        </div>
+
+        {isLoading ? (
+          <div className="animate-pulse space-y-4">
+            <div className="h-24 bg-surface-hover rounded w-full"></div>
+            <div className="h-24 bg-surface-hover rounded w-full"></div>
           </div>
-
-          {isLoading ? (
-            <div className="animate-pulse space-y-4">
-              <div className="h-24 bg-surface-hover rounded w-full"></div>
-              <div className="h-24 bg-surface-hover rounded w-full"></div>
-            </div>
-          ) : sessions.length === 0 ? (
-            <EmptyState 
-              title="Không có lịch dạy"
-              description="Bạn không có lịch dạy nào trong ngày hôm nay."
-              icon="event_busy"
-            />
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {sessions.map((s: any) => (
-                <div key={s.classId + s.startTime} className="bg-surface rounded-md border border-light p-4 flex flex-col justify-between h-full">
-                  <div>
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="bg-primary-light text-primary font-bold px-3 py-1 rounded-md">
-                        {s.startTime} - {s.end_time || s.endTime}
-                      </div>
-                      {s.status === 'checked_in' && <Badge variant="success">Đã Check-in</Badge>}
-                      {s.status === 'approved' && <Badge variant="primary">Đã Duyệt</Badge>}
-                      {s.status === 'paid' && <Badge variant="primary">Đã Thanh Toán</Badge>}
-                      {s.status === 'cancelled' && <Badge variant="danger">Đã Hủy</Badge>}
-                      {(s.status === 'pending' || s.status === 'scheduled') && <Badge variant="default">Chưa Check-in</Badge>}
+        ) : sessions.length === 0 ? (
+          <EmptyState 
+            title="Không có lịch dạy"
+            description="Bạn không có lịch dạy nào trong ngày hôm nay."
+            icon="event_busy"
+          />
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {sessions.map((s: any) => (
+              <div key={s.classId + s.startTime} className="bg-surface rounded-md border border-light p-4 flex flex-col justify-between h-full hover:shadow-md transition-shadow">
+                <div>
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="bg-primary-light text-primary font-bold px-3 py-1 rounded-md text-sm">
+                      {s.startTime} - {s.end_time || s.endTime}
                     </div>
-                    
-                    <h4 className="font-semibold text-main mb-2 text-lg">{s.className}</h4>
-                    <p className="text-sm text-secondary flex items-center gap-2 mb-4">
-                      <span className="material-icons-round text-muted" style={{ fontSize: '18px' }}>location_on</span> 
-                      {s.venueName}
+                    {s.status === 'checked_in' && <Badge variant="success">Đã Check-in</Badge>}
+                    {s.status === 'approved' && <Badge variant="primary">Đã Duyệt</Badge>}
+                    {s.status === 'paid' && <Badge variant="primary">Đã Thanh Toán</Badge>}
+                    {s.status === 'cancelled' && <Badge variant="danger">Đã Hủy</Badge>}
+                    {(s.status === 'pending' || s.status === 'scheduled') && <Badge variant="default">Chưa Check-in</Badge>}
+                  </div>
+                  
+                  <h4 className="font-semibold text-main mb-2 text-lg">{s.className}</h4>
+                  <p className="text-sm text-secondary flex items-center gap-2 mb-4">
+                    <span className="material-icons-round text-muted" style={{ fontSize: '18px' }}>location_on</span> 
+                    {s.venueName}
+                  </p>
+                  
+                  {s.originalCoachId !== s.currentCoachId && (
+                    <p className="text-xs text-warning mb-4 p-2 bg-warning-bg rounded-md font-medium border border-warning/30">
+                      Bạn đang dạy thay cho HLV {s.originalCoachName}
                     </p>
-                    
-                    {s.originalCoachId !== s.currentCoachId && (
-                      <p className="text-xs text-warning mb-4 p-2 bg-warning-bg rounded-md">
-                        Bạn đang dạy thay cho HLV {s.originalCoachName}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="mt-auto pt-4 border-t border-light">
-                    {(s.status === 'pending' || s.status === 'scheduled') ? (
-                      <Button 
-                        variant="primary" 
-                        className="w-full"
-                        disabled={loading}
-                        onClick={() => handleCheckIn(s.classId)}
-                        leftIcon={<span className="material-icons-round">check_circle</span>}
-                      >
-                        Check-in Ngay
-                      </Button>
-                    ) : (
-                      <Button 
-                        variant="secondary" 
-                        className="w-full"
-                        disabled
-                        leftIcon={<span className="material-icons-round">check</span>}
-                      >
-                        Đã Hoàn Thành
-                      </Button>
-                    )}
-                  </div>
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+
+                <div className="mt-auto pt-4 border-t border-light">
+                  {(s.status === 'pending' || s.status === 'scheduled') ? (
+                    <Button 
+                      variant="primary" 
+                      className="w-full"
+                      disabled={loading}
+                      onClick={() => handleCheckIn(s.classId)}
+                      leftIcon={<span className="material-icons-round">check_circle</span>}
+                    >
+                      Check-in Ngay
+                    </Button>
+                  ) : (
+                    <Button 
+                      variant="secondary" 
+                      className="w-full"
+                      disabled
+                      leftIcon={<span className="material-icons-round">check</span>}
+                    >
+                      Đã Hoàn Thành
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

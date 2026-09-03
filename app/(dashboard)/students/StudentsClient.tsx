@@ -10,14 +10,15 @@ const ImportModal = dynamic(() => import('@/app/components/excel/ImportModal').t
 const ExportButton = dynamic(() => import('@/app/components/excel/ExportButton').then(mod => mod.ExportButton), { ssr: false });
 import { StudentsImportDef, StudentsExportDef } from '@/services/excel/definitions/students.def';
 
-// UI Components
 import { PageHeader } from '@/app/components/ui/PageHeader';
 import { Button } from '@/app/components/ui/Button';
 import { Input, Select } from '@/app/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
 import { EmptyState } from '@/app/components/ui/EmptyState';
 import { Badge } from '@/app/components/ui/Badge';
+import { Table, Thead, Tbody, Tr, Th, Td } from '@/app/components/ui/Table';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/app/components/ui/Modal';
+import styles from '@/app/styles/page-standard.module.css';
 
 
 
@@ -282,79 +283,72 @@ export default function StudentsClient() {
           icon="face"
         />
       ) : (
-        <div className="flex-col gap-6">
-          {students.map((student: any) => {
-            const activeClass = student.class_students && student.class_students.length > 0 ? student.class_students[0] : null;
-            const currentClassName = activeClass ? activeClass.venue_classes?.name : 'Chưa xếp lớp';
-            const currentVenueName = activeClass ? (activeClass.venue_classes?.venues?.name || 'Không rõ') : (student.venues?.name || 'Chưa chọn địa điểm');
+        <div className={styles.listContainer}>
+          <Card>
+            <div className="overflow-x-auto">
+              <Table>
+                <Thead>
+                  <Tr>
+                    <Th>Học viên</Th>
+                    <Th>Liên hệ</Th>
+                    <Th>Phân lớp</Th>
+                    <Th>Đai</Th>
+                    {isAdminOrOwner && <Th className="text-right">Thao tác</Th>}
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {students.map((student: any) => {
+                    const activeClass = student.class_students && student.class_students.length > 0 ? student.class_students[0] : null;
+                    const currentClassName = activeClass ? activeClass.venue_classes?.name : 'Chưa xếp lớp';
+                    const currentVenueName = activeClass ? (activeClass.venue_classes?.venues?.name || 'Không rõ') : (student.venues?.name || 'Chưa chọn địa điểm');
 
-            return (
-              <Card key={student.id}>
-                <CardHeader className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-                  <div>
-                    <CardTitle>{student.name}</CardTitle>
-                    <p className="text-secondary text-sm mt-1">
-                      SĐT: {student.phone || 'N/A'} | Phụ huynh: {student.parent_name || 'N/A'}
-                    </p>
-                  </div>
-                  {isAdminOrOwner && (
-                    <div className="flex gap-2 flex-wrap">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleEdit(student)}
-                        leftIcon={<span className="material-icons-round">edit</span>}
-                      >
-                        Sửa
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="text-danger border-danger hover:bg-danger-bg"
-                        onClick={() => handleDelete(student.id)}
-                        disabled={loading}
-                        leftIcon={<span className="material-icons-round">delete</span>}
-                      >
-                        Xóa
-                      </Button>
-                    </div>
-                  )}
-                </CardHeader>
-
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2 p-4 bg-background rounded-lg border border-light">
-                    <div>
-                      <h4 className="text-sm font-semibold text-secondary mb-3 uppercase tracking-wider">Thông tin cơ bản</h4>
-                      <div className="flex flex-col gap-2">
-                        <div className="flex justify-between">
-                          <span className="text-muted">Ngày sinh:</span>
-                          <span className="font-medium text-main">
-                            {student.dob ? new Date(student.dob).toLocaleDateString('vi-VN') : 'N/A'}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted">Lớp hiện tại:</span>
-                          <span className="font-medium text-main">{currentClassName}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted">Chi nhánh:</span>
-                          <span className="font-medium text-main">{currentVenueName}</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h4 className="text-sm font-semibold text-secondary mb-3 uppercase tracking-wider">Thông tin võ thuật</h4>
-                      <div className="flex justify-between">
-                        <span className="text-muted">Đai hiện tại:</span>
-                        <span className="font-medium text-main">{student.organization_belts?.name || 'Chưa có đai'}</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+                    return (
+                      <Tr key={student.id}>
+                        <Td>
+                          <div className="font-semibold text-main">{student.name}</div>
+                          <div className="text-xs text-secondary mt-1">SN: {student.dob ? new Date(student.dob).toLocaleDateString('vi-VN') : 'N/A'}</div>
+                        </Td>
+                        <Td>
+                          <div className="text-sm">{student.phone || 'N/A'}</div>
+                          <div className="text-xs text-secondary mt-1">PH: {student.parent_name || 'N/A'}</div>
+                        </Td>
+                        <Td>
+                          <div className="font-medium text-main">{currentClassName}</div>
+                          <div className="text-xs text-secondary mt-1">{currentVenueName}</div>
+                        </Td>
+                        <Td>
+                          <Badge variant={student.organization_belts ? 'primary' : 'default'}>
+                            {student.organization_belts?.name || 'Chưa có đai'}
+                          </Badge>
+                        </Td>
+                        {isAdminOrOwner && (
+                          <Td className="text-right whitespace-nowrap">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleEdit(student)}
+                              className="mr-2"
+                            >
+                              Sửa
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="text-danger hover:bg-danger-bg"
+                              onClick={() => handleDelete(student.id)}
+                              disabled={loading}
+                            >
+                              Xóa
+                            </Button>
+                          </Td>
+                        )}
+                      </Tr>
+                    );
+                  })}
+                </Tbody>
+              </Table>
+            </div>
+          </Card>
         </div>
       )}
     </div>

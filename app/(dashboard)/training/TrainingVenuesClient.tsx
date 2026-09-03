@@ -11,6 +11,7 @@ import dynamic from 'next/dynamic';
 const ImportModal = dynamic(() => import('@/app/components/excel/ImportModal').then(mod => mod.ImportModal), { ssr: false });
 const ExportButton = dynamic(() => import('@/app/components/excel/ExportButton').then(mod => mod.ExportButton), { ssr: false });
 import { VenuesImportDef, VenuesExportDef } from '@/services/excel/definitions/venues.def';
+import styles from '@/app/styles/page-standard.module.css';
 
 import { PageHeader } from '@/app/components/ui/PageHeader';
 import { Button } from '@/app/components/ui/Button';
@@ -175,58 +176,54 @@ export default function TrainingVenuesClient() {
           icon="domain"
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className={styles.listContainer}>
           {venues.map((venue: any) => (
-            <Card key={venue.id} className="hover:shadow-md transition-shadow">
-              <CardHeader className="flex flex-row items-start justify-between pb-2 border-b border-light">
-                <div className="flex-1">
-                  <CardTitle className="text-lg text-main flex items-center gap-2">
-                    <span className="material-icons-round text-primary text-xl">location_on</span>
+            <div key={venue.id} className={styles.rowItem}>
+              <div className={styles.rowMainInfo}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="material-icons-round text-primary text-[18px]">location_on</span>
+                  <Link href={`/training/${venue.id}`} className={`${styles.rowTitle} hover:text-primary transition-colors`}>
                     {venue.name}
-                  </CardTitle>
-                  <p className="text-sm text-secondary mt-1 flex items-start gap-1">
-                    <span className="material-icons-round text-[14px] mt-[2px]">map</span>
-                    <span className="line-clamp-2">{venue.address || 'Chưa cập nhật địa chỉ'}</span>
-                  </p>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <div className="flex justify-between items-center mb-4">
-                  <Badge variant={venue.status === 'active' ? 'success' : 'default'}>
-                    {venue.status === 'active' ? 'Đang hoạt động' : 'Ngừng hoạt động'}
+                  </Link>
+                  <Badge variant={venue.status === 'active' ? 'success' : 'default'} className="ml-2">
+                    {venue.status === 'active' ? 'Hoạt động' : 'Ngừng'}
                   </Badge>
                 </div>
-                
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="bg-surface-hover p-3 rounded-lg text-center">
-                    <div className="text-2xl font-bold text-main">{venue.activeClassesCount}</div>
-                    <div className="text-xs text-secondary mt-1 uppercase tracking-wider font-medium">Lớp Học</div>
-                  </div>
-                  <div className="bg-surface-hover p-3 rounded-lg text-center">
-                    <div className="text-2xl font-bold text-main">{venue.totalStudentsCount}</div>
-                    <div className="text-xs text-secondary mt-1 uppercase tracking-wider font-medium">Học Viên</div>
-                  </div>
+                <div className={styles.rowSubTitle}>
+                  {venue.address || 'Chưa cập nhật địa chỉ'}
                 </div>
+              </div>
+              
+              <div className={styles.rowMeta}>
+                <div className={styles.rowMetaItem}>
+                  <span className={styles.rowMetaLabel}>Lớp học</span>
+                  <span className={styles.rowMetaValue}>{venue.activeClassesCount} lớp</span>
+                </div>
+                <div className={styles.rowMetaItem}>
+                  <span className={styles.rowMetaLabel}>Học viên</span>
+                  <span className={styles.rowMetaValue}>{venue.totalStudentsCount} hv</span>
+                </div>
+              </div>
 
-                <div className="flex gap-2">
-                  <Link href={`/training/${venue.id}`} className="flex-1">
-                    <Button variant="primary" className="w-full justify-center">
-                      Xem Chi Tiết
-                    </Button>
-                  </Link>
-                  {isAdminOrOwner && (
-                    <Button 
-                      variant="outline" 
-                      onClick={() => handleEdit(venue)}
-                      className="px-3"
-                      title="Sửa"
-                    >
-                      <span className="material-icons-round text-secondary">edit</span>
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+              <div className={styles.rowActions}>
+                {isAdminOrOwner && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => handleEdit(venue)}
+                    title="Sửa"
+                    leftIcon={<span className="material-icons-round">edit</span>}
+                  >
+                    Sửa
+                  </Button>
+                )}
+                <Link href={`/training/${venue.id}`}>
+                  <Button variant="outline" size="sm">
+                    Chi Tiết
+                  </Button>
+                </Link>
+              </div>
+            </div>
           ))}
         </div>
       )}

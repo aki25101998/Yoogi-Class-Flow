@@ -8,6 +8,7 @@ import { useDashboardContext } from '../DashboardProvider';
 import dynamic from 'next/dynamic';
 const ExportButton = dynamic(() => import('@/app/components/excel/ExportButton').then(mod => mod.ExportButton), { ssr: false });
 import { ClassesExportDef } from '@/services/excel/definitions/classes.def';
+import styles from '@/app/styles/page-standard.module.css';
 
 // UI Components
 import { PageHeader } from '@/app/components/ui/PageHeader';
@@ -175,72 +176,60 @@ export default function ClassesClient() {
           icon="class"
         />
       ) : (
-        <div className="flex-col gap-6">
+        <div className={styles.listContainer}>
           {classes.map((cls: any) => (
-            <Card key={cls.id}>
-              <CardHeader className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <CardTitle>{cls.name || 'Lớp chưa đặt tên'}</CardTitle>
-                    <Badge variant={cls.status === 'active' ? 'success' : 'default'}>
-                      {cls.status === 'active' ? 'Đang hoạt động' : 'Tạm ngưng'}
-                    </Badge>
-                  </div>
-                  <p className="text-secondary mt-2 text-sm">
-                    {cls.venues?.name || 'Chưa có địa điểm'} • {cls.start_time} - {cls.end_time}
-                  </p>
+            <div key={cls.id} className={styles.rowItem}>
+              <div className={styles.rowMainInfo}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className={styles.rowTitle}>{cls.name || 'Lớp chưa đặt tên'}</span>
+                  <Badge variant={cls.status === 'active' ? 'success' : 'default'} className="ml-2">
+                    {cls.status === 'active' ? 'Đang hoạt động' : 'Tạm ngưng'}
+                  </Badge>
                 </div>
-                {isAdminOrOwner && (
-                  <div className="flex gap-2 flex-wrap">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setStudentModalClassId(cls.id)}
-                      leftIcon={<span className="material-icons-round">groups</span>}
-                    >
-                      Học viên
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => openEditModal(cls)}
-                      leftIcon={<span className="material-icons-round">edit</span>}
-                    >
-                      Sửa
-                    </Button>
-                  </div>
-                )}
-              </CardHeader>
+                <div className={styles.rowSubTitle}>
+                  {cls.venues?.name || 'Chưa có địa điểm'} • {cls.start_time} - {cls.end_time}
+                </div>
+              </div>
               
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2 p-4 bg-background rounded-lg border border-light">
-                  <div>
-                    <h4 className="text-sm font-semibold text-secondary mb-3 uppercase tracking-wider">HLV phụ trách</h4>
-                    {(!cls.class_coaches || cls.class_coaches.length === 0) ? (
-                      <p className="text-muted text-sm italic">Chưa có HLV nào được phân công.</p>
-                    ) : (
-                      <ul className="flex-col gap-2">
-                        {cls.class_coaches.map((assignment: any) => (
-                          <li key={assignment.id} className="flex justify-between items-center py-1">
-                            <span className="font-medium text-main">{assignment.coaches?.organization_members?.profiles?.name || 'Unknown'}</span>
-                            <span className="text-xs text-secondary">{assignment.role === 'HEAD_COACH' ? 'HLV Trưởng' : 'HLV Phụ'}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-secondary mb-3 uppercase tracking-wider">Thống kê</h4>
-                    <div className="flex justify-between">
-                      <span className="text-muted">Sĩ số học viên:</span>
-                      <span className="font-medium text-main">
-                        {cls.class_students?.filter((cs: any) => cs.status === 'active').length || 0}
-                      </span>
-                    </div>
-                  </div>
+              <div className={styles.rowMeta}>
+                <div className={styles.rowMetaItem}>
+                  <span className={styles.rowMetaLabel}>HLV Phụ trách</span>
+                  <span className={styles.rowMetaValue}>
+                    {(!cls.class_coaches || cls.class_coaches.length === 0) 
+                      ? <span className="text-muted italic">Chưa phân công</span> 
+                      : cls.class_coaches.map((assignment: any) => assignment.coaches?.organization_members?.profiles?.name).join(', ')}
+                  </span>
                 </div>
-              </CardContent>
-            </Card>
+                <div className={styles.rowMetaItem}>
+                  <span className={styles.rowMetaLabel}>Sĩ số</span>
+                  <span className={styles.rowMetaValue}>
+                    {cls.class_students?.filter((cs: any) => cs.status === 'active').length || 0} hv
+                  </span>
+                </div>
+              </div>
+
+              {isAdminOrOwner && (
+                <div className={styles.rowActions}>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setStudentModalClassId(cls.id)}
+                    leftIcon={<span className="material-icons-round">groups</span>}
+                  >
+                    Học viên
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => openEditModal(cls)}
+                    title="Sửa"
+                    leftIcon={<span className="material-icons-round">edit</span>}
+                  >
+                    Sửa
+                  </Button>
+                </div>
+              )}
+            </div>
           ))}
         </div>
       )}

@@ -20,6 +20,8 @@ import { Card, CardContent } from '@/app/components/ui/Card';
 import { EmptyState } from '@/app/components/ui/EmptyState';
 import { Badge } from '@/app/components/ui/Badge';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/app/components/ui/Modal';
+import { Table, Thead, Tbody, Tr, Th, Td } from '@/app/components/ui/Table';
+import styles from '@/app/styles/page-standard.module.css';
 
 export default function ClassDetailsClient({ venueId, classId }: { venueId: string; classId: string }) {
   const router = useRouter();
@@ -197,85 +199,94 @@ export default function ClassDetailsClient({ venueId, classId }: { venueId: stri
         />
       )}
 
-      <Card>
-        <CardContent className="p-0">
+      <div className={styles.listContainer}>
+        <div className={styles.sectionHeader}>
+          <h3 className={styles.sectionTitle}>Danh sách học viên</h3>
+          <span className={styles.sectionCount}>{activeStudents.length} học viên</span>
+        </div>
+        <Card>
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-surface-hover border-b border-light">
-                  <th className="p-4 text-sm font-semibold text-secondary w-[250px]">Tên học viên</th>
-                  <th className="p-4 text-sm font-semibold text-secondary w-[120px]">Ngày sinh</th>
-                  <th className="p-4 text-sm font-semibold text-secondary w-[150px]">SĐT / Phụ huynh</th>
-                  <th className="p-4 text-sm font-semibold text-secondary w-[120px]">Cấp đai</th>
-                  <th className="p-4 text-sm font-semibold text-secondary w-[100px]">Trạng thái</th>
-                  {isAdminOrOwner && <th className="p-4 text-sm font-semibold text-secondary text-right w-[100px]">Hành động</th>}
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <Thead>
+                <Tr>
+                  <Th>Tên học viên</Th>
+                  <Th>Ngày sinh</Th>
+                  <Th>SĐT / Phụ huynh</Th>
+                  <Th>Cấp đai</Th>
+                  <Th>Trạng thái</Th>
+                  {isAdminOrOwner && <Th className="text-right">Hành động</Th>}
+                </Tr>
+              </Thead>
+              <Tbody>
                 {activeStudents.length === 0 ? (
-                  <tr>
-                    <td colSpan={isAdminOrOwner ? 6 : 5} className="p-8 text-center text-secondary">
+                  <Tr>
+                    <Td colSpan={isAdminOrOwner ? 6 : 5} className="text-center text-secondary">
                       <EmptyState 
                         title="Lớp chưa có học viên" 
                         description="Vui lòng bấm Thêm Học Viên để ghi danh vào lớp." 
                         icon="school"
                       />
-                    </td>
-                  </tr>
+                    </Td>
+                  </Tr>
                 ) : (
                   activeStudents.map((student: any) => (
-                    <tr key={student.id} className="border-b border-light hover:bg-surface-hover/50 transition-colors">
-                      <td className="p-4">
+                    <Tr key={student.id}>
+                      <Td>
                         <div className="font-semibold text-main">{student.name}</div>
-                      </td>
-                      <td className="p-4 text-main">
+                      </Td>
+                      <Td className="text-main">
                         {student.dob ? new Date(student.dob).toLocaleDateString('vi-VN') : 'N/A'}
-                      </td>
-                      <td className="p-4">
+                      </Td>
+                      <Td>
                         <div className="text-main">{student.phone || student.parent_phone || 'N/A'}</div>
                         <div className="text-xs text-secondary">{student.parent_name}</div>
-                      </td>
-                      <td className="p-4">
+                      </Td>
+                      <Td>
                         {student.organization_belts ? (
                           <Badge variant="primary">{student.organization_belts.name}</Badge>
                         ) : (
                           <span className="text-secondary text-sm">Chưa có</span>
                         )}
-                      </td>
-                      <td className="p-4">
+                      </Td>
+                      <Td>
                         <Badge variant={student.status === 'active' ? 'success' : 'default'}>
                           {student.status === 'active' ? 'Hoạt động' : 'Tạm nghỉ'}
                         </Badge>
-                      </td>
+                      </Td>
                       {isAdminOrOwner && (
-                        <td className="p-4 text-right">
+                        <Td className="text-right">
                           <div className="flex justify-end gap-2">
-                            <button 
+                            <Button 
+                              variant="ghost"
+                              size="sm"
                               onClick={() => handleEditStudent(student)}
-                              className="w-8 h-8 rounded-full flex items-center justify-center text-secondary hover:bg-surface hover:text-primary transition-colors"
                               title="Sửa"
+                              leftIcon={<span className="material-icons-round text-[18px]">edit</span>}
                             >
-                              <span className="material-icons-round text-[18px]">edit</span>
-                            </button>
-                            <button 
+                              Sửa
+                            </Button>
+                            <Button 
+                              variant="ghost"
+                              size="sm"
+                              className="text-danger hover:bg-danger-bg"
                               onClick={() => handleRemoveStudent(student)}
-                              className="w-8 h-8 rounded-full flex items-center justify-center text-secondary hover:bg-danger-bg hover:text-danger transition-colors"
                               title="Loại khỏi lớp"
                               disabled={loading}
+                              leftIcon={<span className="material-icons-round text-[18px]">person_remove</span>}
                             >
-                              <span className="material-icons-round text-[18px]">person_remove</span>
-                            </button>
+                              Loại
+                            </Button>
                           </div>
-                        </td>
+                        </Td>
                       )}
-                    </tr>
+                    </Tr>
                   ))
                 )}
-              </tbody>
-            </table>
+              </Tbody>
+            </Table>
           </div>
-        </CardContent>
-      </Card>
+        </Card>
+      </div>
 
       {/* Student Modal */}
       <Modal isOpen={isStudentModalOpen} onClose={loading ? () => {} : resetForms}>

@@ -15,7 +15,7 @@ import { EmptyState } from '@/app/components/ui/EmptyState';
 import { Badge } from '@/app/components/ui/Badge';
 import { Table, Thead, Tbody, Tr, Th, Td } from '@/app/components/ui/Table';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/app/components/ui/Modal';
-
+import styles from '@/app/styles/page-standard.module.css';
 function TuitionSkeleton() {
   return (
     <Card className="animate-pulse">
@@ -194,75 +194,81 @@ export default function TuitionClient() {
           icon="account_balance_wallet"
         />
       ) : (
-        <Card>
-          <div className="overflow-x-auto">
-            <Table>
-              <Thead>
-                <Tr>
-                  <Th>Học viên</Th>
-                  <Th>Lớp / Kỳ hạn</Th>
-                  <Th>Số tiền</Th>
-                  <Th>Thanh toán</Th>
-                  <Th>Trạng thái</Th>
-                  {isAdminOrOwner && <Th className="text-right">Thao tác</Th>}
-                </Tr>
-              </Thead>
-              <Tbody>
-                {tuitionList.map((t: any) => {
-                  const amount = Number(t.amount) || 0;
-                  const paid = Number(t.paid_amount) || 0;
-                  const remaining = amount - paid;
-                  
-                  return (
-                    <Tr key={t.id}>
-                      <Td className="font-medium text-main">{t.students?.name}</Td>
-                      <Td>
-                        <div className="font-medium">{t.venue_classes?.name || 'Tất cả lớp'}</div>
-                        <div className="text-sm text-secondary">{t.due_date}</div>
-                      </Td>
-                      <Td>{amount.toLocaleString('vi-VN')} đ</Td>
-                      <Td>
-                        <div className="text-success text-sm">Đã đóng: {paid.toLocaleString('vi-VN')} đ</div>
-                        {remaining > 0 && <div className="text-danger text-sm">Còn nợ: {remaining.toLocaleString('vi-VN')} đ</div>}
-                      </Td>
-                      <Td>
-                        <Badge 
-                          variant={t.status === 'paid' ? 'success' : (t.status === 'partial' ? 'warning' : 'danger')}
-                        >
-                          {t.status === 'paid' ? 'Đã thu đủ' : (t.status === 'partial' ? 'Thu một phần' : 'Chưa thu')}
-                        </Badge>
-                      </Td>
-                      {isAdminOrOwner && (
-                        <Td className="text-right whitespace-nowrap">
-                          {t.status !== 'paid' && (
+        <div className={styles.listContainer}>
+          <div className={styles.sectionHeader}>
+            <h3 className={styles.sectionTitle}>Danh sách khoản thu</h3>
+            <span className={styles.sectionCount}>{tuitionList.length} khoản thu</span>
+          </div>
+          <Card>
+            <div className="overflow-x-auto">
+              <Table>
+                <Thead>
+                  <Tr>
+                    <Th>Học viên</Th>
+                    <Th>Lớp / Kỳ hạn</Th>
+                    <Th>Số tiền</Th>
+                    <Th>Thanh toán</Th>
+                    <Th>Trạng thái</Th>
+                    {isAdminOrOwner && <Th className="text-right">Thao tác</Th>}
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {tuitionList.map((t: any) => {
+                    const amount = Number(t.amount) || 0;
+                    const paid = Number(t.paid_amount) || 0;
+                    const remaining = amount - paid;
+                    
+                    return (
+                      <Tr key={t.id}>
+                        <Td className="font-medium text-main">{t.students?.name}</Td>
+                        <Td>
+                          <div className="font-medium">{t.venue_classes?.name || 'Tất cả lớp'}</div>
+                          <div className="text-sm text-secondary">{t.due_date}</div>
+                        </Td>
+                        <Td>{amount.toLocaleString('vi-VN')} đ</Td>
+                        <Td>
+                          <div className="text-success text-sm">Đã đóng: {paid.toLocaleString('vi-VN')} đ</div>
+                          {remaining > 0 && <div className="text-danger text-sm">Còn nợ: {remaining.toLocaleString('vi-VN')} đ</div>}
+                        </Td>
+                        <Td>
+                          <Badge 
+                            variant={t.status === 'paid' ? 'success' : (t.status === 'partial' ? 'warning' : 'danger')}
+                          >
+                            {t.status === 'paid' ? 'Đã thu đủ' : (t.status === 'partial' ? 'Thu một phần' : 'Chưa thu')}
+                          </Badge>
+                        </Td>
+                        {isAdminOrOwner && (
+                          <Td className="text-right whitespace-nowrap">
+                            {t.status !== 'paid' && (
+                              <Button 
+                                variant="outline"
+                                size="sm"
+                                className="mr-2 text-success border-success hover:bg-success-bg"
+                                onClick={() => { setPaymentId(t.id); setPaymentAmount(remaining); setPaymentRemaining(remaining); }}
+                                disabled={loading}
+                              >
+                                Thanh toán
+                              </Button>
+                            )}
                             <Button 
-                              variant="outline"
+                              variant="ghost"
                               size="sm"
-                              className="mr-2 text-success border-success hover:bg-success-bg"
-                              onClick={() => { setPaymentId(t.id); setPaymentAmount(remaining); setPaymentRemaining(remaining); }}
+                              className="text-danger hover:bg-danger-bg"
+                              onClick={() => handleDelete(t.id)}
                               disabled={loading}
                             >
-                              Thanh toán
+                              Xóa
                             </Button>
-                          )}
-                          <Button 
-                            variant="ghost"
-                            size="sm"
-                            className="text-danger hover:bg-danger-bg"
-                            onClick={() => handleDelete(t.id)}
-                            disabled={loading}
-                          >
-                            Xóa
-                          </Button>
-                        </Td>
-                      )}
-                    </Tr>
-                  );
-                })}
-              </Tbody>
-            </Table>
-          </div>
-        </Card>
+                          </Td>
+                        )}
+                      </Tr>
+                    );
+                  })}
+                </Tbody>
+              </Table>
+            </div>
+          </Card>
+        </div>
       )}
     </div>
   );

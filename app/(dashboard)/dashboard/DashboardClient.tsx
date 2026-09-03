@@ -7,6 +7,7 @@ import { useTodaySessions } from '@/hooks/useTodaySessions';
 import { cancelSessionAction, overrideCoachAction, checkInSessionAction } from './actions';
 import { useClasses } from '@/hooks/useClasses';
 import { getBusinessDate, getBusinessDateString } from '@/utils/date';
+import styles from '@/app/styles/page-standard.module.css';
 
 // UI Components
 import { PageHeader } from '@/app/components/ui/PageHeader';
@@ -20,15 +21,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 function StatSkeleton() {
   return (
-    <Card className="animate-pulse">
-      <CardContent className="flex items-center gap-4">
-        <div className="w-12 h-12 bg-surface-hover rounded-full shrink-0"></div>
-        <div className="flex-1">
-          <div className="h-8 bg-surface-hover rounded w-16 mb-2"></div>
-          <div className="h-4 bg-surface-hover rounded w-24"></div>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="h-16 bg-surface-hover rounded w-full"></div>
   );
 }
 
@@ -119,7 +112,8 @@ export default function DashboardClient() {
         description={`Hôm nay: ${displayDate}`}
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-6)' }}>
+      <div className={styles.overviewCard}>
+        <div className={styles.overviewGrid}>
         {statsLoading ? (
           <>
             {isAdminOrOwner && <StatSkeleton />}
@@ -130,68 +124,43 @@ export default function DashboardClient() {
         ) : (
           <>
             {isAdminOrOwner && (
-              <Card>
-                <CardContent className="flex items-center gap-4">
-                  <div style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary)', padding: 'var(--space-3)', borderRadius: 'var(--radius-full)', display: 'flex' }}>
-                    <span className="material-icons-round">people</span>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-main)' }}>{stats.coachCount}</div>
-                    <div className="text-secondary text-sm font-medium">Huấn luyện viên</div>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className={`${styles.kpiItem} ${styles.kpiPrimary}`}>
+                <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Huấn luyện viên</div>
+                <div className={styles.kpiValue}>{stats.coachCount}</div>
+              </div>
             )}
 
-            <Card>
-              <CardContent className="flex items-center gap-4">
-                <div style={{ backgroundColor: 'var(--info-bg)', color: 'var(--info-text)', padding: 'var(--space-3)', borderRadius: 'var(--radius-full)', display: 'flex' }}>
-                  <span className="material-icons-round">class</span>
-                </div>
-                <div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-main)' }}>{stats.classCount}</div>
-                  <div className="text-secondary text-sm font-medium">{isAdminOrOwner ? 'Lớp học đang mở' : 'Lớp được phân công'}</div>
-                </div>
-              </CardContent>
-            </Card>
+            <div className={`${styles.kpiItem} ${styles.kpiInfo}`}>
+              <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> {isAdminOrOwner ? 'Lớp học đang mở' : 'Lớp được phân công'}</div>
+              <div className={styles.kpiValue}>{stats.classCount}</div>
+            </div>
 
             {isAdminOrOwner && (
-              <Card>
-                <CardContent className="flex items-center gap-4">
-                  <div style={{ backgroundColor: 'var(--success-bg)', color: 'var(--success-text)', padding: 'var(--space-3)', borderRadius: 'var(--radius-full)', display: 'flex' }}>
-                    <span className="material-icons-round">school</span>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-main)' }}>{stats.studentCount}</div>
-                    <div className="text-secondary text-sm font-medium">Học viên</div>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className={`${styles.kpiItem} ${styles.kpiSuccess}`}>
+                <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Học viên</div>
+                <div className={styles.kpiValue}>{stats.studentCount}</div>
+              </div>
             )}
 
             {isAdminOrOwner && (
-              <Card>
-                <CardContent className="flex items-center gap-4">
-                  <div style={{ backgroundColor: 'var(--warning-bg)', color: 'var(--warning-text)', padding: 'var(--space-3)', borderRadius: 'var(--radius-full)', display: 'flex' }}>
-                    <span className="material-icons-round">location_on</span>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-main)' }}>{stats.venueCount}</div>
-                    <div className="text-secondary text-sm font-medium">Địa điểm</div>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className={`${styles.kpiItem} ${styles.kpiWarning}`}>
+                <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Địa điểm</div>
+                <div className={styles.kpiValue}>{stats.venueCount}</div>
+              </div>
             )}
           </>
         )}
+        </div>
       </div>
 
-      <Card>
-        <CardContent>
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-semibold text-lg text-main">Lịch hôm nay ({sessions.length})</h3>
+      <div className={styles.listContainer}>
+        <div className={styles.sectionHeader}>
+          <h3 className={styles.sectionTitle}>Lịch hôm nay</h3>
+          <div className="flex items-center gap-2">
+            <span className={styles.sectionCount}>{sessions.length} buổi</span>
             <Button variant="ghost" size="sm" onClick={handleSuccess} leftIcon={<span className="material-icons-round">refresh</span>}>Làm mới</Button>
           </div>
+        </div>
           
           {sessionsLoading ? (
             <div className="animate-pulse space-y-4">
@@ -271,8 +240,7 @@ export default function DashboardClient() {
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+      </div>
 
       {/* Override Coach Modal */}
       <Modal isOpen={!!overrideModalSession} onClose={loading ? () => {} : () => setOverrideModalSession(null)}>

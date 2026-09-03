@@ -18,6 +18,7 @@ import dynamic from 'next/dynamic';
 const ImportModal = dynamic(() => import('@/app/components/excel/ImportModal').then(mod => mod.ImportModal), { ssr: false });
 const ExportButton = dynamic(() => import('@/app/components/excel/ExportButton').then(mod => mod.ExportButton), { ssr: false });
 import { CoachesImportDef, CoachesExportDef } from '@/services/excel/definitions/coaches.def';
+import styles from '@/app/styles/page-standard.module.css';
 
 // UI Components
 import { PageHeader } from '@/app/components/ui/PageHeader';
@@ -322,45 +323,66 @@ export default function CoachesClient() {
         )}
       </Modal>
 
-      {/* Tabs */}
-      <div className="flex gap-6 mb-6" style={{ borderBottom: '1px solid var(--border-light)' }}>
-        <button 
-          onClick={() => setActiveTab('active')} 
-          style={{ 
-            background: 'none', border: 'none', padding: '0 0 var(--space-3) 0', cursor: 'pointer',
-            borderBottom: activeTab === 'active' ? '2px solid var(--primary)' : '2px solid transparent', 
-            color: activeTab === 'active' ? 'var(--primary)' : 'var(--text-secondary)', 
-            fontWeight: activeTab === 'active' ? 600 : 500 
-          }}
-        >
-          Đang hoạt động ({activeMembers.length})
-        </button>
-        <button 
-          onClick={() => setActiveTab('invitations')} 
-          style={{ 
-            background: 'none', border: 'none', padding: '0 0 var(--space-3) 0', cursor: 'pointer',
-            borderBottom: activeTab === 'invitations' ? '2px solid var(--warning)' : '2px solid transparent', 
-            color: activeTab === 'invitations' ? 'var(--warning)' : 'var(--text-secondary)', 
-            fontWeight: activeTab === 'invitations' ? 600 : 500 
-          }}
-        >
-          Lời mời ({invitations.length})
-        </button>
-        <button 
-          onClick={() => setActiveTab('suspended')} 
-          style={{ 
-            background: 'none', border: 'none', padding: '0 0 var(--space-3) 0', cursor: 'pointer',
-            borderBottom: activeTab === 'suspended' ? '2px solid var(--danger)' : '2px solid transparent', 
-            color: activeTab === 'suspended' ? 'var(--danger)' : 'var(--text-secondary)', 
-            fontWeight: activeTab === 'suspended' ? 600 : 500 
-          }}
-        >
-          Đã tạm ngưng ({suspendedMembers.length})
-        </button>
+      {/* Overview Metrics */}
+      <div className={styles.overviewCard}>
+        <div className={styles.overviewGrid}>
+          <div className={`${styles.kpiItem} ${styles.kpiPrimary}`}>
+            <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Đang hoạt động</div>
+            <div className={styles.kpiValue}>{activeMembers.length}</div>
+          </div>
+          <div className={`${styles.kpiItem} ${styles.kpiWarning}`}>
+            <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Lời mời chờ</div>
+            <div className={styles.kpiValue}>{invitations.length}</div>
+          </div>
+          <div className={`${styles.kpiItem} ${styles.kpiDanger}`}>
+            <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Đã tạm ngưng</div>
+            <div className={styles.kpiValue}>{suspendedMembers.length}</div>
+          </div>
+        </div>
       </div>
 
-      <TableContainer>
-        <Table>
+      <div className={styles.listContainer}>
+        {/* Tabs */}
+        <div className={styles.sectionHeader} style={{ marginBottom: 0 }}>
+          <div className="flex gap-6" style={{ borderBottom: '1px solid var(--border-light)' }}>
+            <button 
+              onClick={() => setActiveTab('active')} 
+              style={{ 
+                background: 'none', border: 'none', padding: '0 0 var(--space-3) 0', cursor: 'pointer',
+                borderBottom: activeTab === 'active' ? '2px solid var(--primary)' : '2px solid transparent', 
+                color: activeTab === 'active' ? 'var(--primary)' : 'var(--text-secondary)', 
+                fontWeight: activeTab === 'active' ? 600 : 500 
+              }}
+            >
+              Đang hoạt động ({activeMembers.length})
+            </button>
+            <button 
+              onClick={() => setActiveTab('invitations')} 
+              style={{ 
+                background: 'none', border: 'none', padding: '0 0 var(--space-3) 0', cursor: 'pointer',
+                borderBottom: activeTab === 'invitations' ? '2px solid var(--warning)' : '2px solid transparent', 
+                color: activeTab === 'invitations' ? 'var(--warning)' : 'var(--text-secondary)', 
+                fontWeight: activeTab === 'invitations' ? 600 : 500 
+              }}
+            >
+              Lời mời ({invitations.length})
+            </button>
+            <button 
+              onClick={() => setActiveTab('suspended')} 
+              style={{ 
+                background: 'none', border: 'none', padding: '0 0 var(--space-3) 0', cursor: 'pointer',
+                borderBottom: activeTab === 'suspended' ? '2px solid var(--danger)' : '2px solid transparent', 
+                color: activeTab === 'suspended' ? 'var(--danger)' : 'var(--text-secondary)', 
+                fontWeight: activeTab === 'suspended' ? 600 : 500 
+              }}
+            >
+              Đã tạm ngưng ({suspendedMembers.length})
+            </button>
+          </div>
+        </div>
+
+        <TableContainer>
+          <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Tên</TableHead>
@@ -486,6 +508,7 @@ export default function CoachesClient() {
           </TableBody>
         </Table>
       </TableContainer>
+      </div>
 
       {editingRoleMember && (
         <ChangeRoleModal

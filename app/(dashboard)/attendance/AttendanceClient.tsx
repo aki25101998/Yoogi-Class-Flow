@@ -17,6 +17,7 @@ import { Input, Select } from '@/app/components/ui/Input';
 import { Card, CardContent } from '@/app/components/ui/Card';
 import { EmptyState } from '@/app/components/ui/EmptyState';
 import { Table, Thead, Tbody, Tr, Th, Td } from '@/app/components/ui/Table';
+import styles from '@/app/styles/page-standard.module.css';
 
 export default function AttendanceClient() {
   const { context } = useDashboardContext();
@@ -161,20 +162,21 @@ export default function AttendanceClient() {
       {success && <div className="text-success text-sm font-medium">{success}</div>}
 
       {selectedSession ? (
-        <Card>
-          <div className="overflow-x-auto">
-            <div className="flex justify-between items-center p-4 border-b border-light">
-              <h3 className="font-semibold text-main">Danh sách học viên ({selectedSession.students.length})</h3>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleMarkAllPresent}
-                disabled={selectedSession.students.length === 0}
-                leftIcon={<span className="material-icons-round">done_all</span>}
-              >
-                Tất cả có mặt
-              </Button>
-            </div>
+        <div className={styles.listContainer}>
+          <div className={styles.sectionHeader}>
+            <h3 className={styles.sectionTitle}>Danh sách học viên ({selectedSession.students.length})</h3>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleMarkAllPresent}
+              disabled={selectedSession.students.length === 0}
+              leftIcon={<span className="material-icons-round">done_all</span>}
+            >
+              Tất cả có mặt
+            </Button>
+          </div>
+          <Card>
+            <div className="overflow-x-auto">
             <Table>
               <Thead>
                 <Tr>
@@ -247,6 +249,7 @@ export default function AttendanceClient() {
             </div>
           </div>
         </Card>
+        </div>
       ) : (
         <EmptyState 
           title="Chưa chọn ca học" 

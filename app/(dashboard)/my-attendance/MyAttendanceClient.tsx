@@ -3,6 +3,14 @@
 import { useDashboardContext } from '../DashboardProvider';
 import { useMyAttendance } from '@/hooks/useMyAttendance';
 
+// UI Components
+import { PageHeader } from '@/app/components/ui/PageHeader';
+import { Card } from '@/app/components/ui/Card';
+import { EmptyState } from '@/app/components/ui/EmptyState';
+import { Badge } from '@/app/components/ui/Badge';
+import { Table, Thead, Tbody, Tr, Th, Td } from '@/app/components/ui/Table';
+import styles from '@/app/styles/page-standard.module.css';
+
 export default function MyAttendanceClient() {
   const { context } = useDashboardContext();
   const organizationId = context?.organization?.id;
@@ -12,9 +20,13 @@ export default function MyAttendanceClient() {
 
   if (!coachId) {
     return (
-      <div style={{ padding: '24px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '24px' }}>Lịch sử điểm danh</h1>
-        <p style={{ color: 'var(--danger)' }}>Bạn chưa được liên kết với hồ sơ HLV nào trong hệ thống.</p>
+      <div className="flex-col gap-6">
+        <PageHeader title="Lịch sử điểm danh" />
+        <Card>
+          <div className="p-6 text-danger font-medium">
+            Bạn chưa được liên kết với hồ sơ HLV nào trong hệ thống.
+          </div>
+        </Card>
       </div>
     );
   }
@@ -23,41 +35,56 @@ export default function MyAttendanceClient() {
   const displaySessions = sessions.slice(0, 30);
 
   return (
-    <div style={{ padding: '24px' }}>
-      <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '24px' }}>Lịch sử điểm danh (30 buổi gần nhất)</h1>
+    <div className="flex-col gap-6">
+      <PageHeader 
+        title="Lịch sử điểm danh" 
+        description="Lịch sử dạy và tính lương 30 buổi gần nhất"
+      />
       
       {isLoading ? (
-        <div style={{ padding: '24px', textAlign: 'center', backgroundColor: 'var(--surface-hover)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)', color: 'var(--text-secondary)' }}>
-          Đang tải dữ liệu...
+        <div className="animate-pulse space-y-4">
+          <div className="h-12 bg-surface-hover rounded w-full"></div>
+          <div className="h-12 bg-surface-hover rounded w-full"></div>
+          <div className="h-12 bg-surface-hover rounded w-full"></div>
         </div>
       ) : displaySessions.length === 0 ? (
-        <div style={{ padding: '24px', textAlign: 'center', backgroundColor: 'var(--surface-hover)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)', color: 'var(--text-secondary)' }}>
-          Chưa có dữ liệu điểm danh.
-        </div>
+        <EmptyState 
+          title="Chưa có dữ liệu điểm danh"
+          description="Hệ thống chưa ghi nhận buổi dạy nào của bạn."
+          icon="history"
+        />
       ) : (
-        <div style={{ backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead style={{ backgroundColor: 'var(--surface-hover)' }}>
-              <tr>
-                <th style={{ padding: '12px 16px', fontWeight: '600', borderBottom: '1px solid var(--border-light)' }}>Ngày</th>
-                <th style={{ padding: '12px 16px', fontWeight: '600', borderBottom: '1px solid var(--border-light)' }}>Lớp</th>
-                <th style={{ padding: '12px 16px', fontWeight: '600', borderBottom: '1px solid var(--border-light)' }}>Trạng thái</th>
-              </tr>
-            </thead>
-            <tbody>
-              {displaySessions.map((s: any) => (
-                <tr key={s.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                  <td style={{ padding: '12px 16px' }}>{s.date}</td>
-                  <td style={{ padding: '12px 16px' }}>{s.venue_classes?.name || '---'}</td>
-                  <td style={{ padding: '12px 16px' }}>
-                    {s.status === 'checked_in' && <span style={{ color: 'var(--warning)' }}>Đã Check-in</span>}
-                    {s.status === 'approved' && <span style={{ color: 'var(--info)' }}>Đã được duyệt</span>}
-                    {s.status === 'paid' && <span style={{ color: 'var(--success)' }}>Đã thanh toán lương</span>}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className={styles.listContainer}>
+          <div className={styles.sectionHeader}>
+            <h3 className={styles.sectionTitle}>Lịch sử điểm danh</h3>
+            <span className={styles.sectionCount}>{displaySessions.length} buổi</span>
+          </div>
+          <Card>
+            <div className="overflow-x-auto">
+              <Table>
+                <Thead>
+                  <Tr>
+                    <Th>Ngày</Th>
+                    <Th>Lớp</Th>
+                    <Th>Trạng thái</Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {displaySessions.map((s: any) => (
+                    <Tr key={s.id}>
+                      <Td className="font-medium text-main">{s.date}</Td>
+                      <Td>{s.venue_classes?.name || '---'}</Td>
+                      <Td>
+                        {s.status === 'checked_in' && <Badge variant="warning">Đã Check-in</Badge>}
+                        {s.status === 'approved' && <Badge variant="primary">Đã được duyệt</Badge>}
+                        {s.status === 'paid' && <Badge variant="success">Đã thanh toán lương</Badge>}
+                      </Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            </div>
+          </Card>
         </div>
       )}
     </div>
