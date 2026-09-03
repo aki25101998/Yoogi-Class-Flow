@@ -88,8 +88,7 @@ export function useTrainingVenueDetails(organizationId: string | undefined, venu
         .select(`
           *,
           class_students(id, status),
-          head_coach:head_coach_id(name),
-          assistant_coach:assistant_coach_id(name)
+          class_coaches(role, coach_id, coaches(name))
         `)
         .eq('venue_id', venueId)
         .eq('organization_id', organizationId)
@@ -98,10 +97,19 @@ export function useTrainingVenueDetails(organizationId: string | undefined, venu
       if (classesError) {
         classesErrorState = classesError;
       } else if (classesData) {
-        classesWithStats = classesData.map((c: any) => ({
-          ...c,
-          studentsCount: c.class_students?.filter((s: any) => s.status === 'active').length || 0
-        }));
+        classesWithStats = classesData.map((c: any) => {
+          const headCoachRel = c.class_coaches?.find((cc: any) => cc.role === 'HEAD_COACH' || cc.role === 'head_coach');
+          const assistantCoachRel = c.class_coaches?.find((cc: any) => cc.role === 'ASSISTANT_COACH' || cc.role === 'assistant_coach');
+          
+          return {
+            ...c,
+            head_coach: headCoachRel?.coaches ? { name: headCoachRel.coaches.name } : null,
+            head_coach_id: headCoachRel?.coach_id || null,
+            assistant_coach: assistantCoachRel?.coaches ? { name: assistantCoachRel.coaches.name } : null,
+            assistant_coach_id: assistantCoachRel?.coach_id || null,
+            studentsCount: c.class_students?.filter((s: any) => s.status === 'active').length || 0
+          };
+        });
         activeClassIds = classesData.filter((c: any) => c.status === 'active').map((c: any) => c.id);
       }
       
@@ -175,8 +183,7 @@ export function useTrainingClassDetails(organizationId: string | undefined, venu
         .select(`
           *,
           venues(name),
-          head_coach:head_coach_id(name),
-          assistant_coach:assistant_coach_id(name)
+          class_coaches(role, coach_id, coaches(name))
         `)
         .eq('id', classId)
         .eq('venue_id', venueId)
@@ -184,6 +191,17 @@ export function useTrainingClassDetails(organizationId: string | undefined, venu
         .single();
         
       if (classInfoError) throw classInfoError;
+      
+      const headCoachRel = classData.class_coaches?.find((cc: any) => cc.role === 'HEAD_COACH' || cc.role === 'head_coach');
+      const assistantCoachRel = classData.class_coaches?.find((cc: any) => cc.role === 'ASSISTANT_COACH' || cc.role === 'assistant_coach');
+      
+      const normalizedClassData = {
+        ...classData,
+        head_coach: headCoachRel?.coaches ? { name: headCoachRel.coaches.name } : null,
+        head_coach_id: headCoachRel?.coach_id || null,
+        assistant_coach: assistantCoachRel?.coaches ? { name: assistantCoachRel.coaches.name } : null,
+        assistant_coach_id: assistantCoachRel?.coach_id || null,
+      };
       
       // Get students mapped to this class
       const { data: classStudents, error: classStudentsError } = await supabase
@@ -203,7 +221,7 @@ export function useTrainingClassDetails(organizationId: string | undefined, venu
       }));
       
       return {
-        ...classData,
+        ...normalizedClassData,
         students: studentsList
       };
     },
