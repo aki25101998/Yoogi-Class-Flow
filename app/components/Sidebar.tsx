@@ -197,8 +197,9 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
   };
 
   const navSections = [
+    ADMIN_NAV[0],
     ...(isAdminOrOwner ? [] : COACH_NAV),
-    ...ADMIN_NAV
+    ...ADMIN_NAV.slice(1)
   ];
 
   const handleLogout = async () => {
