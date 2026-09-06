@@ -98,15 +98,15 @@ export function useTrainingVenueDetails(organizationId: string | undefined, venu
         classesErrorState = classesError;
       } else if (classesData) {
         classesWithStats = classesData.map((c: any) => {
-          const headCoachRel = c.class_coaches?.find((cc: any) => cc.role === 'HEAD_COACH' || cc.role === 'head_coach');
-          const assistantCoachRel = c.class_coaches?.find((cc: any) => cc.role === 'ASSISTANT_COACH' || cc.role === 'assistant_coach');
+          const mappedCoaches = (c.class_coaches || []).map((cc: any) => ({
+            coach_id: cc.coach_id,
+            name: cc.coaches?.name,
+            role: (cc.role || '').toUpperCase()
+          })).sort((a: any, b: any) => a.role === 'HEAD_COACH' ? -1 : 1);
           
           return {
             ...c,
-            head_coach: headCoachRel?.coaches ? { name: headCoachRel.coaches.name } : null,
-            head_coach_id: headCoachRel?.coach_id || null,
-            assistant_coach: assistantCoachRel?.coaches ? { name: assistantCoachRel.coaches.name } : null,
-            assistant_coach_id: assistantCoachRel?.coach_id || null,
+            coaches: mappedCoaches,
             studentsCount: c.class_students?.filter((s: any) => s.status === 'active').length || 0
           };
         });
@@ -192,15 +192,15 @@ export function useTrainingClassDetails(organizationId: string | undefined, venu
         
       if (classInfoError) throw classInfoError;
       
-      const headCoachRel = classData.class_coaches?.find((cc: any) => cc.role === 'HEAD_COACH' || cc.role === 'head_coach');
-      const assistantCoachRel = classData.class_coaches?.find((cc: any) => cc.role === 'ASSISTANT_COACH' || cc.role === 'assistant_coach');
+      const mappedCoaches = (classData.class_coaches || []).map((cc: any) => ({
+        coach_id: cc.coach_id,
+        name: cc.coaches?.name,
+        role: (cc.role || '').toUpperCase()
+      })).sort((a: any, b: any) => a.role === 'HEAD_COACH' ? -1 : 1);
       
       const normalizedClassData = {
         ...classData,
-        head_coach: headCoachRel?.coaches ? { name: headCoachRel.coaches.name } : null,
-        head_coach_id: headCoachRel?.coach_id || null,
-        assistant_coach: assistantCoachRel?.coaches ? { name: assistantCoachRel.coaches.name } : null,
-        assistant_coach_id: assistantCoachRel?.coach_id || null,
+        coaches: mappedCoaches,
       };
       
       // Get students mapped to this class

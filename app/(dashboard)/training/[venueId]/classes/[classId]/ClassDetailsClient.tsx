@@ -7,6 +7,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useDashboardContext } from '../../../../DashboardProvider';
 import { useTrainingClassDetails, useTrainingFormLookups } from '@/hooks/useTrainingManagement';
 import { addStudentAction, updateStudentAction, unenrollStudentAction, importStudentsBatchAction } from '../../../actions';
+import { assignCoachAction, removeCoachAction, changeCoachRoleAction } from '../../../../classes/actions';
 import dynamic from 'next/dynamic';
 
 const ImportModal = dynamic(() => import('@/app/components/excel/ImportModal').then(mod => mod.ImportModal), { ssr: false });
@@ -31,7 +32,7 @@ export default function ClassDetailsClient({ venueId, classId }: { venueId: stri
   const isAdminOrOwner = currentUserRole === 'admin' || currentUserRole === 'owner';
 
   const { classDetails, isClassLoading } = useTrainingClassDetails(organizationId, venueId, classId);
-  const { activeBelts, activeClassesForVenue } = useTrainingFormLookups(organizationId, venueId);
+  const { activeBelts, activeClassesForVenue, activeCoaches } = useTrainingFormLookups(organizationId, venueId);
   
   const queryClient = useQueryClient();
 
@@ -42,6 +43,9 @@ export default function ClassDetailsClient({ venueId, classId }: { venueId: stri
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  const [isCoachModalOpen, setIsCoachModalOpen] = useState(false);
+  const [coachForm, setCoachForm] = useState<{coach_id: string, role: 'HEAD_COACH' | 'ASSISTANT_COACH'}>({ coach_id: '', role: 'ASSISTANT_COACH' });
 
   const resetForms = () => {
     setStudentForm({ name: '', phone: '', parent_name: '', parent_phone: '', dob: '', current_belt_id: '', class_id: classId });
@@ -52,6 +56,47 @@ export default function ClassDetailsClient({ venueId, classId }: { venueId: stri
 
   const handleSuccess = () => {
     queryClient.invalidateQueries({ queryKey: ['training', organizationId] });
+  };
+
+  const handleCoachSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!coachForm.coach_id) return setError('Vui lòng chọn HLV');
+    setLoading(true);
+    const res = await assignCoachAction(classId, coachForm.coach_id, coachForm.role);
+    setLoading(false);
+    if (res.success) {
+      setIsCoachModalOpen(false);
+      setCoachForm({ coach_id: '', role: 'ASSISTANT_COACH' });
+      handleSuccess();
+    } else {
+      setError(res.error || 'Lỗi khi phân công HLV');
+    }
+  };
+
+  const handleRemoveCoach = async (coachId: string) => {
+    if (confirm('Bạn có chắc muốn gỡ HLV này khỏi lớp?')) {
+      setLoading(true);
+      const res = await removeCoachAction(classId, coachId);
+      setLoading(false);
+      if (res.success) handleSuccess();
+      else alert(res.error || 'Lỗi khi gỡ HLV');
+    }
+  };
+
+  const handleChangeCoachRole = async (coachId: string, newRole: 'HEAD_COACH' | 'ASSISTANT_COACH') => {
+    if (newRole === 'HEAD_COACH') {
+      const existingHead = classDetails?.coaches?.find((c: any) => c.role === 'HEAD_COACH');
+      if (existingHead && confirm(`Lớp hiện đã có HLV trưởng là ${existingHead.name}. Bạn có muốn chuyển vai trò HLV trưởng sang HLV này không? HLV trưởng cũ sẽ thành HLV phụ.`)) {
+        // Proceed with swap
+      } else if (existingHead) {
+        return; // Cancelled
+      }
+    }
+    setLoading(true);
+    const res = await changeCoachRoleAction(classId, coachId, newRole);
+    setLoading(false);
+    if (res.success) handleSuccess();
+    else alert(res.error || 'Lỗi khi đổi vai trò');
   };
 
   const handleStudentSubmit = async (e: React.FormEvent) => {
@@ -166,7 +211,7 @@ export default function ClassDetailsClient({ venueId, classId }: { venueId: stri
       </div>
       <PageHeader 
         title={`Lớp: ${classDetails.name}`} 
-        description={`${classDetails.venues?.name || 'Chi nhánh'} | HLV: ${classDetails.head_coach?.name || 'Chưa phân công'}`}
+        description={`${classDetails.venues?.name || 'Chi nhánh'} | Sĩ số: ${activeStudents.length} học viên`}
         primaryAction={isAdminOrOwner ? (
           <div className="flex gap-2">
             <ExportButton data={activeStudents} definition={StudentsExportDef} />
@@ -198,6 +243,54 @@ export default function ClassDetailsClient({ venueId, classId }: { venueId: stri
           onImport={importStudentsBatchAction}
         />
       )}
+
+      {/* COACHES SECTION */}
+      <div className={styles.listContainer}>
+        <div className={styles.sectionHeader}>
+          <h3 className={styles.sectionTitle}>Đội ngũ HLV</h3>
+          <span className={styles.sectionCount}>{classDetails.coaches?.length || 0} HLV</span>
+        </div>
+        <Card>
+          <div className="p-4 flex flex-col gap-3">
+            {(!classDetails.coaches || classDetails.coaches.length === 0) ? (
+              <div className="text-muted italic text-sm py-4 text-center">Chưa có HLV phụ trách</div>
+            ) : (
+              classDetails.coaches.map((coach: any) => (
+                <div key={coach.coach_id} className="flex justify-between items-center p-3 border border-light rounded-md">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold">
+                      {coach.name ? coach.name.charAt(0) : '?'}
+                    </div>
+                    <div>
+                      <div className="font-semibold text-main">{coach.name}</div>
+                      <Badge variant={coach.role === 'HEAD_COACH' ? 'primary' : 'default'} className="mt-1">
+                        {coach.role === 'HEAD_COACH' ? 'HLV Trưởng' : 'HLV Phụ'}
+                      </Badge>
+                    </div>
+                  </div>
+                  {isAdminOrOwner && (
+                    <div className="flex gap-2">
+                      {coach.role === 'ASSISTANT_COACH' && (
+                        <Button variant="ghost" size="sm" onClick={() => handleChangeCoachRole(coach.coach_id, 'HEAD_COACH')} title="Đổi thành HLV trưởng">
+                          <span className="material-icons-round text-secondary hover:text-primary">star_border</span>
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="sm" onClick={() => handleRemoveCoach(coach.coach_id)} className="text-danger hover:bg-danger-bg" title="Gỡ khỏi lớp">
+                        <span className="material-icons-round">remove_circle_outline</span>
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+            {isAdminOrOwner && (
+              <Button variant="outline" onClick={() => { setError(''); setIsCoachModalOpen(true); }} className="mt-2 w-full sm:w-auto self-start">
+                + Thêm HLV
+              </Button>
+            )}
+          </div>
+        </Card>
+      </div>
 
       <div className={styles.listContainer}>
         <div className={styles.sectionHeader}>
@@ -352,6 +445,45 @@ export default function ClassDetailsClient({ venueId, classId }: { venueId: stri
         <ModalFooter>
           <Button type="button" variant="secondary" onClick={resetForms} disabled={loading}>Hủy</Button>
           <Button type="submit" form="student-form" isLoading={loading} variant="primary">Lưu</Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Coach Modal */}
+      <Modal isOpen={isCoachModalOpen} onClose={loading ? () => {} : () => setIsCoachModalOpen(false)}>
+        <ModalHeader title="Thêm Huấn Luyện Viên" onClose={loading ? () => {} : () => setIsCoachModalOpen(false)} />
+        <ModalBody>
+          {error && (
+            <div className="bg-danger-bg border border-danger text-danger px-4 py-3 rounded-md text-sm mb-5 flex items-center gap-2">
+              <span className="material-icons-round text-lg">error_outline</span>
+              <span>{error}</span>
+            </div>
+          )}
+          <form id="coach-form" onSubmit={handleCoachSubmit} style={{ display: 'grid', gap: '16px' }}>
+            <Select 
+              label="Chọn Huấn Luyện Viên *" 
+              required 
+              value={coachForm.coach_id} 
+              onChange={e => setCoachForm({...coachForm, coach_id: e.target.value})}
+              options={[
+                { value: '', label: '-- Chọn HLV --' },
+                ...activeCoaches.filter((c: any) => !classDetails.coaches?.some((ec: any) => ec.coach_id === c.id)).map((c: any) => ({ value: c.id, label: c.name }))
+              ]}
+            />
+            <Select 
+              label="Vai trò *" 
+              required 
+              value={coachForm.role} 
+              onChange={e => setCoachForm({...coachForm, role: e.target.value as any})}
+              options={[
+                { value: 'HEAD_COACH', label: 'HLV Trưởng' },
+                { value: 'ASSISTANT_COACH', label: 'HLV Phụ' }
+              ]}
+            />
+          </form>
+        </ModalBody>
+        <ModalFooter>
+          <Button type="button" variant="secondary" onClick={() => setIsCoachModalOpen(false)} disabled={loading}>Hủy</Button>
+          <Button type="submit" form="coach-form" isLoading={loading} variant="primary">Lưu</Button>
         </ModalFooter>
       </Modal>
     </div>

@@ -1,19 +1,23 @@
 'use server';
 
-import { assignCoachToClass, removeCoachFromClass } from '@/services/class-coaches.service';
+import { assignCoachToClass, removeCoachFromClass, changeCoachRole, CoachRole } from '@/services/class-coaches.service';
 import { createClient } from '@/utils/supabase/server';
 import { getCurrentOrganizationContext } from '@/services/organization.service';
 import { revalidatePath } from 'next/cache';
 
-export async function assignCoachAction(classId: string, coachId: string, role: 'HEAD_COACH' | 'ASSISTANT_COACH') {
+export async function assignCoachAction(classId: string, coachId: string, role: CoachRole) {
   return await assignCoachToClass(classId, coachId, role);
+}
+
+export async function changeCoachRoleAction(classId: string, coachId: string, newRole: CoachRole) {
+  return await changeCoachRole(classId, coachId, newRole);
 }
 
 export async function removeCoachAction(classId: string, coachId: string) {
   return await removeCoachFromClass(classId, coachId);
 }
 
-export async function addClassAction(data: { name: string; venue_id: string; status: string; head_coach_id?: string; assistant_coach_id?: string }) {
+export async function addClassAction(data: { name: string; venue_id: string; status: string }) {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
@@ -47,14 +51,13 @@ export async function addClassAction(data: { name: string; venue_id: string; sta
 
   if (error) return { success: false, error: error.message };
   
-  if (data.head_coach_id) await assignCoachToClass(newClass.id, data.head_coach_id, 'HEAD_COACH');
-  if (data.assistant_coach_id) await assignCoachToClass(newClass.id, data.assistant_coach_id, 'ASSISTANT_COACH');
+  // Note: Coach assignment is now handled separately via assignCoachAction
 
   revalidatePath('/classes');
   return { success: true };
 }
 
-export async function updateClassAction(id: string, data: { name: string; venue_id: string; status: string; head_coach_id?: string; assistant_coach_id?: string }) {
+export async function updateClassAction(id: string, data: { name: string; venue_id: string; status: string }) {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
@@ -88,11 +91,7 @@ export async function updateClassAction(id: string, data: { name: string; venue_
 
   if (error) return { success: false, error: error.message };
 
-  // Remove existing coaches and re-assign (simplest way to update)
-  await supabase.from('class_coaches').delete().eq('class_id', id).eq('organization_id', orgId);
-
-  if (data.head_coach_id) await assignCoachToClass(id, data.head_coach_id, 'HEAD_COACH');
-  if (data.assistant_coach_id) await assignCoachToClass(id, data.assistant_coach_id, 'ASSISTANT_COACH');
+  // Note: Coach updates are now handled separately
 
   revalidatePath('/classes');
   return { success: true };

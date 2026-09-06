@@ -69,7 +69,7 @@ export async function importVenuesBatchAction(venues: any[]) {
 
 // --- CLASSES ---
 
-export async function addClassAction(data: { name: string; venue_id: string; status: string; head_coach_id?: string; assistant_coach_id?: string }) {
+export async function addClassAction(data: { name: string; venue_id: string; status: string }) {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
@@ -102,14 +102,13 @@ export async function addClassAction(data: { name: string; venue_id: string; sta
 
   if (error) return { success: false, error: error.message };
   
-  if (data.head_coach_id) await assignCoachToClass(newClass.id, data.head_coach_id, 'HEAD_COACH');
-  if (data.assistant_coach_id) await assignCoachToClass(newClass.id, data.assistant_coach_id, 'ASSISTANT_COACH');
+  // Note: Coach assignment is now handled separately via assignCoachAction
 
   revalidatePath('/training');
   return { success: true };
 }
 
-export async function updateClassAction(id: string, data: { name: string; venue_id: string; status: string; head_coach_id?: string; assistant_coach_id?: string }) {
+export async function updateClassAction(id: string, data: { name: string; venue_id: string; status: string }) {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
@@ -153,10 +152,7 @@ export async function updateClassAction(id: string, data: { name: string; venue_
 
   if (error) return { success: false, error: error.message };
 
-  await supabase.from('class_coaches').delete().eq('class_id', id).eq('organization_id', orgId);
-
-  if (data.head_coach_id) await assignCoachToClass(id, data.head_coach_id, 'HEAD_COACH');
-  if (data.assistant_coach_id) await assignCoachToClass(id, data.assistant_coach_id, 'ASSISTANT_COACH');
+  // Note: Coach updates are now handled separately
 
   revalidatePath('/training');
   return { success: true };

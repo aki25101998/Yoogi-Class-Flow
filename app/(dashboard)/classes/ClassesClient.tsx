@@ -48,9 +48,7 @@ export default function ClassesClient() {
   const [formData, setFormData] = useState({
     name: '',
     venue_id: '',
-    status: 'active',
-    head_coach_id: '',
-    assistant_coach_id: ''
+    status: 'active'
   });
 
   const [studentModalClassId, setStudentModalClassId] = useState<string | null>(null);
@@ -68,21 +66,17 @@ export default function ClassesClient() {
 
   const openAddModal = () => {
     setEditingClassId(null);
-    setFormData({ name: '', venue_id: '', status: 'active', head_coach_id: '', assistant_coach_id: '' });
+    setFormData({ name: '', venue_id: '', status: 'active' });
     setError('');
     setIsClassModalOpen(true);
   };
 
   const openEditModal = (cls: any) => {
     setEditingClassId(cls.id);
-    const headCoach = cls.class_coaches?.find((c: any) => c.role === 'HEAD_COACH')?.coach_id || '';
-    const assistantCoach = cls.class_coaches?.find((c: any) => c.role === 'ASSISTANT_COACH')?.coach_id || '';
     setFormData({
-      name: cls.name || '',
-      venue_id: cls.venue_id || '',
-      status: cls.status || 'active',
-      head_coach_id: headCoach,
-      assistant_coach_id: assistantCoach
+      name: cls.name,
+      venue_id: cls.venue_id,
+      status: cls.status || 'active'
     });
     setError('');
     setIsClassModalOpen(true);
@@ -197,7 +191,17 @@ export default function ClassesClient() {
                   <span className={styles.rowMetaValue}>
                     {(!cls.class_coaches || cls.class_coaches.length === 0) 
                       ? <span className="text-muted italic">Chưa phân công</span> 
-                      : cls.class_coaches.map((assignment: any) => assignment.coaches?.organization_members?.profiles?.name).join(', ')}
+                      : (() => {
+                          const sortedCoaches = [...cls.class_coaches].sort((a: any, b: any) => a.role === 'HEAD_COACH' ? -1 : 1);
+                          const names = sortedCoaches.map((assignment: any) => {
+                            const name = assignment.coaches?.organization_members?.profiles?.name || 'Unknown';
+                            return assignment.role === 'HEAD_COACH' ? `★ ${name}` : name;
+                          });
+                          if (names.length > 3) {
+                            return `${names.slice(0, 3).join(' · ')} +${names.length - 3}`;
+                          }
+                          return names.join(' · ');
+                        })()}
                   </span>
                 </div>
                 <div className={styles.rowMetaItem}>
@@ -268,26 +272,6 @@ export default function ClassesClient() {
               ]}
             />
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '8px' }}>
-              <Select 
-                label="HLV trưởng"
-                value={formData.head_coach_id} 
-                onChange={e => setFormData({...formData, head_coach_id: e.target.value})} 
-                options={[
-                  { value: '', label: '-- Không --' },
-                  ...availableCoaches.map((c: any) => ({ value: c.id, label: c.name }))
-                ]}
-              />
-              <Select 
-                label="HLV phụ"
-                value={formData.assistant_coach_id} 
-                onChange={e => setFormData({...formData, assistant_coach_id: e.target.value})} 
-                options={[
-                  { value: '', label: '-- Không --' },
-                  ...availableCoaches.map((c: any) => ({ value: c.id, label: c.name }))
-                ]}
-              />
-            </div>
           </form>
         </ModalBody>
         <ModalFooter>

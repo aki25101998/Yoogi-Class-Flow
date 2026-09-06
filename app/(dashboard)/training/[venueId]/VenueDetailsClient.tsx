@@ -28,7 +28,7 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
   // Class Modal State
   const [isClassModalOpen, setIsClassModalOpen] = useState(false);
   const [editingClassId, setEditingClassId] = useState<string | null>(null);
-  const [classForm, setClassForm] = useState({ name: '', head_coach_id: '', assistant_coach_id: '', status: 'active' });
+  const [classForm, setClassForm] = useState({ name: '', status: 'active' });
 
   // Student Modal State
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
@@ -39,7 +39,7 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
   const [loading, setLoading] = useState(false);
 
   const resetForms = () => {
-    setClassForm({ name: '', head_coach_id: '', assistant_coach_id: '', status: 'active' });
+    setClassForm({ name: '', status: 'active' });
     setStudentForm({ name: '', phone: '', parent_name: '', parent_phone: '', dob: '', current_belt_id: '', class_id: '' });
     setIsClassModalOpen(false);
     setIsStudentModalOpen(false);
@@ -67,8 +67,6 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
     const payload = {
       ...classForm,
       venue_id: venueId,
-      head_coach_id: classForm.head_coach_id || undefined,
-      assistant_coach_id: classForm.assistant_coach_id || undefined,
     };
 
     if (editingClassId) {
@@ -92,8 +90,6 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
     setEditingClassId(cls.id);
     setClassForm({
       name: cls.name,
-      head_coach_id: cls.head_coach_id || '',
-      assistant_coach_id: cls.assistant_coach_id || '',
       status: cls.status || 'active'
     });
     setIsClassModalOpen(true);
@@ -322,19 +318,17 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
                   {cls.status === 'active' ? 'Hoạt động' : 'Đã đóng'}
                 </Badge>
 
-                {/* Head coach */}
+                {/* Coaches */}
                 <div className={styles.classCoach}>
-                  <div className={styles.classCoachLabel}>HLV trưởng</div>
-                  <div className={cls.head_coach?.name ? styles.classCoachName : `${styles.classCoachName} ${styles.classCoachEmpty}`}>
-                    {cls.head_coach?.name || 'Chưa phân công'}
-                  </div>
-                </div>
-
-                {/* Assistant coach (hidden on tablet) */}
-                <div className={`${styles.classCoach} ${styles.classCoachHideable}`}>
-                  <div className={styles.classCoachLabel}>HLV phụ</div>
-                  <div className={cls.assistant_coach?.name ? styles.classCoachName : `${styles.classCoachName} ${styles.classCoachEmpty}`}>
-                    {cls.assistant_coach?.name || 'Không có'}
+                  <div className={styles.classCoachLabel}>Đội ngũ HLV</div>
+                  <div className={cls.coaches && cls.coaches.length > 0 ? styles.classCoachName : `${styles.classCoachName} ${styles.classCoachEmpty}`}>
+                    {cls.coaches && cls.coaches.length > 0 
+                      ? (() => {
+                          const names = (cls.coaches as any[]).map((c: any) => c.role === 'HEAD_COACH' ? `★ ${c.name}` : c.name);
+                          if (names.length > 2) return `${names.slice(0, 2).join(' · ')} +${names.length - 2}`;
+                          return names.join(' · ');
+                        })()
+                      : 'Chưa phân công'}
                   </div>
                 </div>
 
@@ -363,7 +357,7 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
 
                 {/* Mobile info (visible only on small screens) */}
                 <div className={styles.classMobileInfo}>
-                  <span>HLV: {cls.head_coach?.name || 'Chưa có'}</span>
+                  <span>HLV: {cls.coaches && cls.coaches.length > 0 ? cls.coaches[0].name : 'Chưa có'}{cls.coaches && cls.coaches.length > 1 ? '...' : ''}</span>
                   <span>·</span>
                   <span>{cls.studentsCount} học viên</span>
                 </div>
@@ -471,26 +465,7 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
               onChange={e => setClassForm({...classForm, name: e.target.value})} 
             />
             
-            <Select 
-              label="HLV Trưởng"
-              value={classForm.head_coach_id} 
-              onChange={e => setClassForm({...classForm, head_coach_id: e.target.value})} 
-              options={[
-                { value: '', label: '-- Chọn HLV --' },
-                ...activeCoaches.map((c: any) => ({ value: c.id, label: c.name }))
-              ]}
-            />
-            
-            <Select 
-              label="HLV Phụ (Không bắt buộc)"
-              value={classForm.assistant_coach_id} 
-              onChange={e => setClassForm({...classForm, assistant_coach_id: e.target.value})} 
-              options={[
-                { value: '', label: '-- Chọn HLV --' },
-                ...activeCoaches.map((c: any) => ({ value: c.id, label: c.name }))
-              ]}
-            />
-            
+
             <Select 
               label="Trạng thái"
               value={classForm.status} 
