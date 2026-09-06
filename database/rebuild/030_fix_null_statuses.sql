@@ -82,3 +82,30 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error updating tuition: %', SQLERRM;
 END $$;
+
+-- 7. Fix coaches schema (drop deprecated columns)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'coaches' AND column_name = 'name'
+  ) THEN
+    ALTER TABLE public.coaches DROP COLUMN name;
+  END IF;
+  
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'coaches' AND column_name = 'email'
+  ) THEN
+    ALTER TABLE public.coaches DROP COLUMN email;
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'coaches' AND column_name = 'auth_user_id'
+  ) THEN
+    ALTER TABLE public.coaches DROP COLUMN auth_user_id;
+  END IF;
+EXCEPTION WHEN OTHERS THEN
+  RAISE NOTICE 'Error fixing coaches schema: %', SQLERRM;
+END $$;
