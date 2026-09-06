@@ -137,7 +137,7 @@ auth.users → profiles → organization_members → coaches
 - `profiles` chứa `name`, `email`, `avatar_url` — KHÔNG trùng lặp ở bảng khác
 - `organization_members` chứa `role` và `permissions` — đây là **NGUỒN CHÂN LÝ DUY NHẤT** cho phân quyền
 - `coaches` chỉ chứa thông tin chuyên môn (`phone`, `cccd`, `level`, `membership_number`) — KHÔNG chứa `name`, `email`, `role`, `permissions`
-- Khi cần lấy tên HLV: JOIN qua `coaches → organization_members → profiles`
+- Khi cần lấy tên HLV: JOIN qua `coaches → organization_members → profiles`. Ví dụ: `coaches(id, organization_members(profiles(name)))`. TUYỆT ĐỐI KHÔNG query `coaches(name)`.
 
 ### 3.2 Composite Foreign Keys
 
@@ -188,6 +188,12 @@ status IN ('present', 'absent', 'late', 'excused')
 - Migration là **IMMUTABLE** — KHÔNG SỬA migration cũ, chỉ thêm migration mới
 - Format: `XXX_tên_mô_tả.sql`
 - Mỗi migration PHẢI sử dụng `CREATE TABLE IF NOT EXISTS` hoặc `DO $$ ... END $$` để idempotent
+
+### 3.6 Quy Tắc Refactor Database KHÔNG ĐƯỢC PHẠM
+
+Khi thực hiện việc thay đổi schema cơ sở dữ liệu (ví dụ: xóa cột, đổi tên cột, hoặc di chuyển cột sang bảng khác — như việc chuyển `name` từ `coaches` sang `profiles`):
+1. **BẮT BUỘC** phải tìm kiếm toàn bộ codebase (các file `.ts`, `.tsx` trong `hooks/`, `services/`, `app/`) để tìm và cập nhật TẤT CẢ các câu truy vấn Supabase (`.select()`) đang sử dụng cột cũ.
+2. Việc quên cập nhật frontend query sẽ lập tức gây ra lỗi crash ("Không thể tải dữ liệu") trên giao diện người dùng. Đừng chỉ sửa ở DB mà quên update code frontend!
 
 ---
 
@@ -708,6 +714,7 @@ useDashboardStats.ts — Dashboard statistics
 | Ngày | Phiên bản | Thay đổi |
 |---|---|---|
 | 2026-09-07 | 1.0.0 | Khởi tạo Hiến Pháp — Ghi nhận toàn bộ kiến trúc hiện tại |
+| 2026-09-07 | 1.0.1 | Thêm quy tắc Refactor Database (3.6) và làm rõ query Identity Chain (3.1) |
 
 ---
 
