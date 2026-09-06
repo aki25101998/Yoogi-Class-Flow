@@ -88,7 +88,7 @@ export function useTrainingVenueDetails(organizationId: string | undefined, venu
         .select(`
           *,
           class_students(id, status),
-          class_coaches(role, coach_id, coaches(name))
+          class_coaches(role, coach_id, coaches(id, organization_members(profiles(name))))
         `)
         .eq('venue_id', venueId)
         .eq('organization_id', organizationId)
@@ -100,7 +100,7 @@ export function useTrainingVenueDetails(organizationId: string | undefined, venu
         classesWithStats = classesData.map((c: any) => {
           const mappedCoaches = (c.class_coaches || []).map((cc: any) => ({
             coach_id: cc.coach_id,
-            name: cc.coaches?.name,
+            name: cc.coaches?.organization_members?.profiles?.name || 'Unknown',
             role: (cc.role || '').toUpperCase()
           })).sort((a: any, b: any) => a.role === 'HEAD_COACH' ? -1 : 1);
           
@@ -183,7 +183,7 @@ export function useTrainingClassDetails(organizationId: string | undefined, venu
         .select(`
           *,
           venues(name),
-          class_coaches(role, coach_id, coaches(name))
+          class_coaches(role, coach_id, coaches(id, organization_members(profiles(name))))
         `)
         .eq('id', classId)
         .eq('venue_id', venueId)
@@ -194,7 +194,7 @@ export function useTrainingClassDetails(organizationId: string | undefined, venu
       
       const mappedCoaches = (classData.class_coaches || []).map((cc: any) => ({
         coach_id: cc.coach_id,
-        name: cc.coaches?.name,
+        name: cc.coaches?.organization_members?.profiles?.name || 'Unknown',
         role: (cc.role || '').toUpperCase()
       })).sort((a: any, b: any) => a.role === 'HEAD_COACH' ? -1 : 1);
       
@@ -277,12 +277,16 @@ export function useTrainingFormLookups(organizationId: string | undefined, venue
       if (!organizationId) return [];
       const { data, error } = await supabase
         .from('coaches')
-        .select('id, name')
+        .select('id, organization_members(profiles(name))')
         .eq('organization_id', organizationId)
-        .eq('status', 'active')
-        .order('name');
+        .eq('status', 'active');
       if (error) throw error;
-      return data || [];
+      
+      const mapped = (data || []).map((c: any) => ({
+        id: c.id,
+        name: c.organization_members?.profiles?.name || 'Unknown'
+      }));
+      return mapped.sort((a, b) => a.name.localeCompare(b.name));
     },
     enabled: !!organizationId,
   });
