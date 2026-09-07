@@ -106,3 +106,50 @@ export async function updateCoachFullProfileAction(
   }
   return res;
 }
+
+export async function uploadAdminCoachAvatarAction(coachId: string, formData: FormData) {
+  const context = await getCurrentOrganizationContext();
+  if (!context || !context.organization || !context.membership) return { success: false, error: 'Access Denied' };
+  
+  if (context.membership.role !== 'owner' && context.membership.role !== 'admin') {
+    return { success: false, error: 'Permission Denied' };
+  }
+
+  const avatarFile = formData.get('avatar');
+  if (!(avatarFile instanceof File) || avatarFile.size === 0) {
+    return { success: false, error: 'File ảnh không hợp lệ' };
+  }
+
+  if (avatarFile.size > 2 * 1024 * 1024) {
+    return { success: false, error: 'Ảnh đại diện không được vượt quá 2MB.' };
+  }
+
+  const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  if (!ALLOWED_MIME_TYPES.includes(avatarFile.type)) {
+    return { success: false, error: 'Định dạng ảnh không được hỗ trợ (chỉ chấp nhận JPG, PNG, WEBP).' };
+  }
+
+  const supabase = await createClient();
+  const fileExt = avatarFile.type === 'image/jpeg' ? 'jpg' : avatarFile.type === 'image/png' ? 'png' : 'webp';
+  const fileName = `${coachId}-${crypto.randomUUID()}.${fileExt}`;
+  const filePath = `avatars/${fileName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(filePath, avatarFile, {
+      cacheControl: '3600',
+      upsert: true,
+      contentType: avatarFile.type,
+    });
+
+  if (uploadError) {
+    console.error('Upload avatar error:', uploadError);
+    return { success: false, error: 'Không thể tải ảnh đại diện lên.' };
+  } 
+
+  const { data: publicUrlData } = supabase.storage
+    .from('avatars')
+    .getPublicUrl(filePath);
+
+  return { success: true, avatarUrl: publicUrlData.publicUrl };
+}
