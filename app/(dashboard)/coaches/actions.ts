@@ -64,7 +64,7 @@ export async function importCoachesBatchAction(coaches: any[]) {
 
 export async function updateCoachNicknameAction(coachId: string, nickname: string) {
   const context = await getCurrentOrganizationContext();
-  if (!context || !context.organization) return { success: false, error: 'Access Denied' };
+  if (!context || !context.organization || !context.membership) return { success: false, error: 'Access Denied' };
   
   if (context.membership.role !== 'owner' && context.membership.role !== 'admin') {
     return { success: false, error: 'Permission Denied' };
