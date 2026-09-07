@@ -460,7 +460,13 @@ export default function CoachesClient() {
                       <TableCell>
                         <div>
                           <button
-                            onClick={() => setQuickProfileCoachId(m.coachId || m.id)}
+                            onClick={() => {
+                              if (m.coachId) {
+                                setQuickProfileCoachId(m.coachId);
+                              } else {
+                                console.error('Coach ID is missing for member', m);
+                              }
+                            }}
                             className="text-action text-action-primary"
                             disabled={loading}
                           >
@@ -533,7 +539,13 @@ export default function CoachesClient() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => setQuickProfileCoachId(m.coachId || m.id)}
+                            onClick={() => {
+                              if (m.coachId) {
+                                setQuickProfileCoachId(m.coachId);
+                              } else {
+                                console.error('Coach ID is missing for member', m);
+                              }
+                            }}
                             className="text-action text-action-primary"
                             disabled={loading}
                           >
