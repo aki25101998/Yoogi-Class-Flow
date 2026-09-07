@@ -15,7 +15,7 @@ export function useCoaches(organizationId: string | undefined) {
       
       const { data: membersData, error: membersError } = await supabase
         .from('organization_members')
-        .select('*, profiles(email, name), coaches(id, status)')
+        .select('*, profiles(email, name), coaches(id, status, nickname)')
         .eq('organization_id', organizationId)
         .in('status', ['active', 'suspended']);
         
@@ -46,11 +46,17 @@ export function useCoaches(organizationId: string | undefined) {
            classCount = classCountsByCoach[m.coaches[0].id] || 0;
         }
         
+        const originalName = m.profiles?.name || m.profiles?.email || '-';
+        const nickname = m.coaches?.[0]?.nickname || '';
+        
         // Unified data structure for the UI
         return {
           ...m,
-          name: m.profiles?.name || m.profiles?.email || '-',
+          name: nickname ? `${originalName} (${nickname})` : originalName,
+          originalName,
+          nickname,
           email: m.profiles?.email || '-',
+          coachId: m.coaches?.[0]?.id,
           classCount
         };
       });

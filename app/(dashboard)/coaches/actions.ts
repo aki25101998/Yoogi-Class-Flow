@@ -61,3 +61,26 @@ export async function importCoachesBatchAction(coaches: any[]) {
 
   return { success: false, error: data?.error || 'Unknown error during import' };
 }
+
+export async function updateCoachNicknameAction(coachId: string, nickname: string) {
+  const context = await getCurrentOrganizationContext();
+  if (!context || !context.organization) return { success: false, error: 'Access Denied' };
+  
+  if (context.membership.role !== 'owner' && context.membership.role !== 'admin') {
+    return { success: false, error: 'Permission Denied' };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('coaches')
+    .update({ nickname })
+    .eq('id', coachId)
+    .eq('organization_id', context.organization.id);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+  
+  revalidatePath('/coaches');
+  return { success: true };
+}

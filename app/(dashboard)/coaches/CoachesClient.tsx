@@ -9,7 +9,8 @@ import {
   suspendMemberAction,
   reactivateMemberAction,
   changeRoleAction,
-  importCoachesBatchAction
+  importCoachesBatchAction,
+  updateCoachNicknameAction
 } from './actions';
 import { OrganizationRole } from '@/types/organization';
 import { useCoaches } from '@/hooks/useCoaches';
@@ -91,6 +92,8 @@ export default function CoachesClient() {
   // Copy link state for invitation list
   const [copiedInvitationId, setCopiedInvitationId] = useState<string | null>(null);
   const [editingRoleMember, setEditingRoleMember] = useState<{id: string, name: string, role: OrganizationRole} | null>(null);
+  const [editingNicknameMember, setEditingNicknameMember] = useState<{coachId: string, originalName: string, nickname: string} | null>(null);
+  const [newNickname, setNewNickname] = useState('');
 
   const isAdminOrOwner = currentUserRole === 'admin' || currentUserRole === 'owner';
 
@@ -427,29 +430,45 @@ export default function CoachesClient() {
                     <TableCell>{m.classCount} lớp</TableCell>
                     {isAdminOrOwner && (
                       <TableCell>
-                        {m.id !== currentUserId && (
-                          <div>
-                            {currentUserRole === 'owner' && (
-                              <button
-                                onClick={() => setEditingRoleMember({ id: m.id, name: m.name, role: m.role as OrganizationRole })}
-                                className="text-action text-action-primary"
-                                disabled={loading}
-                              >
-                                Chỉnh sửa
-                              </button>
-                            )}
-                            {currentUserRole === 'owner' && (
-                              <span className="text-action-separator" aria-hidden="true">|</span>
-                            )}
+                        <div>
+                          {m.coachId && (
                             <button
-                              onClick={() => executeAction(removeMemberAction, m.id, 'Xóa hoàn toàn HLV này?')}
-                              className="text-action text-action-danger"
+                              onClick={() => {
+                                setEditingNicknameMember({ coachId: m.coachId, originalName: m.originalName, nickname: m.nickname });
+                                setNewNickname(m.nickname || '');
+                              }}
+                              className="text-action text-action-primary"
                               disabled={loading}
                             >
-                              Xóa
+                              Đổi tên gọi
                             </button>
-                          </div>
-                        )}
+                          )}
+                          {m.coachId && <span className="text-action-separator" aria-hidden="true">|</span>}
+                          
+                          {m.id !== currentUserId && (
+                            <>
+                              {currentUserRole === 'owner' && (
+                                <button
+                                  onClick={() => setEditingRoleMember({ id: m.id, name: m.name, role: m.role as OrganizationRole })}
+                                  className="text-action text-action-primary"
+                                  disabled={loading}
+                                >
+                                  Phân quyền
+                                </button>
+                              )}
+                              {currentUserRole === 'owner' && (
+                                <span className="text-action-separator" aria-hidden="true">|</span>
+                              )}
+                              <button
+                                onClick={() => executeAction(removeMemberAction, m.id, 'Xóa hoàn toàn HLV này?')}
+                                className="text-action text-action-danger"
+                                disabled={loading}
+                              >
+                                Xóa
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </TableCell>
                     )}
                   </TableRow>
@@ -521,6 +540,40 @@ export default function CoachesClient() {
           }}
           isLoading={loading}
         />
+      )}
+
+      {editingNicknameMember && (
+        <Modal isOpen={!!editingNicknameMember} onClose={() => setEditingNicknameMember(null)}>
+          <ModalHeader title={`Đổi tên gọi: ${editingNicknameMember.originalName}`} onClose={() => setEditingNicknameMember(null)} />
+          <ModalBody>
+            <form id="edit-nickname-form" onSubmit={async (e) => {
+              e.preventDefault();
+              setLoading(true);
+              const res = await updateCoachNicknameAction(editingNicknameMember.coachId, newNickname);
+              if (res.success) {
+                handleSuccess();
+                setEditingNicknameMember(null);
+              } else {
+                alert(res.error || 'Lỗi hệ thống');
+              }
+              setLoading(false);
+            }}>
+              <Input
+                label="Tên gợi nhớ (Nickname)"
+                value={newNickname}
+                onChange={e => setNewNickname(e.target.value)}
+                placeholder="Ví dụ: Thầy Thông Võ"
+              />
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '8px' }}>
+                Tên này sẽ được hiển thị để dễ dàng phân biệt các HLV có cùng tên. Để trống để sử dụng tên gốc.
+              </p>
+            </form>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={() => setEditingNicknameMember(null)} disabled={loading}>Hủy</Button>
+            <Button type="submit" form="edit-nickname-form" isLoading={loading} variant="primary">Lưu thay đổi</Button>
+          </ModalFooter>
+        </Modal>
       )}
     </div>
   );

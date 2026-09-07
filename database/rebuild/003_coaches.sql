@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS public.coaches (
   organization_member_id UUID NOT NULL REFERENCES public.organization_members(id) ON DELETE CASCADE,
   -- Note: auth_user_id, email, and name are removed. 
   -- They are derived from profiles via organization_member_id.
+  nickname TEXT DEFAULT '',
   phone TEXT DEFAULT '',
   cccd TEXT DEFAULT '',
   level TEXT DEFAULT '',
