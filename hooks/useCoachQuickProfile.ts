@@ -29,8 +29,7 @@ export function useCoachQuickProfile(organizationId: string | undefined, coachId
             profiles (
               name,
               email,
-              avatar_url,
-              phone
+              avatar_url
             )
           )
         `)
@@ -132,7 +131,7 @@ export function useCoachQuickProfile(organizationId: string | undefined, coachId
           name: coachData.nickname ? `${profile?.name} (${coachData.nickname})` : profile?.name || '-',
           originalName: profile?.name || '-',
           email: profile?.email || '-',
-          phone: coachData.phone || profile?.phone || '-',
+          phone: coachData.phone || '-',
           cccd: coachData.cccd || '-',
           role: role,
           status: coachData.status,
