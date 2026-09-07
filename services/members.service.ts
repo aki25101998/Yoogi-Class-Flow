@@ -244,3 +244,128 @@ export async function changeRole(memberId: string, newRole: OrganizationRole): P
   
   return { success: true };
 }
+
+export async function updateCoachFullProfile(
+  coachId: string,
+  data: {
+    name?: string;
+    nickname?: string;
+    email?: string;
+    phone?: string;
+    cccd?: string;
+    role?: OrganizationRole;
+    status?: string;
+    photo_url?: string;
+  }
+): Promise<{ success: boolean; error?: string }> {
+  const context = await getCurrentOrganizationContext();
+  if (!context || !context.organization) return { success: false, error: 'Not authenticated' };
+
+  if (context.membership?.role !== 'admin' && context.membership?.role !== 'owner') {
+    return { success: false, error: 'Permission denied' };
+  }
+
+  const supabase = await createClient();
+
+  // 1. Fetch coach to get organization_member_id and user_id (via organization_members)
+  const { data: coach, error: fetchCoachError } = await supabase
+    .from('coaches')
+    .select(`
+      id, 
+      organization_member_id,
+      organization_members (
+        id,
+        user_id,
+        role
+      )
+    `)
+    .eq('id', coachId)
+    .eq('organization_id', context.organization.id)
+    .single();
+
+  if (fetchCoachError || !coach) {
+    return { success: false, error: 'Không tìm thấy HLV.' };
+  }
+
+  const memberId = coach.organization_member_id;
+  // @ts-ignore
+  const userId = coach.organization_members?.user_id;
+  // @ts-ignore
+  const currentRole = coach.organization_members?.role;
+
+  // 2. Update coaches table
+  const coachUpdate: any = {};
+  if (data.nickname !== undefined) coachUpdate.nickname = data.nickname;
+  if (data.phone !== undefined) coachUpdate.phone = data.phone;
+  if (data.cccd !== undefined) coachUpdate.cccd = data.cccd;
+  if (data.status !== undefined) coachUpdate.status = data.status;
+  if (data.photo_url !== undefined) coachUpdate.photo_url = data.photo_url;
+  
+  // If role is updated, sync coaches.role as well
+  if (data.role) {
+    coachUpdate.role = data.role === 'admin' || data.role === 'owner' ? 'admin' : 'coach';
+  }
+
+  if (Object.keys(coachUpdate).length > 0) {
+    const { error: updateCoachError } = await supabase
+      .from('coaches')
+      .update(coachUpdate)
+      .eq('id', coachId);
+    if (updateCoachError) return { success: false, error: updateCoachError.message };
+  }
+
+  // 3. Update organization_members table
+  const memberUpdate: any = {};
+  if (data.status !== undefined) memberUpdate.status = data.status;
+  
+  if (Object.keys(memberUpdate).length > 0 && memberId) {
+    const { error: updateMemberError } = await supabase
+      .from('organization_members')
+      .update(memberUpdate)
+      .eq('id', memberId);
+    if (updateMemberError) return { success: false, error: updateMemberError.message };
+  }
+
+  // Handle role change specifically if provided and different
+  if (data.role && data.role !== currentRole && memberId) {
+    const roleRes = await changeRole(memberId, data.role);
+    if (!roleRes.success) return { success: false, error: roleRes.error };
+  }
+
+  // 4. Update profiles table for name and email
+  if ((data.name !== undefined || data.email !== undefined) && userId) {
+    try {
+      // Import admin client to bypass RLS for updating another user's profile
+      const { createAdminClient } = await import('@/utils/supabase/admin');
+      const adminClient = createAdminClient();
+      
+      const profileUpdate: any = {};
+      if (data.name !== undefined) profileUpdate.name = data.name;
+      // Note: Updating email in profiles doesn't automatically update auth.users email unless handled by triggers.
+      // Usually, it's better to update auth.users via adminClient.auth.admin.updateUserById
+      if (data.email !== undefined) {
+        profileUpdate.email = data.email;
+        // Also update auth.users if needed
+        const authRes = await adminClient.auth.admin.updateUserById(userId, { email: data.email });
+        if (authRes.error) {
+          console.error('Failed to update auth user email', authRes.error);
+          return { success: false, error: 'Lỗi khi cập nhật email đăng nhập: ' + authRes.error.message };
+        }
+      }
+
+      if (Object.keys(profileUpdate).length > 0) {
+        const { error: updateProfileError } = await adminClient
+          .from('profiles')
+          .update(profileUpdate)
+          .eq('id', userId);
+          
+        if (updateProfileError) return { success: false, error: updateProfileError.message };
+      }
+    } catch (e: any) {
+      console.error('Failed to update profile name/email', e);
+      return { success: false, error: 'Không thể cập nhật thông tin cá nhân (Lỗi quyền).' };
+    }
+  }
+
+  return { success: true };
+}

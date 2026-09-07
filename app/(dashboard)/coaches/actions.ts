@@ -84,3 +84,25 @@ export async function updateCoachNicknameAction(coachId: string, nickname: strin
   revalidatePath('/coaches');
   return { success: true };
 }
+
+import { updateCoachFullProfile } from '@/services/members.service';
+
+export async function updateCoachFullProfileAction(
+  coachId: string,
+  data: {
+    name?: string;
+    nickname?: string;
+    email?: string;
+    phone?: string;
+    cccd?: string;
+    role?: OrganizationRole;
+    status?: string;
+    photo_url?: string;
+  }
+) {
+  const res = await updateCoachFullProfile(coachId, data);
+  if (res.success) {
+    revalidatePath('/coaches');
+  }
+  return res;
+}

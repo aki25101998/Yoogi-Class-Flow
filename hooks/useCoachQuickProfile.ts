@@ -130,6 +130,7 @@ export function useCoachQuickProfile(organizationId: string | undefined, coachId
           id: coachData.id,
           name: coachData.nickname ? `${profile?.name} (${coachData.nickname})` : profile?.name || '-',
           originalName: profile?.name || '-',
+          nickname: coachData.nickname || '',
           email: profile?.email || '-',
           phone: coachData.phone || '-',
           cccd: coachData.cccd || '-',
