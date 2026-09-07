@@ -31,6 +31,7 @@ import { Badge } from '@/app/components/ui/Badge';
 import { ChangeRoleModal } from '@/app/components/ui/ChangeRoleModal';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/app/components/ui/Modal';
 import { EmptyState } from '@/app/components/ui/EmptyState';
+import { CoachQuickProfileModal } from '@/app/components/ui/CoachQuickProfileModal';
 
 function CoachSkeleton() {
   return (
@@ -94,6 +95,7 @@ export default function CoachesClient() {
   const [editingRoleMember, setEditingRoleMember] = useState<{id: string, name: string, role: OrganizationRole} | null>(null);
   const [editingNicknameMember, setEditingNicknameMember] = useState<{coachId: string, originalName: string, nickname: string} | null>(null);
   const [newNickname, setNewNickname] = useState('');
+  const [quickProfileCoachId, setQuickProfileCoachId] = useState<string | null>(null);
 
   const isAdminOrOwner = currentUserRole === 'admin' || currentUserRole === 'owner';
 
@@ -420,7 +422,14 @@ export default function CoachesClient() {
 
                 {activeTab === 'active' && activeMembers.map((m: any) => (
                   <TableRow key={m.id}>
-                    <TableCell className="font-medium">{m.name}</TableCell>
+                    <TableCell className="font-medium">
+                      <button
+                        onClick={() => setQuickProfileCoachId(m.coachId || m.id)}
+                        className="text-primary hover:underline bg-transparent border-none p-0 cursor-pointer text-left font-medium outline-none"
+                      >
+                        {m.name}
+                      </button>
+                    </TableCell>
                     <TableCell className="text-secondary">{m.email}</TableCell>
                     <TableCell>
                       <Badge variant={m.role === 'owner' || m.role === 'admin' ? 'primary' : 'default'}>
@@ -476,7 +485,14 @@ export default function CoachesClient() {
 
                 {activeTab === 'suspended' && suspendedMembers.map((m: any) => (
                   <TableRow key={m.id} style={{ opacity: 0.7 }}>
-                    <TableCell>{m.name}</TableCell>
+                    <TableCell>
+                      <button
+                        onClick={() => setQuickProfileCoachId(m.coachId || m.id)}
+                        className="text-primary hover:underline bg-transparent border-none p-0 cursor-pointer text-left font-medium outline-none"
+                      >
+                        {m.name}
+                      </button>
+                    </TableCell>
                     <TableCell className="text-secondary">{m.email}</TableCell>
                     <TableCell><Badge variant="danger">{roleLabels[m.role] || m.role}</Badge></TableCell>
                     <TableCell>{m.classCount} lớp</TableCell>
@@ -574,6 +590,14 @@ export default function CoachesClient() {
             <Button type="submit" form="edit-nickname-form" isLoading={loading} variant="primary">Lưu thay đổi</Button>
           </ModalFooter>
         </Modal>
+      )}
+
+      {quickProfileCoachId && (
+        <CoachQuickProfileModal
+          coachId={quickProfileCoachId}
+          isOpen={!!quickProfileCoachId}
+          onClose={() => setQuickProfileCoachId(null)}
+        />
       )}
     </div>
   );
