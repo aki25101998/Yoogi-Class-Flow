@@ -133,11 +133,16 @@ auth.users → profiles → organization_members → coaches
    Auth       cá nhân       + Role + Perms        chuyên môn
 ```
 
-**QUY TẮC TUYỆT ĐỐI:**
-- `profiles` chứa `name`, `email`, `avatar_url` — KHÔNG trùng lặp ở bảng khác
-- `organization_members` chứa `role` và `permissions` — đây là **NGUỒN CHÂN LÝ DUY NHẤT** cho phân quyền
-- `coaches` chỉ chứa thông tin chuyên môn (`phone`, `cccd`, `level`, `membership_number`) — KHÔNG chứa `name`, `email`, `role`, `permissions`
-- Khi cần lấy tên HLV: JOIN qua `coaches → organization_members → profiles`. Ví dụ: `coaches(id, organization_members(profiles(name)))`. TUYỆT ĐỐI KHÔNG query `coaches(name)`.
+**QUY TẮC TUYỆT ĐỐI (Identity Chain & Column Distribution):**
+1. **`profiles`**: CHỈ chứa `name`, `email`, `avatar_url`. TUYỆT ĐỐI KHÔNG chứa số điện thoại (`phone`).
+2. **`organization_members`**: Chứa `role` và `permissions` — NGUỒN CHÂN LÝ DUY NHẤT cho phân quyền.
+3. **`coaches`**: Chứa thông tin cá nhân/chuyên môn của HLV (`phone`, `cccd`, `level`, `membership_number`, `photo_url`, `nickname`). 
+   - Số điện thoại (`phone`) ĐƯỢC LƯU Ở ĐÂY, **TUYỆT ĐỐI KHÔNG** được query `profiles(phone)`.
+   - Hình ảnh HLV lưu ở `photo_url` (bảng coaches), có thể fallback về `avatar_url` (bảng profiles).
+   - KHÔNG chứa `name`, `email`, `role`, `permissions`.
+4. Khi truy vấn thông tin HLV: Phải JOIN qua `coaches → organization_members → profiles`. 
+   - Ví dụ: `coaches(id, organization_members(profiles(name, email, avatar_url)))`. 
+   - TUYỆT ĐỐI KHÔNG đưa các cột không tồn tại vào query (vd: `profiles(phone)` hoặc `coaches(name)`) vì Supabase PostgREST sẽ báo lỗi và gây crash UI (lỗi "Không thể tải dữ liệu").
 
 ### 3.2 Composite Foreign Keys
 
