@@ -431,7 +431,17 @@ export default function CoachesClient() {
                               setEditingNicknameMember({ coachId: m.coachId, originalName: m.originalName, nickname: m.nickname });
                               setNewNickname(m.nickname || '');
                             }}
-                            className="text-secondary hover:text-primary transition-colors flex items-center justify-center p-1 rounded hover:bg-surface-hover"
+                            style={{ 
+                              backgroundColor: '#ffffff', 
+                              border: '1px solid #cbd5e1', 
+                              color: '#334155',
+                              padding: '2px',
+                              borderRadius: '4px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer'
+                            }}
                             title="Đổi tên gọi"
                           >
                             <span className="material-icons-round" style={{ fontSize: '16px' }}>edit</span>
@@ -498,7 +508,17 @@ export default function CoachesClient() {
                               setEditingNicknameMember({ coachId: m.coachId, originalName: m.originalName, nickname: m.nickname });
                               setNewNickname(m.nickname || '');
                             }}
-                            className="text-secondary hover:text-primary transition-colors flex items-center justify-center p-1 rounded hover:bg-surface-hover"
+                            style={{ 
+                              backgroundColor: '#ffffff', 
+                              border: '1px solid #cbd5e1', 
+                              color: '#334155',
+                              padding: '2px',
+                              borderRadius: '4px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer'
+                            }}
                             title="Đổi tên gọi"
                           >
                             <span className="material-icons-round" style={{ fontSize: '16px' }}>edit</span>
