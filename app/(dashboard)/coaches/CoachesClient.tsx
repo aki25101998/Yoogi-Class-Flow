@@ -422,13 +422,22 @@ export default function CoachesClient() {
 
                 {activeTab === 'active' && activeMembers.map((m: any) => (
                   <TableRow key={m.id}>
-                    <TableCell className="font-medium">
-                      <button
-                        onClick={() => setQuickProfileCoachId(m.coachId || m.id)}
-                        className="text-primary hover:underline bg-transparent border-none p-0 cursor-pointer text-left font-medium outline-none"
-                      >
-                        {m.name}
-                      </button>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-main">{m.name}</span>
+                        {m.coachId && isAdminOrOwner && (
+                          <button
+                            onClick={() => {
+                              setEditingNicknameMember({ coachId: m.coachId, originalName: m.originalName, nickname: m.nickname });
+                              setNewNickname(m.nickname || '');
+                            }}
+                            className="text-secondary hover:text-primary transition-colors flex items-center justify-center p-1 rounded hover:bg-surface-hover"
+                            title="Đổi tên gọi"
+                          >
+                            <span className="material-icons-round" style={{ fontSize: '16px' }}>edit</span>
+                          </button>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-secondary">{m.email}</TableCell>
                     <TableCell>
@@ -440,19 +449,14 @@ export default function CoachesClient() {
                     {isAdminOrOwner && (
                       <TableCell>
                         <div>
-                          {m.coachId && (
-                            <button
-                              onClick={() => {
-                                setEditingNicknameMember({ coachId: m.coachId, originalName: m.originalName, nickname: m.nickname });
-                                setNewNickname(m.nickname || '');
-                              }}
-                              className="text-action text-action-primary"
-                              disabled={loading}
-                            >
-                              Đổi tên gọi
-                            </button>
-                          )}
-                          {m.coachId && <span className="text-action-separator" aria-hidden="true">|</span>}
+                          <button
+                            onClick={() => setQuickProfileCoachId(m.coachId || m.id)}
+                            className="text-action text-action-primary"
+                            disabled={loading}
+                          >
+                            Xem thông tin
+                          </button>
+                          <span className="text-action-separator" aria-hidden="true">|</span>
                           
                           {m.id !== currentUserId && (
                             <>
@@ -486,19 +490,38 @@ export default function CoachesClient() {
                 {activeTab === 'suspended' && suspendedMembers.map((m: any) => (
                   <TableRow key={m.id} style={{ opacity: 0.7 }}>
                     <TableCell>
-                      <button
-                        onClick={() => setQuickProfileCoachId(m.coachId || m.id)}
-                        className="text-primary hover:underline bg-transparent border-none p-0 cursor-pointer text-left font-medium outline-none"
-                      >
-                        {m.name}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-main">{m.name}</span>
+                        {m.coachId && isAdminOrOwner && (
+                          <button
+                            onClick={() => {
+                              setEditingNicknameMember({ coachId: m.coachId, originalName: m.originalName, nickname: m.nickname });
+                              setNewNickname(m.nickname || '');
+                            }}
+                            className="text-secondary hover:text-primary transition-colors flex items-center justify-center p-1 rounded hover:bg-surface-hover"
+                            title="Đổi tên gọi"
+                          >
+                            <span className="material-icons-round" style={{ fontSize: '16px' }}>edit</span>
+                          </button>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-secondary">{m.email}</TableCell>
                     <TableCell><Badge variant="danger">{roleLabels[m.role] || m.role}</Badge></TableCell>
                     <TableCell>{m.classCount} lớp</TableCell>
                     {isAdminOrOwner && (
                       <TableCell>
-                        <Button size="sm" variant="success" onClick={() => executeAction(reactivateMemberAction, m.id, 'Kích hoạt lại HLV này?')} disabled={loading}>Kích hoạt lại</Button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setQuickProfileCoachId(m.coachId || m.id)}
+                            className="text-action text-action-primary"
+                            disabled={loading}
+                          >
+                            Xem thông tin
+                          </button>
+                          <span className="text-action-separator" aria-hidden="true">|</span>
+                          <Button size="sm" variant="success" onClick={() => executeAction(reactivateMemberAction, m.id, 'Kích hoạt lại HLV này?')} disabled={loading}>Kích hoạt lại</Button>
+                        </div>
                       </TableCell>
                     )}
                   </TableRow>
@@ -578,7 +601,7 @@ export default function CoachesClient() {
                 label="Tên gợi nhớ (Nickname)"
                 value={newNickname}
                 onChange={e => setNewNickname(e.target.value)}
-                placeholder="Ví dụ: Thầy Thông Võ"
+                placeholder=""
               />
               <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '8px' }}>
                 Tên này sẽ được hiển thị để dễ dàng phân biệt các HLV có cùng tên. Để trống để sử dụng tên gốc.
