@@ -256,8 +256,7 @@ export function CoachQuickProfileModal({ coachId, isOpen, onClose }: CoachQuickP
                 {editMode ? (formData.name || 'Chưa có tên') : data.coach.originalName}
               </h3>
               <div className={styles.profileMeta}>
-                <span>{roleLabels[currentRole] || 'Chưa xác định'}</span>
-                <span className={styles.dotSeparator}>•</span>
+                <span className={styles.roleLabel}>{roleLabels[currentRole] || 'Chưa xác định'}</span>
                 <span className={`${styles.statusIndicator} ${statusClass}`}>
                   <span className={styles.statusDot}></span>
                   {statusLabels[currentStatus] || currentStatus}
