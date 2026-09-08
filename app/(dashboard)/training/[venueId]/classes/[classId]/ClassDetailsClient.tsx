@@ -247,47 +247,86 @@ export default function ClassDetailsClient({ venueId, classId }: { venueId: stri
       {/* COACHES SECTION */}
       <div className={styles.listContainer}>
         <div className={styles.sectionHeader}>
-          <h3 className={styles.sectionTitle}>Đội ngũ HLV</h3>
-          <span className={styles.sectionCount}>{classDetails.coaches?.length || 0} HLV</span>
+          <div className="flex items-center gap-3">
+            <h3 className={styles.sectionTitle}>Đội ngũ HLV</h3>
+            <span className={styles.sectionCount}>{classDetails.coaches?.length || 0} HLV</span>
+          </div>
+          {isAdminOrOwner && (
+            <Button variant="outline" size="sm" onClick={() => { setError(''); setIsCoachModalOpen(true); }}>
+              + Thêm HLV
+            </Button>
+          )}
         </div>
         <Card>
-          <div className="p-4 flex flex-col gap-3">
-            {(!classDetails.coaches || classDetails.coaches.length === 0) ? (
-              <div className="text-muted italic text-sm py-4 text-center">Chưa có HLV phụ trách</div>
-            ) : (
-              classDetails.coaches.map((coach: any) => (
-                <div key={coach.coach_id} className="flex justify-between items-center p-3 border border-light rounded-md">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold">
-                      {coach.name ? coach.name.charAt(0) : '?'}
-                    </div>
-                    <div>
-                      <div className="font-semibold text-main">{coach.name}</div>
-                      <Badge variant={coach.role === 'HEAD_COACH' ? 'primary' : 'default'} className="mt-1">
-                        {coach.role === 'HEAD_COACH' ? 'HLV Trưởng' : 'HLV Phụ'}
-                      </Badge>
-                    </div>
-                  </div>
-                  {isAdminOrOwner && (
-                    <div className="flex gap-2">
-                      {coach.role === 'ASSISTANT_COACH' && (
-                        <Button variant="ghost" size="sm" onClick={() => handleChangeCoachRole(coach.coach_id, 'HEAD_COACH')} title="Đổi thành HLV trưởng">
-                          <span className="material-icons-round text-secondary hover:text-primary">star_border</span>
-                        </Button>
+          <div className="overflow-x-auto">
+            <Table>
+              <Thead>
+                <Tr>
+                  <Th>HLV</Th>
+                  <Th>Vai trò</Th>
+                  <Th>Trạng thái</Th>
+                  {isAdminOrOwner && <Th className="text-right">Hành động</Th>}
+                </Tr>
+              </Thead>
+              <Tbody>
+                {(!classDetails.coaches || classDetails.coaches.length === 0) ? (
+                  <Tr>
+                    <Td colSpan={isAdminOrOwner ? 4 : 3} className="text-center py-8">
+                      <div className="flex flex-col items-center gap-3">
+                        <span className="text-secondary text-sm">Chưa có HLV phụ trách lớp này.</span>
+                        {isAdminOrOwner && (
+                          <Button variant="outline" size="sm" onClick={() => { setError(''); setIsCoachModalOpen(true); }}>
+                            + Thêm HLV
+                          </Button>
+                        )}
+                      </div>
+                    </Td>
+                  </Tr>
+                ) : (
+                  classDetails.coaches.map((coach: any) => (
+                    <Tr key={coach.coach_id}>
+                      <Td>
+                        <div className="font-semibold text-main">{coach.name}</div>
+                      </Td>
+                      <Td>
+                        <Badge variant={coach.role === 'HEAD_COACH' ? 'primary' : 'default'}>
+                          {coach.role === 'HEAD_COACH' ? 'HLV Trưởng' : 'HLV Phụ'}
+                        </Badge>
+                      </Td>
+                      <Td>
+                        <Badge variant="success">Hoạt động</Badge>
+                      </Td>
+                      {isAdminOrOwner && (
+                        <Td className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button 
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleChangeCoachRole(coach.coach_id, coach.role === 'HEAD_COACH' ? 'ASSISTANT_COACH' : 'HEAD_COACH')}
+                              title={coach.role === 'HEAD_COACH' ? 'Đổi thành HLV phụ' : 'Đặt làm HLV trưởng'}
+                              leftIcon={<span className="material-icons-round text-[18px]">swap_horiz</span>}
+                            >
+                              Đổi vai trò
+                            </Button>
+                            <Button 
+                              variant="ghost"
+                              size="sm"
+                              className="text-danger hover:bg-danger-bg"
+                              onClick={() => handleRemoveCoach(coach.coach_id)}
+                              title="Gỡ khỏi lớp"
+                              disabled={loading}
+                              leftIcon={<span className="material-icons-round text-[18px]">person_remove</span>}
+                            >
+                              Gỡ
+                            </Button>
+                          </div>
+                        </Td>
                       )}
-                      <Button variant="ghost" size="sm" onClick={() => handleRemoveCoach(coach.coach_id)} className="text-danger hover:bg-danger-bg" title="Gỡ khỏi lớp">
-                        <span className="material-icons-round">remove_circle_outline</span>
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
-            {isAdminOrOwner && (
-              <Button variant="outline" onClick={() => { setError(''); setIsCoachModalOpen(true); }} className="mt-2 w-full sm:w-auto self-start">
-                + Thêm HLV
-              </Button>
-            )}
+                    </Tr>
+                  ))
+                )}
+              </Tbody>
+            </Table>
           </div>
         </Card>
       </div>
