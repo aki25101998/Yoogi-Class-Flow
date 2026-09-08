@@ -14,9 +14,8 @@ export function useClasses(organizationId: string | undefined) {
       if (!organizationId) return [];
       const { data, error } = await supabase
         .from('venue_classes')
-        .select('*, venues(name), class_coaches(*, coaches(id, organization_members(profiles(name)))), class_students(id, student_id, status)')
+        .select('*, schedules(id, day_of_week, start_time, end_time, status, effective_from, effective_until), venues(name), class_coaches(*, coaches(id, organization_members(profiles(name)))), class_students(id, student_id, status)')
         .eq('organization_id', organizationId);
-      
       if (error) throw error;
       return data || [];
     },
