@@ -311,35 +311,29 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
             {classes.map((cls: any) => (
               <div key={cls.id} className={styles.classRow}>
                 {/* Class name */}
-                <div className={styles.className}>{cls.name}</div>
+                <div className={`${styles.className} ${styles.areaName}`}>{cls.name}</div>
 
                 {/* Status badge */}
-                <Badge variant={cls.status === 'active' ? 'success' : 'default'}>
-                  {cls.status === 'active' ? 'Hoạt động' : 'Đã đóng'}
-                </Badge>
+                <div className={styles.areaStatus}>
+                  <Badge variant={cls.status === 'active' ? 'success' : 'default'}>
+                    {cls.status === 'active' ? 'Hoạt động' : 'Đã đóng'}
+                  </Badge>
+                </div>
 
-                {/* Coaches */}
-                <div className={styles.classCoach}>
-                  <div className={styles.classCoachLabel}>Đội ngũ HLV</div>
-                  <div className={cls.coaches && cls.coaches.length > 0 ? styles.classCoachName : `${styles.classCoachName} ${styles.classCoachEmpty}`}>
-                    {cls.coaches && cls.coaches.length > 0 
-                      ? (() => {
-                          const names = (cls.coaches as any[]).map((c: any) => c.role === 'HEAD_COACH' ? `★ ${c.name}` : c.name);
-                          if (names.length > 2) return `${names.slice(0, 2).join(' · ')} +${names.length - 2}`;
-                          return names.join(' · ');
-                        })()
-                      : 'Chưa phân công'}
-                  </div>
+                {/* Coaches count */}
+                <div className={`${styles.classStat} ${styles.areaCoach}`}>
+                  <div className={styles.classStatLabel}>Đội ngũ HLV</div>
+                  <div className={styles.classStatValue}>{cls.coaches ? cls.coaches.length : 0}</div>
                 </div>
 
                 {/* Student count */}
-                <div className={styles.classStudentCount}>
-                  <div className={styles.classStudentNumber}>{cls.studentsCount}</div>
-                  <div className={styles.classStudentLabel}>Học viên</div>
+                <div className={`${styles.classStat} ${styles.areaStudent}`}>
+                  <div className={styles.classStatLabel}>Học viên</div>
+                  <div className={styles.classStatValue}>{cls.studentsCount}</div>
                 </div>
 
                 {/* Actions */}
-                <div className={styles.classActions}>
+                <div className={`${styles.classActions} ${styles.areaActions}`}>
                   <Link href={`/training/${venueId}/classes/${cls.id}`}>
                     <Button variant="outline" size="sm">Xem lớp</Button>
                   </Link>
@@ -350,16 +344,9 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
                       onClick={() => handleEditClass(cls)}
                       title="Sửa lớp"
                     >
-                      <span className="material-icons-round" style={{ fontSize: 18 }}>edit</span>
+                      <span className="material-icons-round text-secondary hover:text-primary" style={{ fontSize: 18 }}>edit</span>
                     </Button>
                   )}
-                </div>
-
-                {/* Mobile info (visible only on small screens) */}
-                <div className={styles.classMobileInfo}>
-                  <span>HLV: {cls.coaches && cls.coaches.length > 0 ? cls.coaches[0].name : 'Chưa có'}{cls.coaches && cls.coaches.length > 1 ? '...' : ''}</span>
-                  <span>·</span>
-                  <span>{cls.studentsCount} học viên</span>
                 </div>
               </div>
             ))}

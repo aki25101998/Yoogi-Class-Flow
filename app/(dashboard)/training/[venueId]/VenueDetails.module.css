@@ -176,34 +176,47 @@
 }
 
 /* ==========================================================================
-   CLASS LIST — Row-based layout (similar to trainer list)
+   CLASS LIST — Table-like layout (Source of Truth: Student Table)
    ========================================================================== */
 .classList {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  background-color: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  width: 100%;
 }
 
 .classRow {
   display: grid;
-  grid-template-columns: minmax(160px, 1.5fr) auto 1fr 1fr auto auto;
+  grid-template-columns: minmax(180px, 1.5fr) auto 120px 120px auto;
+  grid-template-areas: "name status coach student actions";
   align-items: center;
-  gap: 16px;
-  padding: 12px 20px;
-  background: var(--surface);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-lg);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  gap: 24px;
+  padding: 16px 20px;
+  background-color: var(--surface);
+  border-bottom: 1px solid var(--border-light);
+  transition: background-color 0.2s;
+}
+
+.classRow:last-child {
+  border-bottom: none;
 }
 
 .classRow:hover {
-  border-color: var(--border);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  background-color: var(--surface-hover);
 }
+
+.areaName { grid-area: name; }
+.areaStatus { grid-area: status; }
+.areaCoach { grid-area: coach; }
+.areaStudent { grid-area: student; }
+.areaActions { grid-area: actions; }
 
 /* Class name */
 .className {
-  font-size: 0.9375rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-main);
   white-space: nowrap;
@@ -211,51 +224,26 @@
   text-overflow: ellipsis;
 }
 
-/* Coach info cell */
-.classCoach {
-  min-width: 0;
+/* Statistics Block (Coach & Student) */
+.classStat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.classCoachLabel {
+.classStatLabel {
   font-size: 0.6875rem;
+  font-weight: 600;
   color: var(--text-muted);
-  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
 }
 
-.classCoachName {
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--text-main);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-top: 1px;
-}
-
-.classCoachEmpty {
-  color: var(--text-muted);
-  font-style: italic;
-}
-
-/* Student count cell */
-.classStudentCount {
-  text-align: center;
-  min-width: 60px;
-}
-
-.classStudentNumber {
+.classStatValue {
   font-size: 1.125rem;
-  font-weight: 700;
-  color: var(--primary);
+  font-weight: 600;
+  color: var(--text-main);
   line-height: 1.2;
-}
-
-.classStudentLabel {
-  font-size: 0.6875rem;
-  color: var(--text-muted);
-  font-weight: 500;
 }
 
 /* Actions cell */
@@ -264,7 +252,6 @@
   gap: 6px;
   align-items: center;
   justify-content: flex-end;
-  flex-shrink: 0;
 }
 
 /* ==========================================================================
@@ -330,13 +317,9 @@
 /* Tablet */
 @media (max-width: 1024px) {
   .classRow {
-    grid-template-columns: minmax(120px, 1.5fr) auto 1fr auto auto;
-    gap: 12px;
-  }
-
-  /* Hide assistant coach on tablet */
-  .classCoachHideable {
-    display: none;
+    grid-template-columns: minmax(120px, 1fr) auto 100px 100px auto;
+    gap: 16px;
+    padding: 16px;
   }
 }
 
@@ -371,45 +354,30 @@
   }
 
   .classRow {
-    grid-template-columns: 1fr auto;
-    gap: 8px;
-    padding: 12px 16px;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: 
+      "name status"
+      "coach student"
+      "actions actions";
+    gap: 16px;
+    padding: 16px;
   }
 
-  .classCoach {
-    display: none;
+  .areaStatus {
+    justify-self: end;
   }
 
-  .classStudentCount {
-    display: none;
+  .areaStudent {
+    justify-self: start;
   }
 
-  /* Show mobile-specific info line */
-  .classMobileInfo {
-    display: flex !important;
-    grid-column: 1 / -1;
-    gap: 12px;
-    align-items: center;
-    flex-wrap: wrap;
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-    padding-top: 4px;
-    border-top: 1px solid var(--border-light);
-  }
-
-  .classActions {
-    grid-column: 1 / -1;
+  .areaActions {
     justify-content: flex-start;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-light);
   }
 
   .sectionHeader {
     margin-bottom: 8px;
-  }
-}
-
-/* Desktop: hide mobile info */
-@media (min-width: 641px) {
-  .classMobileInfo {
-    display: none !important;
   }
 }
