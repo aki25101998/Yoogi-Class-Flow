@@ -77,6 +77,10 @@ export async function addClassAction(data: { name: string; venue_id: string; sta
     return { success: false, error: 'Tên lớp học không được để trống.' };
   }
 
+  if (data.status === 'active') {
+    return { success: false, error: 'Lớp đang hoạt động cần có ít nhất một lịch học. Vui lòng tạo lớp ở trạng thái "Ngừng hoạt động" và thêm lịch học trước khi kích hoạt.' };
+  }
+
   const supabase = await createClient();
   const orgId = context.organization.id;
   
@@ -118,6 +122,21 @@ export async function updateClassAction(id: string, data: { name: string; venue_
 
   const supabase = await createClient();
   const orgId = context.organization.id;
+
+  // Validate ACTIVE status requires at least one active schedule
+  if (data.status === 'active') {
+    const { data: activeSchedules } = await supabase
+      .from('schedules')
+      .select('id')
+      .eq('class_id', id)
+      .eq('organization_id', orgId)
+      .eq('status', 'active')
+      .limit(1);
+      
+    if (!activeSchedules || activeSchedules.length === 0) {
+      return { success: false, error: 'Lớp đang hoạt động cần có ít nhất một lịch học.' };
+    }
+  }
   
   const { data: venue, error: venueError } = await supabase
     .from('venues')

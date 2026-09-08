@@ -6,6 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useDashboardContext } from '../../DashboardProvider';
 import { useTrainingVenueDetails, useTrainingFormLookups } from '@/hooks/useTrainingManagement';
 import { addClassAction, updateClassAction, addStudentAction, updateStudentAction } from '../actions';
+import ClassScheduleManager from '@/app/(dashboard)/classes/components/ClassScheduleManager';
 
 import { Button } from '@/app/components/ui/Button';
 import { Input, Select } from '@/app/components/ui/Input';
@@ -308,15 +309,19 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
           </div>
         ) : (
           <div className={styles.classList}>
-            {classes.map((cls: any) => (
+            {classes.map((cls: any) => {
+              const activeSchedules = (cls.schedules || []).filter((s:any) => s.status === 'active');
+              const isNoSchedule = cls.status === 'active' && activeSchedules.length === 0;
+
+              return (
               <div key={cls.id} className={styles.classRow}>
                 {/* Class name */}
                 <div className={`${styles.className} ${styles.areaName}`}>{cls.name}</div>
 
                 {/* Status badge */}
                 <div className={styles.areaStatus}>
-                  <Badge variant={cls.status === 'active' ? 'success' : 'default'}>
-                    {cls.status === 'active' ? 'Hoạt động' : 'Đã đóng'}
+                  <Badge variant={cls.status === 'active' ? (isNoSchedule ? 'warning' : 'success') : 'default'}>
+                    {cls.status === 'active' ? (isNoSchedule ? 'Thiếu lịch học' : 'Hoạt động') : 'Đã đóng'}
                   </Badge>
                 </div>
 
@@ -349,7 +354,7 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
                   )}
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         )}
       </div>
@@ -463,6 +468,19 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
               ]}
             />
           </form>
+
+          {/* LỊCH HỌC SECTION */}
+          {editingClassId ? (
+            <ClassScheduleManager 
+              classId={editingClassId}
+              schedules={classes.find((c: any) => c.id === editingClassId)?.schedules || []}
+              onSuccess={handleSuccess}
+            />
+          ) : (
+            <div className="border-t border-light pt-6 mt-4 text-center text-muted italic text-sm">
+              Vui lòng lưu lớp học trước khi thêm lịch.
+            </div>
+          )}
         </ModalBody>
         <ModalFooter>
           <Button type="button" variant="secondary" onClick={resetForms} disabled={loading}>Hủy</Button>
