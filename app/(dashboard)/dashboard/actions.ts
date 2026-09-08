@@ -41,8 +41,9 @@ export async function checkInSessionAction(classId: string, dateStr: string, sta
   if (!context || !context.organization || !context.membership) return { success: false, error: 'Access Denied' };
 
   const supabase = await createClient();
+  const orgId = context.organization.id;
   
-  let coachId = context.membership.user_id; // Default to current user
+  let primaryCoachId = context.membership.user_id; // Default to current user
   
   if (sessionId) {
     // If we have a sessionId, the session already exists in DB
@@ -52,48 +53,92 @@ export async function checkInSessionAction(classId: string, dateStr: string, sta
       .single();
 
     if (existing) {
-      if (existing.coach_id) coachId = existing.coach_id;
+      if (existing.coach_id) primaryCoachId = existing.coach_id;
       const { error } = await supabase.from('class_sessions')
         .update({ 
           status: status,
-          check_in_time: new Date().toISOString(),
-          // check_in_by: context.membership.user_id // Not in schema based on latest migration, assuming we just log it implicitly or skip.
+          check_in_time: new Date().toISOString()
         })
         .eq('id', existing.id);
+      
       if (error) return { success: false, error: error.message };
+      
+      // Update session_coaches status as well
+      await supabase.from('session_coaches')
+        .update({ status: status })
+        .eq('session_id', existing.id)
+        .eq('organization_id', orgId);
     }
   } else {
     // We need to fetch original coach_id from schedule if we want to record who checked in
     let originalCoachId = null;
     let startTime = null;
     let endTime = null;
+    let scheduleCoaches: any[] = [];
     
     if (scheduleId) {
-       const { data: schedule } = await supabase.from('schedules').select('coach_id, start_time, end_time').eq('id', scheduleId).single();
+       const { data: schedule } = await supabase.from('schedules')
+         .select('coach_id, start_time, end_time, schedule_coaches(coach_id)')
+         .eq('id', scheduleId)
+         .single();
        if (schedule) {
          originalCoachId = schedule.coach_id;
          startTime = schedule.start_time;
          endTime = schedule.end_time;
-         coachId = schedule.coach_id;
+         primaryCoachId = schedule.coach_id;
+         if (schedule.schedule_coaches) {
+           scheduleCoaches = schedule.schedule_coaches;
+         }
        }
     }
 
-    const { error } = await supabase.from('class_sessions').insert({
-      organization_id: context.organization.id,
-      class_id: classId,
-      schedule_id: scheduleId || null,
-      date: dateStr,
-      status: status,
-      coach_id: coachId,
-      original_coach_id: originalCoachId,
-      start_time: startTime,
-      end_time: endTime,
-      // check_in_time isn't in class_sessions schema initially but let's assume it exists or we omit it if it fails. Actually it's probably missing from the 015 migration. Let's just omit check_in_time and check_in_by if they don't exist.
-    });
-    
-    if (error) {
-       // fallback if check_in_time column exists but something else fails
-       return { success: false, error: error.message };
+    try {
+      // Upsert to prevent race conditions on double click
+      const sessionData = {
+        organization_id: orgId,
+        class_id: classId,
+        schedule_id: scheduleId || null,
+        date: dateStr,
+        status: status,
+        coach_id: primaryCoachId,
+        original_coach_id: originalCoachId,
+        start_time: startTime,
+        end_time: endTime
+      };
+
+      let query = supabase.from('class_sessions').upsert(sessionData, { 
+        onConflict: scheduleId ? 'organization_id, schedule_id, date' : undefined 
+      }).select('id').single();
+
+      const { data: session, error } = await query;
+      
+      if (error) {
+         return { success: false, error: error.message };
+      }
+
+      // Dual Write: Insert to session_coaches
+      if (session) {
+        if (scheduleCoaches.length > 0) {
+          const sessionCoachesData = scheduleCoaches.map((sc: any) => ({
+            organization_id: orgId,
+            session_id: session.id,
+            coach_id: sc.coach_id,
+            status: status
+          }));
+          
+          await supabase.from('session_coaches').upsert(sessionCoachesData, { onConflict: 'session_id, coach_id' });
+        } else if (primaryCoachId) {
+          // Fallback legacy
+          await supabase.from('session_coaches').upsert({
+            organization_id: orgId,
+            session_id: session.id,
+            coach_id: primaryCoachId,
+            status: status
+          }, { onConflict: 'session_id, coach_id' });
+        }
+      }
+    } catch (e: any) {
+      return { success: false, error: e.message || 'Lỗi khi tạo ca học.' };
     }
   }
 

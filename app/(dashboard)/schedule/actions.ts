@@ -11,6 +11,7 @@ export async function addScheduleAction(data: {
   day_of_week: number;
   start_time: string;
   end_time: string;
+  coach_ids?: string[]; // Optional for backward compatibility
 }) {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
@@ -28,16 +29,22 @@ export async function addScheduleAction(data: {
     return { success: false, error: 'Ngày trong tuần không hợp lệ.' };
   }
 
-  // Verify coach belongs to org and is active
-  const { data: coach } = await supabase
+  const coachIdsToProcess = data.coach_ids && data.coach_ids.length > 0 ? data.coach_ids : [data.coach_id];
+  const primaryCoachId = coachIdsToProcess[0];
+
+  // Verify all coaches belong to org and are active
+  const { data: coaches } = await supabase
     .from('coaches')
     .select('id, status')
-    .eq('id', data.coach_id)
-    .eq('organization_id', orgId)
-    .single();
+    .in('id', coachIdsToProcess)
+    .eq('organization_id', orgId);
 
-  if (!coach) return { success: false, error: 'HLV không tồn tại trong tổ chức này.' };
-  if (coach.status !== 'active') return { success: false, error: 'HLV đang không hoạt động.' };
+  if (!coaches || coaches.length !== coachIdsToProcess.length) {
+    return { success: false, error: 'Một số HLV không tồn tại trong tổ chức này.' };
+  }
+  if (coaches.some(c => c.status !== 'active')) {
+    return { success: false, error: 'Một số HLV đang không hoạt động.' };
+  }
 
   // Verify venue belongs to org
   const { data: venue } = await supabase
@@ -61,13 +68,13 @@ export async function addScheduleAction(data: {
   
   // Check for coach conflict
   const { data: coachConflict } = await supabase
-    .from('schedules')
-    .select('id')
-    .eq('coach_id', data.coach_id)
-    .eq('day_of_week', data.day_of_week)
+    .from('schedule_coaches')
+    .select('id, schedule_id, schedules!inner(day_of_week, start_time, end_time, status)')
+    .in('coach_id', coachIdsToProcess)
     .eq('organization_id', orgId)
-    .eq('status', 'active')
-    .or(`and(start_time.lte.${data.end_time},end_time.gte.${data.start_time})`);
+    .eq('schedules.day_of_week', data.day_of_week)
+    .eq('schedules.status', 'active')
+    .or(`and(schedules.start_time.lte.${data.end_time},schedules.end_time.gte.${data.start_time})`);
 
   if (coachConflict && coachConflict.length > 0) {
     return { success: false, error: 'HLV đã có lịch dạy trùng giờ này.' };
@@ -87,14 +94,35 @@ export async function addScheduleAction(data: {
     return { success: false, error: 'Phòng tập/Địa điểm đã có lịch trùng giờ này.' };
   }
 
-  const { error } = await supabase.from('schedules').insert({
+  // Dual Write: Insert to schedules first
+  const scheduleInsertData = {
     organization_id: orgId,
-    ...data,
+    coach_id: primaryCoachId,
+    venue_id: data.venue_id,
+    class_id: data.class_id,
+    day_of_week: data.day_of_week,
+    start_time: data.start_time,
+    end_time: data.end_time,
     status: 'active'
-  });
+  };
+
+  const { data: insertedSchedule, error } = await supabase.from('schedules')
+    .insert(scheduleInsertData)
+    .select('id')
+    .single();
 
   if (error) return { success: false, error: error.message };
   
+  // Insert to schedule_coaches
+  const scheduleCoachesData = coachIdsToProcess.map(id => ({
+    organization_id: orgId,
+    schedule_id: insertedSchedule.id,
+    coach_id: id
+  }));
+
+  const { error: coachesError } = await supabase.from('schedule_coaches').insert(scheduleCoachesData);
+  if (coachesError) return { success: false, error: coachesError.message };
+
   revalidatePath('/schedule');
   return { success: true };
 }
@@ -123,6 +151,7 @@ export async function updateScheduleAction(id: string, data: {
   day_of_week: number;
   start_time: string;
   end_time: string;
+  coach_ids?: string[];
 }) {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
@@ -140,16 +169,22 @@ export async function updateScheduleAction(id: string, data: {
     return { success: false, error: 'Ngày trong tuần không hợp lệ.' };
   }
 
+  const coachIdsToProcess = data.coach_ids && data.coach_ids.length > 0 ? data.coach_ids : [data.coach_id];
+  const primaryCoachId = coachIdsToProcess[0];
+
   // Verify coach belongs to org and is active
-  const { data: coach } = await supabase
+  const { data: coaches } = await supabase
     .from('coaches')
     .select('id, status')
-    .eq('id', data.coach_id)
-    .eq('organization_id', orgId)
-    .single();
+    .in('id', coachIdsToProcess)
+    .eq('organization_id', orgId);
 
-  if (!coach) return { success: false, error: 'HLV không tồn tại trong tổ chức này.' };
-  if (coach.status !== 'active') return { success: false, error: 'HLV đang không hoạt động.' };
+  if (!coaches || coaches.length !== coachIdsToProcess.length) {
+    return { success: false, error: 'Một số HLV không tồn tại trong tổ chức này.' };
+  }
+  if (coaches.some(c => c.status !== 'active')) {
+    return { success: false, error: 'Một số HLV đang không hoạt động.' };
+  }
 
   // Verify venue belongs to org
   const { data: venue } = await supabase
@@ -173,14 +208,14 @@ export async function updateScheduleAction(id: string, data: {
   
   // Check for coach conflict
   const { data: coachConflict } = await supabase
-    .from('schedules')
-    .select('id')
-    .eq('coach_id', data.coach_id)
-    .eq('day_of_week', data.day_of_week)
-    .eq('status', 'active')
+    .from('schedule_coaches')
+    .select('id, schedule_id, schedules!inner(day_of_week, start_time, end_time, status)')
+    .in('coach_id', coachIdsToProcess)
     .eq('organization_id', orgId)
-    .neq('id', id)
-    .or(`and(start_time.lte.${data.end_time},end_time.gte.${data.start_time})`);
+    .eq('schedules.day_of_week', data.day_of_week)
+    .eq('schedules.status', 'active')
+    .neq('schedule_id', id)
+    .or(`and(schedules.start_time.lte.${data.end_time},schedules.end_time.gte.${data.start_time})`);
 
   if (coachConflict && coachConflict.length > 0) {
     return { success: false, error: 'HLV đã có lịch dạy trùng giờ này.' };
@@ -201,12 +236,34 @@ export async function updateScheduleAction(id: string, data: {
     return { success: false, error: 'Phòng tập/Địa điểm đã có lịch trùng giờ này.' };
   }
 
+  const scheduleUpdateData = {
+    coach_id: primaryCoachId,
+    venue_id: data.venue_id,
+    class_id: data.class_id,
+    day_of_week: data.day_of_week,
+    start_time: data.start_time,
+    end_time: data.end_time,
+  };
+
   const { error } = await supabase.from('schedules')
-    .update(data)
+    .update(scheduleUpdateData)
     .eq('id', id)
     .eq('organization_id', orgId);
 
   if (error) return { success: false, error: error.message };
+
+  // Dual Write: Sync schedule_coaches
+  // 1. Delete old coaches
+  await supabase.from('schedule_coaches').delete().eq('schedule_id', id);
+
+  // 2. Insert new coaches
+  const scheduleCoachesData = coachIdsToProcess.map(coachId => ({
+    organization_id: orgId,
+    schedule_id: id,
+    coach_id: coachId
+  }));
+
+  await supabase.from('schedule_coaches').insert(scheduleCoachesData);
   
   revalidatePath('/schedule');
   return { success: true };
