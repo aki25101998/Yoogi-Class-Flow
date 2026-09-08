@@ -471,7 +471,7 @@ export function CoachQuickProfileModal({ coachId, isOpen, onClose }: CoachQuickP
                     <div className="flex items-start justify-between mb-3">
                       <h5 className="font-bold text-main text-base m-0 pr-4 group-hover:text-primary transition-colors line-clamp-1">{cls.name}</h5>
                       <Badge 
-                        variant={cls.role === 'HEAD_COACH' ? 'primary' : 'secondary'} 
+                        variant={cls.role === 'HEAD_COACH' ? 'primary' : 'default'} 
                         className={`flex-shrink-0 text-[10px] uppercase tracking-wider font-bold !py-1 !px-2.5 ${cls.role === 'HEAD_COACH' ? 'bg-primary/10 text-primary border-primary/20' : 'bg-surface-hover text-secondary border-[var(--border-light)]'}`}
                       >
                         {cls.role === 'HEAD_COACH' ? 'HLV TRƯỞNG' : 'HLV PHỤ'}
