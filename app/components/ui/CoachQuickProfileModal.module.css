@@ -1,0 +1,287 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding-bottom: var(--space-4);
+}
+
+.errorBox, .successBox {
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.errorBox {
+  background-color: var(--danger-bg);
+  color: var(--danger-text);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.successBox {
+  background-color: var(--success-bg);
+  color: var(--success-text);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+/* 1. PROFILE IDENTITY */
+.profileIdentity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+@media (min-width: 640px) {
+  .profileIdentity {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.profileInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.avatarWrapper {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-md);
+  background-color: var(--surface-hover);
+  border: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+}
+
+.profileDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profileName {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.profileMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.9rem;
+}
+
+.statusIndicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.statusActive { color: var(--success); }
+.statusActive .statusDot { background-color: var(--success); }
+
+.statusSuspended { color: var(--danger); }
+.statusSuspended .statusDot { background-color: var(--danger); }
+
+.statusInactive { color: var(--text-secondary); }
+.statusInactive .statusDot { background-color: var(--text-muted); }
+
+.actionWrapper {
+  align-self: flex-start;
+}
+
+@media (min-width: 640px) {
+  .actionWrapper {
+    align-self: center;
+  }
+}
+
+/* 2. SECTION SYSTEM */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.sectionDivider {
+  flex: 1;
+  height: 1px;
+  background-color: var(--border-light);
+}
+
+/* PERSONAL INFO GRID */
+.infoGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  row-gap: var(--space-4);
+  column-gap: var(--space-6);
+}
+
+@media (min-width: 640px) {
+  .infoGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.infoLabel {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.infoValue {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.infoValueEmpty {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+/* 3. ASSIGNED CLASSES */
+.emptyState {
+  padding: var(--space-6);
+  background-color: var(--surface-hover);
+  border-radius: var(--radius-md);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-secondary);
+}
+
+.classList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.classCard {
+  background-color: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.classCard:hover {
+  background-color: var(--surface-hover);
+  border-color: var(--border);
+}
+
+.classCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.classTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.classMetaList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+@media (min-width: 640px) {
+  .classMetaList {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-6);
+  }
+}
+
+.classMetaItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Edit Mode Utilities */
+.avatarUploadRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  background-color: var(--surface-hover);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+}
+
+.readonlyField {
+  background-color: var(--surface-hover);
+  border: 1px solid transparent;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  height: 40px;
+  display: flex;
+  align-items: center;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  cursor: not-allowed;
+}
+
+.readonlyHint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
