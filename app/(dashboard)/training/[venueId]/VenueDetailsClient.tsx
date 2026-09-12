@@ -299,7 +299,7 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
         {venue.classesError ? (
           <div className={styles.errorBar}>
             <span className={`material-icons-round ${styles.errorBarIcon}`}>error_outline</span>
-            <span>Không thể tải danh sách lớp học do lỗi dữ liệu.</span>
+            <span>Không thể tải danh sách lớp học: {venue.classesError?.message || JSON.stringify(venue.classesError)}</span>
           </div>
         ) : classes.length === 0 ? (
           <div className={styles.emptyCompact}>
