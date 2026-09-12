@@ -88,8 +88,8 @@ export function useTrainingVenueDetails(organizationId: string | undefined, venu
         .select(`
           *,
           schedules(id, day_of_week, start_time, end_time, status, effective_from, effective_until),
-          class_students(*),
-          class_coaches(*, coaches(id, organization_members(profiles(name))))
+          class_students(id, student_id, status),
+          class_coaches(role, coach_id, coaches(id, organization_members(profiles(name))))
         `)
         .eq('venue_id', venueId)
         .eq('organization_id', organizationId)
