@@ -1,4 +1,4 @@
--- 029_normalize_belts_display_order.sql
+-- 033_normalize_belts_display_order.sql
 
 -- 1. Normalize existing display_order to remove duplicates within each organization.
 -- We use a CTE to rank belts by their current display_order and created_at to break ties.
