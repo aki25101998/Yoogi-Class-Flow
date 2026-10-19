@@ -48,7 +48,7 @@ export default function SettingsClient() {
   };
 
   return (
-    <div className="flex-col gap-6 max-w-2xl">
+    <div className="flex flex-col gap-6 max-w-2xl">
       <PageHeader 
         title="Cài đặt Chung" 
         description="Quản lý thông tin chung của tổ chức/trung tâm"

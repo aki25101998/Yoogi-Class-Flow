@@ -134,7 +134,7 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
   };
 
   return (
-    <div className="flex-col gap-6">
+    <div className="flex flex-col gap-6">
       <PageHeader 
         title="Quản lý Cấp Đai" 
         description="Quản lý các cấp đai được sử dụng trong trung tâm"

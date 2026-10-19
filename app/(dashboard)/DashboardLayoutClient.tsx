@@ -24,7 +24,7 @@ export default function DashboardLayoutClient({ children }: DashboardLayoutClien
         <div className="sidebar-logo">
           <span className="material-icons-round" style={{ fontSize: '1.2rem' }}>sports_martial_arts</span>
         </div>
-        <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>Chấm Công HLV</span>
+        <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)', letterSpacing: '-0.01em' }}>Yoogi Class Flow</span>
       </div>
 
       <Sidebar 

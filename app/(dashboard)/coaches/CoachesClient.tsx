@@ -432,15 +432,16 @@ export default function CoachesClient() {
                               setNewNickname(m.nickname || '');
                             }}
                             style={{ 
-                              backgroundColor: '#ffffff', 
-                              border: '1px solid #cbd5e1', 
-                              color: '#334155',
-                              padding: '2px',
-                              borderRadius: '4px',
+                              backgroundColor: 'var(--surface-hover)', 
+                              border: '1px solid var(--border-light)', 
+                              color: 'var(--text-secondary)',
+                              padding: '4px',
+                              borderRadius: 'var(--radius-sm)',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              cursor: 'pointer'
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease'
                             }}
                             title="Đổi tên gọi"
                           >
@@ -515,15 +516,16 @@ export default function CoachesClient() {
                               setNewNickname(m.nickname || '');
                             }}
                             style={{ 
-                              backgroundColor: '#ffffff', 
-                              border: '1px solid #cbd5e1', 
-                              color: '#334155',
-                              padding: '2px',
-                              borderRadius: '4px',
+                              backgroundColor: 'var(--surface-hover)', 
+                              border: '1px solid var(--border-light)', 
+                              color: 'var(--text-secondary)',
+                              padding: '4px',
+                              borderRadius: 'var(--radius-sm)',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              cursor: 'pointer'
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease'
                             }}
                             title="Đổi tên gọi"
                           >

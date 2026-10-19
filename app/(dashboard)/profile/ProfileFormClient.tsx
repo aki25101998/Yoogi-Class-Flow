@@ -12,6 +12,7 @@ import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
 import { RoleBadge } from '@/app/components/ui/RoleBadge';
+import styles from './Profile.module.css';
 
 export default function ProfileFormClient() {
   const router = useRouter();
@@ -120,27 +121,28 @@ export default function ProfileFormClient() {
         description="Quản lý thông tin cá nhân và hồ sơ huấn luyện viên của bạn."
       />
 
-      <div className="flex flex-wrap gap-6">
+      <div className={styles.profileLayout}>
         {/* Cột trái: Thông tin hiển thị */}
-        <div className="flex-[1_1_300px] flex flex-col gap-6">
+        <div className="flex flex-col gap-6">
           <Card>
             <CardContent className="py-8 px-6 flex flex-col items-center">
-              <div className="relative mb-5 flex justify-center">
+              <div style={{ position: 'relative' }}>
                 <div 
-                  className="w-32 h-32 rounded-full border-4 border-surface overflow-hidden bg-surface-hover shadow-lg relative cursor-pointer transition-transform duration-200 hover:scale-105 group"
+                  className={styles.avatarWrapper}
                   onClick={() => fileInputRef.current?.click()}
+                  title="Nhấn để thay đổi ảnh đại diện"
                 >
                   {avatarPreview ? (
-                    <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                    <img src={avatarPreview} alt="Avatar" className={styles.avatarImg} />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-5xl font-semibold text-muted">
+                    <div className={styles.avatarPlaceholder}>
                       {displayName.charAt(0).toUpperCase()}
                     </div>
                   )}
                   
-                  <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 gap-1">
-                    <span className="material-icons-round text-white text-2xl">photo_camera</span>
-                    <span className="text-white text-xs font-medium">Thay đổi</span>
+                  <div className={styles.avatarOverlay}>
+                    <span className={`material-icons-round ${styles.avatarOverlayIcon}`}>photo_camera</span>
+                    <span className={styles.avatarOverlayText}>Thay đổi</span>
                   </div>
                 </div>
                 
@@ -153,10 +155,10 @@ export default function ProfileFormClient() {
                       setAvatarPreview(profile?.avatar_url || null);
                       if (fileInputRef.current) fileInputRef.current.value = '';
                     }}
-                    className="absolute bottom-1 right-0 bg-danger text-white border-none rounded-full p-1.5 flex items-center justify-center cursor-pointer shadow-md transition-colors duration-200 hover:bg-danger-hover z-10"
-                    title="Xóa ảnh đã chọn"
+                    className={styles.removeAvatarBtn}
+                    title="Hủy ảnh vừa chọn"
                   >
-                    <span className="material-icons-round text-base">close</span>
+                    <span className="material-icons-round" style={{ fontSize: '16px' }}>close</span>
                   </button>
                 )}
               </div>
@@ -198,32 +200,33 @@ export default function ProfileFormClient() {
             <CardHeader className="border-b border-light pb-3">
               <CardTitle className="text-sm">Thông tin tài khoản</CardTitle>
             </CardHeader>
-            <CardContent className="pt-4 flex flex-col gap-3 text-sm">
-              <div className="flex justify-between border-b border-light pb-2">
-                <span className="text-secondary">Email</span>
-                <span className="font-medium text-main truncate max-w-[200px]" title={profile.email || user?.email}>{profile.email || user?.email}</span>
-              </div>
-              <div className="flex justify-between border-b border-light pb-2">
-                <span className="text-secondary">Vai trò</span>
-                {/* Rely on RoleBadge logic for uppercase label natively, or just display raw if not in ROLE_LABELS */}
-                <span className="font-medium text-main uppercase">{profile.role}</span>
-              </div>
-              <div className="flex justify-between border-b border-light pb-2">
-                <span className="text-secondary">Cơ sở</span>
-                <span className="font-medium text-main">{context?.organization?.name || '---'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-secondary">Trạng thái</span>
-                <span className={`font-medium ${profile.status === 'active' ? 'text-success' : 'text-danger'}`}>
-                  {profile.status === 'active' ? 'Đang hoạt động' : 'Đã khóa'}
-                </span>
+            <CardContent className="pt-4">
+              <div className={styles.infoList}>
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>Email</span>
+                  <span className={`${styles.infoValue} truncate max-w-[180px]`} title={profile.email || user?.email}>{profile.email || user?.email}</span>
+                </div>
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>Vai trò</span>
+                  <span className={`${styles.infoValue} uppercase`}>{profile.role}</span>
+                </div>
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>Cơ sở</span>
+                  <span className={styles.infoValue}>{context?.organization?.name || '---'}</span>
+                </div>
+                <div className={styles.infoRow}>
+                  <span className={styles.infoLabel}>Trạng thái</span>
+                  <span className={`font-medium ${profile.status === 'active' ? 'text-success' : 'text-danger'}`}>
+                    {profile.status === 'active' ? 'Đang hoạt động' : 'Đã khóa'}
+                  </span>
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Cột phải: Form chỉnh sửa */}
-        <div className="flex-[2_1_500px]">
+        <div>
           <Card>
             <CardHeader className="border-b border-light pb-4">
               <CardTitle>Chỉnh sửa hồ sơ</CardTitle>
@@ -234,8 +237,8 @@ export default function ProfileFormClient() {
               {success && <div className="text-success mb-4 text-sm bg-success-bg p-3 rounded-md" role="alert">{success}</div>}
               
               <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-                <div className="flex flex-wrap gap-6">
-                  <div className="flex-[1_1_calc(50%-12px)] min-w-[200px]">
+                <div className={styles.formGrid}>
+                  <div>
                     <Input 
                       label="Họ và tên"
                       required 
@@ -243,28 +246,28 @@ export default function ProfileFormClient() {
                       onChange={e => setFormData({...formData, name: e.target.value})} 
                     />
                   </div>
-                  <div className="flex-[1_1_calc(50%-12px)] min-w-[200px]">
+                  <div>
                     <Input 
                       label="Số điện thoại"
                       value={formData.phone} 
                       onChange={e => setFormData({...formData, phone: e.target.value})} 
                     />
                   </div>
-                  <div className="flex-[1_1_calc(50%-12px)] min-w-[200px]">
+                  <div>
                     <Input 
                       label="Số CCCD"
                       value={formData.cccd} 
                       onChange={e => setFormData({...formData, cccd: e.target.value})} 
                     />
                   </div>
-                  <div className="flex-[1_1_calc(50%-12px)] min-w-[200px]">
+                  <div>
                     <Input 
                       label="Mã hội viên"
                       value={formData.membership_number} 
                       onChange={e => setFormData({...formData, membership_number: e.target.value})} 
                     />
                   </div>
-                  <div className="flex-[1_1_calc(50%-12px)] min-w-[200px]">
+                  <div>
                     <Input 
                       label="Cấp đai"
                       value={formData.level} 

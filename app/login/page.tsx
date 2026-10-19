@@ -123,11 +123,11 @@ function LoginContent() {
           <span className="material-icons-round" style={{ fontSize: '32px' }}>sports_martial_arts</span>
         </div>
         
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: 'var(--space-2)' }}>
-          Quản Lý Chấm Công
+        <h1 style={{ fontSize: '1.625rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: 'var(--space-2)', letterSpacing: '-0.02em' }}>
+          Yoogi Class Flow
         </h1>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-6)', fontSize: '0.95rem' }}>
-          Hệ thống điểm danh và tính lương cho Huấn luyện viên
+        <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-6)', fontSize: '0.925rem' }}>
+          Hệ thống quản lý trung tâm đào tạo toàn diện
         </p>
         
         {errorMsg && (

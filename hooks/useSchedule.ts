@@ -19,7 +19,21 @@ export function useSchedule(organizationId: string | undefined) {
         .order('start_time', { ascending: true });
       
       if (error) throw error;
-      return data || [];
+      return (data || []).map((s: any) => {
+        let coachName = '';
+        if (s.coaches) {
+          const members = s.coaches.organization_members;
+          if (Array.isArray(members)) {
+            coachName = members[0]?.profiles?.name || '';
+          } else {
+            coachName = members?.profiles?.name || '';
+          }
+        }
+        return {
+          ...s,
+          coachName: coachName || 'Chưa gán HLV',
+        };
+      });
     },
     enabled: !!organizationId,
   });

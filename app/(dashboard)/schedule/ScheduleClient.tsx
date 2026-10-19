@@ -12,6 +12,7 @@ import { Button } from '@/app/components/ui/Button';
 import { Input, Select } from '@/app/components/ui/Input';
 import { Card, CardContent } from '@/app/components/ui/Card';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/app/components/ui/Modal';
+import styles from './ScheduleClient.module.css';
 
 const DAYS_OF_WEEK = [
   { value: 1, label: 'Thứ 2' },
@@ -25,16 +26,21 @@ const DAYS_OF_WEEK = [
 
 function ScheduleSkeleton() {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 'var(--space-4)', overflowX: 'auto', minWidth: '800px' }} className="animate-pulse">
-      {DAYS_OF_WEEK.map(day => (
-        <div key={day.value} className="bg-surface rounded-md border border-light overflow-hidden flex flex-col h-full min-h-[300px]">
-          <div className="bg-surface-hover p-3 font-semibold text-center border-b border-light h-10"></div>
-          <div className="p-3 flex-col gap-3 flex-1">
-            <div className="h-24 bg-surface-hover rounded w-full"></div>
-            <div className="h-24 bg-surface-hover rounded w-full"></div>
+    <div className={styles.boardScrollWrapper}>
+      <div className={`${styles.scheduleGrid} animate-pulse`}>
+        {DAYS_OF_WEEK.map(day => (
+          <div key={day.value} className={styles.dayColumn}>
+            <div className={styles.dayHeader}>
+              <span className={styles.dayTitle}>{day.label}</span>
+              <span className={styles.dayBadge}>--</span>
+            </div>
+            <div className={styles.dayBody}>
+              <div className="h-24 bg-surface-hover rounded-md w-full"></div>
+              <div className="h-24 bg-surface-hover rounded-md w-full"></div>
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
@@ -196,50 +202,86 @@ export default function ScheduleClient() {
       {isLoading ? (
         <ScheduleSkeleton />
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 'var(--space-4)', overflowX: 'auto', minWidth: '800px' }}>
-          {DAYS_OF_WEEK.map(day => {
-            const daySchedules = schedules.filter((s: any) => s.day_of_week === day.value).sort((a: any, b: any) => a.start_time.localeCompare(b.start_time));
-            
-            return (
-              <div key={day.value} className="bg-surface rounded-md border border-light overflow-hidden flex flex-col h-full min-h-[300px]">
-                <div className="bg-surface-hover p-3 font-semibold text-center border-b border-light text-main">
-                  {day.label}
-                </div>
-                <div className="p-3 flex-col gap-3 flex-1">
-                  {daySchedules.length === 0 ? (
-                    <div className="text-center text-muted text-sm italic py-4">Trống</div>
-                  ) : (
-                    daySchedules.map((s: any) => (
-                      <div key={s.id} className="bg-primary-light border border-primary text-primary p-2 rounded-md text-xs relative flex flex-col">
-                        <div className="font-bold mb-1">{s.start_time} - {s.end_time}</div>
-                        <div className="mb-1 truncate" title={s.venue_classes?.name}><strong>Lớp:</strong> {s.venue_classes?.name}</div>
-                        <div className="mb-1 truncate" title={s.coaches?.name}><strong>HLV:</strong> {s.coaches?.name}</div>
-                        <div className="mb-1 truncate" title={s.venues?.name}><strong>Phòng:</strong> {s.venues?.name}</div>
-                        {isAdminOrOwner && (
-                          <div className="flex gap-2 justify-end mt-2">
-                            <button 
-                              onClick={() => openEditModal(s)} 
-                              disabled={loading}
-                              className="text-primary hover:underline cursor-pointer border-none bg-transparent text-[10px]"
-                            >
-                              Sửa
-                            </button>
-                            <button 
-                              onClick={() => handleDelete(s.id)} 
-                              disabled={loading}
-                              className="text-danger hover:underline cursor-pointer border-none bg-transparent text-[10px]"
-                            >
-                              Ngừng
-                            </button>
-                          </div>
-                        )}
+        <div className={styles.boardScrollWrapper}>
+          <div className={styles.scheduleGrid}>
+            {DAYS_OF_WEEK.map(day => {
+              const daySchedules = schedules
+                .filter((s: any) => s.day_of_week === day.value)
+                .sort((a: any, b: any) => (a.start_time || '').localeCompare(b.start_time || ''));
+              
+              const count = daySchedules.length;
+
+              return (
+                <div key={day.value} className={styles.dayColumn}>
+                  <div className={styles.dayHeader}>
+                    <span className={styles.dayTitle}>{day.label}</span>
+                    <span className={`${styles.dayBadge} ${count > 0 ? styles.dayBadgeActive : ''}`}>
+                      {count} ca
+                    </span>
+                  </div>
+
+                  <div className={styles.dayBody}>
+                    {count === 0 ? (
+                      <div className={styles.emptyDay}>
+                        <span className={`material-icons-round ${styles.emptyDayIcon}`}>event_busy</span>
+                        <span>Không có ca dạy</span>
                       </div>
-                    ))
-                  )}
+                    ) : (
+                      daySchedules.map((s: any) => {
+                        const coachDisplayName = s.coachName || s.coaches?.name || 'Chưa gán HLV';
+                        return (
+                          <div key={s.id} className={styles.sessionCard}>
+                            <div className={styles.sessionTimeHeader}>
+                              <span className={styles.timePill}>
+                                <span className="material-icons-round">schedule</span>
+                                {s.start_time} - {s.end_time}
+                              </span>
+                            </div>
+
+                            <div className={styles.className} title={s.venue_classes?.name}>
+                              {s.venue_classes?.name || 'Chưa chọn lớp'}
+                            </div>
+
+                            <div className={styles.sessionMeta}>
+                              <div className={styles.metaRow} title={`HLV: ${coachDisplayName}`}>
+                                <span className="material-icons-round">person</span>
+                                <span>{coachDisplayName}</span>
+                              </div>
+                              <div className={styles.metaRow} title={`Địa điểm: ${s.venues?.name || 'Trụ sở chính'}`}>
+                                <span className="material-icons-round">place</span>
+                                <span>{s.venues?.name || 'Trụ sở chính'}</span>
+                              </div>
+                            </div>
+
+                            {isAdminOrOwner && (
+                              <div className={styles.sessionActions}>
+                                <button 
+                                  onClick={() => openEditModal(s)} 
+                                  disabled={loading}
+                                  className={`${styles.actionBtn} ${styles.actionBtnEdit}`}
+                                  title="Chỉnh sửa lịch"
+                                >
+                                  Sửa
+                                </button>
+                                <button 
+                                  onClick={() => handleDelete(s.id)} 
+                                  disabled={loading}
+                                  className={`${styles.actionBtn} ${styles.actionBtnDelete}`}
+                                  title="Xóa lịch này"
+                                >
+                                  Xóa
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

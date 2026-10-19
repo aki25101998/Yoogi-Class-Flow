@@ -5,9 +5,8 @@ import { useMySchedule } from '@/hooks/useMySchedule';
 
 // UI Components
 import { PageHeader } from '@/app/components/ui/PageHeader';
-import { Card } from '@/app/components/ui/Card';
-import { EmptyState } from '@/app/components/ui/EmptyState';
-import styles from '@/app/styles/page-standard.module.css';
+import { Card, CardContent } from '@/app/components/ui/Card';
+import styles from '../schedule/ScheduleClient.module.css';
 
 const DAYS_OF_WEEK = [
   { value: 1, label: 'Thứ 2' },
@@ -28,57 +27,93 @@ export default function MyScheduleClient() {
 
   if (!coachId) {
     return (
-      <div className="flex-col gap-6">
+      <div className="flex flex-col gap-6">
         <PageHeader title="Lịch dạy của tôi" />
         <Card>
-          <div className="p-6 text-danger font-medium">
+          <CardContent className="p-6 text-danger font-medium">
             Bạn chưa được liên kết với hồ sơ HLV nào trong hệ thống.
-          </div>
+          </CardContent>
         </Card>
       </div>
     );
   }
 
   return (
-    <div className="flex-col gap-6">
+    <div className="flex flex-col gap-6">
       <PageHeader 
         title="Lịch dạy của tôi" 
-        description="Lịch cố định hàng tuần của bạn"
+        description="Lịch giảng dạy cố định hàng tuần được phân công cho bạn"
       />
       
       {isLoading ? (
-        <div className="animate-pulse space-y-4">
-          <div className="h-32 bg-surface-hover rounded w-full"></div>
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-          {DAYS_OF_WEEK.map(day => {
-            const daySchedules = (schedules || []).filter((s: any) => s.day_of_week === day.value).sort((a: any, b: any) => a.start_time.localeCompare(b.start_time));
-            
-            return (
-              <div key={day.value} className="bg-surface rounded-md border border-light overflow-hidden">
-                <div className="bg-surface-hover p-3 font-bold text-center border-b border-light text-main">
-                  {day.label}
+        <div className={styles.boardScrollWrapper}>
+          <div className={`${styles.scheduleGrid} animate-pulse`}>
+            {DAYS_OF_WEEK.map(day => (
+              <div key={day.value} className={styles.dayColumn}>
+                <div className={styles.dayHeader}>
+                  <span className={styles.dayTitle}>{day.label}</span>
+                  <span className={styles.dayBadge}>--</span>
                 </div>
-                <div className="p-3 flex flex-col gap-3">
-                  {daySchedules.length === 0 ? (
-                    <div className="text-center text-muted text-sm italic py-4">Trống</div>
-                  ) : (
-                    daySchedules.map((s: any) => (
-                      <div key={s.id} className="bg-success-bg p-3 rounded-md border border-light text-sm">
-                        <div className="font-bold text-success mb-2">{s.start_time} - {s.end_time}</div>
-                        <div className="mb-1 text-main font-medium">{s.venue_classes?.name}</div>
-                        <div className="text-xs text-secondary flex items-center gap-1">
-                          <span className="material-icons-round text-[14px]">place</span>
-                          {s.venues?.name}
-                        </div>
-                      </div>
-                    ))
-                  )}
+                <div className={styles.dayBody}>
+                  <div className="h-24 bg-surface-hover rounded-md w-full"></div>
                 </div>
               </div>
-            );
-          })}
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className={styles.boardScrollWrapper}>
+          <div className={styles.scheduleGrid}>
+            {DAYS_OF_WEEK.map(day => {
+              const daySchedules = (schedules || [])
+                .filter((s: any) => s.day_of_week === day.value)
+                .sort((a: any, b: any) => (a.start_time || '').localeCompare(b.start_time || ''));
+              
+              const count = daySchedules.length;
+
+              return (
+                <div key={day.value} className={styles.dayColumn}>
+                  <div className={styles.dayHeader}>
+                    <span className={styles.dayTitle}>{day.label}</span>
+                    <span className={`${styles.dayBadge} ${count > 0 ? styles.dayBadgeActive : ''}`}>
+                      {count} ca
+                    </span>
+                  </div>
+
+                  <div className={styles.dayBody}>
+                    {count === 0 ? (
+                      <div className={styles.emptyDay}>
+                        <span className={`material-icons-round ${styles.emptyDayIcon}`}>event_available</span>
+                        <span>Không có lịch</span>
+                      </div>
+                    ) : (
+                      daySchedules.map((s: any) => (
+                        <div key={s.id} className={styles.sessionCard} style={{ borderLeftColor: 'var(--success)' }}>
+                          <div className={styles.sessionTimeHeader}>
+                            <span className={styles.timePill} style={{ backgroundColor: 'var(--success-bg)', color: 'var(--success)' }}>
+                              <span className="material-icons-round">schedule</span>
+                              {s.start_time} - {s.end_time}
+                            </span>
+                          </div>
+
+                          <div className={styles.className} title={s.venue_classes?.name}>
+                            {s.venue_classes?.name || 'Lớp học'}
+                          </div>
+
+                          <div className={styles.sessionMeta}>
+                            <div className={styles.metaRow} title={`Địa điểm: ${s.venues?.name || 'Trụ sở chính'}`}>
+                              <span className="material-icons-round">place</span>
+                              <span>{s.venues?.name || 'Trụ sở chính'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

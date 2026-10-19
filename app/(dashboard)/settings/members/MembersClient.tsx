@@ -93,7 +93,7 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
   };
 
   return (
-    <div className="flex-col gap-6">
+    <div className="flex flex-col gap-6">
       <PageHeader 
         title="Danh sách thành viên" 
         description="Quản lý thành viên và phân quyền trong trung tâm"
