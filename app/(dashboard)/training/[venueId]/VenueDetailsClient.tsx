@@ -207,6 +207,14 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
   const students = venue.students || [];
   const totalStudents = students.length;
 
+  const assignedCoachesSet = new Set<string>();
+  classes.forEach((c: any) => {
+    (c.coaches || []).forEach((coach: any) => {
+      if (coach.coach_id) assignedCoachesSet.add(coach.coach_id);
+    });
+  });
+  const totalAssignedCoaches = assignedCoachesSet.size;
+
   if (venue.classesError) {
     console.error('Lỗi khi tải danh sách lớp học:', venue.classesError);
   }
@@ -254,11 +262,14 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
       </div>
 
       {/* ═══════════════════════════════════════════════════════
-          OVERVIEW CARD — Single compact card with 3 KPIs
+          OVERVIEW CARD — Athletic 4-KPI Grid
           ═══════════════════════════════════════════════════════ */}
       <div className={styles.overviewCard}>
         <div className={styles.overviewHeader}>
-          <span className={styles.overviewTitle}>Tổng quan địa điểm</span>
+          <span className={styles.overviewTitle}>
+            <span className="material-icons-round" style={{ fontSize: 18, color: 'var(--primary)' }}>dashboard</span>
+            Tổng quan địa điểm
+          </span>
           <Badge variant={venue.status === 'active' ? 'success' : 'default'}>
             {venue.status === 'active' ? 'Đang hoạt động' : 'Ngừng hoạt động'}
           </Badge>
@@ -270,20 +281,38 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
               Lớp đang hoạt động
             </div>
             <div className={styles.kpiValue}>{activeClassesCount}</div>
+            <div className={styles.kpiCaption}>Lớp đang mở giảng dạy</div>
+            <span className={`material-icons-round ${styles.kpiWatermark}`}>bolt</span>
           </div>
+
+          <div className={`${styles.kpiItem} ${styles.kpiInfo}`}>
+            <div className={styles.kpiLabel}>
+              <span className={styles.kpiDot} />
+              Tổng lớp học
+            </div>
+            <div className={styles.kpiValue}>{classes.length}</div>
+            <div className={styles.kpiCaption}>Tất cả lớp tại cơ sở</div>
+            <span className={`material-icons-round ${styles.kpiWatermark}`}>school</span>
+          </div>
+
           <div className={`${styles.kpiItem} ${styles.kpiSuccess}`}>
             <div className={styles.kpiLabel}>
               <span className={styles.kpiDot} />
               Tổng học viên
             </div>
             <div className={styles.kpiValue}>{totalStudents}</div>
+            <div className={styles.kpiCaption}>Võ sinh đang theo học</div>
+            <span className={`material-icons-round ${styles.kpiWatermark}`}>groups</span>
           </div>
-          <div className={`${styles.kpiItem} ${styles.kpiStatus}`}>
+
+          <div className={`${styles.kpiItem} ${styles.kpiWarning}`}>
             <div className={styles.kpiLabel}>
               <span className={styles.kpiDot} />
-              Tổng lớp học
+              Đội ngũ HLV
             </div>
-            <div className={styles.kpiValue}>{classes.length}</div>
+            <div className={styles.kpiValue}>{totalAssignedCoaches}</div>
+            <div className={styles.kpiCaption}>HLV phân công tại đây</div>
+            <span className={`material-icons-round ${styles.kpiWatermark}`}>sports_martial_arts</span>
           </div>
         </div>
       </div>
