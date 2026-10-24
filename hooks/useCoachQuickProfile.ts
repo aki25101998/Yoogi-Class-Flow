@@ -128,7 +128,7 @@ export function useCoachQuickProfile(organizationId: string | undefined, coachId
       return {
         coach: {
           id: coachData.id,
-          name: coachData.nickname ? `${profile?.name} (${coachData.nickname})` : profile?.name || '-',
+          name: coachData.nickname?.trim() || profile?.name || '-',
           originalName: profile?.name || '-',
           nickname: coachData.nickname || '',
           email: profile?.email || '-',

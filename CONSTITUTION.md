@@ -736,6 +736,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-10-24 | 1.3.2 | Đồng bộ bố cục Overview KPI Grid 4 ô cân đối (Lớp hoạt động, Tổng lớp, Tổng học viên, Đội ngũ HLV) kèm watermark thể thao chìm cho trang Chi tiết địa điểm (/training/[venueId]) |
 | 2026-10-24 | 1.3.3 | Đồng bộ bố cục Overview KPI Grid 4 ô cân đối (Tổng lương tháng, Chờ duyệt, Cần thanh toán, Đã thanh toán) loại bỏ overviewHero rườm rà, bổ sung watermark tài chính cho trang Bảng lương (/payroll) |
 | 2026-10-24 | 1.3.4 | Căn chỉnh thẳng hàng cột thao tác (.entityActions justify-content: flex-start) trên danh sách Card-Row (trang Huấn luyện viên), đảm bảo nút "Xem thông tin" của Quản trị viên và các vai trò khác luôn thẳng tắp một hàng |
+| 2026-10-24 | 1.3.5 | Cập nhật quy tắc hiển thị tên HLV: khi đã cài đặt tên gợi nhớ (nickname), chỉ hiển thị duy nhất tên gợi nhớ (thay vì nối 'Tên gốc (Nickname)'), hỗ trợ tìm kiếm linh hoạt theo cả tên gốc và nickname |
 
 ---
 

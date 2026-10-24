@@ -47,13 +47,13 @@ export function useCoaches(organizationId: string | undefined) {
         }
         
         const originalName = m.profiles?.name || m.profiles?.email || '-';
-        const nickname = m.coaches?.[0]?.nickname || '';
+        const nickname = m.coaches?.[0]?.nickname?.trim() || '';
         const photoUrl = m.coaches?.[0]?.photo_url || m.profiles?.avatar_url || '';
         
         // Unified data structure for the UI
         return {
           ...m,
-          name: nickname ? `${originalName} (${nickname})` : originalName,
+          name: nickname || originalName,
           originalName,
           nickname,
           email: m.profiles?.email || '-',

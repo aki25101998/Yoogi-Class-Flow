@@ -210,6 +210,7 @@ export default function CoachesClient() {
       if (!normalizedSearch) return true;
       return (
         m.name?.toLowerCase().includes(normalizedSearch) ||
+        m.originalName?.toLowerCase().includes(normalizedSearch) ||
         m.email?.toLowerCase().includes(normalizedSearch) ||
         (m.nickname && m.nickname.toLowerCase().includes(normalizedSearch))
       );
@@ -221,6 +222,7 @@ export default function CoachesClient() {
       if (!normalizedSearch) return true;
       return (
         m.name?.toLowerCase().includes(normalizedSearch) ||
+        m.originalName?.toLowerCase().includes(normalizedSearch) ||
         m.email?.toLowerCase().includes(normalizedSearch) ||
         (m.nickname && m.nickname.toLowerCase().includes(normalizedSearch))
       );
@@ -525,7 +527,7 @@ export default function CoachesClient() {
                     {m.photoUrl ? (
                       <img src={m.photoUrl} alt={m.name} className={styles.entityAvatarImg} />
                     ) : (
-                      <span>{m.originalName?.[0]?.toUpperCase() || 'H'}</span>
+                      <span>{(m.name || m.originalName)?.[0]?.toUpperCase() || 'H'}</span>
                     )}
                   </div>
 
@@ -619,7 +621,7 @@ export default function CoachesClient() {
                     {m.photoUrl ? (
                       <img src={m.photoUrl} alt={m.name} className={styles.entityAvatarImg} />
                     ) : (
-                      <span>{m.originalName?.[0]?.toUpperCase() || 'H'}</span>
+                      <span>{(m.name || m.originalName)?.[0]?.toUpperCase() || 'H'}</span>
                     )}
                   </div>
 
