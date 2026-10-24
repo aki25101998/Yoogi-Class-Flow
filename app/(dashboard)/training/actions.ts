@@ -7,33 +7,44 @@ import { assignCoachToClass, removeCoachFromClass } from '@/services/class-coach
 
 // --- VENUES ---
 
-export async function addVenueAction(data: { name: string; address?: string; status?: string }) {
+export async function addVenueAction(data: { name: string; address?: string; status?: string; image_url?: string }) {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
   const supabase = await createClient();
   
-  const { error } = await supabase.from('venues').insert({
+  const insertPayload: any = {
     organization_id: context.organization.id,
     name: data.name,
     address: data.address,
     status: data.status || 'active'
-  });
+  };
+  if (data.image_url !== undefined) {
+    insertPayload.image_url = data.image_url;
+  }
+
+  const { data: newVenue, error } = await supabase
+    .from('venues')
+    .insert(insertPayload)
+    .select('id')
+    .single();
 
   if (error) return { success: false, error: error.message };
   
   revalidatePath('/training');
-  return { success: true };
+  return { success: true, venueId: newVenue?.id };
 }
 
-export async function updateVenueAction(id: string, data: { name: string; address?: string; status?: string }) {
+export async function updateVenueAction(id: string, data: { name: string; address?: string; status?: string; image_url?: string }) {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
   const supabase = await createClient();
   
+  const updatePayload: any = { ...data };
+
   const { error } = await supabase.from('venues')
-    .update(data)
+    .update(updatePayload)
     .eq('id', id)
     .eq('organization_id', context.organization.id);
 
@@ -41,6 +52,67 @@ export async function updateVenueAction(id: string, data: { name: string; addres
   
   revalidatePath('/training');
   return { success: true };
+}
+
+export async function uploadVenueImageAction(venueId: string, formData: FormData) {
+  const context = await getCurrentOrganizationContext();
+  if (!context || !context.organization || !context.membership) return { success: false, error: 'Access Denied' };
+  
+  if (context.membership.role !== 'owner' && context.membership.role !== 'admin') {
+    return { success: false, error: 'Permission Denied' };
+  }
+
+  const imageFile = formData.get('image');
+  if (!(imageFile instanceof File) || imageFile.size === 0) {
+    return { success: false, error: 'File ảnh không hợp lệ' };
+  }
+
+  if (imageFile.size > 5 * 1024 * 1024) {
+    return { success: false, error: 'Kích thước ảnh không được vượt quá 5MB.' };
+  }
+
+  const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  if (!ALLOWED_MIME_TYPES.includes(imageFile.type)) {
+    return { success: false, error: 'Định dạng ảnh không được hỗ trợ (chỉ chấp nhận JPG, PNG, WEBP).' };
+  }
+
+  const supabase = await createClient();
+  const fileExt = imageFile.type === 'image/jpeg' ? 'jpg' : imageFile.type === 'image/png' ? 'png' : 'webp';
+  const fileName = `venue-${venueId}-${crypto.randomUUID()}.${fileExt}`;
+  const filePath = `venues/${fileName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(filePath, imageFile, {
+      cacheControl: '3600',
+      upsert: true,
+      contentType: imageFile.type,
+    });
+
+  if (uploadError) {
+    console.error('Upload venue image error:', uploadError);
+    return { success: false, error: 'Không thể tải ảnh địa điểm lên.' };
+  } 
+
+  const { data: publicUrlData } = supabase.storage
+    .from('avatars')
+    .getPublicUrl(filePath);
+
+  const imageUrl = publicUrlData.publicUrl;
+
+  const { error: updateError } = await supabase
+    .from('venues')
+    .update({ image_url: imageUrl })
+    .eq('id', venueId)
+    .eq('organization_id', context.organization.id);
+
+  if (updateError) {
+    console.error('Update venue image_url error:', updateError);
+    return { success: false, error: 'Tải ảnh lên thành công nhưng không thể cập nhật địa điểm.' };
+  }
+
+  revalidatePath('/training');
+  return { success: true, imageUrl };
 }
 
 export async function importVenuesBatchAction(venues: any[]) {

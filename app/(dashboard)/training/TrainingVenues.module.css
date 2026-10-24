@@ -1,0 +1,379 @@
+/* ==========================================================================
+   TRAINING VENUES — Athletic Card Grid & Photo Upload System
+   ========================================================================== */
+
+.venuesGrid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 24px;
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-8);
+}
+
+@media (min-width: 640px) {
+  .venuesGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1080px) {
+  .venuesGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ==========================================================================
+   VENUE CARD
+   ========================================================================== */
+.venueCard {
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.venueCard:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+  border-color: rgba(20, 184, 166, 0.45);
+}
+
+/* ==========================================================================
+   IMAGE CONTAINER & BANNER
+   ========================================================================== */
+.venueImageContainer {
+  position: relative;
+  height: 195px;
+  width: 100%;
+  overflow: hidden;
+  background: var(--surface-hover);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.venueImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.venueCard:hover .venueImage {
+  transform: scale(1.06);
+}
+
+.venuePlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 14%, var(--surface)) 0%, color-mix(in srgb, var(--warning) 10%, var(--surface-hover)) 100%);
+  overflow: hidden;
+}
+
+.venuePlaceholderWatermark {
+  position: absolute;
+  right: -10px;
+  bottom: -15px;
+  font-size: 110px;
+  line-height: 1;
+  color: var(--primary);
+  opacity: 0.12;
+  pointer-events: none;
+  user-select: none;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.venueCard:hover .venuePlaceholderWatermark {
+  opacity: 0.22;
+  transform: scale(1.1) rotate(-5deg);
+}
+
+.venuePlaceholderBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+  color: var(--text-main);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  z-index: 1;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+:global([data-theme='dark']) .venuePlaceholderBadge {
+  background: rgba(18, 24, 38, 0.75);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-main);
+}
+
+.venueStatusOverlay {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  backdrop-filter: blur(8px);
+  border-radius: var(--radius-full);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.quickUploadBtn {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  z-index: 2;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+}
+
+:global([data-theme='dark']) .quickUploadBtn {
+  background: rgba(18, 24, 38, 0.85);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.quickUploadBtn:hover {
+  background: var(--primary);
+  color: #fff;
+  transform: scale(1.1);
+  box-shadow: 0 4px 14px rgba(20, 184, 166, 0.4);
+}
+
+/* ==========================================================================
+   VENUE CARD BODY
+   ========================================================================== */
+.venueBody {
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+}
+
+.venueTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.venueName {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-main);
+  text-decoration: none;
+  line-height: 1.35;
+  transition: color 0.15s ease;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.venueName:hover {
+  color: var(--primary);
+}
+
+.venueAddress {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  min-height: 2.8em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.venueAddressIcon {
+  font-size: 16px;
+  color: var(--primary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* ==========================================================================
+   METRICS GRID (2-column pill box)
+   ========================================================================== */
+.venueStats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--surface-hover);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-light);
+}
+
+.venueStatItem {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.venueStatLabel {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.venueStatIcon {
+  font-size: 14px;
+  color: var(--primary);
+}
+
+.venueStatValue {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.2;
+}
+
+/* ==========================================================================
+   VENUE FOOTER (Actions)
+   ========================================================================== */
+.venueFooter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-light);
+}
+
+/* ==========================================================================
+   MODAL IMAGE UPLOAD DROPZONE
+   ========================================================================== */
+.modalImageSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.modalImageLabel {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.modalImagePreviewBox {
+  position: relative;
+  width: 100%;
+  height: 160px;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  border: 2px dashed var(--border);
+  background: var(--surface-hover);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modalImagePreviewBox:hover {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 5%, var(--surface-hover));
+}
+
+.modalImagePreviewImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.modalImageOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.modalImagePreviewBox:hover .modalImageOverlay {
+  opacity: 1;
+}
+
+.modalImageEmptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-align: center;
+  padding: 16px;
+}
+
+.modalImageEmptyIcon {
+  font-size: 36px;
+  color: var(--primary);
+}
+
+.modalImageHelp {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.modalImageRemoveBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 5;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.9);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.modalImageRemoveBtn:hover {
+  transform: scale(1.1);
+  background: #dc2626;
+}
