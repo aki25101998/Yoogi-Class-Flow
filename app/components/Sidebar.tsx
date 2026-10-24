@@ -95,13 +95,14 @@ function NavItemComponent({ item, pathname, checkIsActive, setIsSidebarOpen, pre
                   onMouseEnter={() => prefetch(sub.route)}
                   style={{
                     display: 'block',
-                    padding: '8px 12px',
+                    padding: '8px 14px',
                     fontSize: '13px',
                     color: isSubActive ? 'var(--primary)' : 'var(--text-secondary)',
                     fontWeight: isSubActive ? 600 : 500,
                     textDecoration: 'none',
-                    borderRadius: 'var(--radius-md)',
+                    borderRadius: 'var(--radius-full)',
                     background: isSubActive ? 'var(--primary-light)' : 'transparent',
+                    boxShadow: isSubActive ? 'inset 0 0 0 1px rgba(20, 184, 166, 0.2)' : 'none',
                     transition: 'all 0.2s'
                   }}
                   onMouseLeave={(e) => {

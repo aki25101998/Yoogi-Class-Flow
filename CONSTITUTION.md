@@ -548,21 +548,29 @@ FOREIGN KEY (organization_id, venue_id)
 
 ### 12.1 Design System
 
-**Theme:** Indigo/Violet (Stripe-inspired)  
-**Primary color:** `#6366f1` (Indigo 500)  
-**Font:** Inter  
-**Hỗ trợ:** Light Mode + Dark Mode (toggle trong sidebar)
+**Theme:** Vibrant Athletic & Martial Arts (High-Energy Contrast)  
+**Primary color:** `#14B8A6` (Electric Teal 500)  
+**Accent Energy color:** `#FF6B35` (Vibrant Coral / Sunset Fire)  
+**Font:** Inter & Plus Jakarta Sans  
+**Border Radius Philosophy:** Generous radii (Cards: `20px - 28px` / `var(--radius-xl)` & `var(--radius-2xl)`, Buttons/Inputs/Pills: `9999px` / `var(--radius-full)`)  
+**Hỗ trợ:** Light Mode (Warm Athletic Cream `#FAF9F6`) + Dark Mode (Deep Obsidian `#090A0F`) toggle trong sidebar
 
 ### 12.2 CSS Variables
 
 MỌI styling PHẢI dùng CSS Variables từ `globals.css`:
 ```css
-var(--primary)          /* #6366f1 */
-var(--surface)          /* Background chính */
+var(--primary)          /* #14B8A6 - Electric Teal */
+var(--primary-hover)    /* #0D9488 - Teal 600 */
+var(--primary-light)    /* rgba(20, 184, 166, 0.12) */
+var(--accent-energy)    /* #FF6B35 - Vibrant Coral Orange */
+var(--surface)          /* Card & Panel background */
 var(--text-main)        /* Text chính */
 var(--border-light)     /* Border nhẹ */
-var(--radius-md)        /* Border radius 0.5rem */
-var(--shadow-md)        /* Shadow trung bình */
+var(--radius-full)      /* Pill 9999px (Buttons, Search, Badges) */
+var(--radius-xl)        /* 20px (Entity cards) */
+var(--radius-2xl)       /* 28px (Overview containers) */
+var(--shadow-teal-glow) /* Glow hiệu ứng Teal năng động */
+var(--shadow-coral-glow)/* Glow hiệu ứng Coral rực cháy */
 ```
 
 **KHÔNG hardcode giá trị màu/kích thước** — Luôn dùng CSS variable.
@@ -572,9 +580,10 @@ var(--shadow-md)        /* Shadow trung bình */
 Dark mode kích hoạt qua `data-theme="dark"` trên `<html>`. CSS Variables tự động override:
 ```css
 [data-theme="dark"] {
-  --background: #0B0B0D;
-  --surface: #121214;
-  --text-main: #F4F4F5;
+  --background: #090A0F;
+  --surface: #11141C;
+  --surface-hover: #171B26;
+  --text-main: #F8FAFC;
   /* ... */
 }
 ```
@@ -722,6 +731,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-09-07 | 1.0.1 | Thêm quy tắc Refactor Database (3.6) và làm rõ query Identity Chain (3.1) |
 | 2026-10-19 | 1.1.0 | Chuẩn hóa toàn diện CSS Design System (app/globals.css), loại bỏ triệt để lỗi Phantom Tailwind, thiết kế mới giao diện Lịch Dạy tuần (ScheduleClient / MyScheduleClient), tối ưu Dark/Light mode và trang Hồ sơ cá nhân |
 | 2026-10-24 | 1.2.0 | Triển khai giao diện Card-Row Entity List, Overview Card và Toolbar Instant Search cho trang Huấn luyện viên (CoachesClient), chuẩn hóa page-standard.module.css, dọn dẹp bảo mật tệp tạm |
+| 2026-10-24 | 1.3.0 | Nâng cấp toàn diện Vibrant Athletic & Martial Arts Design System (Teal #14B8A6 + Coral Orange #FF6B35, Warm cream light mode #FAF9F6, Deep obsidian dark mode #090A0F, pill buttons, diffused glows, 20-28px card elevation) |
 
 ---
 
