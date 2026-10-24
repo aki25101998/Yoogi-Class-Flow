@@ -118,23 +118,31 @@
 .overviewCard {
   background: var(--surface);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-2xl);
   overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease;
+  margin-bottom: var(--space-6);
 }
 
 .overviewHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px 0;
+  padding: 16px 24px;
+  background: var(--surface-hover);
+  border-bottom: 1px solid var(--border-light);
 }
 
 .overviewTitle {
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.8125rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--text-muted);
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .overviewMonth {
@@ -143,82 +151,126 @@
   font-weight: 500;
 }
 
-.overviewHero {
-  padding: 16px 24px 0;
-}
-
-.overviewHeroLabel {
-  font-size: 0.8125rem;
-  color: var(--text-secondary);
-  margin-bottom: 4px;
-}
-
-.overviewHeroAmount {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--text-main);
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-}
-
 .overviewGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  padding: 20px 24px 24px;
+  grid-template-columns: repeat(1, 1fr);
+  gap: var(--space-4);
+  padding: 20px 24px;
+}
+
+@media (min-width: 640px) {
+  .overviewGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .overviewGrid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
 }
 
 .overviewKPI {
-  padding: 14px 16px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-light);
+  position: relative;
+  overflow: hidden;
+  padding: 16px 20px;
+  border-radius: 18px;
   background: var(--surface-hover);
-  transition: border-color 0.15s;
+  border: 1px solid var(--border-light);
+  border-left: 4px solid transparent;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .overviewKPI:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
   border-color: var(--border);
 }
 
+.kpiPrimary { 
+  border-left-color: var(--primary); 
+  background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 8%, var(--surface)) 0%, var(--surface-hover) 100%);
+}
+.kpiSuccess { 
+  border-left-color: var(--success); 
+  background: linear-gradient(135deg, color-mix(in srgb, var(--success) 8%, var(--surface)) 0%, var(--surface-hover) 100%);
+}
+.kpiWarning { 
+  border-left-color: var(--warning); 
+  background: linear-gradient(135deg, color-mix(in srgb, var(--warning) 8%, var(--surface)) 0%, var(--surface-hover) 100%);
+}
+.kpiDanger { 
+  border-left-color: var(--danger); 
+  background: linear-gradient(135deg, color-mix(in srgb, var(--danger) 8%, var(--surface)) 0%, var(--surface-hover) 100%);
+}
+.kpiInfo { 
+  border-left-color: var(--info); 
+  background: linear-gradient(135deg, color-mix(in srgb, var(--info) 8%, var(--surface)) 0%, var(--surface-hover) 100%);
+}
+
 .kpiLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   font-size: 0.6875rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-bottom: 6px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-1);
+  line-height: 1.1;
 }
 
 .kpiDot {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  display: inline-block;
-  flex-shrink: 0;
+  background: currentColor;
 }
+
+.overviewKPI.kpiPrimary .kpiDot { color: var(--primary); }
+.overviewKPI.kpiSuccess .kpiDot { color: var(--success); }
+.overviewKPI.kpiWarning .kpiDot { color: var(--warning); }
+.overviewKPI.kpiDanger .kpiDot { color: var(--danger); }
+.overviewKPI.kpiInfo .kpiDot { color: var(--info); }
 
 .kpiValue {
-  font-size: 1.25rem;
+  font-size: 1.35rem;
   font-weight: 700;
-  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
+  line-height: 1.25;
+}
+.overviewKPI.kpiPrimary .kpiValue { color: var(--primary); }
+.overviewKPI.kpiSuccess .kpiValue { color: var(--success); }
+.overviewKPI.kpiWarning .kpiValue { color: var(--warning); }
+.overviewKPI.kpiDanger .kpiValue { color: var(--danger); }
+.overviewKPI.kpiInfo .kpiValue { color: var(--info); }
+
+.kpiCaption {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  font-weight: 500;
+  line-height: 1.25;
 }
 
-.kpiWarning .kpiLabel { color: var(--warning); }
-.kpiWarning .kpiDot { background: var(--warning); }
-.kpiWarning .kpiValue { color: var(--warning); }
-.kpiWarning { border-color: color-mix(in srgb, var(--warning) 25%, transparent); }
+.kpiWatermark {
+  position: absolute;
+  right: 14px;
+  bottom: 8px;
+  font-size: 38px;
+  line-height: 1;
+  opacity: 0.12;
+  pointer-events: none;
+  user-select: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
 
-.kpiPrimary .kpiLabel { color: var(--primary); }
-.kpiPrimary .kpiDot { background: var(--primary); }
-.kpiPrimary .kpiValue { color: var(--primary); }
-.kpiPrimary { border-color: color-mix(in srgb, var(--primary) 25%, transparent); }
-
-.kpiSuccess .kpiLabel { color: var(--success); }
-.kpiSuccess .kpiDot { background: var(--success); }
-.kpiSuccess .kpiValue { color: var(--success); }
-.kpiSuccess { border-color: color-mix(in srgb, var(--success) 25%, transparent); }
+.overviewKPI:hover .kpiWatermark {
+  opacity: 0.2;
+  transform: scale(1.08);
+}
 
 /* ==========================================================================
    SEARCH & FILTER TOOLBAR

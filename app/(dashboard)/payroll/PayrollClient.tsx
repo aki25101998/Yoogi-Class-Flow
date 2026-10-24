@@ -49,13 +49,9 @@ function PayrollSkeleton() {
           <div className={`${styles.skeletonBar} ${styles.skeletonPulse}`} style={{ width: 180, height: 14 }} />
           <div className={`${styles.skeletonBar} ${styles.skeletonPulse}`} style={{ width: 100, height: 14 }} />
         </div>
-        <div className={styles.overviewHero} style={{ paddingBottom: 0 }}>
-          <div className={`${styles.skeletonBar} ${styles.skeletonPulse}`} style={{ width: 100, height: 12, marginBottom: 8 }} />
-          <div className={`${styles.skeletonBar} ${styles.skeletonPulse}`} style={{ width: 200, height: 36 }} />
-        </div>
         <div className={styles.overviewGrid}>
-          {[1, 2, 3].map(i => (
-            <div key={i} className={`${styles.overviewKPI} ${styles.skeletonPulse}`} style={{ minHeight: 64 }} />
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className={`${styles.overviewKPI} ${styles.skeletonPulse}`} style={{ minHeight: 88, borderRadius: 18 }} />
           ))}
         </div>
       </div>
@@ -369,38 +365,57 @@ export default function PayrollClient() {
       )}
 
       {/* ═══════════════════════════════════════════════════════
-          MONTHLY OVERVIEW
+          MONTHLY OVERVIEW — Athletic 4-KPI Grid
           ═══════════════════════════════════════════════════════ */}
       <div className={styles.overviewCard}>
         <div className={styles.overviewHeader}>
-          <span className={styles.overviewTitle}>Tổng quan lương tháng</span>
-          <span className={styles.overviewMonth}>{getCurrentMonthLabel()}</span>
-        </div>
-        <div className={styles.overviewHero}>
-          <div className={styles.overviewHeroLabel}>Tổng lương</div>
-          <div className={styles.overviewHeroAmount}>{formatFullVND(globalKPIs.totalCalculated)} đ</div>
+          <span className={styles.overviewTitle}>
+            <span className="material-icons-round" style={{ fontSize: 18, color: 'var(--primary)' }}>dashboard</span>
+            Tổng quan lương tháng
+          </span>
+          <Badge variant="default">
+            {getCurrentMonthLabel()}
+          </Badge>
         </div>
         <div className={styles.overviewGrid}>
+          <div className={`${styles.overviewKPI} ${styles.kpiPrimary}`}>
+            <div className={styles.kpiLabel}>
+              <span className={styles.kpiDot} />
+              Tổng lương tháng
+            </div>
+            <div className={styles.kpiValue}>{formatFullVND(globalKPIs.totalCalculated)} đ</div>
+            <div className={styles.kpiCaption}>Tổng chi phí lương dự tính</div>
+            <span className={`material-icons-round ${styles.kpiWatermark}`}>payments</span>
+          </div>
+
           <div className={`${styles.overviewKPI} ${styles.kpiWarning}`}>
             <div className={styles.kpiLabel}>
               <span className={styles.kpiDot} />
               Chờ duyệt
             </div>
             <div className={styles.kpiValue}>{formatFullVND(globalKPIs.totalUnapproved)} đ</div>
+            <div className={styles.kpiCaption}>Buổi dạy chưa chốt duyệt</div>
+            <span className={`material-icons-round ${styles.kpiWatermark}`}>pending_actions</span>
           </div>
-          <div className={`${styles.overviewKPI} ${styles.kpiPrimary}`}>
+
+          <div className={`${styles.overviewKPI} ${styles.kpiInfo}`}>
             <div className={styles.kpiLabel}>
               <span className={styles.kpiDot} />
               Cần thanh toán
             </div>
             <div className={styles.kpiValue}>{formatFullVND(globalKPIs.totalApproved)} đ</div>
+            <div className={styles.kpiCaption}>Đã duyệt, chờ chi trả</div>
+            <span className={`material-icons-round ${styles.kpiWatermark}`}>account_balance_wallet</span>
           </div>
+
           <div className={`${styles.overviewKPI} ${styles.kpiSuccess}`}>
             <div className={styles.kpiLabel}>
               <span className={styles.kpiDot} />
               Đã thanh toán
             </div>
             <div className={styles.kpiValue}>{formatFullVND(globalKPIs.totalPaid)} đ</div>
+            <div className={styles.kpiCaption}>Đã hoàn tất thanh toán</div>
+            <span className={`material-icons-round ${styles.kpiWatermark}`}>check_circle</span>
           </div>
         </div>
       </div>

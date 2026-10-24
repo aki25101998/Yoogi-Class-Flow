@@ -734,6 +734,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-10-24 | 1.3.0 | Nâng cấp toàn diện Vibrant Athletic & Martial Arts Design System (Teal #14B8A6 + Coral Orange #FF6B35, Warm cream light mode #FAF9F6, Deep obsidian dark mode #090A0F, pill buttons, diffused glows, 20-28px card elevation) |
 | 2026-10-24 | 1.3.1 | Chuẩn hóa bố cục Overview KPI Grid 4 ô cân đối, bổ sung watermark võ đạo chìm (.kpiWatermark) và chú thích (.kpiCaption), chuyển overviewGrid sang auto-fit loại bỏ ô trống thừa thãi |
 | 2026-10-24 | 1.3.2 | Đồng bộ bố cục Overview KPI Grid 4 ô cân đối (Lớp hoạt động, Tổng lớp, Tổng học viên, Đội ngũ HLV) kèm watermark thể thao chìm cho trang Chi tiết địa điểm (/training/[venueId]) |
+| 2026-10-24 | 1.3.3 | Đồng bộ bố cục Overview KPI Grid 4 ô cân đối (Tổng lương tháng, Chờ duyệt, Cần thanh toán, Đã thanh toán) loại bỏ overviewHero rườm rà, bổ sung watermark tài chính cho trang Bảng lương (/payroll) |
 
 ---
 
