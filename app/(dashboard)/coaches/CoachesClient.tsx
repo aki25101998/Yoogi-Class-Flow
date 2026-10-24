@@ -35,13 +35,13 @@ function CoachSkeleton() {
   return (
     <div className={`${styles.cardSkeleton} animate-pulse`}>
       <div className={styles.entityAvatar} style={{ background: 'var(--surface-hover)' }} />
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <div style={{ height: '16px', background: 'var(--surface-hover)', borderRadius: 'var(--radius-sm)', width: '35%' }} />
         <div style={{ height: '12px', background: 'var(--surface-hover)', borderRadius: 'var(--radius-sm)', width: '50%' }} />
       </div>
-      <div style={{ height: '24px', background: 'var(--surface-hover)', borderRadius: 'var(--radius-full)', width: '80px' }} />
-      <div style={{ height: '32px', background: 'var(--surface-hover)', borderRadius: 'var(--radius-sm)', width: '90px' }} />
-      <div style={{ height: '32px', background: 'var(--surface-hover)', borderRadius: 'var(--radius-md)', width: '120px' }} />
+      <div style={{ height: '24px', background: 'var(--surface-hover)', borderRadius: 'var(--radius-full)', width: '90px' }} />
+      <div style={{ height: '32px', background: 'var(--surface-hover)', borderRadius: 'var(--radius-sm)', width: '100px' }} />
+      <div style={{ height: '32px', background: 'var(--surface-hover)', borderRadius: 'var(--radius-full)', width: '140px', justifySelf: 'flex-end' }} />
     </div>
   );
 }
