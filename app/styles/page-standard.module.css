@@ -488,7 +488,7 @@
   border-radius: var(--radius-xl);
   padding: 16px 22px;
   display: grid;
-  grid-template-columns: 48px 1fr 140px 140px 220px;
+  grid-template-columns: 48px 1fr 140px 140px 240px;
   align-items: center;
   gap: 20px;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -597,10 +597,11 @@
 .entityActions {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 8px;
-  width: 220px;
+  width: 240px;
   flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .quickEditBtn {
@@ -631,7 +632,7 @@
   border-radius: var(--radius-xl);
   padding: 16px 22px;
   display: grid;
-  grid-template-columns: 48px 1fr 140px 140px 220px;
+  grid-template-columns: 48px 1fr 140px 140px 240px;
   align-items: center;
   gap: 20px;
 }
@@ -645,7 +646,7 @@
   }
   .entityBadge { width: 115px; }
   .entityMetric { width: 120px; }
-  .entityActions { width: auto; }
+  .entityActions { width: auto; justify-content: flex-start; }
 }
 
 /* Responsive for Mobile (< 768px) */
