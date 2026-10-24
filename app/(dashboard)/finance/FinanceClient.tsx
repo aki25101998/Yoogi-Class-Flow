@@ -116,14 +116,20 @@ export default function FinanceClient() {
               <div className={`${styles.kpiItem} ${styles.kpiSuccess}`}>
                 <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Tổng thu</div>
                 <div className={styles.kpiValue}>{totalIncome.toLocaleString('vi-VN')} đ</div>
+                <div className={styles.kpiCaption}>Khoản thu đã ghi nhận</div>
+                <span className={`material-icons-round ${styles.kpiWatermark}`} style={{ color: 'var(--success)' }}>trending_up</span>
               </div>
               <div className={`${styles.kpiItem} ${styles.kpiDanger}`}>
                 <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Tổng chi</div>
                 <div className={styles.kpiValue}>{totalExpense.toLocaleString('vi-VN')} đ</div>
+                <div className={styles.kpiCaption}>Chi phí hoạt động</div>
+                <span className={`material-icons-round ${styles.kpiWatermark}`} style={{ color: 'var(--danger)' }}>trending_down</span>
               </div>
               <div className={`${styles.kpiItem} ${balance >= 0 ? styles.kpiPrimary : styles.kpiDanger}`}>
                 <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Số dư (Lợi nhuận)</div>
                 <div className={styles.kpiValue}>{balance.toLocaleString('vi-VN')} đ</div>
+                <div className={styles.kpiCaption}>Lợi nhuận ròng hiện tại</div>
+                <span className={`material-icons-round ${styles.kpiWatermark}`} style={{ color: balance >= 0 ? 'var(--primary)' : 'var(--danger)' }}>account_balance_wallet</span>
               </div>
             </div>
           </div>

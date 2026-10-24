@@ -127,18 +127,24 @@ export default function DashboardClient() {
               <div className={`${styles.kpiItem} ${styles.kpiPrimary}`}>
                 <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Huấn luyện viên</div>
                 <div className={styles.kpiValue}>{stats.coachCount}</div>
+                <div className={styles.kpiCaption}>Đội ngũ giảng dạy</div>
+                <span className={`material-icons-round ${styles.kpiWatermark}`} style={{ color: 'var(--primary)' }}>sports_martial_arts</span>
               </div>
             )}
 
             <div className={`${styles.kpiItem} ${styles.kpiInfo}`}>
               <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> {isAdminOrOwner ? 'Lớp học đang mở' : 'Lớp được phân công'}</div>
               <div className={styles.kpiValue}>{stats.classCount}</div>
+              <div className={styles.kpiCaption}>Lớp học hoạt động</div>
+              <span className={`material-icons-round ${styles.kpiWatermark}`} style={{ color: 'var(--info)' }}>school</span>
             </div>
 
             {isAdminOrOwner && (
               <div className={`${styles.kpiItem} ${styles.kpiSuccess}`}>
                 <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Học viên</div>
                 <div className={styles.kpiValue}>{stats.studentCount}</div>
+                <div className={styles.kpiCaption}>Võ sinh đăng ký</div>
+                <span className={`material-icons-round ${styles.kpiWatermark}`} style={{ color: 'var(--success)' }}>groups</span>
               </div>
             )}
 
@@ -146,6 +152,8 @@ export default function DashboardClient() {
               <div className={`${styles.kpiItem} ${styles.kpiWarning}`}>
                 <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Địa điểm</div>
                 <div className={styles.kpiValue}>{stats.venueCount}</div>
+                <div className={styles.kpiCaption}>Cơ sở & chi nhánh</div>
+                <span className={`material-icons-round ${styles.kpiWatermark}`} style={{ color: 'var(--warning)' }}>place</span>
               </div>
             )}
           </>

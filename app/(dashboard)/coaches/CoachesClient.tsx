@@ -371,21 +371,40 @@ export default function CoachesClient() {
         <div className={styles.overviewHeader}>
           <div className={styles.overviewTitle}>TỔNG QUAN HUẤN LUYỆN VIÊN</div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-            Tổng cộng: <strong style={{ color: 'var(--text-main)' }}>{totalCount}</strong> nhân sự
+            Cập nhật theo thời gian thực
           </div>
         </div>
         <div className={styles.overviewGrid}>
+          {/* Card 1: Tổng nhân sự */}
           <div className={`${styles.kpiItem} ${styles.kpiPrimary}`}>
+            <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Tổng nhân sự</div>
+            <div className={styles.kpiValue}>{totalCount}</div>
+            <div className={styles.kpiCaption}>Toàn bộ đội ngũ HLV</div>
+            <span className={`material-icons-round ${styles.kpiWatermark}`} style={{ color: 'var(--primary)' }}>sports_martial_arts</span>
+          </div>
+
+          {/* Card 2: Đang hoạt động */}
+          <div className={`${styles.kpiItem} ${styles.kpiSuccess}`}>
             <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Đang hoạt động</div>
             <div className={styles.kpiValue}>{activeCount}</div>
+            <div className={styles.kpiCaption}>Sẵn sàng đứng lớp</div>
+            <span className={`material-icons-round ${styles.kpiWatermark}`} style={{ color: 'var(--success)' }}>bolt</span>
           </div>
+
+          {/* Card 3: Lời mời chờ */}
           <div className={`${styles.kpiItem} ${styles.kpiWarning}`}>
             <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Lời mời chờ</div>
             <div className={styles.kpiValue}>{invitationsCount}</div>
+            <div className={styles.kpiCaption}>Chờ HLV chấp thuận</div>
+            <span className={`material-icons-round ${styles.kpiWatermark}`} style={{ color: 'var(--warning)' }}>mail</span>
           </div>
+
+          {/* Card 4: Đã tạm ngưng */}
           <div className={`${styles.kpiItem} ${styles.kpiDanger}`}>
             <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Đã tạm ngưng</div>
             <div className={styles.kpiValue}>{suspendedCount}</div>
+            <div className={styles.kpiCaption}>Nghỉ phép hoặc tạm ngưng</div>
+            <span className={`material-icons-round ${styles.kpiWatermark}`} style={{ color: 'var(--danger)' }}>pause_circle</span>
           </div>
         </div>
       </div>
