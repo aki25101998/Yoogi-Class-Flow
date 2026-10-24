@@ -7,7 +7,7 @@ import { assignCoachToClass, removeCoachFromClass } from '@/services/class-coach
 
 // --- VENUES ---
 
-export async function addVenueAction(data: { name: string; address?: string; status?: string; image_url?: string }) {
+export async function addVenueAction(data: { name: string; address?: string; status?: string; image_url?: string; image_position?: string }) {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
@@ -22,6 +22,9 @@ export async function addVenueAction(data: { name: string; address?: string; sta
   if (data.image_url !== undefined) {
     insertPayload.image_url = data.image_url;
   }
+  if (data.image_position !== undefined) {
+    insertPayload.image_position = data.image_position;
+  }
 
   const { data: newVenue, error } = await supabase
     .from('venues')
@@ -35,7 +38,7 @@ export async function addVenueAction(data: { name: string; address?: string; sta
   return { success: true, venueId: newVenue?.id };
 }
 
-export async function updateVenueAction(id: string, data: { name: string; address?: string; status?: string; image_url?: string }) {
+export async function updateVenueAction(id: string, data: { name: string; address?: string; status?: string; image_url?: string; image_position?: string }) {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
@@ -50,6 +53,21 @@ export async function updateVenueAction(id: string, data: { name: string; addres
 
   if (error) return { success: false, error: error.message };
   
+  revalidatePath('/training');
+  return { success: true };
+}
+
+export async function updateVenueImagePositionAction(id: string, position: string) {
+  const context = await getCurrentOrganizationContext();
+  if (!context || !context.organization) return { success: false, error: 'Access Denied' };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from('venues')
+    .update({ image_position: position })
+    .eq('id', id)
+    .eq('organization_id', context.organization.id);
+
+  if (error) return { success: false, error: error.message };
   revalidatePath('/training');
   return { success: true };
 }

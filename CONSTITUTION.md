@@ -738,6 +738,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-10-24 | 1.3.4 | Căn chỉnh thẳng hàng cột thao tác (.entityActions justify-content: flex-start) trên danh sách Card-Row (trang Huấn luyện viên), đảm bảo nút "Xem thông tin" của Quản trị viên và các vai trò khác luôn thẳng tắp một hàng |
 | 2026-10-24 | 1.3.5 | Cập nhật quy tắc hiển thị tên HLV: khi đã cài đặt tên gợi nhớ (nickname), chỉ hiển thị duy nhất tên gợi nhớ (thay vì nối 'Tên gốc (Nickname)'), hỗ trợ tìm kiếm linh hoạt theo cả tên gốc và nickname |
 | 2026-10-25 | 1.3.6 | Chuyển đổi danh sách Địa điểm đào tạo (/training) từ dạng bảng ngang sang dạng Thẻ thể thao (Venues Grid Card), tích hợp banner ảnh nơi tập luyện, tính năng tải ảnh nhanh (quick upload) và dropzone ảnh trong modal thêm/sửa (034_venue_image_url.sql) |
+| 2026-10-25 | 1.3.7 | Nâng cấp thanh chuyển đổi 3 phong cách thẻ (Hero Cinematic, Full-Cover Kính Mờ, Athletic Studio) và bộ điều chỉnh góc ảnh/căn lề trực quan (image position 0-100%, preset Đỉnh/Giữa/Đáy) kèm hỗ trợ server localhost:3000 |
 
 ---
 

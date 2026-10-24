@@ -2,6 +2,72 @@
    TRAINING VENUES — Athletic Card Grid & Photo Upload System
    ========================================================================== */
 
+/* Style Switcher Bar */
+.styleSwitcherBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-2xl);
+  padding: 12px 18px;
+  margin-top: var(--space-2);
+  margin-bottom: var(--space-4);
+  box-shadow: var(--shadow-xs);
+  flex-wrap: wrap;
+}
+
+.styleSwitcherLabel {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.styleSwitcherOptions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.styleOptionBtn {
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border: 1px solid var(--border-light);
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.styleOptionBtn:hover {
+  background: var(--surface-active);
+  color: var(--text-main);
+  border-color: var(--border);
+  transform: translateY(-1px);
+}
+
+.styleOptionActive {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%) !important;
+  color: var(--text-on-primary) !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 14px rgba(20, 184, 166, 0.35);
+}
+
+/* ==========================================================================
+   GRID LAYOUTS
+   ========================================================================== */
 .venuesGrid {
   display: grid;
   grid-template-columns: repeat(1, 1fr);
@@ -23,7 +89,7 @@
 }
 
 /* ==========================================================================
-   VENUE CARD
+   BASE VENUE CARD
    ========================================================================== */
 .venueCard {
   background: var(--surface);
@@ -44,17 +110,148 @@
 }
 
 /* ==========================================================================
-   IMAGE CONTAINER & BANNER
+   PHONG CÁCH 1: HERO CINEMATIC (Mặc định được khuyến nghị)
    ========================================================================== */
-.venueImageContainer {
+.cardHero .venueImageContainer {
   position: relative;
-  height: 195px;
+  height: 220px;
   width: 100%;
   overflow: hidden;
   background: var(--surface-hover);
-  border-bottom: 1px solid var(--border-light);
 }
 
+.cardHero .venueGradientFade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 60%, var(--surface) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cardHero .venueBody {
+  padding: 18px 24px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+  margin-top: -30px;
+  position: relative;
+  z-index: 2;
+}
+
+.cardHero .venueName {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
+  text-decoration: none;
+  line-height: 1.3;
+}
+
+.cardHero .venueName:hover {
+  color: var(--primary);
+}
+
+/* ==========================================================================
+   PHONG CÁCH 2: FULL-COVER GLASSMORPHIC (Tràn ảnh toàn bộ)
+   ========================================================================== */
+.cardGlassmorphic {
+  height: 380px;
+  border-radius: var(--radius-2xl);
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.cardGlassmorphic .venueFullImage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+  z-index: 0;
+}
+
+.cardGlassmorphic:hover .venueFullImage {
+  transform: scale(1.08);
+}
+
+.cardGlassmorphic .glassOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.5) 50%, rgba(0, 0, 0, 0.85) 100%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.cardGlassmorphic .glassSheet {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  padding: 16px 18px;
+  border-radius: var(--radius-xl);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 2;
+  transition: transform 0.25s ease, background 0.25s ease;
+}
+
+:global([data-theme='dark']) .cardGlassmorphic .glassSheet {
+  background: rgba(15, 23, 42, 0.85);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.cardGlassmorphic:hover .glassSheet {
+  transform: translateY(-2px);
+}
+
+.cardGlassmorphic .venueName {
+  font-size: 1.1875rem;
+  font-weight: 800;
+  color: var(--text-main);
+  text-decoration: none;
+}
+
+/* ==========================================================================
+   PHONG CÁCH 3: ATHLETIC STUDIO (Khung thể thao tương phản cao)
+   ========================================================================== */
+.cardStudio {
+  padding: 12px;
+  border-radius: 26px;
+}
+
+.cardStudio .venueImageContainer {
+  height: 185px;
+  border-radius: 18px;
+  overflow: hidden;
+  position: relative;
+  background: var(--surface-hover);
+}
+
+.cardStudio .venueBody {
+  padding: 16px 8px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.cardStudio .venueName {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-main);
+  text-decoration: none;
+}
+
+/* ==========================================================================
+   IMAGE CONTROLS & PLACEHOLDER
+   ========================================================================== */
 .venueImage {
   width: 100%;
   height: 100%;
@@ -63,7 +260,7 @@
 }
 
 .venueCard:hover .venueImage {
-  transform: scale(1.06);
+  transform: scale(1.05);
 }
 
 .venuePlaceholder {
@@ -74,7 +271,7 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 14%, var(--surface)) 0%, color-mix(in srgb, var(--warning) 10%, var(--surface-hover)) 100%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 15%, var(--surface)) 0%, color-mix(in srgb, var(--warning) 10%, var(--surface-hover)) 100%);
   overflow: hidden;
 }
 
@@ -82,7 +279,7 @@
   position: absolute;
   right: -10px;
   bottom: -15px;
-  font-size: 110px;
+  font-size: 120px;
   line-height: 1;
   color: var(--primary);
   opacity: 0.12;
@@ -102,37 +299,44 @@
   gap: 8px;
   padding: 8px 16px;
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(8px);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
   color: var(--text-main);
   font-size: 0.8125rem;
-  font-weight: 600;
+  font-weight: 700;
   z-index: 1;
   border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 :global([data-theme='dark']) .venuePlaceholderBadge {
-  background: rgba(18, 24, 38, 0.75);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(18, 24, 38, 0.8);
+  border-color: rgba(255, 255, 255, 0.12);
   color: var(--text-main);
 }
 
+/* Floating Actions on Image */
 .venueStatusOverlay {
   position: absolute;
   top: 14px;
   right: 14px;
-  z-index: 2;
+  z-index: 3;
   backdrop-filter: blur(8px);
   border-radius: var(--radius-full);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-.quickUploadBtn {
+.imageControlToolbar {
   position: absolute;
   bottom: 12px;
   right: 12px;
-  z-index: 2;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.imageControlBtn {
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -148,13 +352,13 @@
   transition: all 0.2s ease;
 }
 
-:global([data-theme='dark']) .quickUploadBtn {
+:global([data-theme='dark']) .imageControlBtn {
   background: rgba(18, 24, 38, 0.85);
   border-color: rgba(255, 255, 255, 0.15);
   color: #fff;
 }
 
-.quickUploadBtn:hover {
+.imageControlBtn:hover {
   background: var(--primary);
   color: #fff;
   transform: scale(1.1);
@@ -162,39 +366,8 @@
 }
 
 /* ==========================================================================
-   VENUE CARD BODY
+   METRICS & DETAILS
    ========================================================================== */
-.venueBody {
-  padding: 20px 22px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  flex: 1;
-}
-
-.venueTitleRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.venueName {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: var(--text-main);
-  text-decoration: none;
-  line-height: 1.35;
-  transition: color 0.15s ease;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.venueName:hover {
-  color: var(--primary);
-}
-
 .venueAddress {
   display: flex;
   align-items: flex-start;
@@ -202,7 +375,7 @@
   font-size: 0.8125rem;
   color: var(--text-secondary);
   line-height: 1.4;
-  min-height: 2.8em;
+  min-height: 2.6em;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -216,9 +389,6 @@
   margin-top: 2px;
 }
 
-/* ==========================================================================
-   METRICS GRID (2-column pill box)
-   ========================================================================== */
 .venueStats {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -258,21 +428,96 @@
   line-height: 1.2;
 }
 
-/* ==========================================================================
-   VENUE FOOTER (Actions)
-   ========================================================================== */
 .venueFooter {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-top: auto;
-  padding-top: 14px;
+  padding-top: 12px;
   border-top: 1px solid var(--border-light);
 }
 
 /* ==========================================================================
-   MODAL IMAGE UPLOAD DROPZONE
+   IMAGE POSITION ADJUSTER MODAL & CONTROLS
    ========================================================================== */
+.positionAdjusterModal {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.positionPreviewContainer {
+  width: 100%;
+  height: 240px;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  border: 2px solid var(--border);
+  position: relative;
+  background: #000;
+}
+
+.positionPreviewImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: object-position 0.1s ease;
+}
+
+.presetBtnGroup {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.presetBtn {
+  padding: 8px 12px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  background: var(--surface-hover);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-main);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.presetBtn:hover {
+  background: var(--surface-active);
+  border-color: var(--primary);
+}
+
+.presetBtnActive {
+  background: var(--primary-light) !important;
+  color: var(--primary) !important;
+  border-color: var(--primary) !important;
+}
+
+.sliderContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sliderHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.rangeSlider {
+  width: 100%;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+/* Modal upload dropzone */
 .modalImageSection {
   display: flex;
   flex-direction: column;
@@ -288,7 +533,7 @@
 .modalImagePreviewBox {
   position: relative;
   width: 100%;
-  height: 160px;
+  height: 180px;
   border-radius: var(--radius-xl);
   overflow: hidden;
   border: 2px dashed var(--border);

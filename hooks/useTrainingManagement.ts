@@ -22,6 +22,7 @@ export function useTrainingManagement(organizationId: string | undefined) {
           address,
           status,
           image_url,
+          image_position,
           venue_classes(id, status, class_students(id, status))
         `)
         .eq('organization_id', organizationId)
@@ -42,6 +43,7 @@ export function useTrainingManagement(organizationId: string | undefined) {
           address: venue.address,
           status: venue.status,
           image_url: venue.image_url || '',
+          image_position: venue.image_position || '50% 50%',
           activeClassesCount: activeClasses.length,
           totalStudentsCount: studentsCount
         };
