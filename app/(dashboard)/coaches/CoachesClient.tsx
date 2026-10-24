@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { 
   inviteMemberAction, 
@@ -25,8 +25,6 @@ import styles from '@/app/styles/page-standard.module.css';
 import { PageHeader } from '@/app/components/ui/PageHeader';
 import { Button } from '@/app/components/ui/Button';
 import { Input, Select } from '@/app/components/ui/Input';
-import { Card, CardContent } from '@/app/components/ui/Card';
-import { Table, TableContainer, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/app/components/ui/Table';
 import { Badge } from '@/app/components/ui/Badge';
 import { ChangeRoleModal } from '@/app/components/ui/ChangeRoleModal';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/app/components/ui/Modal';
@@ -35,13 +33,16 @@ import { CoachQuickProfileModal } from '@/app/components/ui/CoachQuickProfileMod
 
 function CoachSkeleton() {
   return (
-    <TableRow className="animate-pulse">
-      <TableCell><div className="h-4 bg-surface-hover rounded w-3/4"></div></TableCell>
-      <TableCell><div className="h-4 bg-surface-hover rounded w-1/2"></div></TableCell>
-      <TableCell><div className="h-6 bg-surface-hover rounded w-20"></div></TableCell>
-      <TableCell><div className="h-4 bg-surface-hover rounded w-1/4"></div></TableCell>
-      <TableCell><div className="h-8 bg-surface-hover rounded w-24"></div></TableCell>
-    </TableRow>
+    <div className={`${styles.cardSkeleton} animate-pulse`}>
+      <div className={styles.entityAvatar} style={{ background: 'var(--surface-hover)' }} />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ height: '16px', background: 'var(--surface-hover)', borderRadius: 'var(--radius-sm)', width: '35%' }} />
+        <div style={{ height: '12px', background: 'var(--surface-hover)', borderRadius: 'var(--radius-sm)', width: '50%' }} />
+      </div>
+      <div style={{ height: '24px', background: 'var(--surface-hover)', borderRadius: 'var(--radius-full)', width: '80px' }} />
+      <div style={{ height: '32px', background: 'var(--surface-hover)', borderRadius: 'var(--radius-sm)', width: '90px' }} />
+      <div style={{ height: '32px', background: 'var(--surface-hover)', borderRadius: 'var(--radius-md)', width: '120px' }} />
+    </div>
   );
 }
 
@@ -77,7 +78,8 @@ export default function CoachesClient() {
   const { members, invitations, isLoading } = useCoaches(organizationId);
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<'active' | 'invitations' | 'suspended'>('active');
+  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'invitations' | 'suspended'>('active');
+  const [searchTerm, setSearchTerm] = useState('');
   const [showImport, setShowImport] = useState(false);
   const [isInviting, setIsInviting] = useState(false);
   const [email, setEmail] = useState('');
@@ -198,8 +200,44 @@ export default function CoachesClient() {
     return `${appUrl}/invite/${invId}`;
   };
 
-  const activeMembers = members.filter((m: any) => m.status === 'active');
-  const suspendedMembers = members.filter((m: any) => m.status === 'suspended');
+  const activeMembers = useMemo(() => members.filter((m: any) => m.status === 'active'), [members]);
+  const suspendedMembers = useMemo(() => members.filter((m: any) => m.status === 'suspended'), [members]);
+
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+
+  const filteredActiveMembers = useMemo(() => {
+    return activeMembers.filter((m: any) => {
+      if (!normalizedSearch) return true;
+      return (
+        m.name?.toLowerCase().includes(normalizedSearch) ||
+        m.email?.toLowerCase().includes(normalizedSearch) ||
+        (m.nickname && m.nickname.toLowerCase().includes(normalizedSearch))
+      );
+    });
+  }, [activeMembers, normalizedSearch]);
+
+  const filteredSuspendedMembers = useMemo(() => {
+    return suspendedMembers.filter((m: any) => {
+      if (!normalizedSearch) return true;
+      return (
+        m.name?.toLowerCase().includes(normalizedSearch) ||
+        m.email?.toLowerCase().includes(normalizedSearch) ||
+        (m.nickname && m.nickname.toLowerCase().includes(normalizedSearch))
+      );
+    });
+  }, [suspendedMembers, normalizedSearch]);
+
+  const filteredInvitations = useMemo(() => {
+    return invitations.filter((inv: any) => {
+      if (!normalizedSearch) return true;
+      return inv.email?.toLowerCase().includes(normalizedSearch);
+    });
+  }, [invitations, normalizedSearch]);
+
+  const totalCount = members.length + invitations.length;
+  const activeCount = activeMembers.length;
+  const suspendedCount = suspendedMembers.length;
+  const invitationsCount = invitations.length;
 
   return (
     <div className="flex-col gap-6">
@@ -330,243 +368,345 @@ export default function CoachesClient() {
 
       {/* Overview Metrics */}
       <div className={styles.overviewCard}>
+        <div className={styles.overviewHeader}>
+          <div className={styles.overviewTitle}>TỔNG QUAN HUẤN LUYỆN VIÊN</div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+            Tổng cộng: <strong style={{ color: 'var(--text-main)' }}>{totalCount}</strong> nhân sự
+          </div>
+        </div>
         <div className={styles.overviewGrid}>
           <div className={`${styles.kpiItem} ${styles.kpiPrimary}`}>
             <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Đang hoạt động</div>
-            <div className={styles.kpiValue}>{activeMembers.length}</div>
+            <div className={styles.kpiValue}>{activeCount}</div>
           </div>
           <div className={`${styles.kpiItem} ${styles.kpiWarning}`}>
             <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Lời mời chờ</div>
-            <div className={styles.kpiValue}>{invitations.length}</div>
+            <div className={styles.kpiValue}>{invitationsCount}</div>
           </div>
           <div className={`${styles.kpiItem} ${styles.kpiDanger}`}>
             <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Đã tạm ngưng</div>
-            <div className={styles.kpiValue}>{suspendedMembers.length}</div>
+            <div className={styles.kpiValue}>{suspendedCount}</div>
           </div>
         </div>
       </div>
 
-      <div className={styles.listContainer}>
-        {/* Tabs */}
-        <div className={styles.sectionHeader} style={{ marginBottom: 0 }}>
-          <div className="flex gap-6" style={{ borderBottom: '1px solid var(--border-light)' }}>
+      {/* Toolbar & Filter Pills */}
+      <div className={styles.toolbar}>
+        <div className={styles.searchWrapper}>
+          <span className={`material-icons-round ${styles.searchIcon}`}>search</span>
+          <input 
+            type="text" 
+            className={styles.searchInput} 
+            placeholder="Tìm HLV theo tên, biệt danh hoặc email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          {searchTerm && (
             <button 
-              onClick={() => setActiveTab('active')} 
-              style={{ 
-                background: 'none', border: 'none', padding: '0 0 var(--space-3) 0', cursor: 'pointer',
-                borderBottom: activeTab === 'active' ? '2px solid var(--primary)' : '2px solid transparent', 
-                color: activeTab === 'active' ? 'var(--primary)' : 'var(--text-secondary)', 
-                fontWeight: activeTab === 'active' ? 600 : 500 
-              }}
+              type="button" 
+              className={styles.searchClearBtn}
+              onClick={() => setSearchTerm('')}
+              title="Xóa tìm kiếm"
             >
-              Đang hoạt động ({activeMembers.length})
+              <span className="material-icons-round" style={{ fontSize: '18px' }}>close</span>
             </button>
-            <button 
-              onClick={() => setActiveTab('invitations')} 
-              style={{ 
-                background: 'none', border: 'none', padding: '0 0 var(--space-3) 0', cursor: 'pointer',
-                borderBottom: activeTab === 'invitations' ? '2px solid var(--warning)' : '2px solid transparent', 
-                color: activeTab === 'invitations' ? 'var(--warning)' : 'var(--text-secondary)', 
-                fontWeight: activeTab === 'invitations' ? 600 : 500 
-              }}
-            >
-              Lời mời ({invitations.length})
-            </button>
-            <button 
-              onClick={() => setActiveTab('suspended')} 
-              style={{ 
-                background: 'none', border: 'none', padding: '0 0 var(--space-3) 0', cursor: 'pointer',
-                borderBottom: activeTab === 'suspended' ? '2px solid var(--danger)' : '2px solid transparent', 
-                color: activeTab === 'suspended' ? 'var(--danger)' : 'var(--text-secondary)', 
-                fontWeight: activeTab === 'suspended' ? 600 : 500 
-              }}
-            >
-              Đã tạm ngưng ({suspendedMembers.length})
-            </button>
-          </div>
+          )}
         </div>
 
-        <TableContainer>
-          <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Tên</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Vai trò</TableHead>
-              {activeTab === 'invitations' ? (
-                <TableHead>Hết hạn</TableHead>
-              ) : (
-                <TableHead>Số lớp phụ trách</TableHead>
-              )}
-              {isAdminOrOwner && <TableHead className="font-semibold">Hành động</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <>
-                <CoachSkeleton />
-                <CoachSkeleton />
-                <CoachSkeleton />
-              </>
-            ) : (
-              <>
-                {activeTab === 'active' && activeMembers.length === 0 && (
-                  <TableRow><TableCell colSpan={5}><EmptyState title="Chưa có HLV đang hoạt động" description="Không tìm thấy HLV nào trong danh sách." /></TableCell></TableRow>
-                )}
-                {activeTab === 'suspended' && suspendedMembers.length === 0 && (
-                  <TableRow><TableCell colSpan={5}><EmptyState title="Không có HLV nào bị tạm ngưng" description="Danh sách trống." icon="check_circle" /></TableCell></TableRow>
-                )}
-                {activeTab === 'invitations' && invitations.length === 0 && (
-                  <TableRow><TableCell colSpan={5}><EmptyState title="Không có lời mời nào đang chờ" description="Bạn có thể mời HLV mới ở nút phía trên." icon="link" /></TableCell></TableRow>
-                )}
+        <div className={styles.filterGroup}>
+          <button
+            type="button"
+            className={`${styles.filterPill} ${activeTab === 'all' ? styles.filterPillActive : ''}`}
+            onClick={() => setActiveTab('all')}
+          >
+            Tất cả <span className={styles.filterPillCount}>{totalCount}</span>
+          </button>
+          <button
+            type="button"
+            className={`${styles.filterPill} ${activeTab === 'active' ? styles.filterPillActive : ''}`}
+            onClick={() => setActiveTab('active')}
+          >
+            Đang hoạt động <span className={styles.filterPillCount}>{activeCount}</span>
+          </button>
+          <button
+            type="button"
+            className={`${styles.filterPill} ${activeTab === 'invitations' ? styles.filterPillActive : ''}`}
+            onClick={() => setActiveTab('invitations')}
+          >
+            Lời mời <span className={styles.filterPillCount}>{invitationsCount}</span>
+          </button>
+          <button
+            type="button"
+            className={`${styles.filterPill} ${activeTab === 'suspended' ? styles.filterPillActive : ''}`}
+            onClick={() => setActiveTab('suspended')}
+          >
+            Đã tạm ngưng <span className={styles.filterPillCount}>{suspendedCount}</span>
+          </button>
+        </div>
+      </div>
 
-                {activeTab === 'active' && activeMembers.map((m: any) => (
-                  <TableRow key={m.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-main">{m.name}</span>
-                        {m.coachId && isAdminOrOwner && (
-                          <button
-                            onClick={() => {
-                              setEditingNicknameMember({ coachId: m.coachId, originalName: m.originalName, nickname: m.nickname });
-                              setNewNickname(m.nickname || '');
-                            }}
-                            style={{ 
-                              backgroundColor: 'var(--surface-hover)', 
-                              border: '1px solid var(--border-light)', 
-                              color: 'var(--text-secondary)',
-                              padding: '4px',
-                              borderRadius: 'var(--radius-sm)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              cursor: 'pointer',
-                              transition: 'all 0.15s ease'
-                            }}
-                            title="Đổi tên gọi"
-                          >
-                            <span className="material-icons-round" style={{ fontSize: '16px' }}>edit</span>
-                          </button>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-secondary">{m.email}</TableCell>
-                    <TableCell>
-                      <Badge variant={m.role === 'owner' || m.role === 'admin' ? 'primary' : 'default'}>
-                        {roleLabels[m.role] || m.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{m.classCount} lớp</TableCell>
-                    {isAdminOrOwner && (
-                      <TableCell>
-                        <div>
-                          <button
-                            onClick={() => {
-                              if (m.coachId) {
-                                setQuickProfileCoachId(m.coachId);
-                              } else {
-                                console.error('Coach ID is missing for member', m);
-                              }
-                            }}
-                            className="text-action text-action-primary"
-                            disabled={loading}
-                          >
-                            Xem thông tin
-                          </button>
-                          <span className="text-action-separator" aria-hidden="true">|</span>
-                          
-                          {m.id !== currentUserId && (
-                            <>
-                              {currentUserRole === 'owner' && (
-                                <button
-                                  onClick={() => setEditingRoleMember({ id: m.id, name: m.name, role: m.role as OrganizationRole })}
-                                  className="text-action text-action-primary"
-                                  disabled={loading}
-                                >
-                                  Phân quyền
-                                </button>
-                              )}
-                              {currentUserRole === 'owner' && (
-                                <span className="text-action-separator" aria-hidden="true">|</span>
-                              )}
-                              <button
-                                onClick={() => executeAction(removeMemberAction, m.id, 'Xóa hoàn toàn HLV này?')}
-                                className="text-action text-action-danger"
-                                disabled={loading}
-                              >
-                                Xóa
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
+      {/* Card-Row Entity List */}
+      <div className={styles.entityList}>
+        {isLoading ? (
+          <>
+            <CoachSkeleton />
+            <CoachSkeleton />
+            <CoachSkeleton />
+          </>
+        ) : (() => {
+          const showActive = activeTab === 'all' || activeTab === 'active';
+          const showSuspended = activeTab === 'all' || activeTab === 'suspended';
+          const showInvitations = activeTab === 'all' || activeTab === 'invitations';
+
+          const currentTotal = 
+            (showActive ? filteredActiveMembers.length : 0) +
+            (showSuspended ? filteredSuspendedMembers.length : 0) +
+            (showInvitations ? filteredInvitations.length : 0);
+
+          if (currentTotal === 0) {
+            if (normalizedSearch) {
+              return (
+                <EmptyState 
+                  title="Không tìm thấy huấn luyện viên" 
+                  description={`Không có kết quả nào khớp với từ khóa "${searchTerm}".`}
+                  icon="search_off"
+                  action={
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setSearchTerm('')}
+                      style={{ marginTop: '12px' }}
+                    >
+                      Xóa tìm kiếm
+                    </Button>
+                  }
+                />
+              );
+            }
+
+            if (activeTab === 'active') {
+              return <EmptyState title="Chưa có HLV đang hoạt động" description="Không tìm thấy HLV nào trong danh sách." icon="people" />;
+            }
+            if (activeTab === 'suspended') {
+              return <EmptyState title="Không có HLV nào bị tạm ngưng" description="Tất cả HLV đều đang hoạt động bình thường." icon="check_circle" />;
+            }
+            if (activeTab === 'invitations') {
+              return <EmptyState title="Không có lời mời nào đang chờ" description="Bạn có thể mời HLV mới ở nút phía trên." icon="link" />;
+            }
+            return <EmptyState title="Chưa có nhân sự nào" description="Bạn có thể mời HLV mới ở nút phía trên." icon="people" />;
+          }
+
+          return (
+            <>
+              {/* Active Coaches */}
+              {showActive && filteredActiveMembers.map((m: any) => (
+                <div key={m.id} className={styles.entityCard}>
+                  {/* Avatar */}
+                  <div className={styles.entityAvatar}>
+                    {m.photoUrl ? (
+                      <img src={m.photoUrl} alt={m.name} className={styles.entityAvatarImg} />
+                    ) : (
+                      <span>{m.originalName?.[0]?.toUpperCase() || 'H'}</span>
                     )}
-                  </TableRow>
-                ))}
+                  </div>
 
-                {activeTab === 'suspended' && suspendedMembers.map((m: any) => (
-                  <TableRow key={m.id} style={{ opacity: 0.7 }}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-main">{m.name}</span>
-                        {m.coachId && isAdminOrOwner && (
-                          <button
-                            onClick={() => {
-                              setEditingNicknameMember({ coachId: m.coachId, originalName: m.originalName, nickname: m.nickname });
-                              setNewNickname(m.nickname || '');
-                            }}
-                            style={{ 
-                              backgroundColor: 'var(--surface-hover)', 
-                              border: '1px solid var(--border-light)', 
-                              color: 'var(--text-secondary)',
-                              padding: '4px',
-                              borderRadius: 'var(--radius-sm)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              cursor: 'pointer',
-                              transition: 'all 0.15s ease'
-                            }}
-                            title="Đổi tên gọi"
-                          >
-                            <span className="material-icons-round" style={{ fontSize: '16px' }}>edit</span>
-                          </button>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-secondary">{m.email}</TableCell>
-                    <TableCell><Badge variant="danger">{roleLabels[m.role] || m.role}</Badge></TableCell>
-                    <TableCell>{m.classCount} lớp</TableCell>
-                    {isAdminOrOwner && (
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => {
-                              if (m.coachId) {
-                                setQuickProfileCoachId(m.coachId);
-                              } else {
-                                console.error('Coach ID is missing for member', m);
-                              }
-                            }}
-                            className="text-action text-action-primary"
-                            disabled={loading}
-                          >
-                            Xem thông tin
-                          </button>
-                          <span className="text-action-separator" aria-hidden="true">|</span>
-                          <Button size="sm" variant="success" onClick={() => executeAction(reactivateMemberAction, m.id, 'Kích hoạt lại HLV này?')} disabled={loading}>Kích hoạt lại</Button>
-                        </div>
-                      </TableCell>
+                  {/* Main Info */}
+                  <div className={styles.entityMain}>
+                    <div className={styles.entityTitleRow}>
+                      <span className={styles.entityTitle}>{m.name}</span>
+                      {m.coachId && isAdminOrOwner && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingNicknameMember({ coachId: m.coachId, originalName: m.originalName, nickname: m.nickname });
+                            setNewNickname(m.nickname || '');
+                          }}
+                          className={styles.quickEditBtn}
+                          title="Đổi tên gọi"
+                        >
+                          <span className="material-icons-round" style={{ fontSize: '15px' }}>edit</span>
+                        </button>
+                      )}
+                    </div>
+                    <div className={styles.entitySubtitle}>{m.email}</div>
+                  </div>
+
+                  {/* Role Badge */}
+                  <div className={styles.entityBadge}>
+                    <Badge variant={m.role === 'owner' || m.role === 'admin' ? 'primary' : 'default'}>
+                      {roleLabels[m.role] || m.role}
+                    </Badge>
+                  </div>
+
+                  {/* Metric */}
+                  <div className={styles.entityMetric}>
+                    <span className={styles.metricLabel}>Số lớp phụ trách</span>
+                    <span className={styles.metricValue}>{m.classCount} lớp</span>
+                  </div>
+
+                  {/* Actions */}
+                  {isAdminOrOwner && (
+                    <div className={styles.entityActions}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          if (m.coachId) {
+                            setQuickProfileCoachId(m.coachId);
+                          } else {
+                            console.error('Coach ID is missing for member', m);
+                          }
+                        }}
+                        disabled={loading}
+                        leftIcon={<span className="material-icons-round" style={{ fontSize: '16px' }}>visibility</span>}
+                      >
+                        Xem thông tin
+                      </Button>
+
+                      {m.id !== currentUserId && currentUserRole === 'owner' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingRoleMember({ id: m.id, name: m.name, role: m.role as OrganizationRole })}
+                          disabled={loading}
+                          leftIcon={<span className="material-icons-round" style={{ fontSize: '16px' }}>admin_panel_settings</span>}
+                        >
+                          Phân quyền
+                        </Button>
+                      )}
+
+                      {m.id !== currentUserId && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-danger hover:bg-danger-bg"
+                          onClick={() => executeAction(removeMemberAction, m.id, 'Xóa hoàn toàn HLV này?')}
+                          disabled={loading}
+                          leftIcon={<span className="material-icons-round" style={{ fontSize: '16px' }}>delete_outline</span>}
+                        >
+                          Xóa
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* Suspended Coaches */}
+              {showSuspended && filteredSuspendedMembers.map((m: any) => (
+                <div key={m.id} className={styles.entityCard} style={{ opacity: 0.85 }}>
+                  {/* Avatar */}
+                  <div className={styles.entityAvatar} style={{ filter: 'grayscale(0.6)' }}>
+                    {m.photoUrl ? (
+                      <img src={m.photoUrl} alt={m.name} className={styles.entityAvatarImg} />
+                    ) : (
+                      <span>{m.originalName?.[0]?.toUpperCase() || 'H'}</span>
                     )}
-                  </TableRow>
-                ))}
+                  </div>
 
-                {activeTab === 'invitations' && invitations.map((inv: any) => (
-                  <TableRow key={inv.id}>
-                    <TableCell className="text-secondary">-</TableCell>
-                    <TableCell>{inv.email}</TableCell>
-                    <TableCell><Badge variant="info">{roleLabels[inv.role] || inv.role}</Badge></TableCell>
-                    <TableCell className="text-secondary">
+                  {/* Main Info */}
+                  <div className={styles.entityMain}>
+                    <div className={styles.entityTitleRow}>
+                      <span className={styles.entityTitle}>{m.name}</span>
+                      {m.coachId && isAdminOrOwner && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingNicknameMember({ coachId: m.coachId, originalName: m.originalName, nickname: m.nickname });
+                            setNewNickname(m.nickname || '');
+                          }}
+                          className={styles.quickEditBtn}
+                          title="Đổi tên gọi"
+                        >
+                          <span className="material-icons-round" style={{ fontSize: '15px' }}>edit</span>
+                        </button>
+                      )}
+                    </div>
+                    <div className={styles.entitySubtitle}>{m.email}</div>
+                  </div>
+
+                  {/* Role Badge */}
+                  <div className={styles.entityBadge}>
+                    <Badge variant="danger">{roleLabels[m.role] || m.role}</Badge>
+                  </div>
+
+                  {/* Metric */}
+                  <div className={styles.entityMetric}>
+                    <span className={styles.metricLabel}>Số lớp phụ trách</span>
+                    <span className={styles.metricValue}>{m.classCount} lớp</span>
+                  </div>
+
+                  {/* Actions */}
+                  {isAdminOrOwner && (
+                    <div className={styles.entityActions}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          if (m.coachId) {
+                            setQuickProfileCoachId(m.coachId);
+                          } else {
+                            console.error('Coach ID is missing for member', m);
+                          }
+                        }}
+                        disabled={loading}
+                        leftIcon={<span className="material-icons-round" style={{ fontSize: '16px' }}>visibility</span>}
+                      >
+                        Xem thông tin
+                      </Button>
+
+                      <Button
+                        variant="success"
+                        size="sm"
+                        onClick={() => executeAction(reactivateMemberAction, m.id, 'Kích hoạt lại HLV này?')}
+                        disabled={loading}
+                        leftIcon={<span className="material-icons-round" style={{ fontSize: '16px' }}>restore</span>}
+                      >
+                        Kích hoạt lại
+                      </Button>
+
+                      {m.id !== currentUserId && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-danger hover:bg-danger-bg"
+                          onClick={() => executeAction(removeMemberAction, m.id, 'Xóa hoàn toàn HLV này?')}
+                          disabled={loading}
+                          leftIcon={<span className="material-icons-round" style={{ fontSize: '16px' }}>delete_outline</span>}
+                        >
+                          Xóa
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* Invitations */}
+              {showInvitations && filteredInvitations.map((inv: any) => (
+                <div key={inv.id} className={styles.entityCard}>
+                  {/* Avatar */}
+                  <div className={styles.entityAvatar} style={{ background: 'var(--warning-bg)', color: 'var(--warning-text)', borderColor: 'var(--warning)' }}>
+                    <span className="material-icons-round" style={{ fontSize: '20px' }}>mail</span>
+                  </div>
+
+                  {/* Main Info */}
+                  <div className={styles.entityMain}>
+                    <div className={styles.entityTitleRow}>
+                      <span className={styles.entityTitle}>{inv.email}</span>
+                    </div>
+                    <div className={styles.entitySubtitle}>Lời mời gia nhập tổ chức</div>
+                  </div>
+
+                  {/* Role Badge */}
+                  <div className={styles.entityBadge}>
+                    <Badge variant="info">{roleLabels[inv.role] || inv.role}</Badge>
+                  </div>
+
+                  {/* Metric */}
+                  <div className={styles.entityMetric}>
+                    <span className={styles.metricLabel}>Hạn lời mời</span>
+                    <span className={styles.metricValue}>
                       {inv.expires_at ? (
                         isExpired(inv.expires_at) ? (
                           <Badge variant="danger">Đã hết hạn</Badge>
@@ -574,32 +714,43 @@ export default function CoachesClient() {
                           formatExpiryDate(inv.expires_at)
                         )
                       ) : '-'}
-                    </TableCell>
-                    {isAdminOrOwner && (
-                      <TableCell>
-                        <div className="flex gap-2">
-                          {inv.expires_at && !isExpired(inv.expires_at) && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleCopyLink(getInvitationUrl(inv.id), inv.id)}
-                              disabled={loading}
-                              leftIcon={<span className="material-icons-round" style={{ fontSize: '16px' }}>{copiedInvitationId === inv.id ? 'done' : 'content_copy'}</span>}
-                            >
-                              {copiedInvitationId === inv.id ? 'Đã sao chép' : 'Sao chép link'}
-                            </Button>
-                          )}
-                          <Button size="sm" variant="danger" onClick={() => executeAction(revokeInvitationAction, inv.id, 'Thu hồi lời mời này?')} disabled={loading}>Thu hồi</Button>
-                        </div>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                    </span>
+                  </div>
+
+                  {/* Actions */}
+                  {isAdminOrOwner && (
+                    <div className={styles.entityActions}>
+                      {inv.expires_at && !isExpired(inv.expires_at) && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleCopyLink(getInvitationUrl(inv.id), inv.id)}
+                          disabled={loading}
+                          leftIcon={
+                            <span className="material-icons-round" style={{ fontSize: '16px' }}>
+                              {copiedInvitationId === inv.id ? 'done' : 'content_copy'}
+                            </span>
+                          }
+                        >
+                          {copiedInvitationId === inv.id ? 'Đã sao chép' : 'Sao chép link'}
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        onClick={() => executeAction(revokeInvitationAction, inv.id, 'Thu hồi lời mời này?')}
+                        disabled={loading}
+                        leftIcon={<span className="material-icons-round" style={{ fontSize: '16px' }}>cancel</span>}
+                      >
+                        Thu hồi
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </>
+          );
+        })()}
       </div>
 
       {editingRoleMember && (

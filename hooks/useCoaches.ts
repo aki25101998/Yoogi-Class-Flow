@@ -15,7 +15,7 @@ export function useCoaches(organizationId: string | undefined) {
       
       const { data: membersData, error: membersError } = await supabase
         .from('organization_members')
-        .select('*, profiles(email, name), coaches(id, status, nickname)')
+        .select('*, profiles(email, name, avatar_url), coaches(id, status, nickname, photo_url)')
         .eq('organization_id', organizationId)
         .in('status', ['active', 'suspended']);
         
@@ -48,6 +48,7 @@ export function useCoaches(organizationId: string | undefined) {
         
         const originalName = m.profiles?.name || m.profiles?.email || '-';
         const nickname = m.coaches?.[0]?.nickname || '';
+        const photoUrl = m.coaches?.[0]?.photo_url || m.profiles?.avatar_url || '';
         
         // Unified data structure for the UI
         return {
@@ -57,6 +58,7 @@ export function useCoaches(organizationId: string | undefined) {
           nickname,
           email: m.profiles?.email || '-',
           coachId: m.coaches?.[0]?.id,
+          photoUrl,
           classCount
         };
       });

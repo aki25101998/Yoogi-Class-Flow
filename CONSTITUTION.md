@@ -721,6 +721,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-09-07 | 1.0.0 | Khởi tạo Hiến Pháp — Ghi nhận toàn bộ kiến trúc hiện tại |
 | 2026-09-07 | 1.0.1 | Thêm quy tắc Refactor Database (3.6) và làm rõ query Identity Chain (3.1) |
 | 2026-10-19 | 1.1.0 | Chuẩn hóa toàn diện CSS Design System (app/globals.css), loại bỏ triệt để lỗi Phantom Tailwind, thiết kế mới giao diện Lịch Dạy tuần (ScheduleClient / MyScheduleClient), tối ưu Dark/Light mode và trang Hồ sơ cá nhân |
+| 2026-10-24 | 1.2.0 | Triển khai giao diện Card-Row Entity List, Overview Card và Toolbar Instant Search cho trang Huấn luyện viên (CoachesClient), chuẩn hóa page-standard.module.css, dọn dẹp bảo mật tệp tạm |
 
 ---
 
