@@ -1,0 +1,492 @@
+/* ==========================================================================
+   CLASS SCHEDULE MANAGER — Vibrant Athletic & Martial Arts Design System
+   ========================================================================== */
+
+.scheduleSection {
+  border-top: 1px solid var(--border-light);
+  padding-top: 20px;
+  margin-top: 16px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-main);
+}
+
+.sectionTitleIcon {
+  font-size: 18px;
+  color: var(--primary);
+}
+
+.scheduleCountBadge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light);
+}
+
+.errorBanner {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: var(--danger);
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ==========================================================================
+   SCHEDULE ITEMS LIST
+   ========================================================================== */
+.scheduleList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.scheduleItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.scheduleItem:hover {
+  border-color: rgba(20, 184, 166, 0.35);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+:global([data-theme='dark']) .scheduleItem {
+  background: #111827;
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.scheduleItemLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dayPillBadge {
+  min-width: 68px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-full);
+  background: rgba(20, 184, 166, 0.1);
+  color: var(--primary-hover);
+  border: 1px solid rgba(20, 184, 166, 0.25);
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+:global([data-theme='dark']) .dayPillBadge {
+  background: rgba(20, 184, 166, 0.18);
+  color: #2dd4bf;
+}
+
+.weekendBadge {
+  background: rgba(255, 107, 53, 0.1);
+  color: #ea580c;
+  border-color: rgba(255, 107, 53, 0.25);
+}
+
+:global([data-theme='dark']) .weekendBadge {
+  background: rgba(255, 107, 53, 0.18);
+  color: #fb923c;
+}
+
+.timeDisplay {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.timeIcon {
+  font-size: 16px;
+  color: var(--text-muted);
+}
+
+.scheduleItemActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.actionIconBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.actionIconBtn:hover {
+  background: var(--surface-hover);
+  color: var(--primary);
+  border-color: var(--border-light);
+}
+
+.actionIconBtnDanger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.emptySchedule {
+  padding: 24px;
+  text-align: center;
+  border-radius: 14px;
+  background: var(--surface-hover);
+  border: 1px dashed var(--border);
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   ADD SCHEDULE CARD (Refined Bento Box)
+   ========================================================================== */
+.addScheduleCard {
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: 18px;
+  padding: 18px 20px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  transition: all 0.25s ease;
+}
+
+:global([data-theme='dark']) .addScheduleCard {
+  background: linear-gradient(160deg, #131d2e 0%, #0c121e 100%);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.cardHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.cardHeaderTitle {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.selectedCountBadge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2.5px 9px;
+  border-radius: var(--radius-full);
+  background: rgba(20, 184, 166, 0.12);
+  color: var(--primary-hover);
+  border: 1px solid rgba(20, 184, 166, 0.25);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+:global([data-theme='dark']) .selectedCountBadge {
+  background: rgba(20, 184, 166, 0.2);
+  color: #2dd4bf;
+}
+
+/* Quick Presets Strip */
+.presetsRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.presetLabel {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  margin-right: 4px;
+}
+
+.presetChip {
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-light);
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.presetChip:hover {
+  background: var(--surface);
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.presetChipActive {
+  background: rgba(20, 184, 166, 0.15);
+  border-color: var(--primary);
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.presetChipClear {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.presetChipClear:hover {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: var(--danger);
+}
+
+/* ==========================================================================
+   7-DAY INTERACTIVE MODERN STRIP (GRID OF 7 EQUAL COLS)
+   ========================================================================== */
+.daysGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 540px) {
+  .daysGrid {
+    gap: 4px;
+  }
+}
+
+.dayBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 52px;
+  padding: 8px 4px;
+  border-radius: 14px;
+  border: 1.5px solid var(--border-light);
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+:global([data-theme='dark']) .dayBtn {
+  background: rgba(15, 23, 42, 0.6);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.dayBtn:hover {
+  transform: translateY(-2px);
+  border-color: rgba(20, 184, 166, 0.4);
+  background: var(--surface);
+  color: var(--text-main);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.dayBtnName {
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.dayBtnSub {
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.75;
+}
+
+.dayIndicatorDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: transparent;
+  margin-top: 2px;
+  transition: all 0.2s ease;
+}
+
+/* Weekend Styling */
+.dayBtnWeekend:not(.dayBtnSelected) {
+  border-color: rgba(255, 107, 53, 0.2);
+}
+
+.dayBtnWeekend:not(.dayBtnSelected) .dayBtnName {
+  color: #ea580c;
+}
+
+:global([data-theme='dark']) .dayBtnWeekend:not(.dayBtnSelected) .dayBtnName {
+  color: #fb923c;
+}
+
+/* Selected State */
+.dayBtnSelected {
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%) !important;
+  border-color: #0d9488 !important;
+  color: #ffffff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px -2px rgba(20, 184, 166, 0.45);
+}
+
+.dayBtnSelected .dayBtnName,
+.dayBtnSelected .dayBtnSub {
+  color: #ffffff !important;
+  opacity: 1;
+}
+
+.dayBtnSelected .dayIndicatorDot {
+  background: #ffffff;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+}
+
+/* ==========================================================================
+   TIME PICKER SECTION
+   ========================================================================== */
+.timeInputsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+@media (max-width: 480px) {
+  .timeInputsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.durationPreview {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 14px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--surface-hover);
+  border: 1px solid var(--border-light);
+}
+
+.durationPreview strong {
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+/* Actions Row */
+.cardActionsRow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-light);
+}
+
+.btnAddPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+  border: none;
+  color: #ffffff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
+}
+
+.btnAddPill:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(20, 184, 166, 0.42);
+}
+
+.btnAddPill:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btnCancelGhost {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: var(--radius-full);
+  background: transparent;
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btnCancelGhost:hover {
+  background: var(--surface-hover);
+  color: var(--text-main);
+}

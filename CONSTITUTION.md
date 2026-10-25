@@ -743,6 +743,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-10-25 | 1.3.9 | Nâng cấp toàn diện thiết kế Mẫu 1 (Hero Cinematic Refined): áp dụng visual hierarchy cao cấp từ Quiz App (border-radius 28px, category pill tag, heading 1.35rem sắc nét, hai bento chips thể thao hai màu Teal/Orange nổi bật với số liệu 20px, nút CTA pill gradient với icon mũi tên chuyển động) |
 | 2026-10-25 | 1.3.10 | Tái thiết kế hàng hiển thị địa chỉ thành Location Capsule Bar cao cấp: badge định vị màu Cam San Hô nổi bật, micro-label ĐỊA ĐIỂM TẬP LUYỆN, text địa chỉ semibold sắc nét và tích hợp liên kết Google Maps tương tác |
 | 2026-10-25 | 1.3.11 | Loại bỏ dòng địa chỉ bên dưới tên địa điểm (CC Riverside) trên trang Chi tiết địa điểm (/training/[venueId]) và thẻ địa điểm (/training); tái thiết kế danh sách lớp học thành lưới Thẻ tối giản (Minimal Class Cards Grid: icon võ đạo, badge trạng thái bo tròn, lịch học tuần, số liệu HLV/học viên compact và nút Xem lớp pill) |
+| 2026-10-25 | 1.3.12 | Tái thiết kế bộ chọn Ngày học trong tuần (ClassScheduleManager) chuẩn hiện đại: thay thế các nút bấm lỗi thời bằng dải 7 ngày cân xứng (7-Day Strip T2-CN), bộ chọn nhanh 1-chạm (Presets: 2-4-6, 3-5-7, Cuối tuần, Tất cả), chỉ số ngày cuối tuần cam năng động, hiệu ứng glow gradient Teal khi chọn và tự động ước tính thời lượng mỗi buổi |
 
 ---
 

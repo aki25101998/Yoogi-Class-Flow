@@ -8,15 +8,24 @@ import {
 } from '../actions';
 import { Button } from '@/app/components/ui/Button';
 import { Input, Select } from '@/app/components/ui/Input';
+import styles from './ClassScheduleManager.module.css';
 
 const DAYS_OPTIONS = [
-  { value: '1', label: 'Thứ 2' },
-  { value: '2', label: 'Thứ 3' },
-  { value: '3', label: 'Thứ 4' },
-  { value: '4', label: 'Thứ 5' },
-  { value: '5', label: 'Thứ 6' },
-  { value: '6', label: 'Thứ 7' },
-  { value: '0', label: 'CN' }
+  { value: '1', label: 'Thứ 2', name: 'T2', sub: 'Thứ Hai', num: 1, isWeekend: false },
+  { value: '2', label: 'Thứ 3', name: 'T3', sub: 'Thứ Ba', num: 2, isWeekend: false },
+  { value: '3', label: 'Thứ 4', name: 'T4', sub: 'Thứ Tư', num: 3, isWeekend: false },
+  { value: '4', label: 'Thứ 5', name: 'T5', sub: 'Thứ Năm', num: 4, isWeekend: false },
+  { value: '5', label: 'Thứ 6', name: 'T6', sub: 'Thứ Sáu', num: 5, isWeekend: false },
+  { value: '6', label: 'Thứ 7', name: 'T7', sub: 'Thứ Bảy', num: 6, isWeekend: true },
+  { value: '0', label: 'CN', name: 'CN', sub: 'Chủ Nhật', num: 0, isWeekend: true }
+];
+
+const PRESETS = [
+  { label: '2 - 4 - 6', days: [1, 3, 5] },
+  { label: '3 - 5 - 7', days: [2, 4, 6] },
+  { label: 'Cuối tuần (T7, CN)', days: [6, 0] },
+  { label: 'T2 - T6', days: [1, 2, 3, 4, 5] },
+  { label: 'Tất cả cả tuần', days: [1, 2, 3, 4, 5, 6, 0] },
 ];
 
 export function formatDayOfWeek(day: number) {
@@ -59,10 +68,22 @@ export default function ClassScheduleManager({ classId, schedules, onSuccess }: 
     effective_until: ''
   });
 
-  const activeSchedules = schedules.filter((s: any) => s.status === 'active').sort((a: any, b: any) => a.day_of_week - b.day_of_week);
+  const activeSchedules = schedules
+    .filter((s: any) => s.status === 'active')
+    .sort((a: any, b: any) => {
+      // Sort Monday (1) through Saturday (6) first, Sunday (0) last
+      const orderA = a.day_of_week === 0 ? 7 : a.day_of_week;
+      const orderB = b.day_of_week === 0 ? 7 : b.day_of_week;
+      return orderA - orderB;
+    });
 
   const handleAddSchedule = async () => {
     setScheduleError('');
+    if (quickAddData.days_of_week.length === 0) {
+      setScheduleError('Vui lòng chọn ít nhất một ngày học trong tuần');
+      return;
+    }
+
     setScheduleLoading(true);
     const res = await addScheduleToClassAction({
       class_id: classId,
@@ -118,19 +139,61 @@ export default function ClassScheduleManager({ classId, schedules, onSuccess }: 
     }));
   };
 
-  return (
-    <div className="border-t border-light pt-6 mt-4">
-      <h4 className="font-semibold text-main mb-4">LỊCH HỌC</h4>
-      
-      {scheduleError && <div className="text-danger text-sm mb-4">{scheduleError}</div>}
+  const applyPreset = (presetDays: number[]) => {
+    const isExactMatch = 
+      quickAddData.days_of_week.length === presetDays.length &&
+      presetDays.every(d => quickAddData.days_of_week.includes(d));
 
-      <div className="border border-light rounded-md overflow-hidden bg-background mb-4">
-        <div className="flex-col max-h-64 overflow-y-auto">
-          {activeSchedules.map((sch: any) => (
-            <div key={sch.id} className="border-b border-light last:border-b-0">
+    if (isExactMatch) {
+      // Toggle off
+      setQuickAddData(prev => ({ ...prev, days_of_week: [] }));
+    } else {
+      // Set preset
+      setQuickAddData(prev => ({ ...prev, days_of_week: [...presetDays] }));
+    }
+  };
+
+  const calculateDuration = (start: string, end: string) => {
+    if (!start || !end) return '';
+    const [sh, sm] = start.split(':').map(Number);
+    const [eh, em] = end.split(':').map(Number);
+    const diff = (eh * 60 + em) - (sh * 60 + sm);
+    if (diff <= 0) return 'Giờ kết thúc phải sau giờ bắt đầu';
+    const hours = Math.floor(diff / 60);
+    const mins = diff % 60;
+    if (hours > 0 && mins > 0) return `${diff} phút (${hours}h ${mins}m)`;
+    if (hours > 0) return `${diff} phút (${hours} giờ)`;
+    return `${diff} phút`;
+  };
+
+  return (
+    <div className={styles.scheduleSection}>
+      <div className={styles.sectionHeader}>
+        <div className={styles.sectionTitle}>
+          <span className={`material-icons-round ${styles.sectionTitleIcon}`}>schedule</span>
+          <span>Lịch học của lớp</span>
+        </div>
+        <span className={styles.scheduleCountBadge}>
+          {activeSchedules.length} buổi / tuần
+        </span>
+      </div>
+      
+      {scheduleError && (
+        <div className={styles.errorBanner}>
+          <span className="material-icons-round" style={{ fontSize: 18 }}>error_outline</span>
+          <span>{scheduleError}</span>
+        </div>
+      )}
+
+      {/* Existing Schedules List */}
+      <div className={styles.scheduleList}>
+        {activeSchedules.map((sch: any) => {
+          const isWeekend = sch.day_of_week === 6 || sch.day_of_week === 0;
+          return (
+            <div key={sch.id} className={styles.scheduleItem}>
               {editingScheduleId === sch.id ? (
-                <div className="p-3 bg-surface">
-                  <div className="grid grid-cols-3 gap-3 mb-3">
+                <div style={{ width: '100%', padding: '4px 0' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', marginBottom: '10px' }}>
                     <Select
                       label="Thứ"
                       value={editScheduleData.day_of_week.toString()}
@@ -150,22 +213,27 @@ export default function ClassScheduleManager({ classId, schedules, onSuccess }: 
                       onChange={(e) => setEditScheduleData({...editScheduleData, end_time: e.target.value})}
                     />
                   </div>
-                  <div className="flex gap-2 justify-end">
+                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                     <Button variant="ghost" size="sm" onClick={() => setEditingScheduleId(null)}>Hủy</Button>
                     <Button variant="primary" size="sm" isLoading={scheduleLoading} onClick={() => handleUpdateSchedule(sch.id)}>Lưu</Button>
                   </div>
                 </div>
               ) : (
-                <div className="flex justify-between items-center p-3 hover:bg-surface transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 font-semibold text-main">{formatDayOfWeek(sch.day_of_week)}</div>
-                    <div className="text-secondary">{sch.start_time} – {sch.end_time}</div>
+                <>
+                  <div className={styles.scheduleItemLeft}>
+                    <span className={`${styles.dayPillBadge} ${isWeekend ? styles.weekendBadge : ''}`}>
+                      {formatDayOfWeek(sch.day_of_week)}
+                    </span>
+                    <div className={styles.timeDisplay}>
+                      <span className={`material-icons-round ${styles.timeIcon}`}>schedule</span>
+                      <span>{sch.start_time} – {sch.end_time}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      title="Chỉnh sửa"
+                  <div className={styles.scheduleItemActions}>
+                    <button 
+                      type="button" 
+                      className={styles.actionIconBtn} 
+                      title="Chỉnh sửa giờ"
                       disabled={scheduleLoading}
                       onClick={() => {
                         setEditScheduleData({
@@ -179,77 +247,146 @@ export default function ClassScheduleManager({ classId, schedules, onSuccess }: 
                         setIsAddingSchedule(false);
                       }}
                     >
-                      <span className="material-icons-round text-lg">edit</span>
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      title="Xóa"
-                      className="text-danger hover:bg-danger-bg"
+                      <span className="material-icons-round" style={{ fontSize: 18 }}>edit</span>
+                    </button>
+                    <button 
+                      type="button" 
+                      className={`${styles.actionIconBtn} ${styles.actionIconBtnDanger}`}
+                      title="Xóa buổi này"
                       disabled={scheduleLoading}
                       onClick={() => handleDeleteSchedule(sch.id)}
                     >
-                      <span className="material-icons-round text-lg">delete</span>
-                    </Button>
+                      <span className="material-icons-round" style={{ fontSize: 18 }}>delete</span>
+                    </button>
                   </div>
-                </div>
+                </>
               )}
             </div>
-          ))}
-          {activeSchedules.length === 0 && (
-            <div className="p-4 text-center text-muted italic text-sm">Chưa có lịch học nào.</div>
-          )}
-        </div>
+          );
+        })}
+        {activeSchedules.length === 0 && (
+          <div className={styles.emptySchedule}>
+            Chưa có lịch học nào. Bấm &apos;Thêm lịch học&apos; bên dưới để thiết lập thời gian học.
+          </div>
+        )}
       </div>
 
+      {/* Add New Schedule Section */}
       {!isAddingSchedule ? (
         <Button 
           variant="outline" 
           size="sm" 
           onClick={() => { setIsAddingSchedule(true); setEditingScheduleId(null); }}
-          leftIcon={<span className="material-icons-round">add</span>}
+          leftIcon={<span className="material-icons-round" style={{ fontSize: 18 }}>add</span>}
         >
           Thêm lịch học
         </Button>
       ) : (
-        <div className="bg-surface p-4 rounded-md border border-light">
-          <h5 className="font-medium text-sm mb-3">Ngày học trong tuần</h5>
-          <div className="flex flex-wrap gap-2 mb-4">
+        <div className={styles.addScheduleCard}>
+          {/* Section Header with Live Counter Badge */}
+          <div className={styles.cardHeaderRow}>
+            <div className={styles.cardHeaderTitle}>
+              <span className="material-icons-round" style={{ fontSize: 18, color: 'var(--primary)' }}>calendar_today</span>
+              <span>Ngày học trong tuần</span>
+            </div>
+            {quickAddData.days_of_week.length > 0 && (
+              <span className={styles.selectedCountBadge}>
+                <span className="material-icons-round" style={{ fontSize: 13 }}>check</span>
+                Đã chọn: {quickAddData.days_of_week.length} ngày
+              </span>
+            )}
+          </div>
+
+          {/* Quick Presets Micro-chips */}
+          <div className={styles.presetsRow}>
+            <span className={styles.presetLabel}>Chọn nhanh:</span>
+            {PRESETS.map(preset => {
+              const isMatch = 
+                quickAddData.days_of_week.length === preset.days.length &&
+                preset.days.every(d => quickAddData.days_of_week.includes(d));
+              return (
+                <button
+                  key={preset.label}
+                  type="button"
+                  onClick={() => applyPreset(preset.days)}
+                  className={`${styles.presetChip} ${isMatch ? styles.presetChipActive : ''}`}
+                >
+                  {preset.label}
+                </button>
+              );
+            })}
+            {quickAddData.days_of_week.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setQuickAddData(prev => ({ ...prev, days_of_week: [] }))}
+                className={`${styles.presetChip} ${styles.presetChipClear}`}
+                title="Bỏ chọn tất cả"
+              >
+                Xóa chọn
+              </button>
+            )}
+          </div>
+
+          {/* 7-Day Modern Grid */}
+          <div className={styles.daysGrid}>
             {DAYS_OPTIONS.map(day => {
-              const dayValueNum = parseInt(day.value);
-              const isSelected = quickAddData.days_of_week.includes(dayValueNum);
+              const isSelected = quickAddData.days_of_week.includes(day.num);
               return (
                 <button
                   key={day.value}
                   type="button"
-                  onClick={() => toggleDaySelection(dayValueNum)}
-                  className={`px-3 py-1.5 text-sm font-medium rounded transition-colors ${isSelected ? 'bg-primary text-white border-primary' : 'bg-background text-secondary border border-light hover:bg-surface-hover'}`}
+                  onClick={() => toggleDaySelection(day.num)}
+                  className={`${styles.dayBtn} ${day.isWeekend ? styles.dayBtnWeekend : ''} ${isSelected ? styles.dayBtnSelected : ''}`}
+                  title={`${day.sub} (${isSelected ? 'Đang chọn' : 'Bấm để chọn'})`}
                 >
-                  {isSelected && <span className="mr-1">✓</span>}
-                  {day.label}
+                  <span className={styles.dayBtnName}>{day.name}</span>
+                  <span className={styles.dayBtnSub}>{day.sub}</span>
+                  <span className={styles.dayIndicatorDot} />
                 </button>
               );
             })}
           </div>
           
-          <div className="grid grid-cols-2 gap-4 mb-4">
+          {/* Time Range Inputs */}
+          <div className={styles.timeInputsGrid}>
             <Input
-              label="Bắt đầu"
+              label="Giờ bắt đầu"
               type="time"
               value={quickAddData.start_time}
               onChange={e => setQuickAddData({...quickAddData, start_time: e.target.value})}
             />
             <Input
-              label="Kết thúc"
+              label="Giờ kết thúc"
               type="time"
               value={quickAddData.end_time}
               onChange={e => setQuickAddData({...quickAddData, end_time: e.target.value})}
             />
           </div>
+
+          {/* Dynamic Duration Preview */}
+          <div className={styles.durationPreview}>
+            <span className="material-icons-round" style={{ fontSize: 15, color: 'var(--primary)' }}>timelapse</span>
+            <span>Thời lượng mỗi buổi: <strong>{calculateDuration(quickAddData.start_time, quickAddData.end_time)}</strong></span>
+          </div>
           
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="secondary" size="sm" onClick={() => setIsAddingSchedule(false)}>Hủy</Button>
-            <Button variant="primary" size="sm" isLoading={scheduleLoading} onClick={handleAddSchedule}>Thêm lịch</Button>
+          {/* Action Buttons */}
+          <div className={styles.cardActionsRow}>
+            <button 
+              type="button" 
+              className={styles.btnCancelGhost} 
+              onClick={() => setIsAddingSchedule(false)}
+            >
+              Hủy
+            </button>
+            <button 
+              type="button" 
+              className={styles.btnAddPill} 
+              disabled={scheduleLoading || quickAddData.days_of_week.length === 0} 
+              onClick={handleAddSchedule}
+            >
+              <span className="material-icons-round" style={{ fontSize: 16 }}>add_circle</span>
+              <span>{scheduleLoading ? 'Đang lưu...' : 'Thêm lịch học'}</span>
+            </button>
           </div>
         </div>
       )}
