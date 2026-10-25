@@ -739,6 +739,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-10-24 | 1.3.5 | Cập nhật quy tắc hiển thị tên HLV: khi đã cài đặt tên gợi nhớ (nickname), chỉ hiển thị duy nhất tên gợi nhớ (thay vì nối 'Tên gốc (Nickname)'), hỗ trợ tìm kiếm linh hoạt theo cả tên gốc và nickname |
 | 2026-10-25 | 1.3.6 | Chuyển đổi danh sách Địa điểm đào tạo (/training) từ dạng bảng ngang sang dạng Thẻ thể thao (Venues Grid Card), tích hợp banner ảnh nơi tập luyện, tính năng tải ảnh nhanh (quick upload) và dropzone ảnh trong modal thêm/sửa (034_venue_image_url.sql) |
 | 2026-10-25 | 1.3.7 | Nâng cấp thanh chuyển đổi 3 phong cách thẻ (Hero Cinematic, Full-Cover Kính Mờ, Athletic Studio) và bộ điều chỉnh góc ảnh/căn lề trực quan (image position 0-100%, preset Đỉnh/Giữa/Đáy) kèm hỗ trợ server localhost:3000 |
+| 2026-10-25 | 1.3.8 | Bổ sung cơ chế tự phục hồi (resilient schema fallback) cho API địa điểm và hook truy vấn: tự động thử lại khi thiếu cột image_position/image_url trong cache PostgREST, cập nhật file migration 034 với NOTIFY pgrst |
 
 ---
 

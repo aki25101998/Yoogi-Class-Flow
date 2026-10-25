@@ -26,11 +26,33 @@ export async function addVenueAction(data: { name: string; address?: string; sta
     insertPayload.image_position = data.image_position;
   }
 
-  const { data: newVenue, error } = await supabase
+  let { data: newVenue, error } = await supabase
     .from('venues')
     .insert(insertPayload)
     .select('id')
     .single();
+
+  if (error && error.message.includes('image_position')) {
+    delete insertPayload.image_position;
+    const retry = await supabase
+      .from('venues')
+      .insert(insertPayload)
+      .select('id')
+      .single();
+    newVenue = retry.data;
+    error = retry.error;
+  }
+
+  if (error && error.message.includes('image_url')) {
+    delete insertPayload.image_url;
+    const retry = await supabase
+      .from('venues')
+      .insert(insertPayload)
+      .select('id')
+      .single();
+    newVenue = retry.data;
+    error = retry.error;
+  }
 
   if (error) return { success: false, error: error.message };
   
@@ -46,10 +68,28 @@ export async function updateVenueAction(id: string, data: { name: string; addres
   
   const updatePayload: any = { ...data };
 
-  const { error } = await supabase.from('venues')
+  let { error } = await supabase.from('venues')
     .update(updatePayload)
     .eq('id', id)
     .eq('organization_id', context.organization.id);
+
+  if (error && error.message.includes('image_position')) {
+    delete updatePayload.image_position;
+    const retry = await supabase.from('venues')
+      .update(updatePayload)
+      .eq('id', id)
+      .eq('organization_id', context.organization.id);
+    error = retry.error;
+  }
+
+  if (error && error.message.includes('image_url')) {
+    delete updatePayload.image_url;
+    const retry = await supabase.from('venues')
+      .update(updatePayload)
+      .eq('id', id)
+      .eq('organization_id', context.organization.id);
+    error = retry.error;
+  }
 
   if (error) return { success: false, error: error.message };
   
@@ -67,7 +107,15 @@ export async function updateVenueImagePositionAction(id: string, position: strin
     .eq('id', id)
     .eq('organization_id', context.organization.id);
 
-  if (error) return { success: false, error: error.message };
+  if (error) {
+    if (error.message.includes('image_position')) {
+      return { 
+        success: false, 
+        error: "Cột 'image_position' chưa có trong database. Vui lòng chạy lệnh SQL migration 034 trong Supabase SQL Editor." 
+      };
+    }
+    return { success: false, error: error.message };
+  }
   revalidatePath('/training');
   return { success: true };
 }

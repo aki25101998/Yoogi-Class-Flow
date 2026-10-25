@@ -3,3 +3,6 @@
 
 ALTER TABLE public.venues ADD COLUMN IF NOT EXISTS image_url TEXT DEFAULT '';
 ALTER TABLE public.venues ADD COLUMN IF NOT EXISTS image_position TEXT DEFAULT '50% 50%';
+
+-- Refresh Supabase PostgREST schema cache
+NOTIFY pgrst, 'reload schema';

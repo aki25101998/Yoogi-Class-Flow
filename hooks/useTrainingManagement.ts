@@ -14,6 +14,7 @@ export function useTrainingManagement(organizationId: string | undefined) {
     queryFn: async () => {
       if (!organizationId) return [];
       
+      let venuesList: any[] = [];
       const { data, error } = await supabase
         .from('venues')
         .select(`
@@ -28,10 +29,28 @@ export function useTrainingManagement(organizationId: string | undefined) {
         .eq('organization_id', organizationId)
         .order('name');
         
-      if (error) throw error;
+      if (error && (error.message.includes('image_position') || error.message.includes('image_url'))) {
+        const retry = await supabase
+          .from('venues')
+          .select(`
+            id, 
+            name, 
+            address,
+            status,
+            venue_classes(id, status, class_students(id, status))
+          `)
+          .eq('organization_id', organizationId)
+          .order('name');
+        if (retry.error) throw retry.error;
+        venuesList = retry.data || [];
+      } else if (error) {
+        throw error;
+      } else {
+        venuesList = data || [];
+      }
       
       // Calculate summary stats per venue
-      return data.map(venue => {
+      return venuesList.map((venue: any) => {
         const activeClasses = venue.venue_classes?.filter((c: any) => c.status === 'active') || [];
         const studentsCount = activeClasses.reduce((acc: number, c: any) => {
           return acc + (c.class_students?.filter((s: any) => s.status === 'active').length || 0);
