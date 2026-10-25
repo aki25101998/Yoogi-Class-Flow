@@ -6,7 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useDashboardContext } from '../../DashboardProvider';
 import { useTrainingVenueDetails, useTrainingFormLookups } from '@/hooks/useTrainingManagement';
 import { addClassAction, updateClassAction, addStudentAction, updateStudentAction } from '../actions';
-import ClassScheduleManager from '@/app/(dashboard)/classes/components/ClassScheduleManager';
+import ClassScheduleManager, { formatDayOfWeek } from '@/app/(dashboard)/classes/components/ClassScheduleManager';
 
 import { Button } from '@/app/components/ui/Button';
 import { Input, Select } from '@/app/components/ui/Input';
@@ -238,7 +238,6 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
       <div className={styles.pageHeader}>
         <div className={styles.pageHeaderInfo}>
           <h1>{venue.name}</h1>
-          <p>{venue.address || 'Chưa cập nhật địa chỉ'}</p>
         </div>
         {isAdminOrOwner && (
           <div className={styles.pageHeaderActions}>
@@ -337,53 +336,79 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
             <div className={styles.emptyDesc}>Bấm &apos;Tạo Lớp&apos; để thêm lớp học mới vào địa điểm này.</div>
           </div>
         ) : (
-          <div className={styles.classList}>
+          <div className={styles.classGrid}>
             {classes.map((cls: any) => {
               const activeSchedules = (cls.schedules || []).filter((s:any) => s.status === 'active');
               const isNoSchedule = cls.status === 'active' && activeSchedules.length === 0;
 
+              let scheduleStr = 'Chưa xếp lịch học';
+              if (activeSchedules.length > 0) {
+                const days = activeSchedules.map((s:any) => formatDayOfWeek(s.day_of_week)).filter(Boolean);
+                const uniqueDays = Array.from(new Set(days));
+                scheduleStr = uniqueDays.length > 0 ? uniqueDays.join(', ') : `${activeSchedules.length} buổi / tuần`;
+              }
+
               return (
-              <div key={cls.id} className={styles.classRow}>
-                {/* Class name */}
-                <div className={`${styles.className} ${styles.areaName}`}>{cls.name}</div>
+                <div key={cls.id} className={styles.classCard}>
+                  {/* Top: Icon + Status Pill */}
+                  <div className={styles.classCardTop}>
+                    <div className={styles.classIconBadge}>
+                      <span className="material-icons-round" style={{ fontSize: 18 }}>sports_martial_arts</span>
+                    </div>
+                    <span className={`${styles.classStatusBadge} ${
+                      cls.status === 'active' 
+                        ? (isNoSchedule ? styles.statusWarning : styles.statusActive) 
+                        : styles.statusInactive
+                    }`}>
+                      <span className={styles.classStatusDot} />
+                      {cls.status === 'active' ? (isNoSchedule ? 'Thiếu lịch học' : 'Hoạt động') : 'Đã đóng'}
+                    </span>
+                  </div>
 
-                {/* Status badge */}
-                <div className={styles.areaStatus}>
-                  <Badge variant={cls.status === 'active' ? (isNoSchedule ? 'warning' : 'success') : 'default'}>
-                    {cls.status === 'active' ? (isNoSchedule ? 'Thiếu lịch học' : 'Hoạt động') : 'Đã đóng'}
-                  </Badge>
-                </div>
+                  {/* Center: Name & Schedule */}
+                  <div className={styles.classCardCenter}>
+                    <Link href={`/training/${venueId}/classes/${cls.id}`} className={styles.classCardTitle} title={cls.name}>
+                      {cls.name}
+                    </Link>
+                    <div className={styles.classScheduleSubtitle}>
+                      <span className={`material-icons-round ${styles.classScheduleIcon}`}>schedule</span>
+                      <span title={scheduleStr}>{scheduleStr}</span>
+                    </div>
+                  </div>
 
-                {/* Coaches count */}
-                <div className={`${styles.classStat} ${styles.areaCoach}`}>
-                  <div className={styles.classStatLabel}>Đội ngũ HLV</div>
-                  <div className={styles.classStatValue}>{cls.coaches ? cls.coaches.length : 0}</div>
-                </div>
+                  {/* Stats Chips: Coaches & Students */}
+                  <div className={styles.classCardStats}>
+                    <div className={styles.classStatChip}>
+                      <span className="material-icons-round" style={{ fontSize: 15, color: 'var(--primary)' }}>co_present</span>
+                      <span><strong>{cls.coaches ? cls.coaches.length : 0}</strong> HLV</span>
+                    </div>
+                    <div className={styles.classStatDivider} />
+                    <div className={styles.classStatChip}>
+                      <span className="material-icons-round" style={{ fontSize: 15, color: 'var(--accent-energy)' }}>groups</span>
+                      <span><strong>{cls.studentsCount}</strong> học viên</span>
+                    </div>
+                  </div>
 
-                {/* Student count */}
-                <div className={`${styles.classStat} ${styles.areaStudent}`}>
-                  <div className={styles.classStatLabel}>Học viên</div>
-                  <div className={styles.classStatValue}>{cls.studentsCount}</div>
+                  {/* Actions Footer */}
+                  <div className={styles.classCardFooter}>
+                    <Link href={`/training/${venueId}/classes/${cls.id}`} className={styles.btnClassDetails}>
+                      <span>Xem lớp</span>
+                      <span className={`material-icons-round ${styles.btnClassArrow}`}>arrow_forward</span>
+                    </Link>
+                    {isAdminOrOwner && (
+                      <button 
+                        type="button"
+                        className={styles.btnClassEdit}
+                        onClick={() => handleEditClass(cls)}
+                        title="Sửa lớp"
+                      >
+                        <span className="material-icons-round" style={{ fontSize: 16 }}>edit</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
-
-                {/* Actions */}
-                <div className={`${styles.classActions} ${styles.areaActions}`}>
-                  <Link href={`/training/${venueId}/classes/${cls.id}`}>
-                    <Button variant="outline" size="sm">Xem lớp</Button>
-                  </Link>
-                  {isAdminOrOwner && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleEditClass(cls)}
-                      title="Sửa lớp"
-                    >
-                      <span className="material-icons-round text-secondary hover:text-primary" style={{ fontSize: 18 }}>edit</span>
-                    </Button>
-                  )}
-                </div>
-              </div>
-            )})}
+              );
+            })}
           </div>
         )}
       </div>

@@ -569,30 +569,7 @@ export default function TrainingVenuesClient() {
                     </Link>
                   </div>
 
-                  {/* Location Capsule Bar with Google Maps Link */}
-                  <div className={styles.venueLocationBar}>
-                    <div className={styles.locationPinBadge}>
-                      <span className="material-icons-round" style={{ fontSize: 18 }}>near_me</span>
-                    </div>
-                    <div className={styles.locationContent}>
-                      <span className={styles.locationLabel}>ĐỊA ĐIỂM TẬP LUYỆN</span>
-                      <span className={styles.locationText} title={venue.address || 'Chưa cập nhật địa chỉ'}>
-                        {venue.address || 'Chưa cập nhật địa chỉ cụ thể'}
-                      </span>
-                    </div>
-                    {venue.address ? (
-                      <a 
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.address)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={styles.locationMapLink}
-                        title="Mở trên Google Maps"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <span className="material-icons-round" style={{ fontSize: 16 }}>open_in_new</span>
-                      </a>
-                    ) : null}
-                  </div>
+
 
                   {/* Two-Tone Bento Athletic Stat Chips */}
                   <div className={styles.venueStatsRow}>
