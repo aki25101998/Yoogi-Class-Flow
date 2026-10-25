@@ -26,8 +26,6 @@ import { EmptyState } from '@/app/components/ui/EmptyState';
 import { Badge } from '@/app/components/ui/Badge';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/app/components/ui/Modal';
 
-type CardStyleOption = 'hero' | 'glass' | 'studio';
-
 export default function TrainingVenuesClient() {
   const { context } = useDashboardContext();
   const organizationId = context?.organization?.id;
@@ -36,9 +34,6 @@ export default function TrainingVenuesClient() {
 
   const { venues, isVenuesLoading } = useTrainingManagement(organizationId);
   const queryClient = useQueryClient();
-
-  // Selected Style Option (Hero Cinematic by default, user can toggle live on localhost)
-  const [selectedStyle, setSelectedStyle] = useState<CardStyleOption>('hero');
 
   const [isAdding, setIsAdding] = useState(false);
   const [showImport, setShowImport] = useState(false);
@@ -277,42 +272,6 @@ export default function TrainingVenuesClient() {
         ) : null}
       />
 
-      {/* ═══════════════════════════════════════════════════════
-          INTERACTIVE STYLE SWITCHER (Cho phép người dùng chọn xem mẫu trực tiếp)
-          ═══════════════════════════════════════════════════════ */}
-      <div className={styles.styleSwitcherBar}>
-        <div className={styles.styleSwitcherLabel}>
-          <span className="material-icons-round text-primary" style={{ fontSize: 20 }}>palette</span>
-          Tùy chọn phong cách thẻ:
-        </div>
-        <div className={styles.styleSwitcherOptions}>
-          <button 
-            type="button"
-            className={`${styles.styleOptionBtn} ${selectedStyle === 'hero' ? styles.styleOptionActive : ''}`}
-            onClick={() => setSelectedStyle('hero')}
-          >
-            <span className="material-icons-round" style={{ fontSize: 16 }}>auto_awesome</span>
-            Mẫu 1: Hero Cinematic (Khuyên dùng)
-          </button>
-          <button 
-            type="button"
-            className={`${styles.styleOptionBtn} ${selectedStyle === 'glass' ? styles.styleOptionActive : ''}`}
-            onClick={() => setSelectedStyle('glass')}
-          >
-            <span className="material-icons-round" style={{ fontSize: 16 }}>blur_on</span>
-            Mẫu 2: Full-Cover Kính Mờ (Nhận diện tức thì)
-          </button>
-          <button 
-            type="button"
-            className={`${styles.styleOptionBtn} ${selectedStyle === 'studio' ? styles.styleOptionActive : ''}`}
-            onClick={() => setSelectedStyle('studio')}
-          >
-            <span className="material-icons-round" style={{ fontSize: 16 }}>dashboard_customize</span>
-            Mẫu 3: Athletic Studio (Viền thể thao)
-          </button>
-        </div>
-      </div>
-
       {/* Hidden quick upload input */}
       <input 
         type="file"
@@ -530,206 +489,9 @@ export default function TrainingVenuesClient() {
           {venues.map((venue: any) => {
             const imagePosition = venue.image_position || '50% 50%';
 
-            /* ── MẪU 1: HERO CINEMATIC ── */
-            if (selectedStyle === 'hero') {
-              return (
-                <div key={venue.id} className={`${styles.venueCard} ${styles.cardHero}`}>
-                  <div className={styles.venueImageContainer}>
-                    {venue.image_url ? (
-                      <img 
-                        src={venue.image_url} 
-                        alt={venue.name} 
-                        className={styles.venueImage} 
-                        style={{ objectPosition: imagePosition }}
-                      />
-                    ) : (
-                      <div className={styles.venuePlaceholder}>
-                        <span className={`material-icons-round ${styles.venuePlaceholderWatermark}`}>sports_martial_arts</span>
-                        <div className={styles.venuePlaceholderBadge}>
-                          <span className="material-icons-round" style={{ fontSize: 18, color: 'var(--primary)' }}>location_city</span>
-                          <span>Võ Đường / Điểm Tập</span>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className={styles.venueGradientFade} />
-
-                    {/* Status Badge */}
-                    <div className={styles.venueStatusOverlay}>
-                      <Badge variant={venue.status === 'active' ? 'success' : 'default'}>
-                        {venue.status === 'active' ? 'Hoạt động' : 'Ngừng'}
-                      </Badge>
-                    </div>
-
-                    {/* Quick photo & position toolbar */}
-                    {isAdminOrOwner && (
-                      <div className={styles.imageControlToolbar}>
-                        {venue.image_url && (
-                          <button 
-                            type="button"
-                            className={styles.imageControlBtn}
-                            onClick={() => handleOpenAdjuster(venue)}
-                            title="Điều chỉnh góc ảnh / căn lề"
-                          >
-                            <span className="material-icons-round" style={{ fontSize: 18 }}>crop</span>
-                          </button>
-                        )}
-                        <button 
-                          type="button"
-                          className={styles.imageControlBtn}
-                          onClick={() => handleQuickPhotoClick(venue.id)}
-                          title={venue.image_url ? "Thay đổi ảnh địa điểm" : "Tải ảnh địa điểm"}
-                        >
-                          <span className="material-icons-round" style={{ fontSize: 18 }}>photo_camera</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className={styles.venueBody}>
-                    <div className={styles.venueTitleRow}>
-                      <Link href={`/training/${venue.id}`} className={styles.venueName} title={venue.name}>
-                        {venue.name}
-                      </Link>
-                    </div>
-
-                    <div className={styles.venueAddress} title={venue.address || 'Chưa cập nhật địa chỉ'}>
-                      <span className={`material-icons-round ${styles.venueAddressIcon}`}>location_on</span>
-                      <span>{venue.address || 'Chưa cập nhật địa chỉ'}</span>
-                    </div>
-
-                    <div className={styles.venueStats}>
-                      <div className={styles.venueStatItem}>
-                        <div className={styles.venueStatLabel}>
-                          <span className={`material-icons-round ${styles.venueStatIcon}`}>school</span>
-                          Lớp học
-                        </div>
-                        <div className={styles.venueStatValue}>{venue.activeClassesCount} lớp</div>
-                      </div>
-                      <div className={styles.venueStatItem}>
-                        <div className={styles.venueStatLabel}>
-                          <span className={`material-icons-round ${styles.venueStatIcon}`}>groups</span>
-                          Học viên
-                        </div>
-                        <div className={styles.venueStatValue}>{venue.totalStudentsCount} hv</div>
-                      </div>
-                    </div>
-
-                    <div className={styles.venueFooter}>
-                      {isAdminOrOwner && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleEdit(venue)}
-                          title="Sửa địa điểm"
-                          leftIcon={<span className="material-icons-round" style={{ fontSize: 16 }}>edit</span>}
-                        >
-                          Sửa
-                        </Button>
-                      )}
-                      <Link href={`/training/${venue.id}`} style={{ flex: 1 }}>
-                        <Button variant="primary" size="sm" style={{ width: '100%' }}>
-                          Chi Tiết
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              );
-            }
-
-            /* ── MẪU 2: FULL-COVER GLASSMORPHIC ── */
-            if (selectedStyle === 'glass') {
-              return (
-                <div key={venue.id} className={`${styles.venueCard} ${styles.cardGlassmorphic}`}>
-                  {venue.image_url ? (
-                    <img 
-                      src={venue.image_url} 
-                      alt={venue.name} 
-                      className={styles.venueFullImage} 
-                      style={{ objectPosition: imagePosition }}
-                    />
-                  ) : (
-                    <div className={styles.venuePlaceholder}>
-                      <span className={`material-icons-round ${styles.venuePlaceholderWatermark}`}>sports_martial_arts</span>
-                      <div className={styles.venuePlaceholderBadge}>
-                        <span className="material-icons-round" style={{ fontSize: 18, color: 'var(--primary)' }}>location_city</span>
-                        <span>Võ Đường / Điểm Tập</span>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className={styles.glassOverlay} />
-
-                  {/* Status Badge */}
-                  <div className={styles.venueStatusOverlay}>
-                    <Badge variant={venue.status === 'active' ? 'success' : 'default'}>
-                      {venue.status === 'active' ? 'Hoạt động' : 'Ngừng'}
-                    </Badge>
-                  </div>
-
-                  {/* Top-Right Control Toolbar */}
-                  {isAdminOrOwner && (
-                    <div className={styles.imageControlToolbar} style={{ top: 14, left: 14, right: 'auto', bottom: 'auto' }}>
-                      {venue.image_url && (
-                        <button 
-                          type="button"
-                          className={styles.imageControlBtn}
-                          onClick={() => handleOpenAdjuster(venue)}
-                          title="Điều chỉnh góc ảnh"
-                        >
-                          <span className="material-icons-round" style={{ fontSize: 18 }}>crop</span>
-                        </button>
-                      )}
-                      <button 
-                        type="button"
-                        className={styles.imageControlBtn}
-                        onClick={() => handleQuickPhotoClick(venue.id)}
-                        title="Tải ảnh"
-                      >
-                        <span className="material-icons-round" style={{ fontSize: 18 }}>photo_camera</span>
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Frosted Glass Sheet */}
-                  <div className={styles.glassSheet}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Link href={`/training/${venue.id}`} className={styles.venueName} title={venue.name}>
-                        {venue.name}
-                      </Link>
-                    </div>
-
-                    <div className={styles.venueAddress} style={{ minHeight: 'auto' }} title={venue.address || 'Chưa cập nhật địa chỉ'}>
-                      <span className={`material-icons-round ${styles.venueAddressIcon}`}>location_on</span>
-                      <span>{venue.address || 'Chưa cập nhật địa chỉ'}</span>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                      <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--primary)' }}>
-                        {venue.activeClassesCount} lớp • {venue.totalStudentsCount} học viên
-                      </span>
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        {isAdminOrOwner && (
-                          <Button variant="ghost" size="sm" onClick={() => handleEdit(venue)}>
-                            Sửa
-                          </Button>
-                        )}
-                        <Link href={`/training/${venue.id}`}>
-                          <Button variant="primary" size="sm">
-                            Xem
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            }
-
-            /* ── MẪU 3: ATHLETIC STUDIO ── */
             return (
-              <div key={venue.id} className={`${styles.venueCard} ${styles.cardStudio}`}>
+              <div key={venue.id} className={styles.venueCard}>
+                {/* ── Photo Banner ── */}
                 <div className={styles.venueImageContainer}>
                   {venue.image_url ? (
                     <img 
@@ -748,12 +510,21 @@ export default function TrainingVenuesClient() {
                     </div>
                   )}
 
-                  <div className={styles.venueStatusOverlay}>
-                    <Badge variant={venue.status === 'active' ? 'success' : 'default'}>
-                      {venue.status === 'active' ? 'Hoạt động' : 'Ngừng'}
-                    </Badge>
+                  <div className={styles.venueGradientFade} />
+
+                  {/* Status Indicator Pill (Top Left) */}
+                  <div className={styles.venueStatusPill}>
+                    <span 
+                      className={`${styles.statusIndicatorDot} ${
+                        venue.status === 'active' 
+                          ? styles.statusIndicatorDotActive 
+                          : styles.statusIndicatorDotInactive
+                      }`} 
+                    />
+                    <span>{venue.status === 'active' ? 'Đang hoạt động' : 'Tạm dừng'}</span>
                   </div>
 
+                  {/* Quick photo & position controls (Top Right) */}
                   {isAdminOrOwner && (
                     <div className={styles.imageControlToolbar}>
                       {venue.image_url && (
@@ -761,7 +532,7 @@ export default function TrainingVenuesClient() {
                           type="button"
                           className={styles.imageControlBtn}
                           onClick={() => handleOpenAdjuster(venue)}
-                          title="Căn lề góc ảnh"
+                          title="Căn chỉnh vị trí ảnh (Pan 0-100%)"
                         >
                           <span className="material-icons-round" style={{ fontSize: 18 }}>crop</span>
                         </button>
@@ -770,7 +541,7 @@ export default function TrainingVenuesClient() {
                         type="button"
                         className={styles.imageControlBtn}
                         onClick={() => handleQuickPhotoClick(venue.id)}
-                        title="Đổi ảnh"
+                        title={venue.image_url ? "Thay đổi ảnh địa điểm" : "Tải ảnh địa điểm"}
                       >
                         <span className="material-icons-round" style={{ fontSize: 18 }}>photo_camera</span>
                       </button>
@@ -778,49 +549,75 @@ export default function TrainingVenuesClient() {
                   )}
                 </div>
 
+                {/* ── Card Body with Quiz-App Refined Typography ── */}
                 <div className={styles.venueBody}>
-                  <Link href={`/training/${venue.id}`} className={styles.venueName} title={venue.name}>
-                    {venue.name}
-                  </Link>
+                  {/* Watermark in background */}
+                  <span className={`material-icons-round ${styles.cardWatermark}`}>sports_martial_arts</span>
 
-                  <div className={styles.venueAddress} title={venue.address || 'Chưa cập nhật địa chỉ'}>
-                    <span className={`material-icons-round ${styles.venueAddressIcon}`}>location_on</span>
-                    <span>{venue.address || 'Chưa cập nhật địa chỉ'}</span>
-                  </div>
-
-                  <div className={styles.venueStats}>
-                    <div className={styles.venueStatItem}>
-                      <div className={styles.venueStatLabel}>
-                        <span className={`material-icons-round ${styles.venueStatIcon}`}>school</span>
-                        Lớp học
-                      </div>
-                      <div className={styles.venueStatValue}>{venue.activeClassesCount} lớp</div>
-                    </div>
-                    <div className={styles.venueStatItem}>
-                      <div className={styles.venueStatLabel}>
-                        <span className={`material-icons-round ${styles.venueStatIcon}`}>groups</span>
-                        Học viên
-                      </div>
-                      <div className={styles.venueStatValue}>{venue.totalStudentsCount} hv</div>
+                  {/* Category Pill Tag */}
+                  <div className={styles.venueCategoryRow}>
+                    <div className={styles.venueCategoryTag}>
+                      <span className="material-icons-round" style={{ fontSize: 12 }}>stars</span>
+                      <span>CƠ SỞ ĐÀO TẠO</span>
                     </div>
                   </div>
 
+                  {/* Prominent Venue Title */}
+                  <div className={styles.venueTitleRow}>
+                    <Link href={`/training/${venue.id}`} className={styles.venueName} title={venue.name}>
+                      {venue.name}
+                    </Link>
+                  </div>
+
+                  {/* Address Row with Stylized Badge */}
+                  <div className={styles.venueAddressRow} title={venue.address || 'Chưa cập nhật địa chỉ'}>
+                    <div className={styles.addressIconWrap}>
+                      <span className="material-icons-round" style={{ fontSize: 15 }}>location_on</span>
+                    </div>
+                    <span className={styles.addressText}>{venue.address || 'Chưa cập nhật địa chỉ'}</span>
+                  </div>
+
+                  {/* Two-Tone Bento Athletic Stat Chips */}
+                  <div className={styles.venueStatsRow}>
+                    <div className={styles.statChipTeal}>
+                      <div className={`${styles.statChipHeader} ${styles.statChipHeaderTeal}`}>
+                        <span className="material-icons-round" style={{ fontSize: 15 }}>sports_martial_arts</span>
+                        <span>LỚP ĐANG DẠY</span>
+                      </div>
+                      <div className={styles.statChipValue}>
+                        <span className={styles.statNumberTeal}>{venue.activeClassesCount}</span>
+                        <span className={styles.statUnit}>lớp</span>
+                      </div>
+                    </div>
+
+                    <div className={styles.statChipOrange}>
+                      <div className={`${styles.statChipHeader} ${styles.statChipHeaderOrange}`}>
+                        <span className="material-icons-round" style={{ fontSize: 15 }}>groups</span>
+                        <span>VÕ SINH</span>
+                      </div>
+                      <div className={styles.statChipValue}>
+                        <span className={styles.statNumberOrange}>{venue.totalStudentsCount}</span>
+                        <span className={styles.statUnit}>học viên</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer Action Buttons */}
                   <div className={styles.venueFooter}>
                     {isAdminOrOwner && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
+                      <button 
+                        type="button"
+                        className={styles.btnEditVenue}
                         onClick={() => handleEdit(venue)}
-                        title="Sửa"
-                        leftIcon={<span className="material-icons-round" style={{ fontSize: 16 }}>edit</span>}
+                        title="Chỉnh sửa thông tin"
                       >
-                        Sửa
-                      </Button>
+                        <span className="material-icons-round" style={{ fontSize: 16 }}>edit</span>
+                        <span>Sửa</span>
+                      </button>
                     )}
-                    <Link href={`/training/${venue.id}`} style={{ flex: 1 }}>
-                      <Button variant="outline" size="sm" style={{ width: '100%' }}>
-                        Chi Tiết
-                      </Button>
+                    <Link href={`/training/${venue.id}`} className={styles.btnDetailsVenue}>
+                      <span>Xem chi tiết cơ sở</span>
+                      <span className={`material-icons-round ${styles.btnDetailsArrow}`}>arrow_forward</span>
                     </Link>
                   </div>
                 </div>

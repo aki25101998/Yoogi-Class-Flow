@@ -1,77 +1,13 @@
 /* ==========================================================================
-   TRAINING VENUES — Athletic Card Grid & Photo Upload System
+   TRAINING VENUES — Refined Athletic Bento Card System
+   Inspired by modern quiz-app & Apple-grade card visual hierarchy
    ========================================================================== */
 
-/* Style Switcher Bar */
-.styleSwitcherBar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  background: var(--surface);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-2xl);
-  padding: 12px 18px;
-  margin-top: var(--space-2);
-  margin-bottom: var(--space-4);
-  box-shadow: var(--shadow-xs);
-  flex-wrap: wrap;
-}
-
-.styleSwitcherLabel {
-  font-size: 0.8125rem;
-  font-weight: 700;
-  color: var(--text-main);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.styleSwitcherOptions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.styleOptionBtn {
-  padding: 8px 16px;
-  border-radius: var(--radius-full);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  border: 1px solid var(--border-light);
-  background: var(--surface-hover);
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.styleOptionBtn:hover {
-  background: var(--surface-active);
-  color: var(--text-main);
-  border-color: var(--border);
-  transform: translateY(-1px);
-}
-
-.styleOptionActive {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%) !important;
-  color: var(--text-on-primary) !important;
-  border-color: transparent !important;
-  box-shadow: 0 4px 14px rgba(20, 184, 166, 0.35);
-}
-
-/* ==========================================================================
-   GRID LAYOUTS
-   ========================================================================== */
+/* Grid Layout */
 .venuesGrid {
   display: grid;
   grid-template-columns: repeat(1, 1fr);
-  gap: 24px;
+  gap: 28px;
   margin-top: var(--space-4);
   margin-bottom: var(--space-8);
 }
@@ -82,187 +18,74 @@
   }
 }
 
-@media (min-width: 1080px) {
+@media (min-width: 1120px) {
   .venuesGrid {
     grid-template-columns: repeat(3, 1fr);
   }
 }
 
 /* ==========================================================================
-   BASE VENUE CARD
+   ELEVATED VENUE CARD (MẪU 1: HERO CINEMATIC REFINED)
    ========================================================================== */
 .venueCard {
-  background: var(--surface);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-2xl);
+  background: linear-gradient(160deg, #ffffff 0%, rgba(240, 253, 250, 0.5) 100%);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 28px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05), 0 2px 6px rgba(0, 0, 0, 0.02);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
+}
+
+:global([data-theme='dark']) .venueCard {
+  background: linear-gradient(160deg, #131d2e 0%, #0c121e 100%);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 36px -8px rgba(0, 0, 0, 0.5);
 }
 
 .venueCard:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-xl);
+  transform: translateY(-6px);
   border-color: rgba(20, 184, 166, 0.45);
+  box-shadow: 0 24px 48px -12px rgba(20, 184, 166, 0.22), 0 8px 16px -6px rgba(0, 0, 0, 0.08);
 }
 
-/* ==========================================================================
-   PHONG CÁCH 1: HERO CINEMATIC (Mặc định được khuyến nghị)
-   ========================================================================== */
-.cardHero .venueImageContainer {
+/* Image Banner Container */
+.venueImageContainer {
   position: relative;
-  height: 220px;
+  height: 200px;
   width: 100%;
   overflow: hidden;
-  background: var(--surface-hover);
+  background: #090e17;
 }
 
-.cardHero .venueGradientFade {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 60%, var(--surface) 100%);
-  pointer-events: none;
-  z-index: 1;
-}
-
-.cardHero .venueBody {
-  padding: 18px 24px 22px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  flex: 1;
-  margin-top: -30px;
-  position: relative;
-  z-index: 2;
-}
-
-.cardHero .venueName {
-  font-size: 1.25rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--text-main);
-  text-decoration: none;
-  line-height: 1.3;
-}
-
-.cardHero .venueName:hover {
-  color: var(--primary);
-}
-
-/* ==========================================================================
-   PHONG CÁCH 2: FULL-COVER GLASSMORPHIC (Tràn ảnh toàn bộ)
-   ========================================================================== */
-.cardGlassmorphic {
-  height: 380px;
-  border-radius: var(--radius-2xl);
-  position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.cardGlassmorphic .venueFullImage {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.5s ease;
-  z-index: 0;
-}
-
-.cardGlassmorphic:hover .venueFullImage {
-  transform: scale(1.08);
-}
-
-.cardGlassmorphic .glassOverlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.5) 50%, rgba(0, 0, 0, 0.85) 100%);
-  z-index: 1;
-  pointer-events: none;
-}
-
-.cardGlassmorphic .glassSheet {
-  position: absolute;
-  bottom: 12px;
-  left: 12px;
-  right: 12px;
-  padding: 16px 18px;
-  border-radius: var(--radius-xl);
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  z-index: 2;
-  transition: transform 0.25s ease, background 0.25s ease;
-}
-
-:global([data-theme='dark']) .cardGlassmorphic .glassSheet {
-  background: rgba(15, 23, 42, 0.85);
-  border-color: rgba(255, 255, 255, 0.12);
-}
-
-.cardGlassmorphic:hover .glassSheet {
-  transform: translateY(-2px);
-}
-
-.cardGlassmorphic .venueName {
-  font-size: 1.1875rem;
-  font-weight: 800;
-  color: var(--text-main);
-  text-decoration: none;
-}
-
-/* ==========================================================================
-   PHONG CÁCH 3: ATHLETIC STUDIO (Khung thể thao tương phản cao)
-   ========================================================================== */
-.cardStudio {
-  padding: 12px;
-  border-radius: 26px;
-}
-
-.cardStudio .venueImageContainer {
-  height: 185px;
-  border-radius: 18px;
-  overflow: hidden;
-  position: relative;
-  background: var(--surface-hover);
-}
-
-.cardStudio .venueBody {
-  padding: 16px 8px 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  flex: 1;
-}
-
-.cardStudio .venueName {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--text-main);
-  text-decoration: none;
-}
-
-/* ==========================================================================
-   IMAGE CONTROLS & PLACEHOLDER
-   ========================================================================== */
 .venueImage {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .venueCard:hover .venueImage {
   transform: scale(1.05);
 }
 
+/* Cinematic Gradient Fade */
+.venueGradientFade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.35) 0%,
+    rgba(0, 0, 0, 0) 40%,
+    rgba(0, 0, 0, 0.6) 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Empty State / Photo Placeholder */
 .venuePlaceholder {
   width: 100%;
   height: 100%;
@@ -271,26 +94,26 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 15%, var(--surface)) 0%, color-mix(in srgb, var(--warning) 10%, var(--surface-hover)) 100%);
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.15) 0%, rgba(255, 107, 53, 0.12) 100%);
   overflow: hidden;
 }
 
 .venuePlaceholderWatermark {
   position: absolute;
-  right: -10px;
-  bottom: -15px;
-  font-size: 120px;
+  right: -15px;
+  bottom: -20px;
+  font-size: 130px;
   line-height: 1;
   color: var(--primary);
   opacity: 0.12;
   pointer-events: none;
   user-select: none;
-  transition: transform 0.3s ease, opacity 0.3s ease;
+  transition: transform 0.4s ease, opacity 0.4s ease;
 }
 
 .venueCard:hover .venuePlaceholderWatermark {
   opacity: 0.22;
-  transform: scale(1.1) rotate(-5deg);
+  transform: scale(1.1) rotate(-6deg);
 }
 
 .venuePlaceholderBadge {
@@ -299,36 +122,64 @@
   gap: 8px;
   padding: 8px 16px;
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
   color: var(--text-main);
   font-size: 0.8125rem;
   font-weight: 700;
   z-index: 1;
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
 :global([data-theme='dark']) .venuePlaceholderBadge {
-  background: rgba(18, 24, 38, 0.8);
-  border-color: rgba(255, 255, 255, 0.12);
-  color: var(--text-main);
+  background: rgba(18, 24, 38, 0.85);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #fff;
 }
 
-/* Floating Actions on Image */
-.venueStatusOverlay {
+/* Floating Status Pill (Top Left on Photo) */
+.venueStatusPill {
   position: absolute;
   top: 14px;
-  right: 14px;
+  left: 14px;
   z-index: 3;
-  backdrop-filter: blur(8px);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
   border-radius: var(--radius-full);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(12px);
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
 }
 
+.statusIndicatorDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.statusIndicatorDotActive {
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.statusIndicatorDotInactive {
+  background: #94a3b8;
+}
+
+/* Floating Image Control Buttons (Top Right on Photo) */
 .imageControlToolbar {
   position: absolute;
-  bottom: 12px;
+  top: 12px;
   right: 12px;
   z-index: 3;
   display: flex;
@@ -340,101 +191,343 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  color: #1e293b;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-  backdrop-filter: blur(8px);
-  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(10px);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 :global([data-theme='dark']) .imageControlBtn {
-  background: rgba(18, 24, 38, 0.85);
-  border-color: rgba(255, 255, 255, 0.15);
-  color: #fff;
+  background: rgba(15, 23, 42, 0.8);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #f1f5f9;
 }
 
 .imageControlBtn:hover {
   background: var(--primary);
-  color: #fff;
+  color: #ffffff;
   transform: scale(1.1);
-  box-shadow: 0 4px 14px rgba(20, 184, 166, 0.4);
+  box-shadow: 0 6px 18px rgba(20, 184, 166, 0.45);
 }
 
 /* ==========================================================================
-   METRICS & DETAILS
+   CARD BODY & TYPOGRAPHY
    ========================================================================== */
-.venueAddress {
+.venueBody {
+  padding: 22px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  position: relative;
+  z-index: 2;
+}
+
+/* Subtle martial arts watermark in body */
+.cardWatermark {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  font-size: 110px;
+  line-height: 1;
+  color: var(--primary);
+  opacity: 0.04;
+  pointer-events: none;
+  user-select: none;
+  transition: all 0.4s ease;
+  z-index: 0;
+}
+
+.venueCard:hover .cardWatermark {
+  opacity: 0.08;
+  transform: scale(1.08) rotate(-4deg);
+}
+
+/* Category Tag / Micro Breadcrumb */
+.venueCategoryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.venueCategoryTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  background: rgba(20, 184, 166, 0.08);
+  border: 1px solid rgba(20, 184, 166, 0.2);
+  color: var(--primary-hover);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+:global([data-theme='dark']) .venueCategoryTag {
+  background: rgba(20, 184, 166, 0.16);
+  border-color: rgba(20, 184, 166, 0.3);
+  color: #2dd4bf;
+}
+
+/* Venue Main Title */
+.venueTitleRow {
   display: flex;
   align-items: flex-start;
-  gap: 6px;
-  font-size: 0.8125rem;
-  color: var(--text-secondary);
-  line-height: 1.4;
-  min-height: 2.6em;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.venueName {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--text-main);
+  text-decoration: none;
+  line-height: 1.25;
+  transition: color 0.2s ease;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.venueAddressIcon {
-  font-size: 16px;
+.venueName:hover {
   color: var(--primary);
+}
+
+/* Address Row with Clean Icon Badge */
+.venueAddressRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  line-height: 1.45;
+  margin-top: -4px;
+}
+
+.addressIconWrap {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  background: rgba(20, 184, 166, 0.1);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
   margin-top: 2px;
 }
 
-.venueStats {
+:global([data-theme='dark']) .addressIconWrap {
+  background: rgba(20, 184, 166, 0.18);
+  color: #2dd4bf;
+}
+
+.addressText {
+  font-size: 0.84375rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   METRICS / STATS CHIPS (TWO-TONE BENTO ATHLETIC STYLE)
+   ========================================================================== */
+.venueStatsRow {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  padding: 12px 14px;
-  background: var(--surface-hover);
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--border-light);
+  gap: 12px;
+  position: relative;
+  z-index: 1;
 }
 
-.venueStatItem {
+.statChipTeal,
+.statChipOrange {
+  border-radius: 18px;
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 6px;
+  transition: all 0.25s ease;
 }
 
-.venueStatLabel {
-  font-size: 0.6875rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-muted);
+/* Teal Stat (Classes) */
+.statChipTeal {
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.08) 0%, rgba(20, 184, 166, 0.02) 100%);
+  border: 1px solid rgba(20, 184, 166, 0.18);
+}
+
+:global([data-theme='dark']) .statChipTeal {
+  background: rgba(20, 184, 166, 0.1);
+  border-color: rgba(20, 184, 166, 0.25);
+}
+
+.venueCard:hover .statChipTeal {
+  border-color: rgba(20, 184, 166, 0.35);
+  background: rgba(20, 184, 166, 0.12);
+}
+
+/* Orange Stat (Students) */
+.statChipOrange {
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.08) 0%, rgba(255, 107, 53, 0.02) 100%);
+  border: 1px solid rgba(255, 107, 53, 0.18);
+}
+
+:global([data-theme='dark']) .statChipOrange {
+  background: rgba(255, 107, 53, 0.1);
+  border-color: rgba(255, 107, 53, 0.25);
+}
+
+.venueCard:hover .statChipOrange {
+  border-color: rgba(255, 107, 53, 0.35);
+  background: rgba(255, 107, 53, 0.12);
+}
+
+/* Stat Chip Header */
+.statChipHeader {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
-.venueStatIcon {
-  font-size: 14px;
-  color: var(--primary);
+.statChipHeaderTeal {
+  color: #0f766e;
 }
 
-.venueStatValue {
-  font-size: 0.9375rem;
-  font-weight: 700;
-  color: var(--text-main);
-  line-height: 1.2;
+:global([data-theme='dark']) .statChipHeaderTeal {
+  color: #2dd4bf;
 }
 
+.statChipHeaderOrange {
+  color: #c2410c;
+}
+
+:global([data-theme='dark']) .statChipHeaderOrange {
+  color: #fb923c;
+}
+
+/* Stat Chip Value */
+.statChipValue {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.statNumberTeal {
+  font-size: 1.35rem;
+  font-weight: 900;
+  line-height: 1;
+  color: #0f766e;
+  letter-spacing: -0.02em;
+}
+
+:global([data-theme='dark']) .statNumberTeal {
+  color: #5eead4;
+}
+
+.statNumberOrange {
+  font-size: 1.35rem;
+  font-weight: 900;
+  line-height: 1;
+  color: #c2410c;
+  letter-spacing: -0.02em;
+}
+
+:global([data-theme='dark']) .statNumberOrange {
+  color: #fdba74;
+}
+
+.statUnit {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   FOOTER ACTIONS
+   ========================================================================== */
 .venueFooter {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-top: auto;
-  padding-top: 12px;
+  padding-top: 14px;
   border-top: 1px solid var(--border-light);
+  position: relative;
+  z-index: 1;
+}
+
+.btnEditVenue {
+  height: 42px;
+  padding: 0 16px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-light);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-weight: 700;
+  font-size: 0.8125rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.btnEditVenue:hover {
+  background: var(--surface-hover);
+  color: var(--text-main);
+  border-color: var(--border);
+  transform: translateY(-1px);
+}
+
+.btnDetailsVenue {
+  flex: 1;
+  height: 42px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(20, 184, 166, 0.3);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.btnDetailsVenue:hover {
+  background: linear-gradient(135deg, #2dd4bf 0%, #0f766e 100%);
+  box-shadow: 0 8px 24px rgba(20, 184, 166, 0.45);
+  transform: translateY(-2px);
+  color: #ffffff;
+}
+
+.btnDetailsArrow {
+  font-size: 18px;
+  transition: transform 0.2s ease;
+}
+
+.venueCard:hover .btnDetailsArrow {
+  transform: translateX(4px);
 }
 
 /* ==========================================================================
@@ -460,46 +553,52 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: object-position 0.1s ease;
+  transition: object-position 0.15s ease-out;
 }
 
 .presetBtnGroup {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: 10px;
 }
 
 .presetBtn {
-  padding: 8px 12px;
+  padding: 10px 12px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-light);
   background: var(--surface-hover);
+  color: var(--text-secondary);
   font-size: 0.8125rem;
   font-weight: 600;
-  color: var(--text-main);
   cursor: pointer;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  transition: all 0.15s ease;
+  gap: 4px;
+  transition: all 0.2s ease;
 }
 
 .presetBtn:hover {
   background: var(--surface-active);
-  border-color: var(--primary);
+  color: var(--text-main);
+  border-color: var(--border);
 }
 
 .presetBtnActive {
-  background: var(--primary-light) !important;
+  background: rgba(20, 184, 166, 0.12) !important;
   color: var(--primary) !important;
   border-color: var(--primary) !important;
+  font-weight: 700 !important;
 }
 
 .sliderContainer {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  padding: 14px;
+  background: var(--surface-hover);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
 }
 
 .sliderHeader {
@@ -513,11 +612,15 @@
 
 .rangeSlider {
   width: 100%;
+  height: 6px;
+  border-radius: 3px;
   accent-color: var(--primary);
   cursor: pointer;
 }
 
-/* Modal upload dropzone */
+/* ==========================================================================
+   IMAGE UPLOAD SECTION IN VENUE MODAL
+   ========================================================================== */
 .modalImageSection {
   display: flex;
   flex-direction: column;
@@ -525,7 +628,7 @@
 }
 
 .modalImageLabel {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-main);
 }
@@ -547,7 +650,7 @@
 
 .modalImagePreviewBox:hover {
   border-color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 5%, var(--surface-hover));
+  background: color-mix(in srgb, var(--primary) 4%, var(--surface-hover));
 }
 
 .modalImagePreviewImg {
@@ -566,14 +669,39 @@
   justify-content: center;
   gap: 6px;
   color: #fff;
-  opacity: 0;
-  transition: opacity 0.2s ease;
   font-size: 0.8125rem;
   font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  backdrop-filter: blur(4px);
 }
 
 .modalImagePreviewBox:hover .modalImageOverlay {
   opacity: 1;
+}
+
+.modalImageRemoveBtn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.9);
+  color: #fff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 2;
+  transition: transform 0.2s ease;
+}
+
+.modalImageRemoveBtn:hover {
+  transform: scale(1.15);
+  background: #dc2626;
 }
 
 .modalImageEmptyState {
@@ -583,42 +711,20 @@
   justify-content: center;
   gap: 8px;
   color: var(--text-secondary);
-  font-size: 0.8125rem;
-  font-weight: 500;
+  font-size: 0.875rem;
+  font-weight: 600;
   text-align: center;
   padding: 16px;
 }
 
 .modalImageEmptyIcon {
-  font-size: 36px;
+  font-size: 40px;
   color: var(--primary);
+  opacity: 0.8;
 }
 
 .modalImageHelp {
   font-size: 0.75rem;
+  font-weight: 500;
   color: var(--text-muted);
-}
-
-.modalImageRemoveBtn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 5;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: rgba(239, 68, 68, 0.9);
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  transition: transform 0.2s ease;
-}
-
-.modalImageRemoveBtn:hover {
-  transform: scale(1.1);
-  background: #dc2626;
 }
