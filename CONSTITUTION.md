@@ -741,6 +741,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-10-25 | 1.3.7 | Nâng cấp thanh chuyển đổi 3 phong cách thẻ (Hero Cinematic, Full-Cover Kính Mờ, Athletic Studio) và bộ điều chỉnh góc ảnh/căn lề trực quan (image position 0-100%, preset Đỉnh/Giữa/Đáy) kèm hỗ trợ server localhost:3000 |
 | 2026-10-25 | 1.3.8 | Bổ sung cơ chế tự phục hồi (resilient schema fallback) cho API địa điểm và hook truy vấn: tự động thử lại khi thiếu cột image_position/image_url trong cache PostgREST, cập nhật file migration 034 với NOTIFY pgrst |
 | 2026-10-25 | 1.3.9 | Nâng cấp toàn diện thiết kế Mẫu 1 (Hero Cinematic Refined): áp dụng visual hierarchy cao cấp từ Quiz App (border-radius 28px, category pill tag, heading 1.35rem sắc nét, hai bento chips thể thao hai màu Teal/Orange nổi bật với số liệu 20px, nút CTA pill gradient với icon mũi tên chuyển động) |
+| 2026-10-25 | 1.3.10 | Tái thiết kế hàng hiển thị địa chỉ thành Location Capsule Bar cao cấp: badge định vị màu Cam San Hô nổi bật, micro-label ĐỊA ĐIỂM TẬP LUYỆN, text địa chỉ semibold sắc nét và tích hợp liên kết Google Maps tương tác |
 
 ---
 
