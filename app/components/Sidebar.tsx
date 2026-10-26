@@ -15,6 +15,7 @@ const ADMIN_NAV = [
   ]},
   { section: 'VẬN HÀNH', items: [
     { icon: 'people', label: 'Huấn luyện viên', route: '/coaches', permission: 'manage_coaches' },
+    { icon: 'groups', label: 'Học viên', route: '/students', permission: 'manage_students' },
     { icon: 'school', label: 'Quản lý Đào tạo', route: '/training', permission: 'manage_venues' },
     { icon: 'calendar_month', label: 'Lịch dạy', submenus: [
         { label: 'Lịch', route: '/schedule', permission: 'manage_schedule' },
