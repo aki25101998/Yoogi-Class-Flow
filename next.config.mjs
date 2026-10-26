@@ -11,11 +11,6 @@ const nextConfig = {
         source: '/classes',
         destination: '/training',
         permanent: false,
-      },
-      {
-        source: '/students',
-        destination: '/training',
-        permanent: false,
       }
     ];
   },
