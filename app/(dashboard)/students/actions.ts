@@ -4,7 +4,19 @@ import { createClient } from '@/utils/supabase/server';
 import { getCurrentOrganizationContext } from '@/services/organization.service';
 import { revalidatePath } from 'next/cache';
 
-export async function addStudentAction(data: { name: string; phone?: string; parent_name?: string; parent_phone?: string; dob: string; current_belt_id?: string | null; venue_id: string }) {
+export async function addStudentAction(
+  data: { 
+    name: string; 
+    phone?: string; 
+    parent_name?: string; 
+    parent_phone?: string; 
+    dob: string; 
+    current_belt_id?: string | null; 
+    venue_id: string;
+    status?: string;
+  },
+  classId?: string
+) {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
@@ -48,20 +60,44 @@ export async function addStudentAction(data: { name: string; phone?: string; par
       return { success: false, error: 'Địa điểm không tồn tại trong tổ chức này.' };
     }
   }
+
+  // Verify class belongs to org if provided
+  if (classId) {
+    const { data: cls } = await supabase
+      .from('venue_classes')
+      .select('id')
+      .eq('id', classId)
+      .eq('organization_id', orgId)
+      .single();
+    
+    if (!cls) {
+      return { success: false, error: 'Lớp học không tồn tại trong tổ chức này.' };
+    }
+  }
   
-  const { error } = await supabase.from('students').insert({
+  const { data: newStudent, error } = await supabase.from('students').insert({
     organization_id: orgId,
     name: data.name.trim(),
-    phone: data.phone,
-    parent_name: data.parent_name,
-    parent_phone: data.parent_phone,
+    phone: data.phone || null,
+    parent_name: data.parent_name || null,
+    parent_phone: data.parent_phone || null,
     dob: data.dob,
     current_belt_id: data.current_belt_id || null,
     venue_id: data.venue_id || null,
-    status: 'active'
-  });
+    status: data.status || 'active'
+  }).select('id').single();
 
   if (error) return { success: false, error: error.message };
+
+  if (classId && newStudent) {
+    const { error: enrollErr } = await supabase.from('class_students').insert({
+      organization_id: orgId,
+      student_id: newStudent.id,
+      class_id: classId,
+      status: 'active'
+    });
+    if (enrollErr) console.error('Error auto enrolling student to class:', enrollErr);
+  }
   
   revalidatePath('/students');
   return { success: true };
