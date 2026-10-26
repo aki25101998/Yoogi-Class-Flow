@@ -109,53 +109,58 @@ BEGIN
   -- ============================================================
   -- 2. ORGANIZATION BELTS (8 Cấp Đai Chuẩn)
   -- ============================================================
-  INSERT INTO public.organization_belts (organization_id, name, display_order, is_active)
-  VALUES (v_org_id, 'Đai Trắng (Cấp 10)', 1, true)
-  ON CONFLICT (organization_id, name) DO UPDATE SET is_active = true
-  RETURNING id INTO v_belt_white_id;
-  IF v_belt_white_id IS NULL THEN SELECT id INTO v_belt_white_id FROM public.organization_belts WHERE organization_id = v_org_id AND name = 'Đai Trắng (Cấp 10)'; END IF;
+  -- If belts already exist in this organization, map them to avoid violating unique_org_display_order
+  IF EXISTS (SELECT 1 FROM public.organization_belts WHERE organization_id = v_org_id) THEN
+    SELECT id INTO v_belt_white_id FROM public.organization_belts WHERE organization_id = v_org_id ORDER BY display_order ASC LIMIT 1 OFFSET 0;
+    SELECT id INTO v_belt_yellow_id FROM public.organization_belts WHERE organization_id = v_org_id ORDER BY display_order ASC LIMIT 1 OFFSET 1;
+    SELECT id INTO v_belt_orange_id FROM public.organization_belts WHERE organization_id = v_org_id ORDER BY display_order ASC LIMIT 1 OFFSET 2;
+    SELECT id INTO v_belt_green_id FROM public.organization_belts WHERE organization_id = v_org_id ORDER BY display_order ASC LIMIT 1 OFFSET 3;
+    SELECT id INTO v_belt_blue_id FROM public.organization_belts WHERE organization_id = v_org_id ORDER BY display_order ASC LIMIT 1 OFFSET 4;
+    SELECT id INTO v_belt_red_id FROM public.organization_belts WHERE organization_id = v_org_id ORDER BY display_order ASC LIMIT 1 OFFSET 5;
+    SELECT id INTO v_belt_brown_id FROM public.organization_belts WHERE organization_id = v_org_id ORDER BY display_order ASC LIMIT 1 OFFSET 6;
+    SELECT id INTO v_belt_black_id FROM public.organization_belts WHERE organization_id = v_org_id ORDER BY display_order ASC LIMIT 1 OFFSET 7;
 
-  INSERT INTO public.organization_belts (organization_id, name, display_order, is_active)
-  VALUES (v_org_id, 'Đai Vàng (Cấp 8)', 2, true)
-  ON CONFLICT (organization_id, name) DO UPDATE SET is_active = true
-  RETURNING id INTO v_belt_yellow_id;
-  IF v_belt_yellow_id IS NULL THEN SELECT id INTO v_belt_yellow_id FROM public.organization_belts WHERE organization_id = v_org_id AND name = 'Đai Vàng (Cấp 8)'; END IF;
+    -- Ensure fallbacks if fewer than 8 belts exist
+    v_belt_yellow_id := COALESCE(v_belt_yellow_id, v_belt_white_id);
+    v_belt_orange_id := COALESCE(v_belt_orange_id, v_belt_white_id);
+    v_belt_green_id := COALESCE(v_belt_green_id, v_belt_white_id);
+    v_belt_blue_id := COALESCE(v_belt_blue_id, v_belt_white_id);
+    v_belt_red_id := COALESCE(v_belt_red_id, v_belt_white_id);
+    v_belt_brown_id := COALESCE(v_belt_brown_id, v_belt_white_id);
+    v_belt_black_id := COALESCE(v_belt_black_id, v_belt_white_id);
+  ELSE
+    INSERT INTO public.organization_belts (organization_id, name, display_order, is_active)
+    VALUES (v_org_id, 'Đai Trắng (Cấp 10)', 1, true)
+    RETURNING id INTO v_belt_white_id;
 
-  INSERT INTO public.organization_belts (organization_id, name, display_order, is_active)
-  VALUES (v_org_id, 'Đai Cam (Cấp 6)', 3, true)
-  ON CONFLICT (organization_id, name) DO UPDATE SET is_active = true
-  RETURNING id INTO v_belt_orange_id;
-  IF v_belt_orange_id IS NULL THEN SELECT id INTO v_belt_orange_id FROM public.organization_belts WHERE organization_id = v_org_id AND name = 'Đai Cam (Cấp 6)'; END IF;
+    INSERT INTO public.organization_belts (organization_id, name, display_order, is_active)
+    VALUES (v_org_id, 'Đai Vàng (Cấp 8)', 2, true)
+    RETURNING id INTO v_belt_yellow_id;
 
-  INSERT INTO public.organization_belts (organization_id, name, display_order, is_active)
-  VALUES (v_org_id, 'Đai Xanh Lá (Cấp 4)', 4, true)
-  ON CONFLICT (organization_id, name) DO UPDATE SET is_active = true
-  RETURNING id INTO v_belt_green_id;
-  IF v_belt_green_id IS NULL THEN SELECT id INTO v_belt_green_id FROM public.organization_belts WHERE organization_id = v_org_id AND name = 'Đai Xanh Lá (Cấp 4)'; END IF;
+    INSERT INTO public.organization_belts (organization_id, name, display_order, is_active)
+    VALUES (v_org_id, 'Đai Cam (Cấp 6)', 3, true)
+    RETURNING id INTO v_belt_orange_id;
 
-  INSERT INTO public.organization_belts (organization_id, name, display_order, is_active)
-  VALUES (v_org_id, 'Đai Xanh Dương (Cấp 2)', 5, true)
-  ON CONFLICT (organization_id, name) DO UPDATE SET is_active = true
-  RETURNING id INTO v_belt_blue_id;
-  IF v_belt_blue_id IS NULL THEN SELECT id INTO v_belt_blue_id FROM public.organization_belts WHERE organization_id = v_org_id AND name = 'Đai Xanh Dương (Cấp 2)'; END IF;
+    INSERT INTO public.organization_belts (organization_id, name, display_order, is_active)
+    VALUES (v_org_id, 'Đai Xanh Lá (Cấp 4)', 4, true)
+    RETURNING id INTO v_belt_green_id;
 
-  INSERT INTO public.organization_belts (organization_id, name, display_order, is_active)
-  VALUES (v_org_id, 'Đai Đỏ (Cấp 1)', 6, true)
-  ON CONFLICT (organization_id, name) DO UPDATE SET is_active = true
-  RETURNING id INTO v_belt_red_id;
-  IF v_belt_red_id IS NULL THEN SELECT id INTO v_belt_red_id FROM public.organization_belts WHERE organization_id = v_org_id AND name = 'Đai Đỏ (Cấp 1)'; END IF;
+    INSERT INTO public.organization_belts (organization_id, name, display_order, is_active)
+    VALUES (v_org_id, 'Đai Xanh Dương (Cấp 2)', 5, true)
+    RETURNING id INTO v_belt_blue_id;
 
-  INSERT INTO public.organization_belts (organization_id, name, display_order, is_active)
-  VALUES (v_org_id, 'Đai Nâu (Cận Huyền Đai)', 7, true)
-  ON CONFLICT (organization_id, name) DO UPDATE SET is_active = true
-  RETURNING id INTO v_belt_brown_id;
-  IF v_belt_brown_id IS NULL THEN SELECT id INTO v_belt_brown_id FROM public.organization_belts WHERE organization_id = v_org_id AND name = 'Đai Nâu (Cận Huyền Đai)'; END IF;
+    INSERT INTO public.organization_belts (organization_id, name, display_order, is_active)
+    VALUES (v_org_id, 'Đai Đỏ (Cấp 1)', 6, true)
+    RETURNING id INTO v_belt_red_id;
 
-  INSERT INTO public.organization_belts (organization_id, name, display_order, is_active)
-  VALUES (v_org_id, 'Huyền Đai (1 Đẳng)', 8, true)
-  ON CONFLICT (organization_id, name) DO UPDATE SET is_active = true
-  RETURNING id INTO v_belt_black_id;
-  IF v_belt_black_id IS NULL THEN SELECT id INTO v_belt_black_id FROM public.organization_belts WHERE organization_id = v_org_id AND name = 'Huyền Đai (1 Đẳng)'; END IF;
+    INSERT INTO public.organization_belts (organization_id, name, display_order, is_active)
+    VALUES (v_org_id, 'Đai Nâu (Cận Huyền Đai)', 7, true)
+    RETURNING id INTO v_belt_brown_id;
+
+    INSERT INTO public.organization_belts (organization_id, name, display_order, is_active)
+    VALUES (v_org_id, 'Huyền Đai (1 Đẳng)', 8, true)
+    RETURNING id INTO v_belt_black_id;
+  END IF;
 
   -- ============================================================
   -- 3. VENUES (3 Địa Điểm Đẹp với Ảnh Thể Thao Chất Lượng Cao)
@@ -351,46 +356,70 @@ BEGIN
   -- 6. CLASS COACHES (Gán HLV Trưởng và Trợ Giảng)
   -- ============================================================
   -- Class 1: Master Hùng (HEAD_COACH), Coach Tuấn (ASSISTANT_COACH)
-  INSERT INTO public.class_coaches (organization_id, class_id, coach_id, role)
-  VALUES (v_org_id, v_class1_id, v_coach1_id, 'HEAD_COACH')
-  ON CONFLICT (class_id, coach_id) DO UPDATE SET role = 'HEAD_COACH';
+  IF NOT EXISTS (SELECT 1 FROM public.class_coaches WHERE class_id = v_class1_id AND coach_id = v_coach1_id) THEN
+    IF NOT EXISTS (SELECT 1 FROM public.class_coaches WHERE class_id = v_class1_id AND UPPER(role) = 'HEAD_COACH') THEN
+      INSERT INTO public.class_coaches (organization_id, class_id, coach_id, role) VALUES (v_org_id, v_class1_id, v_coach1_id, 'HEAD_COACH');
+    ELSE
+      INSERT INTO public.class_coaches (organization_id, class_id, coach_id, role) VALUES (v_org_id, v_class1_id, v_coach1_id, 'ASSISTANT_COACH');
+    END IF;
+  END IF;
 
-  INSERT INTO public.class_coaches (organization_id, class_id, coach_id, role)
-  VALUES (v_org_id, v_class1_id, v_coach4_id, 'ASSISTANT_COACH')
-  ON CONFLICT (class_id, coach_id) DO UPDATE SET role = 'ASSISTANT_COACH';
+  IF NOT EXISTS (SELECT 1 FROM public.class_coaches WHERE class_id = v_class1_id AND coach_id = v_coach4_id) THEN
+    INSERT INTO public.class_coaches (organization_id, class_id, coach_id, role) VALUES (v_org_id, v_class1_id, v_coach4_id, 'ASSISTANT_COACH');
+  END IF;
 
   -- Class 2: Master Hùng (HEAD_COACH)
-  INSERT INTO public.class_coaches (organization_id, class_id, coach_id, role)
-  VALUES (v_org_id, v_class2_id, v_coach1_id, 'HEAD_COACH')
-  ON CONFLICT (class_id, coach_id) DO UPDATE SET role = 'HEAD_COACH';
+  IF NOT EXISTS (SELECT 1 FROM public.class_coaches WHERE class_id = v_class2_id AND coach_id = v_coach1_id) THEN
+    IF NOT EXISTS (SELECT 1 FROM public.class_coaches WHERE class_id = v_class2_id AND UPPER(role) = 'HEAD_COACH') THEN
+      INSERT INTO public.class_coaches (organization_id, class_id, coach_id, role) VALUES (v_org_id, v_class2_id, v_coach1_id, 'HEAD_COACH');
+    ELSE
+      INSERT INTO public.class_coaches (organization_id, class_id, coach_id, role) VALUES (v_org_id, v_class2_id, v_coach1_id, 'ASSISTANT_COACH');
+    END IF;
+  END IF;
 
   -- Class 3: Coach Minh (HEAD_COACH), Coach Lan (ASSISTANT_COACH)
-  INSERT INTO public.class_coaches (organization_id, class_id, coach_id, role)
-  VALUES (v_org_id, v_class3_id, v_coach2_id, 'HEAD_COACH')
-  ON CONFLICT (class_id, coach_id) DO UPDATE SET role = 'HEAD_COACH';
+  IF NOT EXISTS (SELECT 1 FROM public.class_coaches WHERE class_id = v_class3_id AND coach_id = v_coach2_id) THEN
+    IF NOT EXISTS (SELECT 1 FROM public.class_coaches WHERE class_id = v_class3_id AND UPPER(role) = 'HEAD_COACH') THEN
+      INSERT INTO public.class_coaches (organization_id, class_id, coach_id, role) VALUES (v_org_id, v_class3_id, v_coach2_id, 'HEAD_COACH');
+    ELSE
+      INSERT INTO public.class_coaches (organization_id, class_id, coach_id, role) VALUES (v_org_id, v_class3_id, v_coach2_id, 'ASSISTANT_COACH');
+    END IF;
+  END IF;
 
-  INSERT INTO public.class_coaches (organization_id, class_id, coach_id, role)
-  VALUES (v_org_id, v_class3_id, v_coach3_id, 'ASSISTANT_COACH')
-  ON CONFLICT (class_id, coach_id) DO UPDATE SET role = 'ASSISTANT_COACH';
+  IF NOT EXISTS (SELECT 1 FROM public.class_coaches WHERE class_id = v_class3_id AND coach_id = v_coach3_id) THEN
+    INSERT INTO public.class_coaches (organization_id, class_id, coach_id, role) VALUES (v_org_id, v_class3_id, v_coach3_id, 'ASSISTANT_COACH');
+  END IF;
 
   -- Class 4: Coach Minh (HEAD_COACH)
-  INSERT INTO public.class_coaches (organization_id, class_id, coach_id, role)
-  VALUES (v_org_id, v_class4_id, v_coach2_id, 'HEAD_COACH')
-  ON CONFLICT (class_id, coach_id) DO UPDATE SET role = 'HEAD_COACH';
+  IF NOT EXISTS (SELECT 1 FROM public.class_coaches WHERE class_id = v_class4_id AND coach_id = v_coach2_id) THEN
+    IF NOT EXISTS (SELECT 1 FROM public.class_coaches WHERE class_id = v_class4_id AND UPPER(role) = 'HEAD_COACH') THEN
+      INSERT INTO public.class_coaches (organization_id, class_id, coach_id, role) VALUES (v_org_id, v_class4_id, v_coach2_id, 'HEAD_COACH');
+    ELSE
+      INSERT INTO public.class_coaches (organization_id, class_id, coach_id, role) VALUES (v_org_id, v_class4_id, v_coach2_id, 'ASSISTANT_COACH');
+    END IF;
+  END IF;
 
   -- Class 5: Coach Tuấn (HEAD_COACH), Coach Lan (ASSISTANT_COACH)
-  INSERT INTO public.class_coaches (organization_id, class_id, coach_id, role)
-  VALUES (v_org_id, v_class5_id, v_coach4_id, 'HEAD_COACH')
-  ON CONFLICT (class_id, coach_id) DO UPDATE SET role = 'HEAD_COACH';
+  IF NOT EXISTS (SELECT 1 FROM public.class_coaches WHERE class_id = v_class5_id AND coach_id = v_coach4_id) THEN
+    IF NOT EXISTS (SELECT 1 FROM public.class_coaches WHERE class_id = v_class5_id AND UPPER(role) = 'HEAD_COACH') THEN
+      INSERT INTO public.class_coaches (organization_id, class_id, coach_id, role) VALUES (v_org_id, v_class5_id, v_coach4_id, 'HEAD_COACH');
+    ELSE
+      INSERT INTO public.class_coaches (organization_id, class_id, coach_id, role) VALUES (v_org_id, v_class5_id, v_coach4_id, 'ASSISTANT_COACH');
+    END IF;
+  END IF;
 
-  INSERT INTO public.class_coaches (organization_id, class_id, coach_id, role)
-  VALUES (v_org_id, v_class5_id, v_coach3_id, 'ASSISTANT_COACH')
-  ON CONFLICT (class_id, coach_id) DO UPDATE SET role = 'ASSISTANT_COACH';
+  IF NOT EXISTS (SELECT 1 FROM public.class_coaches WHERE class_id = v_class5_id AND coach_id = v_coach3_id) THEN
+    INSERT INTO public.class_coaches (organization_id, class_id, coach_id, role) VALUES (v_org_id, v_class5_id, v_coach3_id, 'ASSISTANT_COACH');
+  END IF;
 
   -- Class 6: Coach Lan (HEAD_COACH)
-  INSERT INTO public.class_coaches (organization_id, class_id, coach_id, role)
-  VALUES (v_org_id, v_class6_id, v_coach3_id, 'HEAD_COACH')
-  ON CONFLICT (class_id, coach_id) DO UPDATE SET role = 'HEAD_COACH';
+  IF NOT EXISTS (SELECT 1 FROM public.class_coaches WHERE class_id = v_class6_id AND coach_id = v_coach3_id) THEN
+    IF NOT EXISTS (SELECT 1 FROM public.class_coaches WHERE class_id = v_class6_id AND UPPER(role) = 'HEAD_COACH') THEN
+      INSERT INTO public.class_coaches (organization_id, class_id, coach_id, role) VALUES (v_org_id, v_class6_id, v_coach3_id, 'HEAD_COACH');
+    ELSE
+      INSERT INTO public.class_coaches (organization_id, class_id, coach_id, role) VALUES (v_org_id, v_class6_id, v_coach3_id, 'ASSISTANT_COACH');
+    END IF;
+  END IF;
 
   -- ============================================================
   -- 7. STUDENTS (16 Học Viên Đủ Cấp Đai & Phụ Huynh)

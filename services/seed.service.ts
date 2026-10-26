@@ -6,25 +6,30 @@ export async function seedFallbackSampleData(
   coachId?: string
 ): Promise<{ success: boolean; message?: string; error?: string }> {
   try {
-    // 1. Belts
-    const beltsData = [
-      { organization_id: orgId, name: 'Đai Trắng (Cấp 10)', display_order: 1, is_active: true },
-      { organization_id: orgId, name: 'Đai Vàng (Cấp 8)', display_order: 2, is_active: true },
-      { organization_id: orgId, name: 'Đai Cam (Cấp 6)', display_order: 3, is_active: true },
-      { organization_id: orgId, name: 'Đai Xanh Lá (Cấp 4)', display_order: 4, is_active: true },
-      { organization_id: orgId, name: 'Đai Xanh Dương (Cấp 2)', display_order: 5, is_active: true },
-      { organization_id: orgId, name: 'Đai Đỏ (Cấp 1)', display_order: 6, is_active: true },
-      { organization_id: orgId, name: 'Đai Nâu (Cận Huyền Đai)', display_order: 7, is_active: true },
-      { organization_id: orgId, name: 'Huyền Đai (1 Đẳng)', display_order: 8, is_active: true },
-    ];
-    await supabase.from('organization_belts').upsert(beltsData, { onConflict: 'organization_id,name' });
-
-    const { data: belts } = await supabase
+    // 1. Belts (Check if organization already has belts)
+    const { data: existingBelts } = await supabase
       .from('organization_belts')
-      .select('id, name')
-      .eq('organization_id', orgId);
+      .select('id, name, display_order')
+      .eq('organization_id', orgId)
+      .order('display_order', { ascending: true });
 
-    const getBeltId = (namePrefix: string) => belts?.find(b => b.name.includes(namePrefix))?.id;
+    let belts = existingBelts || [];
+    if (belts.length === 0) {
+      const beltsData = [
+        { organization_id: orgId, name: 'Đai Trắng (Cấp 10)', display_order: 1, is_active: true },
+        { organization_id: orgId, name: 'Đai Vàng (Cấp 8)', display_order: 2, is_active: true },
+        { organization_id: orgId, name: 'Đai Cam (Cấp 6)', display_order: 3, is_active: true },
+        { organization_id: orgId, name: 'Đai Xanh Lá (Cấp 4)', display_order: 4, is_active: true },
+        { organization_id: orgId, name: 'Đai Xanh Dương (Cấp 2)', display_order: 5, is_active: true },
+        { organization_id: orgId, name: 'Đai Đỏ (Cấp 1)', display_order: 6, is_active: true },
+        { organization_id: orgId, name: 'Đai Nâu (Cận Huyền Đai)', display_order: 7, is_active: true },
+        { organization_id: orgId, name: 'Huyền Đai (1 Đẳng)', display_order: 8, is_active: true },
+      ];
+      const { data: insertedBelts } = await supabase.from('organization_belts').insert(beltsData).select();
+      belts = insertedBelts || [];
+    }
+
+    const getBeltId = (namePrefix: string) => belts.find(b => b.name.includes(namePrefix))?.id || belts[0]?.id;
 
     // 2. Venues
     const venuesToInsert = [
