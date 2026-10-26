@@ -11,4 +11,4 @@ node_modules/
 scratch*
 test-*
 test_*
-
+*.tsbuildinfo
