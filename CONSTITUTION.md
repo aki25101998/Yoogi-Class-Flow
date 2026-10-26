@@ -744,6 +744,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-10-25 | 1.3.10 | Tái thiết kế hàng hiển thị địa chỉ thành Location Capsule Bar cao cấp: badge định vị màu Cam San Hô nổi bật, micro-label ĐỊA ĐIỂM TẬP LUYỆN, text địa chỉ semibold sắc nét và tích hợp liên kết Google Maps tương tác |
 | 2026-10-25 | 1.3.11 | Loại bỏ dòng địa chỉ bên dưới tên địa điểm (CC Riverside) trên trang Chi tiết địa điểm (/training/[venueId]) và thẻ địa điểm (/training); tái thiết kế danh sách lớp học thành lưới Thẻ tối giản (Minimal Class Cards Grid: icon võ đạo, badge trạng thái bo tròn, lịch học tuần, số liệu HLV/học viên compact và nút Xem lớp pill) |
 | 2026-10-25 | 1.3.12 | Tái thiết kế bộ chọn Ngày học trong tuần (ClassScheduleManager) chuẩn hiện đại: thay thế các nút bấm lỗi thời bằng dải 7 ngày cân xứng (7-Day Strip T2-CN), bộ chọn nhanh 1-chạm (Presets: 2-4-6, 3-5-7, Cuối tuần, Tất cả), chỉ số ngày cuối tuần cam năng động, hiệu ứng glow gradient Teal khi chọn và tự động ước tính thời lượng mỗi buổi |
+| 2026-10-26 | 1.4.0 | Bổ sung hệ thống dữ liệu mẫu toàn diện (Seed Sample Data): migration SQL 035_seed_sample_data.sql với stored procedure public.seed_sample_data(), server action seedSampleDataAction và UI trực quan 1-chạm trong Cài đặt (SettingsClient) để nạp tức thì 8 cấp đai, 3 chi nhánh, 4 HLV, 6 lớp học, 16 học viên, lịch học tuần, điểm danh, học phí và sổ quỹ thu chi |
 
 ---
 
