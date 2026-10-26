@@ -224,10 +224,10 @@ BEGIN
 
   SELECT id INTO v_coach1_id FROM public.coaches WHERE organization_id = v_org_id AND organization_member_id = v_mem1_id LIMIT 1;
   IF v_coach1_id IS NULL THEN
-    INSERT INTO public.coaches (organization_id, organization_member_id, nickname, phone, cccd, level, membership_number, role, photo_url, status)
+    INSERT INTO public.coaches (organization_id, organization_member_id, nickname, phone, cccd, level, membership_number, photo_url, status)
     VALUES (
       v_org_id, v_mem1_id, 'Master Hùng', '0903123456', '079088001234', 
-      'Huyền đai Đệ Ngũ đẳng (5th Dan)', 'YG-COACH-001', 'head_coach', 
+      'Huyền đai Đệ Ngũ đẳng (5th Dan)', 'YG-COACH-001', 
       'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?q=80&w=400&auto=format&fit=crop', 'active'
     ) RETURNING id INTO v_coach1_id;
   END IF;
@@ -249,10 +249,10 @@ BEGIN
 
   SELECT id INTO v_coach2_id FROM public.coaches WHERE organization_id = v_org_id AND organization_member_id = v_mem2_id LIMIT 1;
   IF v_coach2_id IS NULL THEN
-    INSERT INTO public.coaches (organization_id, organization_member_id, nickname, phone, cccd, level, membership_number, role, photo_url, status)
+    INSERT INTO public.coaches (organization_id, organization_member_id, nickname, phone, cccd, level, membership_number, photo_url, status)
     VALUES (
       v_org_id, v_mem2_id, 'Coach Minh', '0918234567', '079092002345', 
-      'Huyền đai Đệ Tam đẳng (3rd Dan)', 'YG-COACH-002', 'head_coach', 
+      'Huyền đai Đệ Tam đẳng (3rd Dan)', 'YG-COACH-002', 
       'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop', 'active'
     ) RETURNING id INTO v_coach2_id;
   END IF;
@@ -274,10 +274,10 @@ BEGIN
 
   SELECT id INTO v_coach3_id FROM public.coaches WHERE organization_id = v_org_id AND organization_member_id = v_mem3_id LIMIT 1;
   IF v_coach3_id IS NULL THEN
-    INSERT INTO public.coaches (organization_id, organization_member_id, nickname, phone, cccd, level, membership_number, role, photo_url, status)
+    INSERT INTO public.coaches (organization_id, organization_member_id, nickname, phone, cccd, level, membership_number, photo_url, status)
     VALUES (
       v_org_id, v_mem3_id, 'Coach Lan', '0933345678', '079195003456', 
-      'Huyền đai Đệ Nhị đẳng (2nd Dan)', 'YG-COACH-003', 'assistant_coach', 
+      'Huyền đai Đệ Nhị đẳng (2nd Dan)', 'YG-COACH-003', 
       'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=400&auto=format&fit=crop', 'active'
     ) RETURNING id INTO v_coach3_id;
   END IF;
@@ -299,10 +299,10 @@ BEGIN
 
   SELECT id INTO v_coach4_id FROM public.coaches WHERE organization_id = v_org_id AND organization_member_id = v_mem4_id LIMIT 1;
   IF v_coach4_id IS NULL THEN
-    INSERT INTO public.coaches (organization_id, organization_member_id, nickname, phone, cccd, level, membership_number, role, photo_url, status)
+    INSERT INTO public.coaches (organization_id, organization_member_id, nickname, phone, cccd, level, membership_number, photo_url, status)
     VALUES (
       v_org_id, v_mem4_id, 'Coach Tuấn', '0977456789', '079096004567', 
-      'Huyền đai Đệ Nhất đẳng (1st Dan)', 'YG-COACH-004', 'assistant_coach', 
+      'Huyền đai Đệ Nhất đẳng (1st Dan)', 'YG-COACH-004', 
       'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop', 'active'
     ) RETURNING id INTO v_coach4_id;
   END IF;
