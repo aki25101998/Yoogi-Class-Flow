@@ -142,8 +142,42 @@ export async function checkInSessionAction(classId: string, dateStr: string, sta
       }
     }
 
-    if (!primaryCoachId) {
-      primaryCoachId = currentCoachId;
+    // Check if a session already exists for this class on this date
+    const { data: existingForClass } = await supabase.from('class_sessions')
+      .select('id, schedule_id, coach_id')
+      .eq('organization_id', orgId)
+      .eq('class_id', classId)
+      .eq('date', dateStr)
+      .maybeSingle();
+
+    if (existingForClass) {
+      const { error: updateErr } = await supabase.from('class_sessions')
+        .update({
+          status: status,
+          check_in_time: new Date().toISOString(),
+          schedule_id: existingForClass.schedule_id || scheduleId || null
+        })
+        .eq('id', existingForClass.id)
+        .eq('organization_id', orgId);
+
+      if (updateErr) return { success: false, error: updateErr.message };
+
+      if (currentCoachId) {
+        await supabase.from('session_coaches').upsert({
+          organization_id: orgId,
+          session_id: existingForClass.id,
+          coach_id: currentCoachId,
+          status: status
+        }, { onConflict: 'session_id, coach_id' });
+      }
+
+      revalidatePath('/dashboard');
+      revalidatePath('/my-checkin');
+      revalidatePath('/my-schedule');
+      revalidatePath('/my-attendance');
+      revalidatePath('/my-earnings');
+      revalidatePath('/schedule');
+      return { success: true };
     }
 
     try {

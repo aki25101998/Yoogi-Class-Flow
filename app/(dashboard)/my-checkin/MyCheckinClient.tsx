@@ -31,7 +31,9 @@ export default function MyCheckinClient() {
   const [loading, setLoading] = useState(false);
 
   const handleSuccess = () => {
-    queryClient.invalidateQueries({ queryKey: ['todaySessions', organizationId, dateStr, coachId] });
+    queryClient.invalidateQueries({ queryKey: ['todaySessions'] });
+    queryClient.invalidateQueries({ queryKey: ['myAttendance'] });
+    queryClient.invalidateQueries({ queryKey: ['mySchedule'] });
   };
 
   const handleCheckIn = async (session: any) => {
@@ -39,8 +41,12 @@ export default function MyCheckinClient() {
       setLoading(true);
       const res = await checkInSessionAction(session.classId, dateStr, 'checked_in', session.scheduleId, session.sessionId);
       setLoading(false);
-      if (res.success) handleSuccess();
-      else alert(res.error || 'Lỗi khi Check-in');
+      if (res.success) {
+        alert('Check-in thành công!');
+        handleSuccess();
+      } else {
+        alert(res.error || 'Lỗi khi Check-in');
+      }
     }
   };
 

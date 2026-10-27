@@ -48,7 +48,10 @@ export default function DashboardClient() {
   const [selectedNewCoachId, setSelectedNewCoachId] = useState('');
 
   const handleSuccess = () => {
-    queryClient.invalidateQueries({ queryKey: ['todaySessions', organizationId, dateStr, coachIdFilter] });
+    queryClient.invalidateQueries({ queryKey: ['todaySessions'] });
+    queryClient.invalidateQueries({ queryKey: ['myAttendance'] });
+    queryClient.invalidateQueries({ queryKey: ['mySchedule'] });
+    queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
   };
 
   const handleCancelSession = async (session: any) => {
@@ -56,8 +59,12 @@ export default function DashboardClient() {
       setLoading(true);
       const res = await cancelSessionAction(session.classId, dateStr, session.scheduleId, session.sessionId);
       setLoading(false);
-      if (res.success) handleSuccess();
-      else alert(res.error || 'Lỗi khi hủy buổi học');
+      if (res.success) {
+        alert('Hủy buổi học thành công.');
+        handleSuccess();
+      } else {
+        alert(res.error || 'Lỗi khi hủy buổi học');
+      }
     }
   };
 
@@ -78,6 +85,7 @@ export default function DashboardClient() {
     if (res.success) {
       setOverrideModalSession(null);
       setSelectedNewCoachId('');
+      alert('Đã xếp HLV dạy thay thành công!');
       handleSuccess();
     } else {
       alert(res.error || 'Lỗi khi xếp HLV dạy thay');
@@ -89,8 +97,12 @@ export default function DashboardClient() {
       setLoading(true);
       const res = await checkInSessionAction(session.classId, dateStr, 'checked_in', session.scheduleId, session.sessionId);
       setLoading(false);
-      if (res.success) handleSuccess();
-      else alert(res.error || 'Lỗi khi Check-in');
+      if (res.success) {
+        alert('Check-in thành công!');
+        handleSuccess();
+      } else {
+        alert(res.error || 'Lỗi khi Check-in');
+      }
     }
   };
 

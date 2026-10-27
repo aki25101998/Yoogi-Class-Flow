@@ -73,7 +73,11 @@ export async function getSessionsForDate(organizationId: string, dateStr: string
   // 4. Merge periodic schedules
   for (const s of (schedules || [])) {
     // Find if there is a session record for this schedule
-    const record = (sessionRecords || []).find(r => r.schedule_id === s.id);
+    const record = (sessionRecords || []).find(r => 
+      (r.schedule_id && r.schedule_id === s.id) ||
+      (!r.schedule_id && r.class_id === s.class_id) ||
+      (r.class_id === s.class_id && r.start_time === s.start_time)
+    );
 
     // Build the coaches array for Virtual Session
     let baseCoaches: { coachId: string; coachName: string; status?: string; isSubstitute?: boolean }[] = [];

@@ -207,7 +207,7 @@ BEGIN
         END IF;
     END IF;
 
-    -- Check if session already exists for this (schedule_id, date)
+    -- Check if session already exists for this (schedule_id, date) or (class_id, date)
     IF p_schedule_id IS NOT NULL THEN
         SELECT id INTO v_session_id
         FROM public.class_sessions
@@ -217,10 +217,20 @@ BEGIN
         LIMIT 1;
     END IF;
 
+    IF v_session_id IS NULL THEN
+        SELECT id INTO v_session_id
+        FROM public.class_sessions
+        WHERE organization_id = p_organization_id
+          AND class_id = p_class_id
+          AND date = p_date
+        LIMIT 1;
+    END IF;
+
     IF v_session_id IS NOT NULL THEN
         UPDATE public.class_sessions
         SET status = 'checked_in',
-            check_in_time = NOW()
+            check_in_time = NOW(),
+            schedule_id = COALESCE(schedule_id, p_schedule_id)
         WHERE id = v_session_id;
     ELSE
         INSERT INTO public.class_sessions (
