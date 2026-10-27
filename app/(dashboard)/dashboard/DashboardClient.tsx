@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useDashboardContext } from '../DashboardProvider';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useTodaySessions } from '@/hooks/useTodaySessions';
@@ -26,6 +27,7 @@ function StatSkeleton() {
 }
 
 export default function DashboardClient() {
+  const router = useRouter();
   const { context } = useDashboardContext();
   const organizationId = context?.organization?.id;
   
@@ -40,7 +42,7 @@ export default function DashboardClient() {
   // If coach, filter their sessions. If admin, show all
   const coachIdFilter = isAdminOrOwner ? undefined : context?.coach?.id;
   
-  const { sessions, isLoading: sessionsLoading } = useTodaySessions(organizationId, dateStr, coachIdFilter);
+  const { sessions, isLoading: sessionsLoading, refetch } = useTodaySessions(organizationId, dateStr, coachIdFilter);
   const queryClient = useQueryClient();
 
   const [loading, setLoading] = useState(false);
@@ -52,6 +54,8 @@ export default function DashboardClient() {
     queryClient.invalidateQueries({ queryKey: ['myAttendance'] });
     queryClient.invalidateQueries({ queryKey: ['mySchedule'] });
     queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+    refetch();
+    router.refresh();
   };
 
   const handleCancelSession = async (session: any) => {

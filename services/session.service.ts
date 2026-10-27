@@ -48,16 +48,21 @@ export async function getSessionsForDate(organizationId: string, dateStr: string
     .eq('day_of_week', dayOfWeek);
 
   // 3. Fetch exceptions / check-ins (class_sessions) including ad-hoc
-  const { data: sessionRecords } = await supabase
+  // NOTE: Disambiguate coaches with coaches:coaches!teacher_salary_sessions_coach_id_fkey to prevent PGRST201
+  const { data: sessionRecords, error: srError } = await supabase
     .from('class_sessions')
     .select(`
       *, 
-      coaches(organization_members(profiles(name))), 
+      coaches:coaches!teacher_salary_sessions_coach_id_fkey(organization_members(profiles(name))), 
       venue_classes(name, venue_id, venues(name), class_coaches(coach_id, role, coaches(organization_members(profiles(name))))),
       session_coaches(coach_id, status, is_substitute, coaches(organization_members(profiles(name))))
     `)
     .eq('organization_id', organizationId)
     .eq('date', dateStr);
+
+  if (srError) {
+    console.error('getSessionsForDate sessionRecords error:', srError);
+  }
 
   const results: ClassSession[] = [];
   const processedSessionIds = new Set<string>();
@@ -75,8 +80,9 @@ export async function getSessionsForDate(organizationId: string, dateStr: string
     // Find if there is a session record for this schedule
     const record = (sessionRecords || []).find(r => 
       (r.schedule_id && r.schedule_id === s.id) ||
+      (r.class_id === s.class_id && r.start_time === s.start_time) ||
       (!r.schedule_id && r.class_id === s.class_id) ||
-      (r.class_id === s.class_id && r.start_time === s.start_time)
+      (r.class_id === s.class_id)
     );
 
     // Build the coaches array for Virtual Session
@@ -104,7 +110,7 @@ export async function getSessionsForDate(organizationId: string, dateStr: string
     }
 
     const primaryCoachId = baseCoaches.length > 0 ? baseCoaches[0].coachId : s.coach_id;
-    const allCoachNames = baseCoaches.map((c: any) => c.coachName).join(', ') || getCoachName(s.coaches);
+    const allCoachNames = baseCoaches.map((c: any) => c.coachName).filter(Boolean).join(', ') || getCoachName(s.coaches);
 
     const baseSession: ClassSession = {
       isVirtual: true,
@@ -159,13 +165,31 @@ export async function getSessionsForDate(organizationId: string, dateStr: string
           isSubstitute: false
         }));
       }
-      
+
+      // Merge baseCoaches with actualCoaches so assigned coaches are kept
+      for (const bc of baseCoaches) {
+        if (!actualCoaches.some(ac => ac.coachId === bc.coachId)) {
+          actualCoaches.push({
+            ...bc,
+            status: 'scheduled'
+          });
+        }
+      }
+
       const actualPrimaryId = actualCoaches.length > 0 ? actualCoaches[0].coachId : record.coach_id;
-      const actualCoachNames = actualCoaches.map((c: any) => c.coachName).join(', ') || getCoachName(record.coaches);
+      const actualCoachNames = actualCoaches.map((c: any) => c.coachName).filter(Boolean).join(', ') || getCoachName(record.coaches);
 
       baseSession.currentCoachId = actualPrimaryId;
       baseSession.currentCoachName = actualCoachNames;
       baseSession.coaches = actualCoaches;
+
+      // If viewing as a specific coach, reflect their specific check-in status if present
+      if (filterCoachId) {
+        const myCoachEntry = actualCoaches.find(c => c.coachId === filterCoachId);
+        if (myCoachEntry && myCoachEntry.status) {
+          baseSession.status = myCoachEntry.status as any;
+        }
+      }
     }
 
     results.push(baseSession);
@@ -199,9 +223,17 @@ export async function getSessionsForDate(organizationId: string, dateStr: string
       }
 
       const actualPrimaryId = actualCoaches.length > 0 ? actualCoaches[0].coachId : r.coach_id;
-      const actualCoachNames = actualCoaches.map((c: any) => c.coachName).join(', ') || getCoachName(r.coaches);
+      const actualCoachNames = actualCoaches.map((c: any) => c.coachName).filter(Boolean).join(', ') || getCoachName(r.coaches);
       
       const originalPrimaryId = r.original_coach_id || actualPrimaryId;
+
+      let sessionStatus = r.status as any;
+      if (filterCoachId) {
+        const myCoachEntry = actualCoaches.find(c => c.coachId === filterCoachId);
+        if (myCoachEntry && myCoachEntry.status) {
+          sessionStatus = myCoachEntry.status as any;
+        }
+      }
 
       results.push({
         isVirtual: false,
@@ -217,7 +249,7 @@ export async function getSessionsForDate(organizationId: string, dateStr: string
         date: r.date,
         startTime: r.start_time || '',
         endTime: r.end_time || '',
-        status: r.status as any,
+        status: sessionStatus,
         checkInTime: r.check_in_time,
         scheduleId: r.schedule_id || undefined,
         coaches: actualCoaches

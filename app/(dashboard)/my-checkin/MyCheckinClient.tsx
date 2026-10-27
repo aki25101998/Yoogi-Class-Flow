@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useDashboardContext } from '../DashboardProvider';
-import { getBusinessDate } from '@/utils/date';
+import { getBusinessDate, getBusinessDateString } from '@/utils/date';
 import { useTodaySessions } from '@/hooks/useTodaySessions';
 import { checkInSessionAction } from '../dashboard/actions';
 import { useQueryClient } from '@tanstack/react-query';
@@ -16,16 +17,17 @@ import { Badge } from '@/app/components/ui/Badge';
 import styles from '@/app/styles/page-standard.module.css';
 
 export default function MyCheckinClient() {
+  const router = useRouter();
   const { context } = useDashboardContext();
   const organizationId = context?.organization?.id;
   const coachId = context?.coach?.id;
 
   const todayObj = getBusinessDate();
-  const dateStr = todayObj.toLocaleDateString('en-CA');
+  const dateStr = getBusinessDateString();
   const displayDate = todayObj.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
   // Fetch only sessions for this coach
-  const { sessions, isLoading } = useTodaySessions(organizationId, dateStr, coachId);
+  const { sessions, isLoading, refetch } = useTodaySessions(organizationId, dateStr, coachId);
   const queryClient = useQueryClient();
 
   const [loading, setLoading] = useState(false);
@@ -34,6 +36,8 @@ export default function MyCheckinClient() {
     queryClient.invalidateQueries({ queryKey: ['todaySessions'] });
     queryClient.invalidateQueries({ queryKey: ['myAttendance'] });
     queryClient.invalidateQueries({ queryKey: ['mySchedule'] });
+    refetch();
+    router.refresh();
   };
 
   const handleCheckIn = async (session: any) => {
