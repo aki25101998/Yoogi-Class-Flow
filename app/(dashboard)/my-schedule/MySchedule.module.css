@@ -1,0 +1,717 @@
+/* MySchedule.module.css — Vibrant Athletic & Martial Arts */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6, 24px);
+  width: 100%;
+}
+
+/* Header & View Switcher */
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.viewSwitcher {
+  display: inline-flex;
+  background-color: var(--surface-hover);
+  padding: 4px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-light);
+  gap: 4px;
+}
+
+.switchBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.825rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.switchBtn:hover {
+  color: var(--text-main);
+}
+
+.switchBtnActive {
+  background: var(--surface);
+  color: var(--primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  font-weight: 700;
+}
+
+.switchBtnActive .switchIcon {
+  color: var(--primary);
+}
+
+.switchIcon {
+  font-size: 16px;
+}
+
+/* Quick KPI Bar */
+.kpiBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.kpiPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  background-color: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-full);
+  font-size: 0.825rem;
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.kpiPill:hover {
+  border-color: var(--border);
+  transform: translateY(-1px);
+}
+
+.kpiDotTeal {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  box-shadow: 0 0 6px rgba(20, 184, 166, 0.5);
+}
+
+.kpiDotOrange {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--accent-energy, #FF6B35);
+  box-shadow: 0 0 6px rgba(255, 107, 53, 0.5);
+}
+
+.kpiDotBlue {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #0284c7;
+  box-shadow: 0 0 6px rgba(2, 132, 199, 0.5);
+}
+
+.kpiValue {
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+/* ================================================================ */
+/* CHẾ ĐỘ 1: HÀNG NGÀY (DAILY STRIP + FOCUS AGENDA)                 */
+/* ================================================================ */
+
+.dayStripWrapper {
+  width: 100%;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dayStripGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(110px, 1fr));
+  gap: 10px;
+  min-width: 770px;
+}
+
+@media (max-width: 900px) {
+  .dayStripGrid {
+    min-width: 720px;
+  }
+}
+
+.dayPill {
+  background-color: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: 12px 8px;
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  user-select: none;
+}
+
+.dayPill:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.dayPillActive {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  border-color: transparent !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 18px rgba(20, 184, 166, 0.35) !important;
+  transform: translateY(-2px);
+}
+
+.dayPillActive .dayName {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.dayPillActive .dayDate {
+  color: #ffffff !important;
+}
+
+.dayPillActive .dayBadge {
+  background: rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+}
+
+.dayPillToday {
+  border: 2px solid var(--accent-energy, #FF6B35) !important;
+}
+
+.todayTag {
+  position: absolute;
+  top: -8px;
+  background: var(--accent-energy, #FF6B35);
+  color: #ffffff;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  box-shadow: 0 2px 6px rgba(255, 107, 53, 0.35);
+}
+
+.dayName {
+  font-size: 0.775rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: capitalize;
+}
+
+.dayDate {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.2;
+}
+
+.dayBadge {
+  font-size: 0.675rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  margin-top: 2px;
+  background-color: var(--surface-hover);
+  color: var(--primary);
+}
+
+.dayBadgeZero {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Focused Day Detail Section */
+.focusContainer {
+  background-color: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-6, 24px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5, 20px);
+  box-shadow: var(--shadow-sm);
+}
+
+.focusHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: var(--space-4, 16px);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.focusTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.focusTitle {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.focusCountBadge {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.focusTimeBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--primary-light);
+  color: var(--primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+}
+
+.sessionList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 16px);
+}
+
+.focusSessionCard {
+  background-color: var(--surface-hover);
+  border: 1px solid var(--border-light);
+  border-left: 5px solid var(--primary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4, 16px) var(--space-5, 20px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.focusSessionCard:hover {
+  transform: translateY(-2px);
+  border-color: var(--border);
+  border-left-color: var(--primary-hover);
+  box-shadow: var(--shadow-md);
+}
+
+.sessionMain {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sessionAvatarIcon {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: var(--primary-light);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.15);
+}
+
+.sessionInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sessionClassName {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.3;
+}
+
+.sessionMetaRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 0.825rem;
+  color: var(--text-secondary);
+}
+
+.metaItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.metaItem .material-icons-round {
+  font-size: 16px;
+  color: var(--text-muted);
+}
+
+.roleChip {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(20, 184, 166, 0.12);
+  color: var(--primary);
+  font-size: 0.725rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.sessionActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.actionBtnSecondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-light);
+  background: var(--surface);
+  color: var(--text-main);
+  font-size: 0.825rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.actionBtnSecondary:hover {
+  border-color: var(--border);
+  background-color: var(--surface-hover);
+  transform: translateY(-1px);
+}
+
+.actionBtnPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: linear-gradient(135deg, var(--accent-energy, #FF6B35), #ea580c);
+  color: #ffffff;
+  font-size: 0.825rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+  transition: all 0.2s ease;
+}
+
+.actionBtnPrimary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(255, 107, 53, 0.4);
+}
+
+.emptyStateContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8, 32px) var(--space-4, 16px);
+  text-align: center;
+  gap: 12px;
+}
+
+.emptyIcon {
+  font-size: 48px;
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.emptyText {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.emptySubtext {
+  font-size: 0.825rem;
+  color: var(--text-secondary);
+  max-width: 400px;
+}
+
+/* ================================================================ */
+/* CHẾ ĐỘ 2: LƯỚI TUẦN THÍCH ỨNG (ADAPTIVE WEEKLY BOARD)            */
+/* ================================================================ */
+
+.weekBoardWrapper {
+  width: 100%;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.weekBoardGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(150px, 1fr));
+  gap: 12px;
+  min-width: 950px;
+}
+
+.weekCol {
+  background-color: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  min-height: auto;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+}
+
+.weekCol:hover {
+  border-color: var(--border);
+  box-shadow: var(--shadow-md);
+}
+
+.weekColToday {
+  border: 2px solid var(--accent-energy, #FF6B35) !important;
+  box-shadow: 0 4px 14px rgba(255, 107, 53, 0.15);
+}
+
+.weekColHeader {
+  padding: 10px 12px;
+  background-color: var(--surface-hover);
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.weekColToday .weekColHeader {
+  background-color: rgba(255, 107, 53, 0.08);
+}
+
+.weekColTitle {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.weekColBadge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  background-color: var(--surface);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light);
+}
+
+.weekColBadgeActive {
+  background-color: var(--primary-light);
+  color: var(--primary);
+  border-color: transparent;
+}
+
+.weekColBody {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.weekSessionCard {
+  background-color: var(--surface);
+  border: 1px solid var(--border-light);
+  border-left: 3px solid var(--primary);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.18s ease;
+}
+
+.weekSessionCard:hover {
+  transform: translateY(-2px);
+  border-color: var(--border);
+  box-shadow: var(--shadow-md);
+}
+
+.weekSessionTime {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.725rem;
+  font-weight: 700;
+  color: var(--primary);
+  background-color: var(--primary-light);
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  width: fit-content;
+}
+
+.weekSessionName {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.3;
+}
+
+.weekSessionVenue {
+  font-size: 0.725rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.weekEmptyDay {
+  padding: 20px 8px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  border: 1px dashed var(--border-light);
+  border-radius: var(--radius-md);
+  margin: 4px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ================================================================ */
+/* CHẾ ĐỘ 3: THEO LỚP HỌC (CLASS BENTO CARDS)                       */
+/* ================================================================ */
+
+.classBentoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 18px;
+}
+
+.classBentoCard {
+  background-color: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-2xl);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.classBentoCard:hover {
+  transform: translateY(-2px);
+  border-color: var(--border);
+  box-shadow: var(--shadow-md);
+}
+
+.classCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.classCardTitle {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 2px;
+}
+
+.classCardVenue {
+  font-size: 0.825rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.classFreqBadge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  background-color: var(--primary-light);
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+.classTimeBanner {
+  background-color: var(--surface-hover);
+  border-radius: var(--radius-lg);
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.classTimeText {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.classDurationText {
+  font-size: 0.775rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.classDaysSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.classDaysLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
+.classDaysList {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.dayChip {
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 0.775rem;
+  font-weight: 600;
+}
+
+.dayChipActive {
+  background-color: var(--primary);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(20, 184, 166, 0.3);
+}
+
+.dayChipInactive {
+  background-color: var(--surface-hover);
+  color: var(--text-muted);
+}

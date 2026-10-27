@@ -1,6 +1,6 @@
 # 📜 HIẾN PHÁP DỰ ÁN — YOOGI CLASS FLOW
 
-> **Phiên bản:** 1.4.6  
+> **Phiên bản:** 1.4.7  
 > **Cập nhật lần cuối:** 2026-10-27  
 > **Mục đích:** Đây là tài liệu gốc, bất khả xâm phạm. Mọi thay đổi code PHẢI tuân thủ các quy tắc trong file này. Khi có tính năng mới, file này PHẢI được cập nhật đồng thời.
 
@@ -751,6 +751,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-10-27 | 1.4.4 | Khắc phục triệt để lỗi đồng bộ trạng thái Check-in trên Dashboard (/dashboard) và Check-in (/my-checkin): tường minh hóa quan hệ khóa ngoại (explicit foreign key embedding `coaches!teacher_salary_sessions_coach_id_fkey`) trong session.service.ts giải quyết lỗi PostgREST PGRST201 làm null dữ liệu buổi học đã lưu; đồng bộ trạng thái check-in theo từng HLV trong ca nhiều HLV và kích hoạt refetch + router.refresh() tức thì khi thao tác thành công |
 | 2026-10-27 | 1.4.5 | Hoàn thiện luồng Điểm danh học viên cho Huấn luyện viên: tích hợp mục "Điểm danh học viên" (/attendance) vào menu Cá nhân (Sidebar) và đổi tên /my-attendance thành "Lịch sử buổi dạy"; bổ sung nút tắt 1-chạm [Điểm danh học viên] trên thẻ ca học (Dashboard & Check-in) ngay khi ca chuyển sang Đã Check-in; cập nhật useAttendance & AttendanceClient tự động lọc lớp phân công theo coachId và tự động chọn ca học qua URL query params (date/sessionId/classId) |
 | 2026-10-27 | 1.4.6 | Sửa lỗi phân quyền RLS khi lưu điểm danh học viên: bổ sung migration 037_student_attendance_rls.sql (chính sách RLS INSERT/UPDATE cho student_session_attendance & RPC public.save_student_attendance atomic); cập nhật saveAttendanceAction gọi RPC với fallback trực tiếp giải quyết triệt để lỗi "new row violates row-level security policy for table student_session_attendance" |
+| 2026-10-27 | 1.4.7 | Tái cấu trúc toàn diện giao diện Lịch dạy cá nhân (/my-schedule) chuẩn Hybrid 3 góc nhìn: Dải 7 ngày tương tác (Weekly Strip & Focus Agenda) làm mặc định tối ưu triệt để khoảng trắng thừa và thanh cuộn ngang, bổ sung thanh Quick KPI Bar (ca/giờ/lớp), highlight ngày Hôm nay và bộ chuyển đổi góc nhìn tức thì [Hàng ngày] | [Lưới tuần thích ứng] | [Theo lớp học Bento] kèm nút tắt 1-chạm Xem lớp & Điểm danh học viên |
 
 ---
 
