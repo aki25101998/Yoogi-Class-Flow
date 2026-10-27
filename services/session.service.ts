@@ -38,7 +38,7 @@ export async function getSessionsForDate(organizationId: string, dateStr: string
     .from('schedules')
     .select(`
       *, 
-      venue_classes(name), 
+      venue_classes(name, class_coaches(coach_id, role, coaches(organization_members(profiles(name))))), 
       coaches(organization_members(profiles(name))), 
       venues(name),
       schedule_coaches(coach_id, role, coaches(organization_members(profiles(name))))
@@ -53,7 +53,7 @@ export async function getSessionsForDate(organizationId: string, dateStr: string
     .select(`
       *, 
       coaches(organization_members(profiles(name))), 
-      venue_classes(name, venue_id, venues(name)),
+      venue_classes(name, venue_id, venues(name), class_coaches(coach_id, role, coaches(organization_members(profiles(name))))),
       session_coaches(coach_id, status, is_substitute, coaches(organization_members(profiles(name))))
     `)
     .eq('organization_id', organizationId)
@@ -76,7 +76,7 @@ export async function getSessionsForDate(organizationId: string, dateStr: string
     const record = (sessionRecords || []).find(r => r.schedule_id === s.id);
 
     // Build the coaches array for Virtual Session
-    let baseCoaches = [];
+    let baseCoaches: { coachId: string; coachName: string; status?: string; isSubstitute?: boolean }[] = [];
     if (s.schedule_coaches && s.schedule_coaches.length > 0) {
       baseCoaches = s.schedule_coaches.map((sc: any) => ({
         coachId: sc.coach_id,
@@ -90,6 +90,13 @@ export async function getSessionsForDate(organizationId: string, dateStr: string
         coachName: getCoachName(s.coaches),
         status: 'pending'
       }];
+    } else if (s.venue_classes?.class_coaches && s.venue_classes.class_coaches.length > 0) {
+      // Fallback to coaches assigned to the class
+      baseCoaches = s.venue_classes.class_coaches.map((cc: any) => ({
+        coachId: cc.coach_id,
+        coachName: getCoachName(cc.coaches),
+        status: 'pending'
+      }));
     }
 
     const primaryCoachId = baseCoaches.length > 0 ? baseCoaches[0].coachId : s.coach_id;
@@ -123,7 +130,7 @@ export async function getSessionsForDate(organizationId: string, dateStr: string
       baseSession.endTime = record.end_time || s.end_time;
 
       // Build the actual coaches array from session_coaches
-      let actualCoaches = [];
+      let actualCoaches: { coachId: string; coachName: string; status?: string; isSubstitute?: boolean }[] = [];
       if (record.session_coaches && record.session_coaches.length > 0) {
         actualCoaches = record.session_coaches.map((sc: any) => ({
           coachId: sc.coach_id,
@@ -139,6 +146,14 @@ export async function getSessionsForDate(organizationId: string, dateStr: string
           status: record.status,
           isSubstitute: false
         }];
+      } else if (record.venue_classes?.class_coaches && record.venue_classes.class_coaches.length > 0) {
+        // Fallback to class_coaches
+        actualCoaches = record.venue_classes.class_coaches.map((cc: any) => ({
+          coachId: cc.coach_id,
+          coachName: getCoachName(cc.coaches),
+          status: record.status,
+          isSubstitute: false
+        }));
       }
       
       const actualPrimaryId = actualCoaches.length > 0 ? actualCoaches[0].coachId : record.coach_id;
@@ -155,7 +170,7 @@ export async function getSessionsForDate(organizationId: string, dateStr: string
   // 5. Add Ad-hoc sessions (sessions not linked to the day's active schedules)
   for (const r of (sessionRecords || [])) {
     if (!processedSessionIds.has(r.id)) {
-      let actualCoaches = [];
+      let actualCoaches: { coachId: string; coachName: string; status?: string; isSubstitute?: boolean }[] = [];
       if (r.session_coaches && r.session_coaches.length > 0) {
         actualCoaches = r.session_coaches.map((sc: any) => ({
           coachId: sc.coach_id,
@@ -170,6 +185,13 @@ export async function getSessionsForDate(organizationId: string, dateStr: string
           status: r.status,
           isSubstitute: false
         }];
+      } else if (r.venue_classes?.class_coaches && r.venue_classes.class_coaches.length > 0) {
+        actualCoaches = r.venue_classes.class_coaches.map((cc: any) => ({
+          coachId: cc.coach_id,
+          coachName: getCoachName(cc.coaches),
+          status: r.status,
+          isSubstitute: false
+        }));
       }
 
       const actualPrimaryId = actualCoaches.length > 0 ? actualCoaches[0].coachId : r.coach_id;

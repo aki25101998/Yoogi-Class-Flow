@@ -42,14 +42,45 @@ export async function checkInSessionAction(classId: string, dateStr: string, sta
 
   const supabase = await createClient();
   const orgId = context.organization.id;
-  
-  let primaryCoachId = context.membership.user_id; // Default to current user
+  const currentCoachId = context.coach?.id || null;
+
+  // 1. Try atomic Stored Procedure RPC first (bypasses complex multi-table client RLS safely)
+  try {
+    const { data: rpcResult, error: rpcError } = await supabase.rpc('checkin_session', {
+      p_organization_id: orgId,
+      p_class_id: classId,
+      p_date: dateStr,
+      p_schedule_id: scheduleId || null,
+      p_session_id: sessionId || null,
+      p_coach_id: currentCoachId
+    });
+
+    if (!rpcError && rpcResult) {
+      if (rpcResult.success) {
+        revalidatePath('/dashboard');
+        revalidatePath('/my-checkin');
+        revalidatePath('/my-schedule');
+        revalidatePath('/my-attendance');
+        revalidatePath('/my-earnings');
+        revalidatePath('/schedule');
+        return { success: true };
+      } else if (rpcResult.error) {
+        return { success: false, error: rpcResult.error };
+      }
+    }
+  } catch (e) {
+    console.warn('RPC checkin_session failed, falling back to direct operations:', e);
+  }
+
+  // 2. Fallback: Direct table operations
+  let primaryCoachId = currentCoachId;
   
   if (sessionId) {
     // If we have a sessionId, the session already exists in DB
     const { data: existing } = await supabase.from('class_sessions')
       .select('id, coach_id')
       .eq('id', sessionId)
+      .eq('organization_id', orgId)
       .single();
 
     if (existing) {
@@ -59,15 +90,20 @@ export async function checkInSessionAction(classId: string, dateStr: string, sta
           status: status,
           check_in_time: new Date().toISOString()
         })
-        .eq('id', existing.id);
+        .eq('id', existing.id)
+        .eq('organization_id', orgId);
       
       if (error) return { success: false, error: error.message };
       
-      // Update session_coaches status as well
-      await supabase.from('session_coaches')
-        .update({ status: status })
-        .eq('session_id', existing.id)
-        .eq('organization_id', orgId);
+      // Update/insert session_coaches status as well
+      if (currentCoachId) {
+        await supabase.from('session_coaches').upsert({
+          organization_id: orgId,
+          session_id: existing.id,
+          coach_id: currentCoachId,
+          status: status
+        }, { onConflict: 'session_id, coach_id' });
+      }
     }
   } else {
     // We need to fetch original coach_id from schedule if we want to record who checked in
@@ -80,16 +116,34 @@ export async function checkInSessionAction(classId: string, dateStr: string, sta
        const { data: schedule } = await supabase.from('schedules')
          .select('coach_id, start_time, end_time, schedule_coaches(coach_id)')
          .eq('id', scheduleId)
+         .eq('organization_id', orgId)
          .single();
        if (schedule) {
          originalCoachId = schedule.coach_id;
          startTime = schedule.start_time;
          endTime = schedule.end_time;
-         primaryCoachId = schedule.coach_id;
-         if (schedule.schedule_coaches) {
+         if (schedule.coach_id) primaryCoachId = schedule.coach_id;
+         if (schedule.schedule_coaches && schedule.schedule_coaches.length > 0) {
            scheduleCoaches = schedule.schedule_coaches;
          }
        }
+    }
+
+    // Fallback times from class if missing
+    if (!startTime || !endTime) {
+      const { data: cls } = await supabase.from('venue_classes')
+        .select('start_time, end_time')
+        .eq('id', classId)
+        .eq('organization_id', orgId)
+        .single();
+      if (cls) {
+        startTime = startTime || cls.start_time;
+        endTime = endTime || cls.end_time;
+      }
+    }
+
+    if (!primaryCoachId) {
+      primaryCoachId = currentCoachId;
     }
 
     try {
@@ -100,6 +154,7 @@ export async function checkInSessionAction(classId: string, dateStr: string, sta
         schedule_id: scheduleId || null,
         date: dateStr,
         status: status,
+        check_in_time: new Date().toISOString(),
         coach_id: primaryCoachId,
         original_coach_id: originalCoachId,
         start_time: startTime,
@@ -123,16 +178,15 @@ export async function checkInSessionAction(classId: string, dateStr: string, sta
             organization_id: orgId,
             session_id: session.id,
             coach_id: sc.coach_id,
-            status: status
+            status: sc.coach_id === currentCoachId ? status : 'scheduled'
           }));
           
           await supabase.from('session_coaches').upsert(sessionCoachesData, { onConflict: 'session_id, coach_id' });
-        } else if (primaryCoachId) {
-          // Fallback legacy
+        } else if (currentCoachId) {
           await supabase.from('session_coaches').upsert({
             organization_id: orgId,
             session_id: session.id,
-            coach_id: primaryCoachId,
+            coach_id: currentCoachId,
             status: status
           }, { onConflict: 'session_id, coach_id' });
         }
@@ -143,5 +197,10 @@ export async function checkInSessionAction(classId: string, dateStr: string, sta
   }
 
   revalidatePath('/dashboard');
+  revalidatePath('/my-checkin');
+  revalidatePath('/my-schedule');
+  revalidatePath('/my-attendance');
+  revalidatePath('/my-earnings');
+  revalidatePath('/schedule');
   return { success: true };
 }

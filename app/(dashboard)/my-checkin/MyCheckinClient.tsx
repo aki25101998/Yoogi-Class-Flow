@@ -18,7 +18,7 @@ import styles from '@/app/styles/page-standard.module.css';
 export default function MyCheckinClient() {
   const { context } = useDashboardContext();
   const organizationId = context?.organization?.id;
-  const coachId = context?.membership?.user_id;
+  const coachId = context?.coach?.id;
 
   const todayObj = getBusinessDate();
   const dateStr = todayObj.toLocaleDateString('en-CA');
@@ -34,10 +34,10 @@ export default function MyCheckinClient() {
     queryClient.invalidateQueries({ queryKey: ['todaySessions', organizationId, dateStr, coachId] });
   };
 
-  const handleCheckIn = async (classId: string) => {
+  const handleCheckIn = async (session: any) => {
     if (confirm('Xác nhận Check-in cho buổi học này?')) {
       setLoading(true);
-      const res = await checkInSessionAction(classId, dateStr, 'checked_in');
+      const res = await checkInSessionAction(session.classId, dateStr, 'checked_in', session.scheduleId, session.sessionId);
       setLoading(false);
       if (res.success) handleSuccess();
       else alert(res.error || 'Lỗi khi Check-in');
@@ -116,7 +116,7 @@ export default function MyCheckinClient() {
                       variant="primary" 
                       className="w-full"
                       disabled={loading}
-                      onClick={() => handleCheckIn(s.classId)}
+                      onClick={() => handleCheckIn(s)}
                       leftIcon={<span className="material-icons-round">check_circle</span>}
                     >
                       Check-in Ngay

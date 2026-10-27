@@ -38,7 +38,7 @@ export default function DashboardClient() {
   const displayDate = todayObj.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
   // If coach, filter their sessions. If admin, show all
-  const coachIdFilter = isAdminOrOwner ? undefined : context?.membership?.userId;
+  const coachIdFilter = isAdminOrOwner ? undefined : context?.coach?.id;
   
   const { sessions, isLoading: sessionsLoading } = useTodaySessions(organizationId, dateStr, coachIdFilter);
   const queryClient = useQueryClient();
