@@ -19,7 +19,30 @@ export async function saveAttendanceAction(sessionId: string, records: any[]) {
   const supabase = await createClient();
   const orgId = context.organization.id;
 
-  // 1. Find session by sessionId and validate organization
+  // 1. Try atomic Stored Procedure RPC first (bypasses multi-table RLS issues safely)
+  try {
+    const { data: rpcResult, error: rpcError } = await supabase.rpc('save_student_attendance', {
+      p_organization_id: orgId,
+      p_session_id: sessionId,
+      p_records: records
+    });
+
+    if (!rpcError && rpcResult) {
+      if (rpcResult.success) {
+        revalidatePath('/attendance');
+        revalidatePath('/dashboard');
+        revalidatePath('/my-attendance');
+        return { success: true };
+      } else if (rpcResult.error) {
+        return { success: false, error: rpcResult.error };
+      }
+    }
+  } catch (e) {
+    console.warn('RPC save_student_attendance failed, falling back to direct operations:', e);
+  }
+
+  // 2. Fallback: Direct table operations
+  // Find session by sessionId and validate organization
   const { data: session, error: sessionError } = await supabase
     .from('class_sessions')
     .select('id, status, class_id, schedule_id, coach_id, date')
@@ -31,12 +54,12 @@ export async function saveAttendanceAction(sessionId: string, records: any[]) {
     return { success: false, error: 'Không tìm thấy ca học hoặc bạn không có quyền truy cập.' };
   }
 
-  // 2. Lock attendance check
+  // Lock attendance check
   if (session.status === 'approved' || session.status === 'paid' || session.status === 'cancelled') {
     return { success: false, error: `Buổi học này có trạng thái "${session.status}". Không thể sửa điểm danh.` };
   }
 
-  // 3. §3.1 — Verify EACH student belongs to this class
+  // §3.1 — Verify EACH student belongs to this class
   const studentIds = records.map((r: any) => r.student_id).filter(Boolean);
   if (studentIds.length === 0) {
     return { success: false, error: 'Không có học viên hợp lệ trong danh sách điểm danh.' };
@@ -62,7 +85,7 @@ export async function saveAttendanceAction(sessionId: string, records: any[]) {
     };
   }
 
-  // 4. Save attendance records to student_session_attendance
+  // Save attendance records to student_session_attendance
   const attendanceInserts = records
     .filter((r: any) => validStudentIds.has(r.student_id))
     .map((r: any) => ({
