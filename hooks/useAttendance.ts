@@ -21,14 +21,14 @@ export interface AttendanceSessionInfo {
   }[];
 }
 
-export function useAttendance(organizationId: string | undefined, dateStr: string) {
+export function useAttendance(organizationId: string | undefined, dateStr: string, coachId?: string) {
   const supabase = createClient();
 
   const {
     data: sessions = [],
     isLoading,
   } = useQuery({
-    queryKey: ['attendanceData', organizationId, dateStr],
+    queryKey: ['attendanceData', organizationId, dateStr, coachId],
     queryFn: async () => {
       if (!organizationId || !dateStr) return [];
 
@@ -36,9 +36,24 @@ export function useAttendance(organizationId: string | undefined, dateStr: strin
       const dateObj = parseBusinessDate(dateStr);
       const dayOfWeek = dateObj.getDay();
 
+      // If coachId is specified, fetch classes where this coach is assigned in class_coaches
+      let assignedClassIds: string[] = [];
+      if (coachId) {
+        const { data: classCoaches } = await supabase
+          .from('class_coaches')
+          .select('class_id')
+          .eq('organization_id', organizationId)
+          .eq('coach_id', coachId);
+        assignedClassIds = (classCoaches || []).map((c: any) => c.class_id);
+      }
+
       const { data: schedules } = await supabase
         .from('schedules')
-        .select('id, class_id, start_time, end_time, venue_classes!inner(name, class_students(student_id, students(name)))')
+        .select(`
+          id, class_id, coach_id, start_time, end_time, 
+          venue_classes!inner(name, class_students(student_id, students(name))),
+          schedule_coaches(coach_id)
+        `)
         .eq('organization_id', organizationId)
         .eq('status', 'active')
         .eq('day_of_week', dayOfWeek);
@@ -46,7 +61,12 @@ export function useAttendance(organizationId: string | undefined, dateStr: strin
       // 2. Fetch class_sessions for the date
       const { data: classSessions } = await supabase
         .from('class_sessions')
-        .select('id, schedule_id, class_id, start_time, end_time, status, venue_classes!inner(name, class_students(student_id, students(name))), student_session_attendance(student_id, status, note)')
+        .select(`
+          id, schedule_id, class_id, coach_id, start_time, end_time, status, 
+          venue_classes!inner(name, class_students(student_id, students(name))), 
+          student_session_attendance(student_id, status, note),
+          session_coaches(coach_id)
+        `)
         .eq('organization_id', organizationId)
         .eq('date', dateStr);
 
@@ -55,7 +75,21 @@ export function useAttendance(organizationId: string | undefined, dateStr: strin
 
       // 3. Merge schedules with class_sessions
       for (const s of (schedules || [])) {
-        const sessionRecord = (classSessions || []).find(r => r.schedule_id === s.id);
+        // If coachId is provided, filter only assigned schedules
+        if (coachId) {
+          const isAssigned = 
+            (s.schedule_coaches && s.schedule_coaches.some((sc: any) => sc.coach_id === coachId)) ||
+            s.coach_id === coachId ||
+            assignedClassIds.includes(s.class_id);
+          if (!isAssigned) continue;
+        }
+
+        const sessionRecord = (classSessions || []).find(r => 
+          (r.schedule_id && r.schedule_id === s.id) ||
+          (r.class_id === s.class_id && r.start_time === s.start_time) ||
+          (!r.schedule_id && r.class_id === s.class_id) ||
+          (r.class_id === s.class_id)
+        );
         const venueClass = (s.venue_classes as any);
         
         const base: AttendanceSessionInfo = {
@@ -83,6 +117,14 @@ export function useAttendance(organizationId: string | undefined, dateStr: strin
       // 4. Add ad-hoc sessions
       for (const r of (classSessions || [])) {
         if (!processedSessionIds.has(r.id)) {
+          if (coachId) {
+            const isAssigned =
+              (r.session_coaches && r.session_coaches.some((sc: any) => sc.coach_id === coachId)) ||
+              r.coach_id === coachId ||
+              assignedClassIds.includes(r.class_id);
+            if (!isAssigned) continue;
+          }
+
           const venueClass = (r.venue_classes as any);
           results.push({
             sessionId: r.id,

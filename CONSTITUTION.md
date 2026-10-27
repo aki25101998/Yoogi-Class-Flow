@@ -1,6 +1,6 @@
 # 📜 HIẾN PHÁP DỰ ÁN — YOOGI CLASS FLOW
 
-> **Phiên bản:** 1.4.4  
+> **Phiên bản:** 1.4.5  
 > **Cập nhật lần cuối:** 2026-10-27  
 > **Mục đích:** Đây là tài liệu gốc, bất khả xâm phạm. Mọi thay đổi code PHẢI tuân thủ các quy tắc trong file này. Khi có tính năng mới, file này PHẢI được cập nhật đồng thời.
 
@@ -749,6 +749,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-10-26 | 1.4.2 | Loại bỏ quy tắc redirect cũ (/students → /training) trong next.config.mjs để mở khóa toàn diện đường dẫn Quản lý Học viên; hoàn tất kết nối và deploy trực tiếp bản build Production lên Vercel (https://yoogi-class-flow.vercel.app/students) |
 | 2026-10-27 | 1.4.3 | Sửa lỗi phân quyền check-in của HLV và đồng bộ lịch dạy: bổ sung migration 036_coach_checkin_and_sessions_rls.sql (RLS INSERT/UPDATE cho class_sessions, session_coaches, schedule_coaches & RPC public.checkin_session atomic), khắc phục lỗi filter coachId trên DashboardClient / MyCheckinClient / MyScheduleClient / MyAttendanceClient, tự động fallback kế thừa HLV từ class_coaches khi lịch định kỳ chưa gán HLV riêng lẻ |
 | 2026-10-27 | 1.4.4 | Khắc phục triệt để lỗi đồng bộ trạng thái Check-in trên Dashboard (/dashboard) và Check-in (/my-checkin): tường minh hóa quan hệ khóa ngoại (explicit foreign key embedding `coaches!teacher_salary_sessions_coach_id_fkey`) trong session.service.ts giải quyết lỗi PostgREST PGRST201 làm null dữ liệu buổi học đã lưu; đồng bộ trạng thái check-in theo từng HLV trong ca nhiều HLV và kích hoạt refetch + router.refresh() tức thì khi thao tác thành công |
+| 2026-10-27 | 1.4.5 | Hoàn thiện luồng Điểm danh học viên cho Huấn luyện viên: tích hợp mục "Điểm danh học viên" (/attendance) vào menu Cá nhân (Sidebar) và đổi tên /my-attendance thành "Lịch sử buổi dạy"; bổ sung nút tắt 1-chạm [Điểm danh học viên] trên thẻ ca học (Dashboard & Check-in) ngay khi ca chuyển sang Đã Check-in; cập nhật useAttendance & AttendanceClient tự động lọc lớp phân công theo coachId và tự động chọn ca học qua URL query params (date/sessionId/classId) |
 
 ---
 

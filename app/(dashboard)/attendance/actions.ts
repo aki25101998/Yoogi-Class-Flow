@@ -82,5 +82,7 @@ export async function saveAttendanceAction(sessionId: string, records: any[]) {
   if (upsertError) return { success: false, error: upsertError.message };
 
   revalidatePath('/attendance');
+  revalidatePath('/dashboard');
+  revalidatePath('/my-attendance');
   return { success: true };
 }

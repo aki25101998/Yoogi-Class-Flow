@@ -132,14 +132,20 @@ export default function MyCheckinClient() {
                       Check-in Ngay
                     </Button>
                   ) : (
-                    <Button 
-                      variant="secondary" 
-                      className="w-full"
-                      disabled
-                      leftIcon={<span className="material-icons-round">check</span>}
-                    >
-                      Đã Hoàn Thành
-                    </Button>
+                    <div className="flex flex-col gap-2">
+                      <Button 
+                        variant="primary" 
+                        className="w-full"
+                        onClick={() => router.push(`/attendance?date=${s.date || dateStr}&sessionId=${s.sessionId || ''}&classId=${s.classId}`)}
+                        leftIcon={<span className="material-icons-round">how_to_reg</span>}
+                      >
+                        Điểm danh học viên
+                      </Button>
+                      <div className="text-center text-xs text-muted flex items-center justify-center gap-1 mt-1">
+                        <span className="material-icons-round text-success" style={{ fontSize: '14px' }}>check_circle</span>
+                        Đã Check-in ca dạy
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>

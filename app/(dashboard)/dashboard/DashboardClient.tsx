@@ -258,6 +258,18 @@ export default function DashboardClient() {
                           Check-in
                         </Button>
                       )}
+
+                      {/* Student Attendance Action when checked in */}
+                      {s.status !== 'cancelled' && s.status !== 'pending' && s.status !== 'scheduled' && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => router.push(`/attendance?date=${s.date || dateStr}&sessionId=${s.sessionId || ''}&classId=${s.classId}`)}
+                          leftIcon={<span className="material-icons-round">how_to_reg</span>}
+                        >
+                          Điểm danh học viên
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>

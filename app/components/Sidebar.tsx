@@ -43,7 +43,8 @@ const COACH_NAV = [
   { section: 'Cá nhân', items: [
     { icon: 'calendar_month', label: 'Lịch của tôi', route: '/my-schedule' },
     { icon: 'fingerprint', label: 'Check-in', route: '/my-checkin' },
-    { icon: 'assignment_turned_in', label: 'Điểm danh', route: '/my-attendance' },
+    { icon: 'how_to_reg', label: 'Điểm danh học viên', route: '/attendance' },
+    { icon: 'history', label: 'Lịch sử buổi dạy', route: '/my-attendance' },
     { icon: 'local_activity', label: 'Hoạt động', route: '/my-earnings' }
   ]}
 ];

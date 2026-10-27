@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { saveAttendanceAction } from './actions';
 import { useAttendance, AttendanceSessionInfo } from '@/hooks/useAttendance';
@@ -23,11 +24,20 @@ export default function AttendanceClient() {
   const { context } = useDashboardContext();
   const organizationId = context?.organization?.id;
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
 
-  const [selectedDate, setSelectedDate] = useState(getBusinessDateString());
+  const urlDate = searchParams.get('date');
+  const urlSessionId = searchParams.get('sessionId');
+  const urlClassId = searchParams.get('classId');
+
+  const role = context?.membership?.role;
+  const isAdminOrOwner = role === 'admin' || role === 'owner';
+  const coachId = isAdminOrOwner ? undefined : context?.coach?.id;
+
+  const [selectedDate, setSelectedDate] = useState(urlDate || getBusinessDateString());
   const [selectedSessionIdx, setSelectedSessionIdx] = useState<number | ''>('');
   
-  const { sessions, isLoading: isFetching } = useAttendance(organizationId, selectedDate);
+  const { sessions, isLoading: isFetching } = useAttendance(organizationId, selectedDate, coachId);
   const [attendanceRecords, setAttendanceRecords] = useState<any[]>([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -38,6 +48,29 @@ export default function AttendanceClient() {
   useEffect(() => {
     setSelectedSessionIdx('');
   }, [selectedDate, sessions.length]);
+
+  // Auto-select session if sessionId or classId is passed in URL query, or if coach has only 1 session
+  useEffect(() => {
+    if (sessions.length > 0 && selectedSessionIdx === '') {
+      if (urlSessionId) {
+        const idx = sessions.findIndex(s => s.sessionId === urlSessionId);
+        if (idx !== -1) {
+          setSelectedSessionIdx(idx);
+          return;
+        }
+      }
+      if (urlClassId) {
+        const idx = sessions.findIndex(s => s.classId === urlClassId);
+        if (idx !== -1) {
+          setSelectedSessionIdx(idx);
+          return;
+        }
+      }
+      if (coachId && sessions.length === 1) {
+        setSelectedSessionIdx(0);
+      }
+    }
+  }, [sessions, urlSessionId, urlClassId, coachId, selectedSessionIdx]);
 
   useEffect(() => {
     if (!selectedSession) {
