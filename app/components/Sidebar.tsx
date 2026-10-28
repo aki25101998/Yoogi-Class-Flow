@@ -214,6 +214,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
   const displayName = context?.profile?.name || userData?.name || user?.user_metadata?.full_name || 'User';
   const displayRole = role === 'owner' ? 'OWNER' : role === 'admin' ? 'ADMIN' : role === 'head_coach' ? 'HEAD COACH' : 'ASSISTANT COACH';
 
+  const isFounder = (user?.email?.toLowerCase() === 'aki251098@gmail.com') || (context?.profile?.email?.toLowerCase() === 'aki251098@gmail.com');
   const multiWorkspace = context?.allMemberships && context.allMemberships.length > 1;
 
   return (
@@ -365,6 +366,32 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
                       </button>
                     );
                   })}
+
+                  {isFounder && (
+                    <Link
+                      href="/platform-admin"
+                      onClick={() => setIsWorkspaceDropdownOpen(false)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 12px',
+                        marginTop: '4px',
+                        borderTop: '1px solid var(--border-light)',
+                        color: '#10b981',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        textDecoration: 'none',
+                        borderRadius: 'var(--radius-sm)',
+                        transition: 'background 0.15s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--surface-hover)'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    >
+                      <span className="material-icons-round" style={{ fontSize: '16px' }}>add_business</span>
+                      <span>+ Cấp phép trung tâm mới</span>
+                    </Link>
+                  )}
                 </div>
               </>
             )}
@@ -429,6 +456,34 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
             </button>
           </div>
           
+          {isFounder && (
+            <Link
+              href="/platform-admin"
+              onClick={() => setIsSidebarOpen(false)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 12px',
+                marginBottom: '12px',
+                borderRadius: '8px',
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%)',
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                color: '#10b981',
+                textDecoration: 'none',
+                fontSize: '12px',
+                fontWeight: 700,
+                transition: 'all 0.2s'
+              }}
+            >
+              <span className="material-icons-round" style={{ fontSize: '18px' }}>admin_panel_settings</span>
+              <span style={{ flex: 1 }}>Cổng Founder Admin</span>
+              <span style={{ fontSize: '10px', textTransform: 'uppercase', padding: '1px 6px', background: '#10b981', color: '#fff', borderRadius: '4px' }}>
+                Founder
+              </span>
+            </Link>
+          )}
+
           <div className="sidebar-user">
             <Link 
               href="/profile" 

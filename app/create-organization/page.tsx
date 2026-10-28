@@ -1,78 +1,169 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { createOrganizationAction } from './actions';
+import { createClient } from '@/utils/supabase/client';
+import Link from 'next/link';
 
 export default function CreateOrganizationPage() {
-  const [name, setName] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const [currentUserEmail, setCurrentUserEmail] = useState<string>('');
+  const [loading, setLoading] = useState(true);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    
-    if (!name) {
-      setError('Vui lòng nhập tên tổ chức.');
-      return;
-    }
-
-    setLoading(true);
-    const result = await createOrganizationAction(name);
-    if (result.success) {
-      router.push('/dashboard');
-    } else {
-      setError(result.error || 'Có lỗi xảy ra khi tạo tổ chức.');
+  useEffect(() => {
+    async function checkUser() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        setCurrentUserEmail(user.email);
+        if (user.email.toLowerCase().trim() === 'aki251098@gmail.com') {
+          // If founder lands here, send to platform admin
+          router.replace('/platform-admin');
+          return;
+        }
+      }
       setLoading(false);
     }
+    checkUser();
+  }, [router]);
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/login');
   };
 
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--background)' }}>
+        <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Đang kiểm tra tài khoản...</div>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ width: '100%', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--background)' }}>
-      <div style={{ backgroundColor: 'var(--surface)', padding: '40px', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-md)', border: '1px solid var(--border-light)', maxWidth: '400px', width: '100%' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px', textAlign: 'center' }}>Tạo Tổ Chức</h1>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', textAlign: 'center' }}>
-          Bạn chưa thuộc tổ chức nào. Hãy tạo một tổ chức mới để bắt đầu.
+    <div style={{ 
+      width: '100%', 
+      minHeight: '100vh', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      backgroundColor: 'var(--background)',
+      padding: '24px'
+    }}>
+      <div style={{ 
+        backgroundColor: 'var(--surface)', 
+        padding: '40px 32px', 
+        borderRadius: '16px', 
+        boxShadow: 'var(--shadow-lg)', 
+        border: '1px solid var(--border-light)', 
+        maxWidth: '460px', 
+        width: '100%',
+        textAlign: 'center'
+      }}>
+        {/* Lock Icon */}
+        <div style={{
+          width: '64px',
+          height: '64px',
+          borderRadius: '50%',
+          backgroundColor: 'rgba(20, 184, 166, 0.1)',
+          color: 'var(--primary)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto 20px',
+          fontSize: '32px'
+        }}>
+          <span className="material-icons-round">domain_disabled</span>
+        </div>
+
+        <h1 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '12px', color: 'var(--text-main)' }}>
+          Trung Tâm Chưa Được Kích Hoạt
+        </h1>
+
+        <p style={{ color: 'var(--text-secondary)', fontSize: '14px', lineHeight: 1.6, marginBottom: '24px' }}>
+          Tài khoản <strong>{currentUserEmail}</strong> chưa được liên kết hoặc kích hoạt quyền sở hữu trung tâm nào trên nền tảng <strong>Yoogi Class Flow</strong>.
         </p>
 
-        {error && (
-          <div style={{ backgroundColor: 'var(--danger-bg)', color: 'var(--danger-text)', padding: '12px', borderRadius: 'var(--radius-sm)', marginBottom: '16px', fontSize: '14px' }}>
-            {error}
+        {/* Contact Founder Card */}
+        <div style={{
+          backgroundColor: 'var(--surface-hover)',
+          border: '1px solid var(--border-light)',
+          borderRadius: '12px',
+          padding: '20px',
+          textAlign: 'left',
+          marginBottom: '24px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+            <span className="material-icons-round" style={{ color: 'var(--primary)', fontSize: '20px' }}>
+              contact_support
+            </span>
+            <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-main)' }}>
+              Liên hệ Người sáng lập (Founder)
+            </span>
           </div>
-        )}
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Tên tổ chức</label>
-            <input 
-              type="text" 
-              value={name} 
-              onChange={e => setName(e.target.value)}
-              placeholder="VD: Yoogi Taekwondo"
-              style={{ width: '100%', padding: '10px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--surface)', color: 'var(--text-main)' }}
-              disabled={loading}
-            />
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 12px 0' }}>
+            Để đăng ký gói bản quyền và kích hoạt trung tâm của riêng bạn, vui lòng liên hệ trực tiếp với Nhà sáng lập:
+          </p>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 14px',
+            backgroundColor: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: '8px',
+            fontSize: '13px',
+            fontWeight: 600,
+            color: 'var(--text-main)'
+          }}>
+            <span className="material-icons-round" style={{ fontSize: '18px', color: 'var(--primary)' }}>email</span>
+            <span>aki251098@gmail.com</span>
           </div>
 
-          <button 
-            type="submit" 
-            disabled={loading}
-            style={{ 
-              width: '100%', 
-              padding: '12px', 
-              backgroundColor: loading ? 'var(--secondary)' : 'var(--primary)', 
-              color: 'var(--text-on-primary)', 
-              border: 'none', 
-              borderRadius: '4px', 
-              fontWeight: 'bold',
-              cursor: loading ? 'not-allowed' : 'pointer'
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '10px', fontStyle: 'italic' }}>
+            Sau khi hoàn tất thanh toán bản quyền, trung tâm của bạn sẽ được kích hoạt tự động ngay trên tài khoản này.
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              width: '100%',
+              padding: '12px',
+              backgroundColor: 'var(--primary)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: 700,
+              fontSize: '14px',
+              cursor: 'pointer'
             }}
           >
-            {loading ? 'Đang tạo...' : 'Tạo tổ chức'}
+            Đã thanh toán? Bấm để làm mới
           </button>
-        </form>
+
+          <button
+            onClick={handleLogout}
+            style={{
+              width: '100%',
+              padding: '10px',
+              backgroundColor: 'transparent',
+              color: 'var(--text-secondary)',
+              border: '1px solid var(--border)',
+              borderRadius: '8px',
+              fontWeight: 500,
+              fontSize: '13px',
+              cursor: 'pointer'
+            }}
+          >
+            Đăng xuất tài khoản
+          </button>
+        </div>
       </div>
     </div>
   );

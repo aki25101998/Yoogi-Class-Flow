@@ -1,6 +1,6 @@
 # 📜 HIẾN PHÁP DỰ ÁN — YOOGI CLASS FLOW
 
-> **Phiên bản:** 1.5.0  
+> **Phiên bản:** 1.6.0  
 > **Cập nhật lần cuối:** 2026-10-28  
 > **Mục đích:** Đây là tài liệu gốc, bất khả xâm phạm. Mọi thay đổi code PHẢI tuân thủ các quy tắc trong file này. Khi có tính năng mới, file này PHẢI được cập nhật đồng thời.
 
@@ -204,12 +204,13 @@ Khi thực hiện việc thay đổi schema cơ sở dữ liệu (ví dụ: xóa
 
 ## 4. HỆ THỐNG PHÂN QUYỀN & VAI TRÒ
 
-### 4.1 Bốn Vai Trò Hệ Thống
+### 4.1 Phân Cấp Vai Trò Hệ Thống
 
 | Vai trò | Code | Quyền hạn |
 |---|---|---|
-| **Owner** | `owner` | Toàn quyền, không thể bị xóa |
-| **Admin** | `admin` | Toàn quyền quản lý (trừ xóa owner) |
+| **Platform Founder** | Super Admin (`aki251098@gmail.com`) | Toàn quyền cấp phép, tạo mới trung tâm, quản lý bản quyền SaaS (/platform-admin) |
+| **Owner** | `owner` | Toàn quyền trong phạm vi tổ chức/trung tâm, không thể bị xóa |
+| **Admin** | `admin` | Toàn quyền quản lý trong trung tâm (trừ xóa owner) |
 | **Head Coach** | `head_coach` | Xem lớp, học viên, điểm danh. Không quản lý |
 | **Assistant Coach** | `assistant_coach` | Chỉ xem lớp được phân công |
 
@@ -283,6 +284,13 @@ getCurrentOrganizationContext(userId)
 1. **MỌI query PHẢI filter theo `organization_id`** — KHÔNG BAO GIỜ query mà thiếu điều kiện `organization_id`
 2. **Switching workspace = clear React Query cache** — Tránh hiển thị data cũ
 3. **RLS enforced ở mọi bảng** — Là tuyến phòng thủ cuối cùng
+
+### 5.4 Cơ Chế Cấp Phép Bản Quyền (Manual Provisioning & Platform Administration)
+
+1. **Mô hình kinh doanh:** Gated B2B SaaS (Không cho phép người dùng tự do đăng ký tạo trung tâm rác).
+2. **Quyền khởi tạo:** Duy nhất Nhà sáng lập (`aki251098@gmail.com`) có quyền tạo mới trung tâm thông qua Cổng Founder Admin (`/platform-admin`) sau khi khách hàng đã thanh toán.
+3. **Khóa tạo tự do:** Người dùng thường khi chưa có trung tâm tại `/create-organization` sẽ thấy trang hướng dẫn liên hệ Founder để đăng ký và kích hoạt.
+4. **Đa vai trò xuyên tổ chức:** Cùng một tài khoản người dùng (User Email) có thể vừa là HLV ở trung tâm này (XLT) vừa là Chủ (Owner) ở trung tâm khác (ABC) mà không hề bị xung đột hay rò rỉ dữ liệu, chuyển đổi linh hoạt qua bộ chọn Workspace trên Sidebar.
 
 ---
 
@@ -755,6 +763,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-10-28 | 1.4.8 | Tinh chỉnh hoàn thiện giao diện Lịch dạy cá nhân (/my-schedule): Khắc phục triệt để lỗi thẻ badge Hôm nay (HÔM NAY) bị cắt cụt do overflow-x trên dải 7 ngày bằng cách bổ sung clearance padding-top và căn giữa tuyệt đối; nâng cấp thẻ ca học (Focus Session Card) theo kiến trúc 3 khối Athletic: khối thời gian nổi bật bên trái (khung giờ + thời lượng), khối thông tin lớp học định danh rõ ràng kèm icon võ đạo, và khối nút tác vụ chuẩn pill (Xem lớp + Điểm danh); bổ sung nút tắt 1-chạm [Quay lại Hôm nay] khi xem các ngày khác trong tuần |
 | 2026-10-28 | 1.4.9 | Đảo ngược phân cấp thị giác trên thẻ ca học (/my-schedule): Đưa Tên địa điểm giảng dạy (CC Riverside) lên làm tiêu đề chính nổi bật (1.35rem bold) kèm badge NƠI DẠY và pin định vị, chuyển tên lớp (🥋 Lớp 3 5 7) thành chip phụ bên dưới, tối ưu hóa theo đúng phản xạ và nhu cầu thực tế của HLV ("hôm nay tôi phải dạy ở đâu") |
 | 2026-10-28 | 1.5.0 | Đồng bộ phân cấp thị giác trên chế độ Xem theo lớp (Class Bento Cards - /my-schedule): Đưa Tên nơi dạy (CC Riverside) lên làm tiêu đề chính nổi bật (1.3rem bold) kèm badge NƠI DẠY và tần suất tuần, chuyển tên lớp (🥋 Lớp 2 4 6 / 🥋 Lớp 3 5 7) thành chip phụ bên dưới, nâng cấp các nút hành động (Chi tiết lớp & Điểm danh) thành pill button chuẩn thể thao |
+| 2026-10-28 | 1.6.0 | Triển khai Cổng Quản Trị Founder (/platform-admin) và cơ chế Manual Provisioning: Xác lập vai trò Platform Founder tối cao cho aki251098@gmail.com; migration 038_platform_founder_admin.sql (RLS Founder bypass & stored procedures platform_provision_organization, platform_get_all_organizations, platform_update_organization); giao diện Dashboard thống kê toàn hệ thống, form cấp phép 1-chạm tạo trung tâm và gán quyền Owner cho khách hàng thanh toán (hỗ trợ mô hình 1 tài khoản vừa làm HLV trung tâm này vừa làm Chủ trung tâm khác); khóa chặt tính năng tự tạo bừa bãi tại /create-organization với giao diện liên hệ Founder thanh toán |
 
 ---
 
