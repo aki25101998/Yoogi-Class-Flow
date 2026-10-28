@@ -914,3 +914,4 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
     </div>
   );
 }
+

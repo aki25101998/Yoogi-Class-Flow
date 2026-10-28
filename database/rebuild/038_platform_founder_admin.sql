@@ -222,3 +222,4 @@ EXCEPTION
     RETURN jsonb_build_object('success', false, 'error', SQLERRM);
 END;
 $$;
+

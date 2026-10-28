@@ -50,3 +50,4 @@ export async function switchIntoWorkspaceAction(organizationId: string) {
   // Switch workspace
   return await switchWorkspace(organizationId);
 }
+
