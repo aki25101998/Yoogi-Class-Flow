@@ -1,3 +1,6 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons+Round');
+
 :root {
   /* Color Palette - Vibrant Athletic & Martial Arts Theme */
   --primary: #14b8a6; /* Electric Teal 500 */
@@ -388,9 +391,22 @@ h4 { font-size: 1.125rem; }
 }
 
 .material-icons-round {
-  display: flex;
+  font-family: 'Material Icons Round' !important;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
 }
 
 /* ==========================================================================

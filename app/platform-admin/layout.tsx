@@ -31,8 +31,7 @@ export default async function PlatformAdminLayout({
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: 'var(--background)',
-        padding: '24px',
-        fontFamily: 'Inter, sans-serif'
+        padding: '24px'
       }}>
         <div style={{
           maxWidth: '480px',
@@ -106,71 +105,80 @@ export default async function PlatformAdminLayout({
       minHeight: '100vh',
       backgroundColor: 'var(--background)',
       color: 'var(--text-main)',
-      fontFamily: 'Inter, sans-serif'
+      display: 'flex',
+      flexDirection: 'column'
     }}>
       {/* Top Founder Navigation Bar */}
       <header style={{
-        height: '64px',
+        height: '68px',
         backgroundColor: 'var(--surface)',
         borderBottom: '1px solid var(--border-light)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 28px',
+        padding: '0 32px',
         position: 'sticky',
         top: 0,
-        zIndex: 40
+        zIndex: 40,
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        {/* Brand & Area Badge */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '10px',
-            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+            width: '40px',
+            height: '40px',
+            borderRadius: '12px',
+            background: 'linear-gradient(135deg, var(--primary) 0%, #0d9488 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             color: '#fff',
-            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)'
+            boxShadow: '0 4px 14px rgba(20, 184, 166, 0.35)'
           }}>
-            <span className="material-icons-round" style={{ fontSize: '20px' }}>admin_panel_settings</span>
+            <span className="material-icons-round" style={{ fontSize: '22px' }}>sports_martial_arts</span>
           </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '-0.3px', color: 'var(--text-main)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '17px', fontWeight: 900, letterSpacing: '-0.3px', color: 'var(--text-main)' }}>
                 YOOGI PLATFORM
               </span>
               <span style={{
-                fontSize: '10px',
-                fontWeight: 700,
+                fontSize: '11px',
+                fontWeight: 800,
+                letterSpacing: '0.5px',
                 textTransform: 'uppercase',
-                padding: '2px 8px',
+                padding: '3px 10px',
                 borderRadius: '100px',
-                backgroundColor: 'rgba(16, 185, 129, 0.12)',
-                color: '#10b981',
-                border: '1px solid rgba(16, 185, 129, 0.25)'
+                backgroundColor: 'rgba(20, 184, 166, 0.12)',
+                color: 'var(--primary)',
+                border: '1px solid rgba(20, 184, 166, 0.25)'
               }}>
                 Founder Area
               </span>
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
               Cổng quản trị cấp phép & bản quyền trung tâm
             </div>
           </div>
         </div>
 
+        {/* User Badge & Back to App */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            padding: '6px 12px',
+            padding: '8px 16px',
             backgroundColor: 'var(--surface-hover)',
-            borderRadius: '20px',
-            fontSize: '12px',
-            color: 'var(--text-secondary)'
+            border: '1px solid var(--border-light)',
+            borderRadius: '100px',
+            fontSize: '13px',
+            color: 'var(--text-main)',
+            fontWeight: 500
           }}>
-            <span className="material-icons-round" style={{ fontSize: '16px', color: '#10b981' }}>verified</span>
+            <span className="material-icons-round" style={{ fontSize: '18px', color: 'var(--primary)' }}>
+              verified_user
+            </span>
             <span>{FOUNDER_EMAIL}</span>
           </div>
 
@@ -179,28 +187,31 @@ export default async function PlatformAdminLayout({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: '8px',
-              backgroundColor: 'var(--surface-hover)',
-              border: '1px solid var(--border-light)',
+              gap: '8px',
+              padding: '9px 18px',
+              borderRadius: '10px',
+              backgroundColor: 'var(--surface)',
+              border: '1px solid var(--border)',
               color: 'var(--text-main)',
               textDecoration: 'none',
               fontSize: '13px',
-              fontWeight: 500
+              fontWeight: 600,
+              boxShadow: 'var(--shadow-sm)',
+              transition: 'all 0.15s'
             }}
           >
-            <span className="material-icons-round" style={{ fontSize: '18px' }}>dashboard</span>
+            <span className="material-icons-round" style={{ fontSize: '18px', color: 'var(--primary)' }}>
+              arrow_back
+            </span>
             <span>Vào ứng dụng</span>
           </Link>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main style={{ maxWidth: '1320px', margin: '0 auto', padding: '32px 24px' }}>
+      {/* Main Content Area */}
+      <main style={{ flex: 1, maxWidth: '1360px', width: '100%', margin: '0 auto', padding: '36px 32px 64px' }}>
         {children}
       </main>
     </div>
   );
 }
-

@@ -38,7 +38,7 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
   const [formError, setFormError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Renewal / Action State
+  // Action Loading State
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   // Filtered Orgs
@@ -162,18 +162,24 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       
-      {/* Banner & Welcome */}
+      {/* Page Title & Main Action */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
-        gap: '16px'
+        gap: '20px'
       }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-main)', margin: '0 0 6px 0' }}>
+          <h1 style={{
+            fontSize: '26px',
+            fontWeight: 900,
+            color: 'var(--text-main)',
+            letterSpacing: '-0.5px',
+            margin: '0 0 8px 0'
+          }}>
             Quản Lý Bản Quyền Nền Tảng
           </h1>
           <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0 }}>
@@ -184,19 +190,27 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
         <button
           onClick={() => handleOpenModal()}
           style={{
-            display: 'flex',
+            display: 'inline-flex',
             alignItems: 'center',
-            gap: '8px',
-            padding: '12px 22px',
+            gap: '10px',
+            padding: '12px 24px',
             backgroundColor: 'var(--primary)',
-            color: '#fff',
+            color: '#ffffff',
             border: 'none',
-            borderRadius: '10px',
+            borderRadius: '12px',
             fontWeight: 700,
             fontSize: '14px',
             cursor: 'pointer',
-            boxShadow: '0 4px 14px rgba(20, 184, 166, 0.35)',
-            transition: 'transform 0.15s, opacity 0.2s'
+            boxShadow: '0 4px 16px rgba(20, 184, 166, 0.35)',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--primary-hover)';
+            e.currentTarget.style.transform = 'translateY(-1px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--primary)';
+            e.currentTarget.style.transform = 'translateY(0)';
           }}
         >
           <span className="material-icons-round" style={{ fontSize: '20px' }}>add_business</span>
@@ -207,50 +221,66 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
       {/* Success Notification */}
       {successMessage && (
         <div style={{
-          backgroundColor: 'rgba(16, 185, 129, 0.12)',
+          backgroundColor: 'rgba(16, 185, 129, 0.1)',
           border: '1px solid rgba(16, 185, 129, 0.3)',
-          color: '#10b981',
-          padding: '14px 20px',
-          borderRadius: '10px',
+          color: '#059669',
+          padding: '16px 20px',
+          borderRadius: '12px',
           fontSize: '14px',
           fontWeight: 600,
           display: 'flex',
           alignItems: 'center',
-          gap: '12px'
+          gap: '12px',
+          boxShadow: '0 2px 8px rgba(16, 185, 129, 0.1)'
         }}>
-          <span className="material-icons-round" style={{ fontSize: '20px' }}>check_circle</span>
+          <span className="material-icons-round" style={{ fontSize: '22px', color: '#10b981' }}>check_circle</span>
           <span style={{ flex: 1 }}>{successMessage}</span>
           <button 
             onClick={() => setSuccessMessage('')} 
-            style={{ background: 'none', border: 'none', color: '#10b981', cursor: 'pointer', fontSize: '18px' }}
+            style={{ background: 'none', border: 'none', color: '#059669', cursor: 'pointer', fontSize: '18px', padding: '4px' }}
           >
             ✕
           </button>
         </div>
       )}
 
-      {/* Metric Cards Grid */}
+      {/* 4 Bento KPI Cards */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-        gap: '16px'
+        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+        gap: '20px'
       }}>
         {/* Total Orgs */}
         <div style={{
           backgroundColor: 'var(--surface)',
           border: '1px solid var(--border-light)',
-          borderRadius: '12px',
-          padding: '20px',
-          boxShadow: 'var(--shadow-sm)'
+          borderRadius: '18px',
+          padding: '24px',
+          boxShadow: '0 2px 10px rgba(0, 0, 0, 0.04)',
+          position: 'relative',
+          overflow: 'hidden'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)' }}>TỔNG TRUNG TÂM</span>
-            <span className="material-icons-round" style={{ color: 'var(--primary)', fontSize: '22px' }}>domain</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.6px', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+              TỔNG TRUNG TÂM
+            </span>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '12px',
+              backgroundColor: 'rgba(20, 184, 166, 0.12)',
+              color: 'var(--primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <span className="material-icons-round" style={{ fontSize: '22px' }}>apartment</span>
+            </div>
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--text-main)' }}>
+          <div style={{ fontSize: '32px', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.5px' }}>
             {stats.totalOrganizations}
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '6px' }}>
             Đang vận hành trên Yoogi
           </div>
         </div>
@@ -259,18 +289,33 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
         <div style={{
           backgroundColor: 'var(--surface)',
           border: '1px solid var(--border-light)',
-          borderRadius: '12px',
-          padding: '20px',
-          boxShadow: 'var(--shadow-sm)'
+          borderRadius: '18px',
+          padding: '24px',
+          boxShadow: '0 2px 10px rgba(0, 0, 0, 0.04)',
+          position: 'relative',
+          overflow: 'hidden'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: '#10b981' }}>ĐANG HOẠT ĐỘNG</span>
-            <span className="material-icons-round" style={{ color: '#10b981', fontSize: '22px' }}>check_circle_outline</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.6px', textTransform: 'uppercase', color: '#10b981' }}>
+              ĐANG HOẠT ĐỘNG
+            </span>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '12px',
+              backgroundColor: 'rgba(16, 185, 129, 0.12)',
+              color: '#10b981',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <span className="material-icons-round" style={{ fontSize: '22px' }}>verified</span>
+            </div>
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 800, color: '#10b981' }}>
+          <div style={{ fontSize: '32px', fontWeight: 900, color: '#10b981', letterSpacing: '-0.5px' }}>
             {stats.activeOrganizations}
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '6px' }}>
             Bản quyền còn hạn
           </div>
         </div>
@@ -279,22 +324,35 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
         <div style={{
           backgroundColor: 'var(--surface)',
           border: '1px solid var(--border-light)',
-          borderRadius: '12px',
-          padding: '20px',
-          boxShadow: 'var(--shadow-sm)'
+          borderRadius: '18px',
+          padding: '24px',
+          boxShadow: '0 2px 10px rgba(0, 0, 0, 0.04)',
+          position: 'relative',
+          overflow: 'hidden'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: stats.expiredOrganizations > 0 ? '#ef4444' : 'var(--text-muted)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.6px', textTransform: 'uppercase', color: stats.expiredOrganizations > 0 ? '#ef4444' : 'var(--text-muted)' }}>
               HẾT HẠN / CẦN THU PHÍ
             </span>
-            <span className="material-icons-round" style={{ color: stats.expiredOrganizations > 0 ? '#ef4444' : 'var(--text-muted)', fontSize: '22px' }}>
-              hourglass_disabled
-            </span>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '12px',
+              backgroundColor: stats.expiredOrganizations > 0 ? 'rgba(239, 68, 68, 0.12)' : 'var(--surface-hover)',
+              color: stats.expiredOrganizations > 0 ? '#ef4444' : 'var(--text-muted)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <span className="material-icons-round" style={{ fontSize: '22px' }}>
+                {stats.expiredOrganizations > 0 ? 'warning' : 'schedule'}
+              </span>
+            </div>
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 800, color: stats.expiredOrganizations > 0 ? '#ef4444' : 'var(--text-main)' }}>
+          <div style={{ fontSize: '32px', fontWeight: 900, color: stats.expiredOrganizations > 0 ? '#ef4444' : 'var(--text-main)', letterSpacing: '-0.5px' }}>
             {stats.expiredOrganizations}
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '6px' }}>
             Cần nhắc đóng phí gia hạn
           </div>
         </div>
@@ -303,21 +361,36 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
         <div style={{
           backgroundColor: 'var(--surface)',
           border: '1px solid var(--border-light)',
-          borderRadius: '12px',
-          padding: '20px',
-          boxShadow: 'var(--shadow-sm)'
+          borderRadius: '18px',
+          padding: '24px',
+          boxShadow: '0 2px 10px rgba(0, 0, 0, 0.04)',
+          position: 'relative',
+          overflow: 'hidden'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)' }}>QUY MÔ TOÀN HỆ THỐNG</span>
-            <span className="material-icons-round" style={{ color: '#3b82f6', fontSize: '22px' }}>groups</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.6px', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+              QUY MÔ TOÀN HỆ THỐNG
+            </span>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '12px',
+              backgroundColor: 'rgba(255, 107, 53, 0.12)',
+              color: '#ff6b35',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <span className="material-icons-round" style={{ fontSize: '22px' }}>groups</span>
+            </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
-            <span style={{ fontSize: '28px', fontWeight: 800, color: 'var(--text-main)' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+            <span style={{ fontSize: '32px', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.5px' }}>
               {stats.totalStudents}
             </span>
-            <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>học viên</span>
+            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)' }}>học viên</span>
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+          <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '6px' }}>
             Cùng {stats.totalCoaches} huấn luyện viên
           </div>
         </div>
@@ -327,8 +400,8 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
       <div style={{
         backgroundColor: 'var(--surface)',
         border: '1px solid var(--border-light)',
-        borderRadius: '16px',
-        boxShadow: 'var(--shadow-sm)',
+        borderRadius: '20px',
+        boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
         overflow: 'hidden'
       }}>
         {/* Filter & Search Header */}
@@ -341,18 +414,19 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
           flexWrap: 'wrap',
           gap: '16px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: '260px', maxWidth: '400px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: '260px', maxWidth: '420px' }}>
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              padding: '8px 14px',
+              gap: '10px',
+              padding: '10px 16px',
               backgroundColor: 'var(--surface-hover)',
               border: '1px solid var(--border-light)',
-              borderRadius: '8px',
-              width: '100%'
+              borderRadius: '12px',
+              width: '100%',
+              transition: 'border-color 0.2s'
             }}>
-              <span className="material-icons-round" style={{ fontSize: '18px', color: 'var(--text-muted)' }}>search</span>
+              <span className="material-icons-round" style={{ fontSize: '20px', color: 'var(--text-muted)' }}>search</span>
               <input
                 type="text"
                 placeholder="Tìm theo tên trung tâm hoặc email chủ..."
@@ -362,7 +436,7 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
                   border: 'none',
                   outline: 'none',
                   background: 'transparent',
-                  fontSize: '13px',
+                  fontSize: '14px',
                   color: 'var(--text-main)',
                   width: '100%'
                 }}
@@ -379,19 +453,20 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
           </div>
 
           {/* Status Tabs */}
-          <div style={{ display: 'flex', gap: '6px', backgroundColor: 'var(--surface-hover)', padding: '4px', borderRadius: '8px' }}>
+          <div style={{ display: 'flex', gap: '6px', backgroundColor: 'var(--surface-hover)', padding: '5px', borderRadius: '12px' }}>
             <button
               onClick={() => setStatusFilter('all')}
               style={{
-                padding: '6px 14px',
-                borderRadius: '6px',
+                padding: '8px 16px',
+                borderRadius: '8px',
                 border: 'none',
                 fontSize: '13px',
-                fontWeight: 600,
+                fontWeight: 700,
                 cursor: 'pointer',
                 backgroundColor: statusFilter === 'all' ? 'var(--surface)' : 'transparent',
                 color: statusFilter === 'all' ? 'var(--text-main)' : 'var(--text-secondary)',
-                boxShadow: statusFilter === 'all' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                boxShadow: statusFilter === 'all' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none',
+                transition: 'all 0.15s'
               }}
             >
               Tất cả ({orgs.length})
@@ -399,15 +474,16 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
             <button
               onClick={() => setStatusFilter('active')}
               style={{
-                padding: '6px 14px',
-                borderRadius: '6px',
+                padding: '8px 16px',
+                borderRadius: '8px',
                 border: 'none',
                 fontSize: '13px',
-                fontWeight: 600,
+                fontWeight: 700,
                 cursor: 'pointer',
                 backgroundColor: statusFilter === 'active' ? 'var(--surface)' : 'transparent',
                 color: statusFilter === 'active' ? '#10b981' : 'var(--text-secondary)',
-                boxShadow: statusFilter === 'active' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                boxShadow: statusFilter === 'active' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none',
+                transition: 'all 0.15s'
               }}
             >
               Còn hạn ({stats.activeOrganizations})
@@ -415,15 +491,16 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
             <button
               onClick={() => setStatusFilter('expired')}
               style={{
-                padding: '6px 14px',
-                borderRadius: '6px',
+                padding: '8px 16px',
+                borderRadius: '8px',
                 border: 'none',
                 fontSize: '13px',
-                fontWeight: 600,
+                fontWeight: 700,
                 cursor: 'pointer',
                 backgroundColor: statusFilter === 'expired' ? 'var(--surface)' : 'transparent',
                 color: statusFilter === 'expired' ? '#ef4444' : 'var(--text-secondary)',
-                boxShadow: statusFilter === 'expired' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                boxShadow: statusFilter === 'expired' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none',
+                transition: 'all 0.15s'
               }}
             >
               Hết hạn ({stats.expiredOrganizations})
@@ -436,22 +513,34 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
             <thead>
               <tr style={{ backgroundColor: 'var(--surface-hover)', borderBottom: '1px solid var(--border-light)' }}>
-                <th style={{ padding: '14px 20px', fontWeight: 600, color: 'var(--text-muted)' }}>TRUNG TÂM</th>
-                <th style={{ padding: '14px 20px', fontWeight: 600, color: 'var(--text-muted)' }}>CHỦ SỞ HỮU (OWNER)</th>
-                <th style={{ padding: '14px 20px', fontWeight: 600, color: 'var(--text-muted)' }}>GÓI DỊCH VỤ</th>
-                <th style={{ padding: '14px 20px', fontWeight: 600, color: 'var(--text-muted)' }}>HẠN DÙNG</th>
-                <th style={{ padding: '14px 20px', fontWeight: 600, color: 'var(--text-muted)' }}>QUY MÔ</th>
-                <th style={{ padding: '14px 20px', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'right' }}>THAO TÁC</th>
+                <th style={{ padding: '16px 24px', fontWeight: 700, color: 'var(--text-muted)', fontSize: '12px', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                  TRUNG TÂM
+                </th>
+                <th style={{ padding: '16px 24px', fontWeight: 700, color: 'var(--text-muted)', fontSize: '12px', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                  CHỦ SỞ HỮU (OWNER)
+                </th>
+                <th style={{ padding: '16px 24px', fontWeight: 700, color: 'var(--text-muted)', fontSize: '12px', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                  GÓI DỊCH VỤ
+                </th>
+                <th style={{ padding: '16px 24px', fontWeight: 700, color: 'var(--text-muted)', fontSize: '12px', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                  HẠN DÙNG
+                </th>
+                <th style={{ padding: '16px 24px', fontWeight: 700, color: 'var(--text-muted)', fontSize: '12px', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                  QUY MÔ
+                </th>
+                <th style={{ padding: '16px 24px', fontWeight: 700, color: 'var(--text-muted)', fontSize: '12px', letterSpacing: '0.5px', textTransform: 'uppercase', textAlign: 'right' }}>
+                  THAO TÁC
+                </th>
               </tr>
             </thead>
             <tbody>
               {filteredOrgs.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ padding: '48px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                    <span className="material-icons-round" style={{ fontSize: '36px', opacity: 0.5, marginBottom: '8px', display: 'block' }}>
+                  <td colSpan={6} style={{ padding: '60px 24px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    <span className="material-icons-round" style={{ fontSize: '48px', opacity: 0.4, marginBottom: '12px', display: 'block' }}>
                       search_off
                     </span>
-                    Không tìm thấy trung tâm nào phù hợp.
+                    <div style={{ fontSize: '15px', fontWeight: 600 }}>Không tìm thấy trung tâm nào phù hợp</div>
                   </td>
                 </tr>
               ) : (
@@ -461,24 +550,25 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
                   const isSuspended = org.subscription_status === 'suspended';
 
                   let statusBadgeBg = 'rgba(16, 185, 129, 0.12)';
-                  let statusBadgeColor = '#10b981';
+                  let statusBadgeColor = '#059669';
                   let statusText = 'Đang hoạt động';
 
                   if (isSuspended) {
                     statusBadgeBg = 'rgba(239, 68, 68, 0.12)';
-                    statusBadgeColor = '#ef4444';
+                    statusBadgeColor = '#dc2626';
                     statusText = 'Đã khóa';
                   } else if (isExpired) {
                     statusBadgeBg = 'rgba(239, 68, 68, 0.12)';
-                    statusBadgeColor = '#ef4444';
+                    statusBadgeColor = '#dc2626';
                     statusText = 'Hết hạn';
                   } else if (remainingDays !== null && remainingDays <= 15) {
                     statusBadgeBg = 'rgba(245, 158, 11, 0.12)';
-                    statusBadgeColor = '#f59e0b';
+                    statusBadgeColor = '#d97706';
                     statusText = `Còn ${remainingDays} ngày`;
                   }
 
                   const planUpper = (org.subscription_plan || 'starter').toUpperCase();
+                  const initials = org.name.trim().slice(0, 2).toUpperCase();
 
                   return (
                     <tr 
@@ -490,34 +580,54 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
                       onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--surface-hover)'}
                       onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
-                      {/* Name & ID */}
-                      <td style={{ padding: '16px 20px' }}>
-                        <div style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '14px', marginBottom: '2px' }}>
-                          {org.name}
-                        </div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                          ID: {org.id.slice(0, 8)}...
+                      {/* Name & ID with Avatar */}
+                      <td style={{ padding: '20px 24px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                          <div style={{
+                            width: '42px',
+                            height: '42px',
+                            borderRadius: '12px',
+                            backgroundColor: 'rgba(20, 184, 166, 0.12)',
+                            color: 'var(--primary)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 800,
+                            fontSize: '14px',
+                            letterSpacing: '0.5px'
+                          }}>
+                            {initials}
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 800, color: 'var(--text-main)', fontSize: '15px', marginBottom: '3px' }}>
+                              {org.name}
+                            </div>
+                            <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                              ID: {org.id.slice(0, 8)}...
+                            </div>
+                          </div>
                         </div>
                       </td>
 
                       {/* Owner Info */}
-                      <td style={{ padding: '16px 20px' }}>
-                        <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>
+                      <td style={{ padding: '20px 24px' }}>
+                        <div style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '14px', marginBottom: '2px' }}>
                           {org.owner_name}
                         </div>
-                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                        <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
                           {org.owner_email}
                         </div>
                       </td>
 
                       {/* Plan & Status */}
-                      <td style={{ padding: '16px 20px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
+                      <td style={{ padding: '20px 24px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                           <span style={{
-                            padding: '2px 8px',
-                            borderRadius: '4px',
+                            padding: '3px 10px',
+                            borderRadius: '6px',
                             fontSize: '11px',
-                            fontWeight: 700,
+                            fontWeight: 800,
+                            letterSpacing: '0.5px',
                             backgroundColor: 'var(--surface-hover)',
                             border: '1px solid var(--border-light)',
                             color: 'var(--text-secondary)'
@@ -525,10 +635,10 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
                             {planUpper}
                           </span>
                           <span style={{
-                            padding: '2px 8px',
+                            padding: '3px 10px',
                             borderRadius: '100px',
-                            fontSize: '11px',
-                            fontWeight: 600,
+                            fontSize: '12px',
+                            fontWeight: 700,
                             backgroundColor: statusBadgeBg,
                             color: statusBadgeColor
                           }}>
@@ -538,13 +648,15 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
                       </td>
 
                       {/* Expiration Date */}
-                      <td style={{ padding: '16px 20px' }}>
-                        <div style={{ color: 'var(--text-main)', fontWeight: 500 }}>
+                      <td style={{ padding: '20px 24px' }}>
+                        <div style={{ color: 'var(--text-main)', fontWeight: 600, fontSize: '14px' }}>
                           {formatDate(org.subscription_expires_at)}
                         </div>
                         {remainingDays !== null && (
                           <div style={{
-                            fontSize: '11px',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            marginTop: '2px',
                             color: isExpired ? '#ef4444' : remainingDays <= 15 ? '#f59e0b' : 'var(--text-muted)'
                           }}>
                             {isExpired ? `Quá hạn ${Math.abs(remainingDays)} ngày` : `Còn ${remainingDays} ngày`}
@@ -553,15 +665,21 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
                       </td>
 
                       {/* Scale */}
-                      <td style={{ padding: '16px 20px' }}>
-                        <div style={{ color: 'var(--text-secondary)', fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <span>👥 {org.coaches_count || 0} HLV</span>
-                          <span>🥋 {org.students_count || 0} Học viên</span>
+                      <td style={{ padding: '20px 24px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                            <span className="material-icons-round" style={{ fontSize: '16px', color: 'var(--primary)' }}>sports_martial_arts</span>
+                            <span>{org.coaches_count || 0} HLV</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                            <span className="material-icons-round" style={{ fontSize: '16px', color: '#ff6b35' }}>people</span>
+                            <span>{org.students_count || 0} Học viên</span>
+                          </div>
                         </div>
                       </td>
 
                       {/* Actions */}
-                      <td style={{ padding: '16px 20px', textAlign: 'right' }}>
+                      <td style={{ padding: '20px 24px', textAlign: 'right' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
                           {/* Extend 1 Year */}
                           <button
@@ -569,20 +687,23 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
                             disabled={actionLoadingId === org.id}
                             title="Gia hạn thêm 1 năm (12 tháng)"
                             style={{
-                              padding: '6px 10px',
-                              borderRadius: '6px',
+                              padding: '8px 14px',
+                              borderRadius: '8px',
                               backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                              color: '#10b981',
-                              border: '1px solid rgba(16, 185, 129, 0.25)',
-                              fontSize: '12px',
-                              fontWeight: 600,
+                              color: '#059669',
+                              border: '1px solid rgba(16, 185, 129, 0.3)',
+                              fontSize: '13px',
+                              fontWeight: 700,
                               cursor: 'pointer',
-                              display: 'flex',
+                              display: 'inline-flex',
                               alignItems: 'center',
-                              gap: '4px'
+                              gap: '6px',
+                              transition: 'all 0.15s'
                             }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.2)'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.1)'}
                           >
-                            <span className="material-icons-round" style={{ fontSize: '15px' }}>update</span>
+                            <span className="material-icons-round" style={{ fontSize: '17px' }}>add_circle</span>
                             <span>+1 Năm</span>
                           </button>
 
@@ -592,20 +713,23 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
                             disabled={actionLoadingId === org.id}
                             title={isSuspended ? "Mở khóa trung tâm" : "Khóa trung tâm"}
                             style={{
-                              padding: '6px 10px',
-                              borderRadius: '6px',
+                              padding: '8px 14px',
+                              borderRadius: '8px',
                               backgroundColor: isSuspended ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                              color: isSuspended ? '#10b981' : '#ef4444',
-                              border: `1px solid ${isSuspended ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`,
-                              fontSize: '12px',
-                              fontWeight: 600,
+                              color: isSuspended ? '#059669' : '#dc2626',
+                              border: `1px solid ${isSuspended ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                              fontSize: '13px',
+                              fontWeight: 700,
                               cursor: 'pointer',
-                              display: 'flex',
+                              display: 'inline-flex',
                               alignItems: 'center',
-                              gap: '4px'
+                              gap: '6px',
+                              transition: 'all 0.15s'
                             }}
+                            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.85'}
+                            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                           >
-                            <span className="material-icons-round" style={{ fontSize: '15px' }}>
+                            <span className="material-icons-round" style={{ fontSize: '17px' }}>
                               {isSuspended ? 'lock_open' : 'lock'}
                             </span>
                             <span>{isSuspended ? 'Mở' : 'Khóa'}</span>
@@ -617,20 +741,23 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
                             disabled={actionLoadingId === org.id}
                             title="Chuyển vào trung tâm này để kiểm tra"
                             style={{
-                              padding: '6px 10px',
-                              borderRadius: '6px',
+                              padding: '8px 14px',
+                              borderRadius: '8px',
                               backgroundColor: 'var(--surface-hover)',
                               color: 'var(--text-main)',
                               border: '1px solid var(--border-light)',
-                              fontSize: '12px',
-                              fontWeight: 500,
+                              fontSize: '13px',
+                              fontWeight: 600,
                               cursor: 'pointer',
-                              display: 'flex',
+                              display: 'inline-flex',
                               alignItems: 'center',
-                              gap: '4px'
+                              gap: '6px',
+                              transition: 'all 0.15s'
                             }}
+                            onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
+                            onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-light)'}
                           >
-                            <span className="material-icons-round" style={{ fontSize: '15px' }}>login</span>
+                            <span className="material-icons-round" style={{ fontSize: '17px', color: 'var(--primary)' }}>open_in_new</span>
                             <span>Vào xem</span>
                           </button>
                         </div>
@@ -649,47 +776,68 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
         <div style={{
           position: 'fixed',
           inset: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.65)',
+          backgroundColor: 'rgba(15, 23, 42, 0.65)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 1000,
-          padding: '20px',
-          backdropFilter: 'blur(3px)'
+          padding: '24px',
+          backdropFilter: 'blur(5px)'
         }}>
           <div style={{
             backgroundColor: 'var(--surface)',
             border: '1px solid var(--border-light)',
-            borderRadius: '16px',
-            maxWidth: '520px',
+            borderRadius: '20px',
+            maxWidth: '540px',
             width: '100%',
-            boxShadow: 'var(--shadow-xl)',
+            boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.2)',
             overflow: 'hidden'
           }}>
             {/* Modal Header */}
             <div style={{
-              padding: '20px 24px',
+              padding: '24px 28px',
               borderBottom: '1px solid var(--border-light)',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between'
+              justifyContent: 'space-between',
+              backgroundColor: 'var(--surface)'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span className="material-icons-round" style={{ color: 'var(--primary)', fontSize: '24px' }}>
-                  add_business
-                </span>
-                <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>
-                  Cấp Phép Trung Tâm Mới
-                </h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(20, 184, 166, 0.12)',
+                  color: 'var(--primary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <span className="material-icons-round" style={{ fontSize: '22px' }}>add_business</span>
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: 'var(--text-main)' }}>
+                    Cấp Phép Trung Tâm Mới
+                  </h2>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    Khởi tạo trung tâm & trao quyền Chủ sở hữu (Owner)
+                  </div>
+                </div>
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
                 style={{
-                  background: 'none',
+                  background: 'var(--surface-hover)',
                   border: 'none',
-                  fontSize: '20px',
-                  color: 'var(--text-muted)',
-                  cursor: 'pointer'
+                  borderRadius: '8px',
+                  width: '32px',
+                  height: '32px',
+                  fontSize: '18px',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}
               >
                 ✕
@@ -697,25 +845,26 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
             </div>
 
             {/* Modal Form */}
-            <form onSubmit={handleProvisionSubmit} style={{ padding: '24px' }}>
+            <form onSubmit={handleProvisionSubmit} style={{ padding: '28px' }}>
               {formError && (
                 <div style={{
-                  padding: '12px 16px',
+                  padding: '14px 18px',
                   backgroundColor: 'rgba(239, 68, 68, 0.1)',
                   border: '1px solid rgba(239, 68, 68, 0.25)',
-                  color: '#ef4444',
-                  borderRadius: '8px',
+                  color: '#dc2626',
+                  borderRadius: '10px',
                   fontSize: '13px',
-                  marginBottom: '18px'
+                  fontWeight: 600,
+                  marginBottom: '20px'
                 }}>
                   {formError}
                 </div>
               )}
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                 {/* Org Name */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '8px' }}>
                     Tên trung tâm <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <input
@@ -726,20 +875,21 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
                     onChange={e => setFormData({ ...formData, name: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '10px 14px',
-                      borderRadius: '8px',
+                      padding: '12px 16px',
+                      borderRadius: '10px',
                       border: '1px solid var(--border)',
                       backgroundColor: 'var(--background)',
                       color: 'var(--text-main)',
                       fontSize: '14px',
-                      boxSizing: 'border-box'
+                      boxSizing: 'border-box',
+                      outline: 'none'
                     }}
                   />
                 </div>
 
                 {/* Owner Email */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '8px' }}>
                     Email Chủ trung tâm (Owner) <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <input
@@ -750,24 +900,25 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
                     onChange={e => setFormData({ ...formData, ownerEmail: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '10px 14px',
-                      borderRadius: '8px',
+                      padding: '12px 16px',
+                      borderRadius: '10px',
                       border: '1px solid var(--border)',
                       backgroundColor: 'var(--background)',
                       color: 'var(--text-main)',
                       fontSize: '14px',
-                      boxSizing: 'border-box'
+                      boxSizing: 'border-box',
+                      outline: 'none'
                     }}
                   />
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px' }}>
                     Email này sẽ được trao toàn quyền Quản trị (Owner) của trung tâm mới.
                   </div>
                 </div>
 
                 {/* Owner Name (Optional) */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
-                    Tên chủ sở hữu (Hiển thị)
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '8px' }}>
+                    Tên chủ sở hữu (Tùy chọn)
                   </label>
                   <input
                     type="text"
@@ -776,21 +927,22 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
                     onChange={e => setFormData({ ...formData, ownerName: e.target.value })}
                     style={{
                       width: '100%',
-                      padding: '10px 14px',
-                      borderRadius: '8px',
+                      padding: '12px 16px',
+                      borderRadius: '10px',
                       border: '1px solid var(--border)',
                       backgroundColor: 'var(--background)',
                       color: 'var(--text-main)',
                       fontSize: '14px',
-                      boxSizing: 'border-box'
+                      boxSizing: 'border-box',
+                      outline: 'none'
                     }}
                   />
                 </div>
 
                 {/* Plan & Duration */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '8px' }}>
                       Gói cước
                     </label>
                     <select
@@ -798,13 +950,14 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
                       onChange={e => setFormData({ ...formData, plan: e.target.value })}
                       style={{
                         width: '100%',
-                        padding: '10px 12px',
-                        borderRadius: '8px',
+                        padding: '12px 14px',
+                        borderRadius: '10px',
                         border: '1px solid var(--border)',
                         backgroundColor: 'var(--background)',
                         color: 'var(--text-main)',
                         fontSize: '14px',
-                        boxSizing: 'border-box'
+                        boxSizing: 'border-box',
+                        outline: 'none'
                       }}
                     >
                       <option value="starter">Starter (Cơ bản)</option>
@@ -814,7 +967,7 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '8px' }}>
                       Thời hạn bản quyền
                     </label>
                     <select
@@ -822,13 +975,14 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
                       onChange={e => setFormData({ ...formData, durationMonths: parseInt(e.target.value, 10) })}
                       style={{
                         width: '100%',
-                        padding: '10px 12px',
-                        borderRadius: '8px',
+                        padding: '12px 14px',
+                        borderRadius: '10px',
                         border: '1px solid var(--border)',
                         backgroundColor: 'var(--background)',
                         color: 'var(--text-main)',
                         fontSize: '14px',
-                        boxSizing: 'border-box'
+                        boxSizing: 'border-box',
+                        outline: 'none'
                       }}
                     >
                       <option value={1}>1 tháng</option>
@@ -843,12 +997,13 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
 
                 {/* Checkbox: Create Coach Record */}
                 <div style={{
-                  padding: '12px 14px',
+                  padding: '14px 16px',
                   backgroundColor: 'var(--surface-hover)',
-                  borderRadius: '8px',
+                  border: '1px solid var(--border-light)',
+                  borderRadius: '10px',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '10px',
+                  gap: '12px',
                   cursor: 'pointer'
                 }}>
                   <input
@@ -856,28 +1011,28 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
                     id="createCoach"
                     checked={formData.createCoachProfile}
                     onChange={e => setFormData({ ...formData, createCoachProfile: e.target.checked })}
-                    style={{ width: '16px', height: '16px', accentColor: 'var(--primary)', cursor: 'pointer' }}
+                    style={{ width: '18px', height: '18px', accentColor: 'var(--primary)', cursor: 'pointer' }}
                   />
-                  <label htmlFor="createCoach" style={{ fontSize: '13px', color: 'var(--text-main)', cursor: 'pointer', userSelect: 'none' }}>
-                    Tạo hồ sơ Huấn luyện viên cho chủ trung tâm (để chủ có thể trực tiếp đứng lớp dạy)
+                  <label htmlFor="createCoach" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-main)', cursor: 'pointer', userSelect: 'none' }}>
+                    Tạo hồ sơ HLV cho chủ trung tâm (để chủ có thể trực tiếp đứng lớp dạy)
                   </label>
                 </div>
               </div>
 
               {/* Form Buttons */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '28px' }}>
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
                   disabled={isSubmitting}
                   style={{
-                    padding: '10px 18px',
-                    borderRadius: '8px',
+                    padding: '12px 20px',
+                    borderRadius: '10px',
                     border: '1px solid var(--border)',
                     backgroundColor: 'transparent',
                     color: 'var(--text-secondary)',
-                    fontWeight: 600,
-                    fontSize: '13px',
+                    fontWeight: 700,
+                    fontSize: '14px',
                     cursor: 'pointer'
                   }}
                 >
@@ -887,18 +1042,18 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
                   type="submit"
                   disabled={isSubmitting}
                   style={{
-                    padding: '10px 22px',
-                    borderRadius: '8px',
+                    padding: '12px 26px',
+                    borderRadius: '10px',
                     border: 'none',
                     backgroundColor: 'var(--primary)',
-                    color: '#fff',
-                    fontWeight: 700,
-                    fontSize: '13px',
+                    color: '#ffffff',
+                    fontWeight: 800,
+                    fontSize: '14px',
                     cursor: isSubmitting ? 'wait' : 'pointer',
-                    boxShadow: '0 2px 8px rgba(20, 184, 166, 0.35)',
-                    display: 'flex',
+                    boxShadow: '0 4px 14px rgba(20, 184, 166, 0.35)',
+                    display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '6px'
+                    gap: '8px'
                   }}
                 >
                   <span className="material-icons-round" style={{ fontSize: '18px' }}>
@@ -914,4 +1069,3 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
     </div>
   );
 }
-
