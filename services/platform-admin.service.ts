@@ -115,10 +115,10 @@ export async function getPlatformOrganizations(): Promise<{ success: boolean; da
     }));
   }
 
-  // Calculate statistics
+  // Calculate statistics accurately
   const now = new Date().getTime();
   let activeCount = 0;
-  let expiredCount = 0;
+  let expiredOrSuspendedCount = 0;
   let totalCoaches = 0;
   let totalStudents = 0;
   let totalClasses = 0;
@@ -129,8 +129,10 @@ export async function getPlatformOrganizations(): Promise<{ success: boolean; da
     totalClasses += org.classes_count || 0;
 
     const isExpired = org.subscription_expires_at && new Date(org.subscription_expires_at).getTime() < now;
-    if (org.subscription_status === 'expired' || isExpired) {
-      expiredCount++;
+    const isSuspended = org.subscription_status === 'suspended';
+
+    if (isSuspended || org.subscription_status === 'expired' || isExpired) {
+      expiredOrSuspendedCount++;
     } else {
       activeCount++;
     }
@@ -142,7 +144,7 @@ export async function getPlatformOrganizations(): Promise<{ success: boolean; da
     stats: {
       totalOrganizations: orgList.length,
       activeOrganizations: activeCount,
-      expiredOrganizations: expiredCount,
+      expiredOrganizations: expiredOrSuspendedCount,
       totalCoaches,
       totalStudents,
       totalClasses
@@ -176,15 +178,20 @@ export async function provisionOrganization(params: {
   }
 
   // Calculate expiration date
-  const expiresAt = new Date();
-  expiresAt.setMonth(expiresAt.getMonth() + (params.durationMonths || 12));
+  let expiresAt: Date | null = new Date();
+  if (params.durationMonths <= 0 || params.durationMonths >= 120) {
+    // 10 years / unlimited
+    expiresAt.setFullYear(expiresAt.getFullYear() + 10);
+  } else {
+    expiresAt.setMonth(expiresAt.getMonth() + (params.durationMonths || 12));
+  }
 
   // 1. Try RPC
   const { data: rpcRes, error: rpcErr } = await supabase.rpc('platform_provision_organization', {
     p_name: cleanName,
     p_owner_email: cleanEmail,
     p_plan: params.plan || 'starter',
-    p_expires_at: expiresAt.toISOString(),
+    p_expires_at: expiresAt ? expiresAt.toISOString() : null,
     p_owner_name: params.ownerName || null,
     p_create_coach: params.createCoachProfile !== false
   });
@@ -225,7 +232,7 @@ export async function provisionOrganization(params: {
         subscription_plan: params.plan || 'starter',
         subscription_status: 'active',
         subscription_started_at: new Date().toISOString(),
-        subscription_expires_at: expiresAt.toISOString()
+        subscription_expires_at: expiresAt ? expiresAt.toISOString() : null
       }])
       .select()
       .single();
@@ -277,10 +284,12 @@ export async function provisionOrganization(params: {
 
 export async function updateOrganizationStatus(
   orgId: string, 
-  status: 'active' | 'expired' | 'suspended',
+  status?: 'active' | 'expired' | 'suspended',
   addMonths?: number,
-  plan?: string
-): Promise<{ success: boolean; error?: string }> {
+  plan?: string,
+  exactExpiresAt?: string | null,
+  name?: string
+): Promise<{ success: boolean; newExpiresAt?: string | null; error?: string }> {
   const auth = await verifyFounderAccess();
   if (!auth.isAuthorized) {
     return { success: false, error: auth.error };
@@ -288,8 +297,11 @@ export async function updateOrganizationStatus(
 
   const supabase = await createClient();
 
-  let expiresAtIso: string | undefined;
-  if (addMonths && addMonths > 0) {
+  let expiresAtIso: string | null | undefined = undefined;
+
+  if (exactExpiresAt !== undefined) {
+    expiresAtIso = exactExpiresAt;
+  } else if (addMonths && addMonths > 0) {
     const { data: org } = await supabase
       .from('organizations')
       .select('subscription_expires_at')
@@ -304,25 +316,27 @@ export async function updateOrganizationStatus(
     expiresAtIso = baseDate.toISOString();
   }
 
-  // 1. Try RPC
+  // 1. Try RPC with enhanced parameters
   const { data: rpcRes, error: rpcErr } = await supabase.rpc('platform_update_organization', {
     p_org_id: orgId,
-    p_status: status,
-    p_expires_at: expiresAtIso || null,
-    p_plan: plan || null
+    p_status: status || null,
+    p_expires_at: expiresAtIso !== undefined ? expiresAtIso : null,
+    p_plan: plan || null,
+    p_name: name || null
   });
 
   if (!rpcErr && rpcRes?.success) {
-    return { success: true };
+    return { success: true, newExpiresAt: expiresAtIso };
   }
 
   // 2. Direct fallback
   const updatePayload: any = {
-    subscription_status: status,
     updated_at: new Date().toISOString()
   };
-  if (expiresAtIso) updatePayload.subscription_expires_at = expiresAtIso;
+  if (status) updatePayload.subscription_status = status;
+  if (expiresAtIso !== undefined) updatePayload.subscription_expires_at = expiresAtIso;
   if (plan) updatePayload.subscription_plan = plan;
+  if (name && name.trim()) updatePayload.name = name.trim();
 
   const { error } = await supabase
     .from('organizations')
@@ -333,6 +347,5 @@ export async function updateOrganizationStatus(
     return { success: false, error: error.message };
   }
 
-  return { success: true };
+  return { success: true, newExpiresAt: expiresAtIso };
 }
-

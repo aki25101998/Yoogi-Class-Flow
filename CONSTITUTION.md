@@ -1,6 +1,6 @@
 # 📜 HIẾN PHÁP DỰ ÁN — YOOGI CLASS FLOW
 
-> **Phiên bản:** 1.6.2  
+> **Phiên bản:** 1.6.3  
 > **Cập nhật lần cuối:** 2026-10-28  
 > **Mục đích:** Đây là tài liệu gốc, bất khả xâm phạm. Mọi thay đổi code PHẢI tuân thủ các quy tắc trong file này. Khi có tính năng mới, file này PHẢI được cập nhật đồng thời.
 
@@ -766,6 +766,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-10-28 | 1.6.0 | Triển khai Cổng Quản Trị Founder (/platform-admin) và cơ chế Manual Provisioning: Xác lập vai trò Platform Founder tối cao cho aki251098@gmail.com; migration 038_platform_founder_admin.sql (RLS Founder bypass & stored procedures platform_provision_organization, platform_get_all_organizations, platform_update_organization); giao diện Dashboard thống kê toàn hệ thống, form cấp phép 1-chạm tạo trung tâm và gán quyền Owner cho khách hàng thanh toán (hỗ trợ mô hình 1 tài khoản vừa làm HLV trung tâm này vừa làm Chủ trung tâm khác); khóa chặt tính năng tự tạo bừa bãi tại /create-organization với giao diện liên hệ Founder thanh toán |
 | 2026-10-28 | 1.6.1 | Sửa triệt để lỗi font và icon trên Cổng Founder Admin (/platform-admin): Nhúng trực tiếp Google Fonts Inter và Material Icons Round (@import) vào globals.css, chuẩn hóa class .material-icons-round (font-family !important, font-feature-settings: 'liga', inline-flex); tái cấu trúc toàn diện giao diện theo chuẩn Vibrant Athletic Design System: lưới 4 thẻ Bento KPI nổi bật với gradient icon circles, thanh tìm kiếm & segmented filter tabs bo tròn cao cấp, bảng danh sách trung tâm cân đối với avatar chữ viết tắt, badge gói dịch vụ và các nút tác vụ pill (+1 Năm, Khóa/Mở, Vào xem) sắc nét |
 | 2026-10-28 | 1.6.2 | Tích hợp Cổng Founder Admin (/platform-admin) trực tiếp vào Layout Dashboard chuẩn (app/(dashboard)/platform-admin): Giữ trọn vẹn Sidebar Yoogi bên trái, mở rộng toàn màn hình (.main-content) giải quyết triệt để lỗi trang bị co cụm vào một góc; đồng bộ 100% theme, font chữ Inter, bảng màu hệ thống và thiết kế Card-Row Entity List chuẩn Yoogi với page-standard.module.css |
+| 2026-10-28 | 1.6.3 | Hoàn thiện toàn diện nghiệp vụ bản quyền và khắc phục triệt để lỗi logic trên Cổng Founder Admin (/platform-admin): Sửa lỗi đảo ngược điều kiện khóa/mở (isCurrentlySuspended thay vì isCurrentlyActive), đồng bộ trạng thái React state tức thì kèm thông báo và cập nhật số liệu Bento KPI; bổ sung Modal Chỉnh Sửa Trung Tâm (đổi tên, nâng gói cước, chỉnh hạn dùng); hoàn thiện cơ chế khóa thực tế: tự động chặn người dùng thường khi trung tâm bị khóa (màn hình Trung Tâm Đang Tạm Khóa với nút Đăng xuất & thông tin liên hệ Founder), cảnh báo Founder khi truy cập trung tâm đang khóa; hoàn thiện nút Vào xem (Founder Impersonation) tự động gán quyền Owner cho Founder trên mọi trung tâm; bổ sung migration 039_platform_admin_enhancements.sql |
 
 ---
 
