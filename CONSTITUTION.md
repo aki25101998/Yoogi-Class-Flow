@@ -1,7 +1,7 @@
 # 📜 HIẾN PHÁP DỰ ÁN — YOOGI CLASS FLOW
 
-> **Phiên bản:** 1.4.7  
-> **Cập nhật lần cuối:** 2026-10-27  
+> **Phiên bản:** 1.4.8  
+> **Cập nhật lần cuối:** 2026-10-28  
 > **Mục đích:** Đây là tài liệu gốc, bất khả xâm phạm. Mọi thay đổi code PHẢI tuân thủ các quy tắc trong file này. Khi có tính năng mới, file này PHẢI được cập nhật đồng thời.
 
 ---
@@ -752,6 +752,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-10-27 | 1.4.5 | Hoàn thiện luồng Điểm danh học viên cho Huấn luyện viên: tích hợp mục "Điểm danh học viên" (/attendance) vào menu Cá nhân (Sidebar) và đổi tên /my-attendance thành "Lịch sử buổi dạy"; bổ sung nút tắt 1-chạm [Điểm danh học viên] trên thẻ ca học (Dashboard & Check-in) ngay khi ca chuyển sang Đã Check-in; cập nhật useAttendance & AttendanceClient tự động lọc lớp phân công theo coachId và tự động chọn ca học qua URL query params (date/sessionId/classId) |
 | 2026-10-27 | 1.4.6 | Sửa lỗi phân quyền RLS khi lưu điểm danh học viên: bổ sung migration 037_student_attendance_rls.sql (chính sách RLS INSERT/UPDATE cho student_session_attendance & RPC public.save_student_attendance atomic); cập nhật saveAttendanceAction gọi RPC với fallback trực tiếp giải quyết triệt để lỗi "new row violates row-level security policy for table student_session_attendance" |
 | 2026-10-27 | 1.4.7 | Tái cấu trúc toàn diện giao diện Lịch dạy cá nhân (/my-schedule) chuẩn Hybrid 3 góc nhìn: Dải 7 ngày tương tác (Weekly Strip & Focus Agenda) làm mặc định tối ưu triệt để khoảng trắng thừa và thanh cuộn ngang, bổ sung thanh Quick KPI Bar (ca/giờ/lớp), highlight ngày Hôm nay và bộ chuyển đổi góc nhìn tức thì [Hàng ngày] | [Lưới tuần thích ứng] | [Theo lớp học Bento] kèm nút tắt 1-chạm Xem lớp & Điểm danh học viên |
+| 2026-10-28 | 1.4.8 | Tinh chỉnh hoàn thiện giao diện Lịch dạy cá nhân (/my-schedule): Khắc phục triệt để lỗi thẻ badge Hôm nay (HÔM NAY) bị cắt cụt do overflow-x trên dải 7 ngày bằng cách bổ sung clearance padding-top và căn giữa tuyệt đối; nâng cấp thẻ ca học (Focus Session Card) theo kiến trúc 3 khối Athletic: khối thời gian nổi bật bên trái (khung giờ + thời lượng), khối thông tin lớp học định danh rõ ràng kèm icon võ đạo, và khối nút tác vụ chuẩn pill (Xem lớp + Điểm danh); bổ sung nút tắt 1-chạm [Quay lại Hôm nay] khi xem các ngày khác trong tuần |
 
 ---
 

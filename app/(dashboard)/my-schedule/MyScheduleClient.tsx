@@ -227,11 +227,12 @@ export default function MyScheduleClient() {
                           ${styles.dayPill}
                           ${isSelected ? styles.dayPillActive : ''}
                           ${d.isToday && !isSelected ? styles.dayPillToday : ''}
+                          ${d.isToday && isSelected ? styles.dayPillActiveToday : ''}
                         `}
                         onClick={() => setSelectedDay(d.value)}
                       >
                         {d.isToday && (
-                          <span className={styles.todayTag}>NAY</span>
+                          <span className={styles.todayTag}>HÔM NAY</span>
                         )}
                         <span className={styles.dayName}>{d.label}</span>
                         <span className={styles.dayDate}>{d.dateNumber}</span>
@@ -249,57 +250,77 @@ export default function MyScheduleClient() {
                 <div className={styles.focusHeader}>
                   <div className={styles.focusTitleGroup}>
                     <h3 className={styles.focusTitle}>
-                      {selectedDayInfo?.label} ({selectedDayInfo?.fullDateStr})
+                      {selectedDayInfo?.label}, {selectedDayInfo?.fullDateStr}
                     </h3>
+                    {selectedDayInfo?.isToday && (
+                      <span className={styles.todayHeaderBadge}>Hôm nay</span>
+                    )}
                     <span className={styles.focusCountBadge}>
-                      {selectedDaySchedules.length > 0 
-                        ? `• Có ${selectedDaySchedules.length} ca giảng dạy` 
-                        : '• Không có ca dạy'}
+                      • {selectedDaySchedules.length > 0 
+                        ? `${selectedDaySchedules.length} ca giảng dạy` 
+                        : 'Không có ca dạy'}
                     </span>
                   </div>
 
-                  {selectedDaySchedules.length > 0 && (
-                    <span className={styles.focusTimeBadge}>
-                      <span className="material-icons-round text-sm">schedule</span>
-                      {selectedDaySchedules[0]?.start_time} - {selectedDaySchedules[selectedDaySchedules.length - 1]?.end_time}
-                    </span>
+                  {selectedDay !== todayDayOfWeek && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedDay(todayDayOfWeek)}
+                      className={styles.backToTodayBtn}
+                      title="Quay lại xem lịch ngày hôm nay"
+                    >
+                      <span className="material-icons-round text-sm">today</span>
+                      <span>Quay lại Hôm nay</span>
+                    </button>
                   )}
                 </div>
 
                 {selectedDaySchedules.length === 0 ? (
                   <div className={styles.emptyStateContainer}>
                     <span className={`material-icons-round ${styles.emptyIcon}`}>weekend</span>
-                    <div className={styles.emptyText}>Hôm nay bạn không có lịch dạy</div>
+                    <div className={styles.emptyText}>
+                      {selectedDayInfo?.isToday ? 'Hôm nay bạn không có lịch dạy' : `${selectedDayInfo?.label} không có lịch dạy`}
+                    </div>
                     <div className={styles.emptySubtext}>
-                      Chúc bạn có một ngày nghỉ ngơi tràn đầy năng lượng hoặc dành thời gian bồi dưỡng chuyên môn! 🌴
+                      {selectedDayInfo?.isToday 
+                        ? 'Chúc bạn có một ngày nghỉ ngơi tràn đầy năng lượng hoặc dành thời gian bồi dưỡng chuyên môn! 🌴'
+                        : 'Bạn không có ca dạy cố định nào được xếp vào ngày này trong tuần.'}
                     </div>
                   </div>
                 ) : (
                   <div className={styles.sessionList}>
                     {selectedDaySchedules.map((s: any) => {
                       const durationStr = calculateDuration(s.start_time, s.end_time);
+                      const rawName = s.venue_classes?.name || 'Lớp võ thuật';
+                      const displayName = rawName.toLowerCase().startsWith('lớp') ? rawName : `Lớp ${rawName}`;
+
                       return (
                         <div key={s.id} className={styles.focusSessionCard}>
-                          <div className={styles.sessionMain}>
-                            <div className={styles.sessionAvatarIcon}>
-                              🥋
-                            </div>
-                            <div className={styles.sessionInfo}>
-                              <div className={styles.sessionClassName}>
-                                {s.venue_classes?.name || 'Lớp võ thuật'}
+                          <div className={styles.sessionLeft}>
+                            {/* Dedicated Time Box */}
+                            <div className={styles.sessionTimeBox}>
+                              <div className={styles.sessionTimeRange}>
+                                {s.start_time} - {s.end_time}
                               </div>
-                              <div className={styles.sessionMetaRow}>
-                                <div className={styles.metaItem}>
-                                  <span className="material-icons-round">schedule</span>
-                                  <strong>{s.start_time} - {s.end_time}</strong>
-                                  {durationStr && <span>({durationStr})</span>}
-                                </div>
-                                <div className={styles.metaItem}>
+                              {durationStr && (
+                                <div className={styles.sessionDuration}>{durationStr}</div>
+                              )}
+                            </div>
+
+                            {/* Main Info */}
+                            <div className={styles.sessionMainInfo}>
+                              <div className={styles.sessionCategoryRow}>
+                                <span className={styles.categoryTag}>LỚP CỐ ĐỊNH</span>
+                                <span className={styles.roleChip}>HLV Phụ trách</span>
+                              </div>
+                              <div className={styles.sessionClassName}>
+                                <span>🥋</span>
+                                <span>{displayName}</span>
+                              </div>
+                              <div className={styles.sessionVenueRow}>
+                                <div className={styles.venueText} title={`Địa điểm: ${s.venues?.name || 'Trụ sở chính'}`}>
                                   <span className="material-icons-round">place</span>
                                   <span>{s.venues?.name || 'Trụ sở chính'}</span>
-                                </div>
-                                <div className={styles.metaItem}>
-                                  <span className={styles.roleChip}>HLV Phụ trách</span>
                                 </div>
                               </div>
                             </div>

@@ -122,14 +122,16 @@
 .dayStripWrapper {
   width: 100%;
   overflow-x: auto;
-  padding-bottom: 4px;
+  padding-top: 18px;
+  padding-bottom: 10px;
+  margin-top: -10px;
   -webkit-overflow-scrolling: touch;
 }
 
 .dayStripGrid {
   display: grid;
   grid-template-columns: repeat(7, minmax(110px, 1fr));
-  gap: 10px;
+  gap: 12px;
   min-width: 770px;
 }
 
@@ -141,9 +143,9 @@
 
 .dayPill {
   background-color: var(--surface);
-  border: 1px solid var(--border-light);
+  border: 1.5px solid var(--border-light);
   border-radius: var(--radius-xl);
-  padding: 12px 8px;
+  padding: 14px 8px 12px;
   text-align: center;
   cursor: pointer;
   position: relative;
@@ -151,7 +153,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   user-select: none;
 }
 
@@ -184,39 +186,50 @@
 
 .dayPillToday {
   border: 2px solid var(--accent-energy, #FF6B35) !important;
+  background-color: rgba(255, 107, 53, 0.04);
+}
+
+.dayPillActiveToday {
+  box-shadow: 0 0 0 2px var(--accent-energy, #FF6B35), 0 8px 24px rgba(20, 184, 166, 0.4) !important;
 }
 
 .todayTag {
   position: absolute;
-  top: -8px;
-  background: var(--accent-energy, #FF6B35);
+  top: -11px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, var(--accent-energy, #FF6B35), #ea580c);
   color: #ffffff;
-  font-size: 0.6rem;
+  font-size: 0.65rem;
   font-weight: 800;
-  letter-spacing: 0.05em;
-  padding: 2px 7px;
+  letter-spacing: 0.06em;
+  padding: 2px 10px;
   border-radius: var(--radius-full);
-  box-shadow: 0 2px 6px rgba(255, 107, 53, 0.35);
+  box-shadow: 0 3px 8px rgba(255, 107, 53, 0.45);
+  white-space: nowrap;
+  z-index: 10;
+  border: 2px solid var(--surface);
+  line-height: 1.3;
 }
 
 .dayName {
-  font-size: 0.775rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-secondary);
   text-transform: capitalize;
 }
 
 .dayDate {
-  font-size: 1.15rem;
+  font-size: 1.25rem;
   font-weight: 800;
   color: var(--text-main);
   line-height: 1.2;
 }
 
 .dayBadge {
-  font-size: 0.675rem;
+  font-size: 0.7rem;
   font-weight: 700;
-  padding: 2px 7px;
+  padding: 2px 8px;
   border-radius: var(--radius-full);
   margin-top: 2px;
   background-color: var(--surface-hover);
@@ -253,31 +266,53 @@
 .focusTitleGroup {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .focusTitle {
-  font-size: 1.15rem;
+  font-size: 1.25rem;
   font-weight: 800;
   color: var(--text-main);
+  letter-spacing: -0.01em;
+}
+
+.todayHeaderBadge {
+  background: linear-gradient(135deg, var(--accent-energy, #FF6B35), #ea580c);
+  color: #ffffff;
+  font-size: 0.725rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.03em;
+  box-shadow: 0 2px 6px rgba(255, 107, 53, 0.3);
 }
 
 .focusCountBadge {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: var(--text-secondary);
   font-weight: 600;
 }
 
-.focusTimeBadge {
+.backToTodayBtn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background-color: var(--primary-light);
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-light);
+  background-color: var(--surface-hover);
   color: var(--primary);
   font-size: 0.8rem;
   font-weight: 700;
-  padding: 4px 12px;
-  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.backToTodayBtn:hover {
+  background-color: var(--primary-light);
+  border-color: var(--primary);
+  transform: translateY(-1px);
 }
 
 .sessionList {
@@ -287,76 +322,122 @@
 }
 
 .focusSessionCard {
-  background-color: var(--surface-hover);
+  background-color: var(--surface);
   border: 1px solid var(--border-light);
-  border-left: 5px solid var(--primary);
   border-radius: var(--radius-xl);
-  padding: var(--space-4, 16px) var(--space-5, 20px);
+  padding: 18px 22px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 16px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  gap: 18px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.focusSessionCard::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background: linear-gradient(to bottom, var(--primary), var(--primary-hover));
 }
 
 .focusSessionCard:hover {
   transform: translateY(-2px);
   border-color: var(--border);
-  border-left-color: var(--primary-hover);
   box-shadow: var(--shadow-md);
 }
 
-.sessionMain {
+.sessionLeft {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 18px;
+  flex: 1;
+  min-width: 280px;
 }
 
-.sessionAvatarIcon {
-  width: 52px;
-  height: 52px;
-  border-radius: 16px;
-  background: var(--primary-light);
-  color: var(--primary);
+.sessionTimeBox {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: 26px;
+  background-color: var(--primary-light);
+  color: var(--primary);
+  padding: 10px 16px;
+  border-radius: var(--radius-lg);
+  min-width: 120px;
+  text-align: center;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.15);
+  border: 1px solid rgba(20, 184, 166, 0.2);
 }
 
-.sessionInfo {
+.sessionTimeRange {
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.sessionDuration {
+  font-size: 0.725rem;
+  font-weight: 600;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+
+.sessionMainInfo {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.sessionClassName {
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: var(--text-main);
-  line-height: 1.3;
-}
-
-.sessionMetaRow {
+.sessionCategoryRow {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
   flex-wrap: wrap;
-  font-size: 0.825rem;
-  color: var(--text-secondary);
 }
 
-.metaItem {
+.categoryTag {
+  font-size: 0.675rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.sessionClassName {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sessionVenueRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.825rem;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+.venueText {
   display: inline-flex;
   align-items: center;
   gap: 4px;
 }
 
-.metaItem .material-icons-round {
-  font-size: 16px;
+.venueText .material-icons-round {
+  font-size: 15px;
   color: var(--text-muted);
 }
 
