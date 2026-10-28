@@ -732,24 +732,33 @@
 
 .classCardHeader {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.classCardTitle {
-  font-size: 1.15rem;
+.classCardCategoryRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.classCardVenueTitle {
+  font-size: 1.3rem;
   font-weight: 800;
   color: var(--text-main);
-  margin-bottom: 2px;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+  margin: 0;
 }
 
-.classCardVenue {
-  font-size: 0.825rem;
-  color: var(--text-secondary);
+.classCardClassRow {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 2px;
 }
 
 .classFreqBadge {
@@ -824,3 +833,54 @@
   background-color: var(--surface-hover);
   color: var(--text-muted);
 }
+
+.classCardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-light);
+  margin-top: 2px;
+}
+
+.classActionLinkNeutral {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  background: var(--surface-hover);
+  border: 1px solid var(--border-light);
+  transition: all 0.2s ease;
+}
+
+.classActionLinkNeutral:hover {
+  color: var(--primary);
+  background: var(--primary-light);
+  border-color: rgba(20, 184, 166, 0.2);
+}
+
+.classActionLinkAccent {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent-energy, #FF6B35);
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 107, 53, 0.08);
+  border: 1px solid rgba(255, 107, 53, 0.2);
+  transition: all 0.2s ease;
+}
+
+.classActionLinkAccent:hover {
+  background: rgba(255, 107, 53, 0.16);
+  transform: translateX(2px);
+}
+

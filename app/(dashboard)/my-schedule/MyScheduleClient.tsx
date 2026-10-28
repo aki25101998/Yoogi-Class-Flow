@@ -433,19 +433,31 @@ export default function MyScheduleClient() {
               ) : (
                 classGroups.map(cg => {
                   const durationStr = calculateDuration(cg.startTime, cg.endTime);
+                  const rawName = cg.className || 'Lớp võ thuật';
+                  const displayName = rawName.toLowerCase().startsWith('lớp') ? rawName : `Lớp ${rawName}`;
+
                   return (
                     <div key={cg.classId} className={styles.classBentoCard}>
                       <div className={styles.classCardHeader}>
-                        <div>
-                          <h4 className={styles.classCardTitle}>{cg.className}</h4>
-                          <div className={styles.classCardVenue}>
-                            <span className="material-icons-round text-sm">place</span>
-                            <span>{cg.venueName}</span>
-                          </div>
+                        <div className={styles.classCardCategoryRow}>
+                          <span className={styles.venueBadge}>
+                            <span className="material-icons-round">place</span>
+                            NƠI DẠY
+                          </span>
+                          <span className={styles.classFreqBadge}>
+                            {cg.days.size} buổi / tuần
+                          </span>
                         </div>
-                        <span className={styles.classFreqBadge}>
-                          {cg.days.size} buổi / tuần
-                        </span>
+                        <h4 className={styles.classCardVenueTitle}>
+                          {cg.venueName}
+                        </h4>
+                        <div className={styles.classCardClassRow}>
+                          <span className={styles.classSubChip}>
+                            <span>🥋</span>
+                            <span>{displayName}</span>
+                          </span>
+                          <span className={styles.scheduleTypeTag}>• Lớp phụ trách</span>
+                        </div>
                       </div>
 
                       <div className={styles.classTimeBanner}>
@@ -475,18 +487,17 @@ export default function MyScheduleClient() {
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between pt-2 border-t border-border-light mt-1">
+                      <div className={styles.classCardFooter}>
                         <Link
                           href={`/training/${cg.venueId}`}
-                          className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
+                          className={styles.classActionLinkNeutral}
                         >
                           <span className="material-icons-round text-sm">info</span>
-                          Chi tiết lớp
+                          <span>Chi tiết lớp</span>
                         </Link>
                         <Link
                           href={`/attendance?classId=${cg.classId}`}
-                          className="text-xs font-bold text-accent hover:underline flex items-center gap-1"
-                          style={{ color: 'var(--accent-energy, #FF6B35)' }}
+                          className={styles.classActionLinkAccent}
                         >
                           <span>Điểm danh lớp</span>
                           <span className="material-icons-round text-sm">arrow_forward</span>
