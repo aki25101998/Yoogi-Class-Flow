@@ -310,18 +310,21 @@ export default function MyScheduleClient() {
                             {/* Main Info */}
                             <div className={styles.sessionMainInfo}>
                               <div className={styles.sessionCategoryRow}>
-                                <span className={styles.categoryTag}>LỚP CỐ ĐỊNH</span>
+                                <span className={styles.venueBadge}>
+                                  <span className="material-icons-round">place</span>
+                                  NƠI DẠY
+                                </span>
                                 <span className={styles.roleChip}>HLV Phụ trách</span>
                               </div>
-                              <div className={styles.sessionClassName}>
-                                <span>🥋</span>
-                                <span>{displayName}</span>
+                              <div className={styles.sessionVenueTitle}>
+                                <span>{s.venues?.name || 'Trụ sở chính'}</span>
                               </div>
-                              <div className={styles.sessionVenueRow}>
-                                <div className={styles.venueText} title={`Địa điểm: ${s.venues?.name || 'Trụ sở chính'}`}>
-                                  <span className="material-icons-round">place</span>
-                                  <span>{s.venues?.name || 'Trụ sở chính'}</span>
-                                </div>
+                              <div className={styles.sessionClassSubRow}>
+                                <span className={styles.classSubChip}>
+                                  <span>🥋</span>
+                                  <span>{displayName}</span>
+                                </span>
+                                <span className={styles.scheduleTypeTag}>• Lịch định kỳ</span>
                               </div>
                             </div>
                           </div>
@@ -386,21 +389,27 @@ export default function MyScheduleClient() {
                             <span>Không có lịch</span>
                           </div>
                         ) : (
-                          daySchedules.map((s: any) => (
-                            <div key={s.id} className={styles.weekSessionCard}>
-                              <div className={styles.weekSessionTime}>
-                                <span className="material-icons-round text-xs">schedule</span>
-                                <span>{s.start_time} - {s.end_time}</span>
+                          daySchedules.map((s: any) => {
+                            const rawName = s.venue_classes?.name || 'Lớp võ thuật';
+                            const displayName = rawName.toLowerCase().startsWith('lớp') ? rawName : `Lớp ${rawName}`;
+
+                            return (
+                              <div key={s.id} className={styles.weekSessionCard}>
+                                <div className={styles.weekSessionTime}>
+                                  <span className="material-icons-round text-xs">schedule</span>
+                                  <span>{s.start_time} - {s.end_time}</span>
+                                </div>
+                                <div className={styles.weekSessionVenue} title={`Địa điểm: ${s.venues?.name || 'Trụ sở'}`}>
+                                  <span className="material-icons-round text-xs" style={{ color: 'var(--accent-energy, #FF6B35)' }}>place</span>
+                                  <span>{s.venues?.name || 'Trụ sở'}</span>
+                                </div>
+                                <div className={styles.weekSessionClass}>
+                                  <span>🥋</span>
+                                  <span>{displayName}</span>
+                                </div>
                               </div>
-                              <div className={styles.weekSessionName}>
-                                {s.venue_classes?.name || 'Lớp học'}
-                              </div>
-                              <div className={styles.weekSessionVenue}>
-                                <span className="material-icons-round text-xs">place</span>
-                                <span>{s.venues?.name || 'Trụ sở'}</span>
-                              </div>
-                            </div>
-                          ))
+                            );
+                          })
                         )}
                       </div>
                     </div>

@@ -403,42 +403,66 @@
   flex-wrap: wrap;
 }
 
-.categoryTag {
+.venueBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 0.675rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--text-muted);
+  color: var(--accent-energy, #FF6B35);
+  background: rgba(255, 107, 53, 0.08);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
 }
 
-.sessionClassName {
-  font-size: 1.2rem;
+.venueBadge .material-icons-round {
+  font-size: 13px;
+  color: var(--accent-energy, #FF6B35);
+}
+
+.sessionVenueTitle {
+  font-size: 1.35rem;
   font-weight: 800;
   color: var(--text-main);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sessionVenueTitle .material-icons-round {
+  font-size: 20px;
+  color: var(--accent-energy, #FF6B35);
+}
+
+.sessionClassSubRow {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.sessionVenueRow {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 0.825rem;
-  color: var(--text-secondary);
   flex-wrap: wrap;
+  margin-top: 2px;
 }
 
-.venueText {
+.classSubChip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  background-color: var(--surface-hover);
+  border: 1px solid var(--border-light);
+  padding: 3px 10px;
+  border-radius: var(--radius-md);
+  font-size: 0.825rem;
+  font-weight: 700;
+  color: var(--text-secondary);
 }
 
-.venueText .material-icons-round {
-  font-size: 15px;
+.scheduleTypeTag {
+  font-size: 0.75rem;
   color: var(--text-muted);
+  font-weight: 500;
 }
 
 .roleChip {
@@ -645,15 +669,19 @@
   width: fit-content;
 }
 
-.weekSessionName {
-  font-size: 0.85rem;
-  font-weight: 700;
+.weekSessionVenue {
+  font-size: 0.875rem;
+  font-weight: 800;
   color: var(--text-main);
-  line-height: 1.3;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1.25;
 }
 
-.weekSessionVenue {
-  font-size: 0.725rem;
+.weekSessionClass {
+  font-size: 0.75rem;
+  font-weight: 600;
   color: var(--text-secondary);
   display: flex;
   align-items: center;
