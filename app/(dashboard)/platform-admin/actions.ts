@@ -47,7 +47,5 @@ export async function switchIntoWorkspaceAction(organizationId: string) {
     return { success: false, error: auth.error };
   }
 
-  // Switch workspace
   return await switchWorkspace(organizationId);
 }
-
