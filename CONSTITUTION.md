@@ -1,6 +1,6 @@
 # 📜 HIẾN PHÁP DỰ ÁN — YOOGI CLASS FLOW
 
-> **Phiên bản:** 1.6.3  
+> **Phiên bản:** 1.6.4  
 > **Cập nhật lần cuối:** 2026-10-28  
 > **Mục đích:** Đây là tài liệu gốc, bất khả xâm phạm. Mọi thay đổi code PHẢI tuân thủ các quy tắc trong file này. Khi có tính năng mới, file này PHẢI được cập nhật đồng thời.
 
@@ -767,6 +767,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-10-28 | 1.6.1 | Sửa triệt để lỗi font và icon trên Cổng Founder Admin (/platform-admin): Nhúng trực tiếp Google Fonts Inter và Material Icons Round (@import) vào globals.css, chuẩn hóa class .material-icons-round (font-family !important, font-feature-settings: 'liga', inline-flex); tái cấu trúc toàn diện giao diện theo chuẩn Vibrant Athletic Design System: lưới 4 thẻ Bento KPI nổi bật với gradient icon circles, thanh tìm kiếm & segmented filter tabs bo tròn cao cấp, bảng danh sách trung tâm cân đối với avatar chữ viết tắt, badge gói dịch vụ và các nút tác vụ pill (+1 Năm, Khóa/Mở, Vào xem) sắc nét |
 | 2026-10-28 | 1.6.2 | Tích hợp Cổng Founder Admin (/platform-admin) trực tiếp vào Layout Dashboard chuẩn (app/(dashboard)/platform-admin): Giữ trọn vẹn Sidebar Yoogi bên trái, mở rộng toàn màn hình (.main-content) giải quyết triệt để lỗi trang bị co cụm vào một góc; đồng bộ 100% theme, font chữ Inter, bảng màu hệ thống và thiết kế Card-Row Entity List chuẩn Yoogi với page-standard.module.css |
 | 2026-10-28 | 1.6.3 | Hoàn thiện toàn diện nghiệp vụ bản quyền và khắc phục triệt để lỗi logic trên Cổng Founder Admin (/platform-admin): Sửa lỗi đảo ngược điều kiện khóa/mở (isCurrentlySuspended thay vì isCurrentlyActive), đồng bộ trạng thái React state tức thì kèm thông báo và cập nhật số liệu Bento KPI; bổ sung Modal Chỉnh Sửa Trung Tâm (đổi tên, nâng gói cước, chỉnh hạn dùng); hoàn thiện cơ chế khóa thực tế: tự động chặn người dùng thường khi trung tâm bị khóa (màn hình Trung Tâm Đang Tạm Khóa với nút Đăng xuất & thông tin liên hệ Founder), cảnh báo Founder khi truy cập trung tâm đang khóa; hoàn thiện nút Vào xem (Founder Impersonation) tự động gán quyền Owner cho Founder trên mọi trung tâm; bổ sung migration 039_platform_admin_enhancements.sql |
+| 2026-10-28 | 1.6.4 | Tinh chỉnh bố cục thẻ trung tâm trên Cổng Founder Admin (/platform-admin): Chuyển đổi từ CSS Grid 5 cột (bị tràn nút sang hàng 2 khiến khối thông tin bên phải lệch lên trên) sang kiến trúc Flexbox đối xứng 2 khối (.platformCard, .platformCardLeft, .platformCardRight); căn giữa tuyệt đối theo phương đứng (align-items: center) cho toàn bộ khối Badges, Hạn dùng và Quy mô, đảm bảo khoảng cách trên dưới luôn cân bằng hoàn hảo 100% |
 
 ---
 

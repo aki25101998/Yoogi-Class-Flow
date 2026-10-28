@@ -695,3 +695,56 @@
   }
 }
 
+/* ============================================================
+   Platform Founder Admin Card (Split Left-Right with Perfect Centering)
+   ============================================================ */
+.platformCard {
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-xs);
+}
+
+.platformCard:hover {
+  border-color: rgba(20, 184, 166, 0.4);
+  background: var(--surface-hover);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.platformCardLeft {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+}
+
+.platformCardRight {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 992px) {
+  .platformCard {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .platformCardRight {
+    justify-content: space-between;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-light);
+    gap: 16px;
+  }
+}
+
+

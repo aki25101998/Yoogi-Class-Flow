@@ -493,107 +493,116 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
             const initials = org.name.trim().slice(0, 2).toUpperCase();
 
             return (
-              <div key={org.id} className={styles.entityCard}>
-                {/* 1. Avatar */}
-                <div className={styles.entityAvatar} style={{
-                  backgroundColor: isSuspended ? 'var(--danger-bg)' : 'var(--primary-light)',
-                  color: isSuspended ? 'var(--danger)' : 'var(--primary)'
-                }}>
-                  {initials}
-                </div>
-
-                {/* 2. Main Center & Owner Info */}
-                <div className={styles.entityMain}>
-                  <div className={styles.entityTitleRow}>
-                    <span className={styles.entityTitle}>{org.name}</span>
-                    <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: 'var(--text-muted)' }}>
-                      ID: {org.id.slice(0, 8)}...
-                    </span>
-                  </div>
-                  <div className={styles.entitySubtitle}>
-                    Chủ sở hữu: <strong>{org.owner_name}</strong> • {org.owner_email}
-                  </div>
-                </div>
-
-                {/* 3. Badges: Plan & Status */}
-                <div className={styles.entityBadge} style={{ width: '190px', gap: '6px', flexWrap: 'wrap' }}>
-                  <Badge variant="primary">{planUpper}</Badge>
-                  <Badge variant={statusVariant}>{statusText}</Badge>
-                </div>
-
-                {/* 4. Metric 1: Hạn dùng */}
-                <div className={styles.entityMetric} style={{ width: '150px' }}>
-                  <div className={styles.metricLabel}>HẠN SỬ DỤNG</div>
-                  <div className={styles.metricValue}>{formatDate(org.subscription_expires_at)}</div>
-                  {remainingDays !== null && (
-                    <span style={{
-                      fontSize: '0.6875rem',
-                      fontWeight: 600,
-                      color: isExpired ? 'var(--danger)' : remainingDays <= 15 ? 'var(--warning)' : 'var(--text-muted)'
-                    }}>
-                      {isExpired ? `Quá hạn ${Math.abs(remainingDays)} ngày` : `Còn ${remainingDays} ngày`}
-                    </span>
-                  )}
-                </div>
-
-                {/* 5. Metric 2: Quy mô */}
-                <div className={styles.entityMetric} style={{ width: '130px' }}>
-                  <div className={styles.metricLabel}>QUY MÔ</div>
-                  <div className={styles.metricValue}>{org.coaches_count || 0} HLV</div>
-                  <span style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)' }}>
-                    {org.students_count || 0} học viên
-                  </span>
-                </div>
-
-                {/* 6. Actions */}
-                <div className={styles.entityActions} style={{ gap: '8px' }}>
-                  {/* +1 Năm */}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    leftIcon={<span className="material-icons-round" style={{ fontSize: '16px', color: 'var(--success)' }}>update</span>}
-                    onClick={() => handleExtendSubscription(org, 12)}
-                    disabled={actionLoadingId === org.id}
+              <div key={org.id} className={styles.platformCard}>
+                {/* 1. LEFT ZONE: Avatar + Info + Action Buttons */}
+                <div className={styles.platformCardLeft}>
+                  <div 
+                    className={styles.entityAvatar} 
+                    style={{
+                      backgroundColor: isSuspended ? 'var(--danger-bg)' : 'var(--primary-light)',
+                      color: isSuspended ? 'var(--danger)' : 'var(--primary)',
+                      flexShrink: 0
+                    }}
                   >
-                    +1 Năm
-                  </Button>
+                    {initials}
+                  </div>
 
-                  {/* Lock / Unlock Toggle Button */}
-                  <Button
-                    size="sm"
-                    variant={isSuspended ? "success" : "danger"}
-                    leftIcon={
-                      <span className="material-icons-round" style={{ fontSize: '16px' }}>
-                        {isSuspended ? 'lock_open' : 'lock'}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
+                    <div className={styles.entityTitleRow}>
+                      <span className={styles.entityTitle}>{org.name}</span>
+                      <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: 'var(--text-muted)' }}>
+                        ID: {org.id.slice(0, 8)}...
                       </span>
-                    }
-                    onClick={() => handleToggleStatus(org)}
-                    disabled={actionLoadingId === org.id}
-                  >
-                    {isSuspended ? 'Mở khóa' : 'Khóa'}
-                  </Button>
+                    </div>
+                    
+                    <div className={styles.entitySubtitle}>
+                      Chủ sở hữu: <strong>{org.owner_name}</strong> • {org.owner_email}
+                    </div>
 
-                  {/* Edit Center Button */}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    leftIcon={<span className="material-icons-round" style={{ fontSize: '16px' }}>edit</span>}
-                    onClick={() => handleOpenEditModal(org)}
-                    disabled={actionLoadingId === org.id}
-                  >
-                    Sửa
-                  </Button>
+                    {/* Action Buttons Row */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
+                      {/* +1 Năm */}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        leftIcon={<span className="material-icons-round" style={{ fontSize: '16px', color: 'var(--success)' }}>update</span>}
+                        onClick={() => handleExtendSubscription(org, 12)}
+                        disabled={actionLoadingId === org.id}
+                      >
+                        +1 Năm
+                      </Button>
 
-                  {/* Switch into Workspace */}
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    leftIcon={<span className="material-icons-round" style={{ fontSize: '16px' }}>open_in_new</span>}
-                    onClick={() => handleSwitchIntoWorkspace(org.id, org.name)}
-                    disabled={actionLoadingId === org.id}
-                  >
-                    Vào xem
-                  </Button>
+                      {/* Lock / Unlock Toggle Button */}
+                      <Button
+                        size="sm"
+                        variant={isSuspended ? "success" : "danger"}
+                        leftIcon={
+                          <span className="material-icons-round" style={{ fontSize: '16px' }}>
+                            {isSuspended ? 'lock_open' : 'lock'}
+                          </span>
+                        }
+                        onClick={() => handleToggleStatus(org)}
+                        disabled={actionLoadingId === org.id}
+                      >
+                        {isSuspended ? 'Mở khóa' : 'Khóa'}
+                      </Button>
+
+                      {/* Edit Center Button */}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        leftIcon={<span className="material-icons-round" style={{ fontSize: '16px' }}>edit</span>}
+                        onClick={() => handleOpenEditModal(org)}
+                        disabled={actionLoadingId === org.id}
+                      >
+                        Sửa
+                      </Button>
+
+                      {/* Switch into Workspace */}
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        leftIcon={<span className="material-icons-round" style={{ fontSize: '16px' }}>open_in_new</span>}
+                        onClick={() => handleSwitchIntoWorkspace(org.id, org.name)}
+                        disabled={actionLoadingId === org.id}
+                      >
+                        Vào xem
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. RIGHT ZONE: Badges + Hạn dùng + Quy mô (100% Symmetrically Vertically Centered) */}
+                <div className={styles.platformCardRight}>
+                  {/* Badges: Plan & Status */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-start', minWidth: '130px' }}>
+                    <Badge variant="primary">{planUpper}</Badge>
+                    <Badge variant={statusVariant}>{statusText}</Badge>
+                  </div>
+
+                  {/* Metric 1: Hạn dùng */}
+                  <div className={styles.entityMetric} style={{ width: '135px', margin: 0 }}>
+                    <div className={styles.metricLabel}>HẠN SỬ DỤNG</div>
+                    <div className={styles.metricValue}>{formatDate(org.subscription_expires_at)}</div>
+                    {remainingDays !== null && (
+                      <span style={{
+                        fontSize: '0.6875rem',
+                        fontWeight: 600,
+                        color: isExpired ? 'var(--danger)' : remainingDays <= 15 ? 'var(--warning)' : 'var(--text-muted)'
+                      }}>
+                        {isExpired ? `Quá hạn ${Math.abs(remainingDays)} ngày` : `Còn ${remainingDays} ngày`}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Metric 2: Quy mô */}
+                  <div className={styles.entityMetric} style={{ width: '115px', margin: 0 }}>
+                    <div className={styles.metricLabel}>QUY MÔ</div>
+                    <div className={styles.metricValue}>{org.coaches_count || 0} HLV</div>
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)' }}>
+                      {org.students_count || 0} học viên
+                    </span>
+                  </div>
                 </div>
               </div>
             );
