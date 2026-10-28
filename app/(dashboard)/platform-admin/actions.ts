@@ -4,6 +4,7 @@ import {
   getPlatformOrganizations, 
   provisionOrganization, 
   updateOrganizationStatus,
+  transferOrganizationOwnership,
   verifyFounderAccess,
   FOUNDER_EMAIL
 } from '@/services/platform-admin.service';
@@ -99,3 +100,19 @@ export async function switchIntoWorkspaceAction(organizationId: string) {
 
   return await switchWorkspace(organizationId);
 }
+
+export async function transferOrganizationOwnershipAction(params: {
+  orgId: string;
+  newOwnerEmail: string;
+  newOwnerName?: string;
+  oldOwnerRole?: 'admin' | 'head_coach' | 'remove';
+  createCoachProfile?: boolean;
+}) {
+  const result = await transferOrganizationOwnership(params);
+  if (result.success) {
+    revalidatePath('/platform-admin');
+    revalidatePath('/', 'layout');
+  }
+  return result;
+}
+

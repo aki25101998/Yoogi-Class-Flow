@@ -8,6 +8,7 @@ import {
 import { 
   provisionOrganizationAction, 
   updateOrganizationStatusAction,
+  transferOrganizationOwnershipAction,
   switchIntoWorkspaceAction,
   getPlatformOverviewAction 
 } from './actions';
@@ -58,6 +59,17 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
     expiresAtDate: ''
   });
   const [isEditSubmitting, setIsEditSubmitting] = useState(false);
+
+  // Transfer Ownership Modal State
+  const [transferOrg, setTransferOrg] = useState<PlatformOrganization | null>(null);
+  const [transferForm, setTransferForm] = useState({
+    newOwnerEmail: '',
+    newOwnerName: '',
+    oldOwnerRole: 'admin' as 'admin' | 'head_coach' | 'remove',
+    createCoachProfile: true
+  });
+  const [isTransferSubmitting, setIsTransferSubmitting] = useState(false);
+  const [transferError, setTransferError] = useState('');
 
   // Success Notification State
   const [successMessage, setSuccessMessage] = useState('');
@@ -193,6 +205,72 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
       alert(err.message || 'Lỗi hệ thống.');
     } finally {
       setIsEditSubmitting(false);
+    }
+  };
+
+  // Open Transfer Ownership Modal
+  const handleOpenTransferModal = (org: PlatformOrganization) => {
+    setTransferOrg(org);
+    setTransferForm({
+      newOwnerEmail: '',
+      newOwnerName: '',
+      oldOwnerRole: 'admin',
+      createCoachProfile: true
+    });
+    setTransferError('');
+    if (editingOrg) setEditingOrg(null);
+  };
+
+  // Submit Transfer Ownership Form
+  const handleTransferSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!transferOrg) return;
+    setTransferError('');
+
+    const cleanEmail = transferForm.newOwnerEmail.trim().toLowerCase();
+    if (!cleanEmail) {
+      setTransferError('Vui lòng nhập email của chủ sở hữu mới.');
+      return;
+    }
+
+    if (cleanEmail === transferOrg.owner_email.toLowerCase()) {
+      setTransferError('Email này hiện đã là Chủ sở hữu của trung tâm.');
+      return;
+    }
+
+    const confirmMsg = `Bạn có chắc chắn muốn chuyển giao toàn quyền Chủ sở hữu (Owner) trung tâm "${transferOrg.name}" từ ${transferOrg.owner_email} sang ${cleanEmail}?`;
+    if (!confirm(confirmMsg)) return;
+
+    setIsTransferSubmitting(true);
+    try {
+      const res = await transferOrganizationOwnershipAction({
+        orgId: transferOrg.id,
+        newOwnerEmail: cleanEmail,
+        newOwnerName: transferForm.newOwnerName.trim() || undefined,
+        oldOwnerRole: transferForm.oldOwnerRole,
+        createCoachProfile: transferForm.createCoachProfile
+      });
+
+      if (res.success) {
+        const newOwnerName = res.data?.new_owner_name || transferForm.newOwnerName.trim() || cleanEmail.split('@')[0];
+
+        // Update local state immediately
+        setOrgs(prev => prev.map(o => o.id === transferOrg.id ? {
+          ...o,
+          owner_name: newOwnerName,
+          owner_email: cleanEmail
+        } : o));
+
+        setSuccessMessage(`Đã chuyển giao thành công quyền Chủ sở hữu trung tâm "${transferOrg.name}" cho ${cleanEmail}!`);
+        setTransferOrg(null);
+        router.refresh();
+      } else {
+        setTransferError(res.error || 'Có lỗi xảy ra khi chuyển quyền chủ sở hữu.');
+      }
+    } catch (err: any) {
+      setTransferError(err.message || 'Lỗi hệ thống khi chuyển quyền chủ sở hữu.');
+    } finally {
+      setIsTransferSubmitting(false);
     }
   };
 
@@ -515,8 +593,30 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
                       </span>
                     </div>
                     
-                    <div className={styles.entitySubtitle}>
-                      Chủ sở hữu: <strong>{org.owner_name}</strong> • {org.owner_email}
+                    <div className={styles.entitySubtitle} style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                      <span>Chủ sở hữu: <strong>{org.owner_name}</strong> • {org.owner_email}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenTransferModal(org)}
+                        style={{
+                          background: 'rgba(20, 184, 166, 0.1)',
+                          border: 'none',
+                          color: 'var(--primary)',
+                          fontSize: '0.6875rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          padding: '2px 8px',
+                          borderRadius: 'var(--radius-full)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '3px',
+                          transition: 'all 0.15s ease'
+                        }}
+                        title="Chuyển nhượng quyền chủ sở hữu cho người khác"
+                      >
+                        <span className="material-icons-round" style={{ fontSize: '13px' }}>swap_horiz</span>
+                        Đổi chủ
+                      </button>
                     </div>
 
                     {/* Action Buttons Row */}
@@ -845,6 +945,38 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
                 />
               </div>
 
+              {/* Owner Info & Transfer Button */}
+              {editingOrg && (
+                <div style={{
+                  padding: '12px 14px',
+                  backgroundColor: 'var(--surface-hover)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-light)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px'
+                }}>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                      CHỦ SỞ HỮU HIỆN TẠI (OWNER)
+                    </div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '2px' }}>
+                      {editingOrg.owner_name} <span style={{ fontWeight: 400, color: 'var(--text-secondary)' }}>({editingOrg.owner_email})</span>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    leftIcon={<span className="material-icons-round" style={{ fontSize: '15px', color: 'var(--primary)' }}>swap_horiz</span>}
+                    onClick={() => handleOpenTransferModal(editingOrg)}
+                  >
+                    Đổi Chủ
+                  </Button>
+                </div>
+              )}
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
@@ -951,6 +1083,173 @@ export default function PlatformAdminClient({ initialOrgs, initialStats }: Props
               leftIcon={<span className="material-icons-round">save</span>}
             >
               Lưu Thay Đổi
+            </Button>
+          </ModalFooter>
+        </form>
+      </Modal>
+
+      {/* 7. TRANSFER OWNERSHIP MODAL */}
+      <Modal isOpen={!!transferOrg} onClose={() => setTransferOrg(null)}>
+        <ModalHeader 
+          title={`Đổi Chủ Sở Hữu: ${transferOrg?.name || ''}`}
+          onClose={() => setTransferOrg(null)} 
+        />
+        
+        <form onSubmit={handleTransferSubmit}>
+          <ModalBody>
+            {transferError && (
+              <div style={{
+                padding: '12px 16px',
+                backgroundColor: 'var(--danger-bg)',
+                color: 'var(--danger-text)',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                marginBottom: '16px'
+              }}>
+                {transferError}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Current Owner Info */}
+              <div style={{
+                padding: '12px 14px',
+                backgroundColor: 'var(--surface-hover)',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border-light)'
+              }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                  CHỦ SỞ HỮU HIỆN TẠI (OWNER)
+                </div>
+                <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '2px' }}>
+                  {transferOrg?.owner_name} <span style={{ fontWeight: 400, color: 'var(--text-secondary)' }}>({transferOrg?.owner_email})</span>
+                </div>
+              </div>
+
+              {/* New Owner Email */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
+                  Email Chủ sở hữu mới <span style={{ color: 'var(--danger)' }}>*</span>
+                </label>
+                <input
+                  type="email"
+                  required
+                  placeholder="VD: tienthongv@gmail.com"
+                  value={transferForm.newOwnerEmail}
+                  onChange={e => setTransferForm({ ...transferForm, newOwnerEmail: e.target.value })}
+                  style={{
+                    width: '100%',
+                    height: '42px',
+                    padding: '0 14px',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border)',
+                    backgroundColor: 'var(--surface)',
+                    color: 'var(--text-main)',
+                    fontSize: '0.875rem',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  Tài khoản này sẽ trở thành Chủ sở hữu (Owner) có toàn quyền quản trị trung tâm này.
+                </div>
+              </div>
+
+              {/* New Owner Display Name */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
+                  Tên hiển thị chủ mới (Tùy chọn)
+                </label>
+                <input
+                  type="text"
+                  placeholder="VD: Võ Sư Tiến Thông"
+                  value={transferForm.newOwnerName}
+                  onChange={e => setTransferForm({ ...transferForm, newOwnerName: e.target.value })}
+                  style={{
+                    width: '100%',
+                    height: '42px',
+                    padding: '0 14px',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border)',
+                    backgroundColor: 'var(--surface)',
+                    color: 'var(--text-main)',
+                    fontSize: '0.875rem',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              {/* Old Owner Role Handling */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
+                  Vai trò của chủ cũ sau khi chuyển quyền
+                </label>
+                <select
+                  value={transferForm.oldOwnerRole}
+                  onChange={e => setTransferForm({ ...transferForm, oldOwnerRole: e.target.value as any })}
+                  style={{
+                    width: '100%',
+                    height: '42px',
+                    padding: '0 12px',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border)',
+                    backgroundColor: 'var(--surface)',
+                    color: 'var(--text-main)',
+                    fontSize: '0.875rem',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  <option value="admin">Chuyển thành Quản trị viên (Admin) — Khuyên dùng</option>
+                  <option value="head_coach">Chuyển thành Huấn luyện viên trưởng (Head Coach)</option>
+                  <option value="remove">Xóa hoàn toàn khỏi trung tâm</option>
+                </select>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  Giữ vai trò Quản trị viên giúp chủ cũ không bị gián đoạn lịch dạy và dữ liệu lịch sử.
+                </div>
+              </div>
+
+              {/* Checkbox: Create Coach Record */}
+              <div style={{
+                padding: '12px 14px',
+                backgroundColor: 'var(--surface-hover)',
+                borderRadius: 'var(--radius-md)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px'
+              }}>
+                <input
+                  type="checkbox"
+                  id="createCoachProfileTransfer"
+                  checked={transferForm.createCoachProfile}
+                  onChange={e => setTransferForm({ ...transferForm, createCoachProfile: e.target.checked })}
+                  style={{ width: '16px', height: '16px', accentColor: 'var(--primary)', cursor: 'pointer' }}
+                />
+                <label htmlFor="createCoachProfileTransfer" style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text-main)', cursor: 'pointer' }}>
+                  Tạo hồ sơ Huấn luyện viên cho chủ mới (để có thể xếp lịch đứng lớp giảng dạy)
+                </label>
+              </div>
+            </div>
+          </ModalBody>
+
+          <ModalFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setTransferOrg(null)}
+              disabled={isTransferSubmitting}
+            >
+              Hủy
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              isLoading={isTransferSubmitting}
+              leftIcon={<span className="material-icons-round">swap_horiz</span>}
+            >
+              Xác Nhận Đổi Chủ
             </Button>
           </ModalFooter>
         </form>

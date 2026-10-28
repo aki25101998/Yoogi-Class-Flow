@@ -349,3 +349,184 @@ export async function updateOrganizationStatus(
 
   return { success: true, newExpiresAt: expiresAtIso };
 }
+
+export async function transferOrganizationOwnership(params: {
+  orgId: string;
+  newOwnerEmail: string;
+  newOwnerName?: string;
+  oldOwnerRole?: 'admin' | 'head_coach' | 'remove';
+  createCoachProfile?: boolean;
+}): Promise<{ success: boolean; data?: any; error?: string }> {
+  const auth = await verifyFounderAccess();
+  if (!auth.isAuthorized) {
+    return { success: false, error: auth.error };
+  }
+
+  const supabase = await createClient();
+  const cleanEmail = params.newOwnerEmail.toLowerCase().trim();
+
+  if (!cleanEmail) {
+    return { success: false, error: 'Email chủ mới không được để trống.' };
+  }
+
+  // 1. Try RPC
+  const { data: rpcRes, error: rpcErr } = await supabase.rpc('platform_transfer_organization_owner', {
+    p_org_id: params.orgId,
+    p_new_owner_email: cleanEmail,
+    p_new_owner_name: params.newOwnerName || null,
+    p_old_owner_role: params.oldOwnerRole || 'admin',
+    p_create_coach: params.createCoachProfile !== false
+  });
+
+  if (!rpcErr && rpcRes?.success) {
+    return { success: true, data: rpcRes };
+  }
+
+  // 2. Direct fallback
+  try {
+    // 2.1 Get current owner
+    const { data: org, error: orgFetchErr } = await supabase
+      .from('organizations')
+      .select('id, owner_id')
+      .eq('id', params.orgId)
+      .single();
+
+    if (orgFetchErr || !org) {
+      return { success: false, error: 'Không tìm thấy thông tin trung tâm.' };
+    }
+
+    const oldOwnerId = org.owner_id;
+
+    // 2.2 Find or create profile for new owner
+    let { data: newProfile } = await supabase
+      .from('profiles')
+      .select('id, email, name')
+      .eq('email', cleanEmail)
+      .maybeSingle();
+
+    if (!newProfile) {
+      const displayName = params.newOwnerName || cleanEmail.split('@')[0];
+      const { data: createdProfile, error: profileErr } = await supabase
+        .from('profiles')
+        .insert([{ email: cleanEmail, name: displayName }])
+        .select()
+        .single();
+
+      if (profileErr) return { success: false, error: `Lỗi tạo hồ sơ: ${profileErr.message}` };
+      newProfile = createdProfile;
+    }
+
+    if (!newProfile) return { success: false, error: 'Không thể khởi tạo hồ sơ cho chủ sở hữu mới.' };
+
+    if (newProfile.id === oldOwnerId) {
+      return { success: false, error: 'Email này hiện đã là Chủ sở hữu của trung tâm.' };
+    }
+
+    // 2.3 Demote or remove old owner membership
+    if (params.oldOwnerRole === 'remove') {
+      await supabase
+        .from('organization_members')
+        .delete()
+        .eq('organization_id', params.orgId)
+        .eq('user_id', oldOwnerId);
+    } else {
+      await supabase
+        .from('organization_members')
+        .update({
+          role: params.oldOwnerRole || 'admin',
+          updated_at: new Date().toISOString()
+        })
+        .eq('organization_id', params.orgId)
+        .eq('user_id', oldOwnerId);
+    }
+
+    // 2.4 Set or update new owner membership
+    const permissions = [
+      'manage_coaches', 'manage_students', 'manage_venues', 'manage_classes', 
+      'manage_schedule', 'manage_settings', 'manage_attendance', 'view_payroll', 
+      'manage_members', 'manage_organization', 'manage_tuition', 'manage_finance'
+    ];
+
+    const { data: existingNewMember } = await supabase
+      .from('organization_members')
+      .select('id')
+      .eq('organization_id', params.orgId)
+      .eq('user_id', newProfile.id)
+      .maybeSingle();
+
+    let newMemberId: string;
+    if (existingNewMember) {
+      newMemberId = existingNewMember.id;
+      await supabase
+        .from('organization_members')
+        .update({
+          role: 'owner',
+          status: 'active',
+          permissions,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingNewMember.id);
+    } else {
+      const { data: insertedMember, error: insertErr } = await supabase
+        .from('organization_members')
+        .insert([{
+          organization_id: params.orgId,
+          user_id: newProfile.id,
+          role: 'owner',
+          status: 'active',
+          permissions
+        }])
+        .select()
+        .single();
+
+      if (insertErr) return { success: false, error: `Lỗi gán quyền Owner: ${insertErr.message}` };
+      newMemberId = insertedMember.id;
+    }
+
+    // 2.5 Update organization owner_id
+    await supabase
+      .from('organizations')
+      .update({
+        owner_id: newProfile.id,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', params.orgId);
+
+    // 2.6 Create coach record if requested
+    if (params.createCoachProfile !== false) {
+      const { data: existingCoach } = await supabase
+        .from('coaches')
+        .select('id')
+        .eq('organization_id', params.orgId)
+        .eq('organization_member_id', newMemberId)
+        .maybeSingle();
+
+      if (!existingCoach) {
+        await supabase.from('coaches').insert([{
+          organization_id: params.orgId,
+          organization_member_id: newMemberId,
+          status: 'active'
+        }]);
+      }
+    }
+
+    // 2.7 Set default workspace for new owner if empty
+    await supabase
+      .from('profiles')
+      .update({ last_active_workspace: params.orgId })
+      .eq('id', newProfile.id)
+      .is('last_active_workspace', null);
+
+    return {
+      success: true,
+      data: {
+        new_owner_name: newProfile.name,
+        new_owner_email: cleanEmail,
+        new_owner_id: newProfile.id
+      }
+    };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Lỗi không xác định khi chuyển đổi chủ sở hữu.' };
+  }
+}
+
