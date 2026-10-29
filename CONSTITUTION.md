@@ -1,6 +1,6 @@
 # 📜 HIẾN PHÁP DỰ ÁN — YOOGI CLASS FLOW
 
-> **Phiên bản:** 1.7.0  
+> **Phiên bản:** 1.7.1  
 > **Cập nhật lần cuối:** 2026-10-29  
 > **Mục đích:** Đây là tài liệu gốc, bất khả xâm phạm. Mọi thay đổi code PHẢI tuân thủ các quy tắc trong file này. Khi có tính năng mới, file này PHẢI được cập nhật đồng thời.
 
@@ -774,6 +774,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-10-29 | 1.6.8 | Đồng bộ hóa toàn diện phong cách thiết kế Thẻ Ca Học Thể Thao (Athletic Session Card) cho cả Tổng quan (/dashboard) và Check-in (/my-checkin) theo chuẩn Lịch dạy (/my-schedule): Thẻ ngang bo góc 20px với dải accent gradient teal bên trái, khối thời gian chuyên dụng (khung giờ + thời lượng ước tính), hàng badge nổi bật (Nơi dạy cam san hô, HLV phụ trách/Dạy thay, trạng thái ca), tiêu đề nơi dạy 1.125rem semibold, chip lớp học võ đạo và hệ thống nút bấm hành động pill bo tròn hoàn hảo (Xem lớp, Check-in ngay gradient, Điểm danh học viên, Đổi HLV/Hủy buổi) |
 | 2026-10-29 | 1.6.9 | Bổ sung thông tin Địa điểm dạy (venues) trên Lịch sử điểm danh/Lịch sử buổi dạy (/my-attendance) và Hoạt động & Thu nhập (/my-earnings): Cập nhật hook useMyAttendance truy vấn quan hệ lồng venue_classes(name, venue_id, venues(id, name)); hiển thị cột Địa điểm dạy dạng văn bản chuẩn, sạch sẽ, đồng bộ phong cách với khung giờ và loại bỏ biểu tượng/icon/emote rườm rà trên bảng dữ liệu |
 | 2026-10-29 | 1.7.0 | Mở rộng toàn diện giao diện Lịch sử phiên bản (/settings/version-history): Loại bỏ giới hạn co cụm maxWidth: 800px; margin: 0 auto; mở rộng toàn màn hình chuẩn Vibrant Athletic Design System; tích hợp PageHeader với nút Làm mới dữ liệu thời gian thực; lưới 4 thẻ Bento KPI cân đối (Tổng phiên bản, Phiên bản hiện tại, Thay đổi gần nhất, Điểm khôi phục) kèm watermark chìm; thanh công cụ tìm kiếm tức thì & 6 tabs lọc phân loại tác vụ (Tất cả, Tạo mới, Cập nhật, Đã xóa, Khôi phục, Hệ thống); danh sách Thẻ ngang thể thao (PlatformCard) hiển thị capsule phiên bản, avatar tác giả, huy hiệu phân loại, ngày giờ GMT+7 và nút tác vụ pill [Chi tiết] / [Khôi phục]; nâng cấp giao diện Modal Chi tiết phiên bản (maxWidth: 720px) và Modal Xác nhận khôi phục an toàn (maxWidth: 520px) |
+| 2026-10-29 | 1.7.1 | Mở rộng toàn diện giao diện Cài đặt Chung / Thông tin trung tâm (/settings): Loại bỏ triệt để giới hạn co cụm max-w-2xl (672px), mở rộng toàn màn hình 100% cân đối hoàn hảo; tích hợp lưới 4 thẻ Bento KPI tổng quan (Tên trung tâm, Gói bản quyền, Hạn dùng, Quyền hạn người dùng) kèm watermark chìm; tái cấu trúc 2 cột thẻ ngang thể thao thích ứng (Thẻ Thông tin tổ chức & Bản quyền SaaS tích hợp khối sao chép Organization ID, Thẻ Dữ liệu Mẫu Kiểm thử 1-chạm tích hợp lưới 6 module dữ liệu) |
 
 ---
 
