@@ -216,6 +216,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
 
   const isFounder = (user?.email?.toLowerCase() === 'aki251098@gmail.com') || (context?.profile?.email?.toLowerCase() === 'aki251098@gmail.com');
   const multiWorkspace = context?.allMemberships && context.allMemberships.length > 1;
+  const canSwitchWorkspace = Boolean(multiWorkspace || isFounder);
 
   return (
     <>
@@ -237,8 +238,8 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
           
           <div style={{ position: 'relative' }}>
             <button
-              onClick={() => multiWorkspace && !isSwitchingWorkspace && setIsWorkspaceDropdownOpen(!isWorkspaceDropdownOpen)}
-              disabled={isSwitchingWorkspace || !multiWorkspace}
+              onClick={() => canSwitchWorkspace && !isSwitchingWorkspace && setIsWorkspaceDropdownOpen(!isWorkspaceDropdownOpen)}
+              disabled={isSwitchingWorkspace || !canSwitchWorkspace}
               style={{
                 width: '100%',
                 height: '40px',
@@ -249,17 +250,17 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
                 background: 'var(--surface-hover)',
                 border: '1px solid var(--border-light)',
                 borderRadius: '8px',
-                cursor: multiWorkspace ? (isSwitchingWorkspace ? 'wait' : 'pointer') : 'default',
+                cursor: canSwitchWorkspace ? (isSwitchingWorkspace ? 'wait' : 'pointer') : 'default',
                 transition: 'all 0.2s ease',
                 textAlign: 'left'
               }}
               onMouseEnter={(e) => {
-                if (multiWorkspace && !isSwitchingWorkspace) {
+                if (canSwitchWorkspace && !isSwitchingWorkspace) {
                   e.currentTarget.style.borderColor = 'var(--border)';
                 }
               }}
               onMouseLeave={(e) => {
-                if (multiWorkspace && !isSwitchingWorkspace) {
+                if (canSwitchWorkspace && !isSwitchingWorkspace) {
                   e.currentTarget.style.borderColor = 'var(--border-light)';
                 }
               }}
@@ -273,16 +274,16 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
                   {isSwitchingWorkspace ? 'Đang chuyển...' : displayRole}
                 </span>
               </div>
-              {multiWorkspace && (
+              {canSwitchWorkspace && (
                 isSwitchingWorkspace ? (
-                  <span className="material-icons-round" style={{ fontSize: '18px', color: 'var(--text-secondary)', flexShrink: 0 }}>sync</span>
+                  <span className="material-icons-round animate-spin" style={{ fontSize: '18px', color: 'var(--text-secondary)', flexShrink: 0 }}>sync</span>
                 ) : (
                   <span className="material-icons-round" style={{ fontSize: '18px', color: 'var(--text-secondary)', flexShrink: 0 }}>arrow_drop_down</span>
                 )
               )}
             </button>
 
-            {isWorkspaceDropdownOpen && multiWorkspace && (
+            {isWorkspaceDropdownOpen && canSwitchWorkspace && (
               <>
                 <div 
                   style={{ position: 'fixed', inset: 0, zIndex: 99 }} 
@@ -306,7 +307,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
                   <div style={{ padding: '8px 12px', fontSize: '10px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
                     Chọn Workspace
                   </div>
-                  {context.allMemberships.map((m: any) => {
+                  {context?.allMemberships?.map((m: any) => {
                     const mRole = m.role === 'owner' ? 'OWNER' : m.role === 'admin' ? 'ADMIN' : m.role === 'head_coach' ? 'HEAD COACH' : 'ASSISTANT COACH';
                     const isActive = m.organization_id === context.organization?.id;
                     return (
@@ -317,10 +318,21 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
                           if (isActive) return;
                           setIsSwitchingWorkspace(true);
                           try {
-                            queryClient.clear();
-                            await switchWorkspace(m.organization_id);
-                          } catch (e) {
+                            const res = await switchWorkspace(m.organization_id);
+                            if (res?.success) {
+                              queryClient.clear();
+                              if (window.location.pathname === '/dashboard') {
+                                window.location.reload();
+                              } else {
+                                window.location.href = '/dashboard';
+                              }
+                            } else {
+                              alert(res?.error || 'Không thể chuyển đổi cơ sở.');
+                              setIsSwitchingWorkspace(false);
+                            }
+                          } catch (e: any) {
                             console.error(e);
+                            alert(e?.message || 'Lỗi hệ thống khi chuyển cơ sở.');
                             setIsSwitchingWorkspace(false);
                           }
                         }}

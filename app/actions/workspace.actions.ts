@@ -3,6 +3,7 @@
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/utils/supabase/server';
+import { isFounderEmail } from '@/services/platform-admin.service';
 
 export async function switchWorkspace(organizationId: string) {
   const supabase = await createClient();
@@ -12,7 +13,7 @@ export async function switchWorkspace(organizationId: string) {
     return { success: false, error: 'Not authenticated' };
   }
 
-  // Verify the user is actually a member of this organization
+  // Verify the user profile
   const { data: profile } = await supabase
     .from('profiles')
     .select('id')
@@ -23,15 +24,46 @@ export async function switchWorkspace(organizationId: string) {
     return { success: false, error: 'Profile not found' };
   }
 
-  const { data: membership } = await supabase
-    .from('organization_members')
-    .select('id, status')
-    .eq('organization_id', organizationId)
-    .eq('user_id', profile.id)
-    .single();
+  const isFounder = isFounderEmail(userData.user.email);
 
-  if (!membership || membership.status !== 'active') {
-    return { success: false, error: 'You do not have an active membership in this organization' };
+  if (isFounder) {
+    // If founder, ensure active owner membership exists in target organization
+    const { data: existingMember } = await supabase
+      .from('organization_members')
+      .select('id, status')
+      .eq('organization_id', organizationId)
+      .eq('user_id', profile.id)
+      .maybeSingle();
+
+    if (!existingMember) {
+      await supabase.from('organization_members').insert({
+        organization_id: organizationId,
+        user_id: profile.id,
+        role: 'owner',
+        status: 'active',
+        permissions: [
+          'manage_coaches', 'manage_students', 'manage_venues', 'manage_classes', 
+          'manage_schedule', 'manage_settings', 'manage_attendance', 'view_payroll', 
+          'manage_members', 'manage_organization', 'manage_tuition', 'manage_finance'
+        ]
+      });
+    } else if (existingMember.status !== 'active') {
+      await supabase.from('organization_members')
+        .update({ status: 'active' })
+        .eq('id', existingMember.id);
+    }
+  } else {
+    // Regular user: verify membership
+    const { data: membership } = await supabase
+      .from('organization_members')
+      .select('id, status')
+      .eq('organization_id', organizationId)
+      .eq('user_id', profile.id)
+      .single();
+
+    if (!membership || membership.status !== 'active') {
+      return { success: false, error: 'You do not have an active membership in this organization' };
+    }
   }
 
   // Update last_active_workspace
