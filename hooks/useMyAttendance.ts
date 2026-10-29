@@ -21,7 +21,7 @@ export function useMyAttendance(organizationId: string | undefined, coachId: str
       // 2. Fetch class_sessions matching coach_id OR in sessionIds
       let query = supabase
         .from('class_sessions')
-        .select('*, venue_classes(name)')
+        .select('*, venue_classes(name, venue_id, venues(id, name))')
         .eq('organization_id', organizationId)
         .order('date', { ascending: false });
 

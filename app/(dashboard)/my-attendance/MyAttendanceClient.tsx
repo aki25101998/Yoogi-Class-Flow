@@ -64,23 +64,57 @@ export default function MyAttendanceClient() {
               <Table>
                 <Thead>
                   <Tr>
-                    <Th>Ngày</Th>
-                    <Th>Lớp</Th>
+                    <Th>Ngày dạy</Th>
+                    <Th>Địa điểm dạy</Th>
+                    <Th>Lớp học</Th>
+                    <Th>Khung giờ</Th>
                     <Th>Trạng thái</Th>
                   </Tr>
                 </Thead>
                 <Tbody>
-                  {displaySessions.map((s: any) => (
-                    <Tr key={s.id}>
-                      <Td className="font-medium text-main">{s.date}</Td>
-                      <Td>{s.venue_classes?.name || '---'}</Td>
-                      <Td>
-                        {s.status === 'checked_in' && <Badge variant="warning">Đã Check-in</Badge>}
-                        {s.status === 'approved' && <Badge variant="primary">Đã được duyệt</Badge>}
-                        {s.status === 'paid' && <Badge variant="success">Đã thanh toán lương</Badge>}
-                      </Td>
-                    </Tr>
-                  ))}
+                  {displaySessions.map((s: any) => {
+                    const venueName = s.venue_classes?.venues?.name || 'Trụ sở chính';
+                    const rawName = s.venue_classes?.name || 'Lớp học';
+                    const className = rawName.toLowerCase().startsWith('lớp') ? rawName : `Lớp ${rawName}`;
+                    const timeRange = s.start_time && s.end_time ? `${s.start_time} - ${s.end_time}` : null;
+
+                    return (
+                      <Tr key={s.id}>
+                        <Td className="font-semibold text-main whitespace-nowrap">{s.date}</Td>
+                        <Td>
+                          <div className="flex items-center gap-1.5 font-semibold text-main">
+                            <span 
+                              className="material-icons-round text-base" 
+                              style={{ color: 'var(--accent-energy, #FF6B35)' }}
+                            >
+                              place
+                            </span>
+                            <span>{venueName}</span>
+                          </div>
+                        </Td>
+                        <Td>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-surface-hover border border-light text-secondary">
+                            <span>🥋</span>
+                            <span>{className}</span>
+                          </span>
+                        </Td>
+                        <Td className="text-secondary text-sm whitespace-nowrap">
+                          {timeRange ? (
+                            <span className="font-medium">{timeRange}</span>
+                          ) : (
+                            <span className="text-muted text-xs">--:--</span>
+                          )}
+                        </Td>
+                        <Td>
+                          {s.status === 'checked_in' && <Badge variant="warning">Đã Check-in</Badge>}
+                          {s.status === 'approved' && <Badge variant="primary">Đã được duyệt</Badge>}
+                          {s.status === 'paid' && <Badge variant="success">Đã thanh toán lương</Badge>}
+                          {s.status === 'cancelled' && <Badge variant="danger">Đã Hủy</Badge>}
+                          {(s.status === 'pending' || s.status === 'scheduled') && <Badge variant="default">Chưa Check-in</Badge>}
+                        </Td>
+                      </Tr>
+                    );
+                  })}
                 </Tbody>
               </Table>
             </div>

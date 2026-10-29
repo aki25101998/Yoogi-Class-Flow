@@ -118,6 +118,7 @@ export default function MyEarningsClient() {
                   <Thead>
                     <Tr>
                       <Th>Ngày</Th>
+                      <Th>Địa điểm dạy</Th>
                       <Th>Lớp</Th>
                       <Th>Trạng thái</Th>
                       <Th className="text-right">Thu nhập</Th>
@@ -126,7 +127,7 @@ export default function MyEarningsClient() {
                   <Tbody>
                     {sessions.length === 0 ? (
                       <Tr>
-                        <Td colSpan={4} className="text-center text-secondary">
+                        <Td colSpan={5} className="text-center text-secondary">
                           <EmptyState 
                             title="Chưa có dữ liệu" 
                             description="Hệ thống chưa ghi nhận thu nhập nào." 
@@ -138,10 +139,30 @@ export default function MyEarningsClient() {
                     ) : (
                       sessions.map((s: any) => {
                         const hasSnapshot = s.salary_config_snapshot && (s.status === 'approved' || s.status === 'paid');
+                        const venueName = s.venue_classes?.venues?.name || 'Trụ sở chính';
+                        const rawName = s.venue_classes?.name || 'Lớp học';
+                        const className = rawName.toLowerCase().startsWith('lớp') ? rawName : `Lớp ${rawName}`;
+
                         return (
                           <Tr key={s.id}>
-                            <Td className="font-medium text-main">{s.date}</Td>
-                            <Td>{s.venue_classes?.name || '---'}</Td>
+                            <Td className="font-semibold text-main whitespace-nowrap">{s.date}</Td>
+                            <Td>
+                              <div className="flex items-center gap-1.5 font-semibold text-main">
+                                <span 
+                                  className="material-icons-round text-base" 
+                                  style={{ color: 'var(--accent-energy, #FF6B35)' }}
+                                >
+                                  place
+                                </span>
+                                <span>{venueName}</span>
+                              </div>
+                            </Td>
+                            <Td>
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-surface-hover border border-light text-secondary">
+                                <span>🥋</span>
+                                <span>{className}</span>
+                              </span>
+                            </Td>
                             <Td>
                               {s.status === 'checked_in' && <Badge variant="warning">Chờ duyệt</Badge>}
                               {s.status === 'approved' && <Badge variant="primary">Chờ thanh toán</Badge>}
@@ -153,7 +174,7 @@ export default function MyEarningsClient() {
                                 <span className="text-secondary">---</span>
                               ) : (
                                 <span
-                                  className={hasSnapshot ? "cursor-pointer underline text-primary hover:text-primary-dark transition-colors" : ""}
+                                  className={hasSnapshot ? "cursor-pointer underline text-primary hover:text-primary-dark transition-colors font-semibold" : "font-semibold"}
                                   onClick={() => hasSnapshot && openBreakdown(s)}
                                   title={hasSnapshot ? 'Xem chi tiết tính lương' : ''}
                                 >
