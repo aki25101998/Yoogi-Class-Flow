@@ -63,3 +63,19 @@ export function formatBusinessDateVN(date: Date | string, timezone: string = DEF
     year: 'numeric',
   }).format(d);
 }
+
+/**
+ * Calculates human-readable duration between two HH:MM time strings (e.g. "18:00" and "19:30" -> "1h 30p")
+ */
+export function calculateDuration(start?: string, end?: string): string {
+  if (!start || !end) return '';
+  const [sh, sm] = (start || '').split(':').map(Number);
+  const [eh, em] = (end || '').split(':').map(Number);
+  if (isNaN(sh) || isNaN(sm) || isNaN(eh) || isNaN(em)) return '';
+  const diffMinutes = (eh * 60 + em) - (sh * 60 + sm);
+  if (diffMinutes <= 0) return '';
+  if (diffMinutes < 60) return `${diffMinutes} phút`;
+  const hours = Math.floor(diffMinutes / 60);
+  const mins = diffMinutes % 60;
+  return mins > 0 ? `${hours}h ${mins}p` : `${hours} giờ`;
+}

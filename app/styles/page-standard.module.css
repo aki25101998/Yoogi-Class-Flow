@@ -747,4 +747,276 @@
   }
 }
 
+/* ============================================================
+   ATHLETIC SESSION CARD (Unified across Dashboard, Check-in, Schedule)
+   ============================================================ */
+.sessionList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 16px);
+}
+
+.sessionCard {
+  background-color: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: 18px 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.sessionCard::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background: linear-gradient(to bottom, var(--primary), var(--primary-hover));
+}
+
+.sessionCard:hover {
+  transform: translateY(-2px);
+  border-color: var(--border);
+  box-shadow: var(--shadow-md);
+}
+
+.sessionLeft {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex: 1;
+  min-width: 280px;
+}
+
+.sessionTimeBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--primary-light);
+  color: var(--primary);
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  min-width: 110px;
+  text-align: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(20, 184, 166, 0.2);
+}
+
+.sessionTimeRange {
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  white-space: nowrap;
+}
+
+.sessionDuration {
+  font-size: 0.75rem;
+  font-weight: 400;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+
+.sessionMainInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sessionCategoryRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.venueBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent-energy, #FF6B35);
+  background: rgba(255, 107, 53, 0.08);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.venueBadge .material-icons-round {
+  font-size: 14px;
+  color: var(--accent-energy, #FF6B35);
+}
+
+.sessionVenueTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-main);
+  letter-spacing: normal;
+  line-height: 1.35;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sessionVenueTitle .material-icons-round {
+  font-size: 18px;
+  color: var(--accent-energy, #FF6B35);
+}
+
+.sessionClassSubRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.classSubChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--surface-hover);
+  border: 1px solid var(--border-light);
+  padding: 3px 10px;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.scheduleTypeTag {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.roleChip {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(20, 184, 166, 0.12);
+  color: var(--primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.substituteChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.sessionActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.actionBtnSecondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-light);
+  background: var(--surface);
+  color: var(--text-main);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.actionBtnSecondary:hover {
+  border-color: var(--border);
+  background-color: var(--surface-hover);
+  transform: translateY(-1px);
+}
+
+.actionBtnPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: linear-gradient(135deg, var(--accent-energy, #FF6B35), #ea580c);
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+  transition: all 0.2s ease;
+}
+
+.actionBtnPrimary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(255, 107, 53, 0.4);
+}
+
+.actionBtnTeal {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
+  transition: all 0.2s ease;
+}
+
+.actionBtnTeal:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(20, 184, 166, 0.4);
+}
+
+.actionBtnDanger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 14px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--danger-bg);
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.actionBtnDanger:hover {
+  background: var(--danger);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+
 

@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useDashboardContext } from '../DashboardProvider';
-import { getBusinessDate, getBusinessDateString } from '@/utils/date';
+import { getBusinessDate, getBusinessDateString, calculateDuration } from '@/utils/date';
 import { useTodaySessions } from '@/hooks/useTodaySessions';
 import { checkInSessionAction } from '../dashboard/actions';
 import { useQueryClient } from '@tanstack/react-query';
@@ -92,64 +93,97 @@ export default function MyCheckinClient() {
             icon="event_busy"
           />
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {sessions.map((s: any) => (
-              <div key={s.classId + s.startTime} className="bg-surface rounded-md border border-light p-4 flex flex-col justify-between h-full hover:shadow-md transition-shadow">
-                <div>
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="bg-primary-light text-primary font-bold px-3 py-1 rounded-md text-sm">
-                      {s.startTime} - {s.end_time || s.endTime}
-                    </div>
-                    {s.status === 'checked_in' && <Badge variant="success">Đã Check-in</Badge>}
-                    {s.status === 'approved' && <Badge variant="primary">Đã Duyệt</Badge>}
-                    {s.status === 'paid' && <Badge variant="primary">Đã Thanh Toán</Badge>}
-                    {s.status === 'cancelled' && <Badge variant="danger">Đã Hủy</Badge>}
-                    {(s.status === 'pending' || s.status === 'scheduled') && <Badge variant="default">Chưa Check-in</Badge>}
-                  </div>
-                  
-                  <h4 className="font-semibold text-main mb-2 text-lg">{s.className}</h4>
-                  <p className="text-sm text-secondary flex items-center gap-2 mb-4">
-                    <span className="material-icons-round text-muted" style={{ fontSize: '18px' }}>location_on</span> 
-                    {s.venueName}
-                  </p>
-                  
-                  {s.originalCoachId !== s.currentCoachId && (
-                    <p className="text-xs text-warning mb-4 p-2 bg-warning-bg rounded-md font-medium border border-warning/30">
-                      Bạn đang dạy thay cho HLV {s.originalCoachName}
-                    </p>
-                  )}
-                </div>
+          <div className={styles.sessionList}>
+            {sessions.map((s: any) => {
+              const durationStr = calculateDuration(s.startTime, s.end_time || s.endTime);
+              const rawName = s.className || 'Lớp võ thuật';
+              const displayName = rawName.toLowerCase().startsWith('lớp') ? rawName : `Lớp ${rawName}`;
+              const venueId = s.venueId || s.venues?.id;
 
-                <div className="mt-auto pt-4 border-t border-light">
-                  {(s.status === 'pending' || s.status === 'scheduled') ? (
-                    <Button 
-                      variant="primary" 
-                      className="w-full"
-                      disabled={loading}
-                      onClick={() => handleCheckIn(s)}
-                      leftIcon={<span className="material-icons-round">check_circle</span>}
-                    >
-                      Check-in Ngay
-                    </Button>
-                  ) : (
-                    <div className="flex flex-col gap-2">
-                      <Button 
-                        variant="primary" 
-                        className="w-full"
-                        onClick={() => router.push(`/attendance?date=${s.date || dateStr}&sessionId=${s.sessionId || ''}&classId=${s.classId}`)}
-                        leftIcon={<span className="material-icons-round">how_to_reg</span>}
-                      >
-                        Điểm danh học viên
-                      </Button>
-                      <div className="text-center text-xs text-muted flex items-center justify-center gap-1 mt-1">
-                        <span className="material-icons-round text-success" style={{ fontSize: '14px' }}>check_circle</span>
-                        Đã Check-in ca dạy
+              return (
+                <div key={s.classId + s.startTime} className={styles.sessionCard}>
+                  <div className={styles.sessionLeft}>
+                    {/* Time Box */}
+                    <div className={styles.sessionTimeBox}>
+                      <div className={styles.sessionTimeRange}>
+                        {s.startTime} - {s.end_time || s.endTime}
+                      </div>
+                      {durationStr && (
+                        <div className={styles.sessionDuration}>{durationStr}</div>
+                      )}
+                    </div>
+
+                    {/* Main Info */}
+                    <div className={styles.sessionMainInfo}>
+                      <div className={styles.sessionCategoryRow}>
+                        <span className={styles.venueBadge}>
+                          <span className="material-icons-round">place</span>
+                          NƠI DẠY
+                        </span>
+                        {s.originalCoachId !== s.currentCoachId ? (
+                          <span className={styles.substituteChip}>
+                            <span className="material-icons-round text-xs">swap_horiz</span>
+                            Dạy thay HLV {s.originalCoachName}
+                          </span>
+                        ) : (
+                          <span className={styles.roleChip}>HLV Phụ trách</span>
+                        )}
+                        {s.status === 'checked_in' && <Badge variant="success">Đã Check-in</Badge>}
+                        {s.status === 'approved' && <Badge variant="primary">Đã Duyệt</Badge>}
+                        {s.status === 'paid' && <Badge variant="primary">Đã Thanh Toán</Badge>}
+                        {s.status === 'cancelled' && <Badge variant="danger">Đã Hủy</Badge>}
+                        {(s.status === 'pending' || s.status === 'scheduled') && <Badge variant="default">Chưa Check-in</Badge>}
+                      </div>
+
+                      <div className={styles.sessionVenueTitle}>
+                        <span>{s.venueName || 'Trụ sở chính'}</span>
+                      </div>
+
+                      <div className={styles.sessionClassSubRow}>
+                        <span className={styles.classSubChip}>
+                          <span>🥋</span>
+                          <span>{displayName}</span>
+                        </span>
+                        <span className={styles.scheduleTypeTag}>• Lịch định kỳ</span>
                       </div>
                     </div>
-                  )}
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className={styles.sessionActions}>
+                    {venueId && (
+                      <Link
+                        href={`/training/${venueId}`}
+                        className={styles.actionBtnSecondary}
+                      >
+                        <span className="material-icons-round text-sm">visibility</span>
+                        <span>Xem lớp</span>
+                      </Link>
+                    )}
+
+                    {(s.status === 'pending' || s.status === 'scheduled') ? (
+                      <button
+                        type="button"
+                        className={styles.actionBtnTeal}
+                        disabled={loading}
+                        onClick={() => handleCheckIn(s)}
+                      >
+                        <span className="material-icons-round text-sm">check_circle</span>
+                        <span>Check-in Ngay</span>
+                      </button>
+                    ) : (
+                      <Link
+                        href={`/attendance?date=${s.date || dateStr}&sessionId=${s.sessionId || ''}&classId=${s.classId}`}
+                        className={styles.actionBtnPrimary}
+                      >
+                        <span className="material-icons-round text-sm">fact_check</span>
+                        <span>Điểm danh học viên →</span>
+                      </Link>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useDashboardContext } from '../DashboardProvider';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useTodaySessions } from '@/hooks/useTodaySessions';
 import { cancelSessionAction, overrideCoachAction, checkInSessionAction } from './actions';
 import { useClasses } from '@/hooks/useClasses';
-import { getBusinessDate, getBusinessDateString } from '@/utils/date';
+import { getBusinessDate, getBusinessDateString, calculateDuration } from '@/utils/date';
 import styles from '@/app/styles/page-standard.module.css';
 
 // UI Components
@@ -198,82 +199,125 @@ export default function DashboardClient() {
               icon="event_busy"
             />
           ) : (
-            <div className="flex-col gap-4">
-              {sessions.map((s: any) => (
-                <div key={s.classId + s.startTime} className="bg-surface rounded-md border border-light p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="flex items-start gap-4">
-                    <div className="bg-primary-light text-primary font-bold px-3 py-2 rounded-md text-center min-w-[100px]">
-                      <div>{s.startTime}</div>
-                      <div className="text-xs font-normal opacity-80">{s.endTime}</div>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-main mb-1">{s.className}</h4>
-                      <p className="text-sm text-secondary flex items-center gap-1 mb-1">
-                        <span className="material-icons-round" style={{ fontSize: '14px' }}>location_on</span> {s.venueName}
-                      </p>
-                      <p className="text-sm text-secondary flex items-center gap-1">
-                        <span className="material-icons-round" style={{ fontSize: '14px' }}>person</span> {s.currentCoachName || 'Chưa có HLV'}
-                        {s.originalCoachId !== s.currentCoachId && (
-                          <span className="text-xs text-warning ml-2">(Dạy thay {s.originalCoachName})</span>
+            <div className={styles.sessionList}>
+              {sessions.map((s: any) => {
+                const durationStr = calculateDuration(s.startTime, s.endTime);
+                const rawName = s.className || 'Lớp võ thuật';
+                const displayName = rawName.toLowerCase().startsWith('lớp') ? rawName : `Lớp ${rawName}`;
+                const venueId = s.venueId || s.venues?.id;
+
+                return (
+                  <div key={s.classId + s.startTime} className={styles.sessionCard}>
+                    <div className={styles.sessionLeft}>
+                      {/* Time Box */}
+                      <div className={styles.sessionTimeBox}>
+                        <div className={styles.sessionTimeRange}>
+                          {s.startTime} - {s.endTime}
+                        </div>
+                        {durationStr && (
+                          <div className={styles.sessionDuration}>{durationStr}</div>
                         )}
-                      </p>
+                      </div>
+
+                      {/* Main Info */}
+                      <div className={styles.sessionMainInfo}>
+                        <div className={styles.sessionCategoryRow}>
+                          <span className={styles.venueBadge}>
+                            <span className="material-icons-round">place</span>
+                            NƠI DẠY
+                          </span>
+                          <span className={styles.roleChip}>
+                            HLV: {s.currentCoachName || 'Chưa có HLV'}
+                          </span>
+                          {s.originalCoachId !== s.currentCoachId && (
+                            <span className={styles.substituteChip}>
+                              <span className="material-icons-round text-xs">swap_horiz</span>
+                              Dạy thay {s.originalCoachName}
+                            </span>
+                          )}
+                          {getStatusBadge(s.status)}
+                        </div>
+
+                        <div className={styles.sessionVenueTitle}>
+                          <span>{s.venueName || 'Trụ sở chính'}</span>
+                        </div>
+
+                        <div className={styles.sessionClassSubRow}>
+                          <span className={styles.classSubChip}>
+                            <span>🥋</span>
+                            <span>{displayName}</span>
+                          </span>
+                          <span className={styles.scheduleTypeTag}>• Lịch hôm nay</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex flex-col items-end gap-2">
-                    {getStatusBadge(s.status)}
-                    
-                    <div className="flex gap-2 flex-wrap justify-end">
+
+                    {/* Action Buttons */}
+                    <div className={styles.sessionActions}>
                       {/* Admin Actions */}
                       {isAdminOrOwner && s.status !== 'cancelled' && (
                         <>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
+                          <button
+                            type="button"
+                            className={styles.actionBtnSecondary}
                             disabled={loading || s.status === 'checked_in' || s.status === 'approved' || s.status === 'paid'}
                             onClick={() => { setOverrideModalSession(s); setSelectedNewCoachId(s.currentCoachId); }}
+                            title="Xếp HLV khác dạy thay"
                           >
-                            Đổi HLV
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-danger hover:bg-danger-bg" 
+                            <span className="material-icons-round text-sm">swap_horiz</span>
+                            <span>Đổi HLV</span>
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.actionBtnDanger}
                             disabled={loading}
                             onClick={() => handleCancelSession(s)}
+                            title="Hủy buổi học này"
                           >
-                            Hủy Buổi
-                          </Button>
+                            <span className="material-icons-round text-sm">cancel</span>
+                            <span>Hủy Buổi</span>
+                          </button>
                         </>
                       )}
-                      
+
+                      {/* Link View Class */}
+                      {venueId && (
+                        <Link
+                          href={`/training/${venueId}`}
+                          className={styles.actionBtnSecondary}
+                        >
+                          <span className="material-icons-round text-sm">visibility</span>
+                          <span>Xem lớp</span>
+                        </Link>
+                      )}
+
                       {/* Coach Actions */}
                       {(!isAdminOrOwner) && (s.status === 'pending' || s.status === 'scheduled') && (
-                        <Button 
-                          variant="primary" 
-                          size="sm" 
+                        <button
+                          type="button"
+                          className={styles.actionBtnTeal}
                           disabled={loading}
                           onClick={() => handleCheckIn(s)}
                         >
-                          Check-in
-                        </Button>
+                          <span className="material-icons-round text-sm">check_circle</span>
+                          <span>Check-in Ngay</span>
+                        </button>
                       )}
 
                       {/* Student Attendance Action when checked in */}
                       {s.status !== 'cancelled' && s.status !== 'pending' && s.status !== 'scheduled' && (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => router.push(`/attendance?date=${s.date || dateStr}&sessionId=${s.sessionId || ''}&classId=${s.classId}`)}
-                          leftIcon={<span className="material-icons-round">how_to_reg</span>}
+                        <Link
+                          href={`/attendance?date=${s.date || dateStr}&sessionId=${s.sessionId || ''}&classId=${s.classId}`}
+                          className={styles.actionBtnPrimary}
                         >
-                          Điểm danh học viên
-                        </Button>
+                          <span className="material-icons-round text-sm">fact_check</span>
+                          <span>Điểm danh học viên →</span>
+                        </Link>
                       )}
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
       </div>
