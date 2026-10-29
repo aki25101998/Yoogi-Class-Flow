@@ -64,9 +64,9 @@ export default function MyAttendanceClient() {
               <Table>
                 <Thead>
                   <Tr>
-                    <Th>Ngày dạy</Th>
+                    <Th>Ngày</Th>
                     <Th>Địa điểm dạy</Th>
-                    <Th>Lớp học</Th>
+                    <Th>Lớp</Th>
                     <Th>Khung giờ</Th>
                     <Th>Trạng thái</Th>
                   </Tr>
@@ -74,33 +74,17 @@ export default function MyAttendanceClient() {
                 <Tbody>
                   {displaySessions.map((s: any) => {
                     const venueName = s.venue_classes?.venues?.name || 'Trụ sở chính';
-                    const rawName = s.venue_classes?.name || 'Lớp học';
-                    const className = rawName.toLowerCase().startsWith('lớp') ? rawName : `Lớp ${rawName}`;
+                    const className = s.venue_classes?.name || '---';
                     const timeRange = s.start_time && s.end_time ? `${s.start_time} - ${s.end_time}` : null;
 
                     return (
                       <Tr key={s.id}>
-                        <Td className="font-semibold text-main whitespace-nowrap">{s.date}</Td>
-                        <Td>
-                          <div className="flex items-center gap-1.5 font-semibold text-main">
-                            <span 
-                              className="material-icons-round text-base" 
-                              style={{ color: 'var(--accent-energy, #FF6B35)' }}
-                            >
-                              place
-                            </span>
-                            <span>{venueName}</span>
-                          </div>
-                        </Td>
-                        <Td>
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-surface-hover border border-light text-secondary">
-                            <span>🥋</span>
-                            <span>{className}</span>
-                          </span>
-                        </Td>
+                        <Td className="font-medium text-main whitespace-nowrap">{s.date}</Td>
+                        <Td className="text-secondary text-sm">{venueName}</Td>
+                        <Td className="text-secondary text-sm">{className}</Td>
                         <Td className="text-secondary text-sm whitespace-nowrap">
                           {timeRange ? (
-                            <span className="font-medium">{timeRange}</span>
+                            <span>{timeRange}</span>
                           ) : (
                             <span className="text-muted text-xs">--:--</span>
                           )}
