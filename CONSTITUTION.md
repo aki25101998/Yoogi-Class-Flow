@@ -1,6 +1,6 @@
 # 📜 HIẾN PHÁP DỰ ÁN — YOOGI CLASS FLOW
 
-> **Phiên bản:** 1.6.6  
+> **Phiên bản:** 1.6.7  
 > **Cập nhật lần cuối:** 2026-10-29  
 > **Mục đích:** Đây là tài liệu gốc, bất khả xâm phạm. Mọi thay đổi code PHẢI tuân thủ các quy tắc trong file này. Khi có tính năng mới, file này PHẢI được cập nhật đồng thời.
 
@@ -770,6 +770,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-10-28 | 1.6.4 | Tinh chỉnh bố cục thẻ trung tâm trên Cổng Founder Admin (/platform-admin): Chuyển đổi từ CSS Grid 5 cột (bị tràn nút sang hàng 2 khiến khối thông tin bên phải lệch lên trên) sang kiến trúc Flexbox đối xứng 2 khối (.platformCard, .platformCardLeft, .platformCardRight); căn giữa tuyệt đối theo phương đứng (align-items: center) cho toàn bộ khối Badges, Hạn dùng và Quy mô, đảm bảo khoảng cách trên dưới luôn cân bằng hoàn hảo 100% |
 | 2026-10-28 | 1.6.5 | Bổ sung tính năng Chuyển Quyền Chủ Sở Hữu (Transfer Organization Ownership) trên Cổng Founder Admin (/platform-admin): Migration 040_platform_transfer_ownership.sql với stored procedure public.platform_transfer_organization_owner atomic kèm fallback trực tiếp; cho phép Founder chuyển giao quyền Owner sang email mới, tự động hạ cấp chủ cũ sang Quản trị viên (Admin) hoặc HLV để không làm gián đoạn lịch dạy/lịch sử, tự động cấp quyền Owner và hồ sơ HLV cho chủ mới; tích hợp nút tắt 1-chạm [Đổi chủ] trên dòng thẻ trung tâm và trong modal Chỉnh sửa trung tâm |
 | 2026-10-29 | 1.6.6 | Khắc phục triệt để lỗi treo UI khi chuyển đổi cơ sở/workspace (Sidebar): Tinh chỉnh luồng switchWorkspace trong app/actions/workspace.actions.ts và Sidebar.tsx, tự động điều hướng sang /dashboard hoặc reload toàn diện context layout sau khi đổi cookie yoogi_workspace_id, xóa sạch cache React Query cũ, bổ sung hiệu ứng xoay .animate-spin cho icon sync và xử lý lỗi/fallback mở lại trạng thái nếu có lỗi |
+| 2026-10-29 | 1.6.7 | Đồng bộ hóa font chữ & typography giữa Lịch dạy cá nhân (/my-schedule) và Check-in (/my-checkin): Loại bỏ triệt để font-weight 800 (Extra Bold) và cỡ chữ quá khổ (1.35rem) gây mất cân đối thị giác; chuẩn hóa tiêu đề ca dạy về font-size 1.125rem font-weight 600, dải 7 ngày về 1.125rem font-weight 600, khung giờ học về 0.875rem font-weight 600, các huy hiệu và tag về 0.75rem font-weight 600, tạo diện mạo đồng bộ, thanh thoát và liền mạch trên toàn hệ thống |
 
 ---
 
