@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
+import { PageHeader } from "@/app/components/ui/PageHeader";
+import { Button } from "@/app/components/ui/Button";
+import { EmptyState } from "@/app/components/ui/EmptyState";
 
 export default function VersionHistoryError({
   error,
@@ -14,16 +17,25 @@ export default function VersionHistoryError({
   }, [error]);
 
   return (
-    <div className="page-container" style={{ padding: '24px', maxWidth: '800px', margin: '0 auto', textAlign: 'center', paddingTop: '64px' }}>
-      <span className="material-icons-round" style={{ fontSize: '48px', color: 'var(--danger)', marginBottom: '16px' }}>error_outline</span>
-      <h2 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '8px' }}>Không thể tải lịch sử phiên bản</h2>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>Đã có lỗi xảy ra trong quá trình tải dữ liệu. Vui lòng thử lại.</p>
-      <button 
-        onClick={() => reset()}
-        className="btn btn-primary"
-      >
-        Thử lại
-      </button>
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+      <PageHeader 
+        title="Lịch sử phiên bản" 
+        description="Xem các thay đổi dữ liệu của tổ chức và khôi phục về trạng thái trước đó."
+      />
+      <EmptyState 
+        icon="error_outline"
+        title="Không thể tải lịch sử phiên bản"
+        description="Đã có lỗi xảy ra trong quá trình tải dữ liệu. Vui lòng thử lại."
+        action={
+          <Button 
+            onClick={() => reset()}
+            variant="primary"
+            leftIcon={<span className="material-icons-round">refresh</span>}
+          >
+            Thử lại
+          </Button>
+        }
+      />
     </div>
   );
 }

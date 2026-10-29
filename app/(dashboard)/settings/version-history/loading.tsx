@@ -1,22 +1,37 @@
 "use client";
 
+import { PageHeader } from "@/app/components/ui/PageHeader";
+import styles from "@/app/styles/page-standard.module.css";
+
 export default function VersionHistoryLoading() {
   return (
-    <div className="page-container" style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
-      <div className="page-header" style={{ marginBottom: '32px' }}>
-        <div style={{ height: '32px', width: '250px', background: 'var(--surface-hover)', borderRadius: '8px', marginBottom: '12px' }} className="skeleton-pulse"></div>
-        <div style={{ height: '20px', width: '400px', background: 'var(--surface-hover)', borderRadius: '8px' }} className="skeleton-pulse"></div>
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+      <PageHeader 
+        title="Lịch sử phiên bản" 
+        description="Xem các thay đổi dữ liệu của tổ chức và khôi phục về trạng thái trước đó."
+      />
+      
+      <div className={styles.overviewCard}>
+        <div className={styles.overviewHeader}>
+          <div className={styles.overviewTitle}>
+            <span className="material-icons-round" style={{ fontSize: '18px', color: 'var(--primary)' }}>analytics</span>
+            TỔNG QUAN BIẾN ĐỘNG HỆ THỐNG
+          </div>
+        </div>
+        <div className={styles.overviewGrid}>
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className={styles.kpiItem} style={{ height: '94px', background: 'var(--surface-hover)' }} />
+          ))}
+        </div>
       </div>
       
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        {[1, 2, 3].map(i => (
-          <div key={i} style={{ display: 'flex', gap: '16px' }}>
-            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: 'var(--surface-hover)', marginTop: '6px' }} className="skeleton-pulse"></div>
-            <div style={{ flex: 1, paddingBottom: '24px', borderLeft: '2px solid var(--border-light)', paddingLeft: '24px', marginLeft: '-7px' }}>
-              <div style={{ height: '20px', width: '150px', background: 'var(--surface-hover)', borderRadius: '4px', marginBottom: '8px' }} className="skeleton-pulse"></div>
-              <div style={{ height: '60px', width: '100%', background: 'var(--surface-hover)', borderRadius: '8px' }} className="skeleton-pulse"></div>
-            </div>
-          </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {[1, 2, 3, 4].map(i => (
+          <div 
+            key={i} 
+            className={styles.platformCard} 
+            style={{ height: '88px', background: 'var(--surface)', opacity: 0.7 }} 
+          />
         ))}
       </div>
     </div>

@@ -2,11 +2,9 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/utils/supabase/client";
-
-const formatDateTime = (dateStr: string) => {
-  const d = new Date(dateStr);
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} — ${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-};
+import { Button } from "@/app/components/ui/Button";
+import { Badge } from "@/app/components/ui/Badge";
+import { formatBusinessDateVN, formatBusinessTime } from "@/utils/date";
 
 export default function VersionDetailModal({ version, isCurrent, isAdminOrOwner, onClose, onRestoreRequest }: any) {
   const supabase = createClient();
@@ -26,24 +24,33 @@ export default function VersionDetailModal({ version, isCurrent, isAdminOrOwner,
 
   // Calculate stats
   const tableLabels: Record<string, string> = {
-    'venues': 'Địa điểm',
+    'venues': 'Địa điểm đào tạo',
     'venue_classes': 'Lớp học',
     'class_coaches': 'Phân công HLV',
     'students': 'Học viên',
-    'class_students': 'Ghi danh',
-    'schedules': 'Lịch học',
-    'attendance': 'Điểm danh',
+    'class_students': 'Ghi danh lớp học',
+    'schedules': 'Lịch học định kỳ',
+    'attendance': 'Điểm danh HLV',
     'student_session_attendance': 'Điểm danh học viên',
-    'teacher_salaries': 'Lương HLV',
+    'student_attendance': 'Điểm danh (Legacy)',
+    'teacher_salaries': 'Cấu hình lương',
+    'salary_rules': 'Quy tắc lương',
+    'salary_profiles': 'Hồ sơ lương',
+    'payroll_periods': 'Kỳ lương',
+    'payroll_payments': 'Thanh toán lương',
     'tuition': 'Học phí',
-    'finance_transactions': 'Giao dịch tài chính',
-    'class_sessions': 'Buổi học'
+    'finance_transactions': 'Giao dịch thu chi',
+    'class_sessions': 'Buổi học thực tế',
+    'coaches': 'Huấn luyện viên',
+    'organization_belts': 'Cấp đai',
+    'organizations': 'Thông tin tổ chức',
+    'organization_members': 'Thành viên & phân quyền'
   };
 
   const stats: Record<string, { inserted: number, updated: number, deleted: number }> = {};
   
   if (changes) {
-    changes.forEach(c => {
+    changes.forEach((c: any) => {
       if (!stats[c.table_name]) {
         stats[c.table_name] = { inserted: 0, updated: 0, deleted: 0 };
       }
@@ -53,113 +60,256 @@ export default function VersionDetailModal({ version, isCurrent, isAdminOrOwner,
     });
   }
 
+  const initial = (profile?.name || 'H').trim().slice(0, 1).toUpperCase();
+
   return (
-    <>
-      <div className="modal-backdrop" onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div 
-          className="modal-content" 
-          onClick={e => e.stopPropagation()}
-          style={{ 
-            background: 'var(--surface)', 
-            borderRadius: '12px', 
-            width: '90%', 
-            maxWidth: '500px', 
-            maxHeight: '90vh',
-            overflowY: 'auto',
-            boxShadow: 'var(--shadow-lg)'
-          }}
-        >
-          <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 10 }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-main)', margin: 0 }}>
-              Chi tiết phiên bản #{version.version_number}
-            </h2>
-            <button 
-              onClick={onClose}
-              style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex' }}
-            >
-              <span className="material-icons-round">close</span>
-            </button>
-          </div>
-
-          <div style={{ padding: '24px' }}>
-            <div style={{ marginBottom: '24px' }}>
-              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Thời gian:</div>
-              <div style={{ fontSize: '15px', color: 'var(--text-main)', fontWeight: 500 }}>
-                {formatDateTime(version.created_at)}
-              </div>
+    <div 
+      className="modal-backdrop" 
+      onClick={onClose} 
+      style={{ 
+        position: 'fixed', 
+        inset: 0, 
+        background: 'rgba(0, 0, 0, 0.6)', 
+        backdropFilter: 'blur(4px)',
+        zIndex: 1000, 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        padding: '20px'
+      }}
+    >
+      <div 
+        className="modal-content" 
+        onClick={e => e.stopPropagation()}
+        style={{ 
+          background: 'var(--surface)', 
+          borderRadius: 'var(--radius-2xl)', 
+          width: '100%', 
+          maxWidth: '720px', 
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: 'var(--shadow-xl)',
+          border: '1px solid var(--border-light)',
+          overflow: 'hidden'
+        }}
+      >
+        {/* MODAL HEADER */}
+        <div style={{ 
+          padding: '20px 24px', 
+          borderBottom: '1px solid var(--border-light)', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          background: 'var(--surface)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: 'var(--radius-lg)',
+              background: 'var(--primary-light)',
+              color: 'var(--primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <span className="material-icons-round" style={{ fontSize: '22px' }}>history_edu</span>
             </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
+                  Chi tiết phiên bản #{version.version_number}
+                </h2>
+                {isCurrent && (
+                  <Badge variant="success">Đang áp dụng</Badge>
+                )}
+              </div>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
+                {formatBusinessTime(version.created_at)} • {formatBusinessDateVN(version.created_at)}
+              </p>
+            </div>
+          </div>
+          <button 
+            onClick={onClose}
+            style={{ 
+              background: 'var(--surface-hover)', 
+              border: 'none', 
+              borderRadius: '50%',
+              width: '32px',
+              height: '32px',
+              cursor: 'pointer', 
+              color: 'var(--text-secondary)', 
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'background 0.2s'
+            }}
+            aria-label="Đóng"
+          >
+            <span className="material-icons-round" style={{ fontSize: '18px' }}>close</span>
+          </button>
+        </div>
 
-            <div style={{ marginBottom: '24px' }}>
-              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Thực hiện bởi:</div>
+        {/* MODAL BODY (SCROLLABLE) */}
+        <div style={{ padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Metadata Grid */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '12px',
+            background: 'var(--surface-hover)',
+            padding: '16px',
+            borderRadius: 'var(--radius-xl)',
+            border: '1px solid var(--border-light)'
+          }}>
+            <div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.04em', marginBottom: '4px' }}>
+                Người thực hiện
+              </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 {profile?.avatar_url ? (
                   <img src={profile.avatar_url} alt="" style={{ width: '24px', height: '24px', borderRadius: '50%' }} />
                 ) : (
-                  <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 600 }}>
-                    {profile?.name ? profile.name.charAt(0).toUpperCase() : '?'}
+                  <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700 }}>
+                    {initial}
                   </div>
                 )}
-                <span style={{ fontSize: '15px', color: 'var(--text-main)', fontWeight: 500 }}>
+                <span style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-main)' }}>
                   {profile?.name || 'Hệ thống'}
                 </span>
               </div>
             </div>
 
-            <div style={{ marginBottom: '24px' }}>
-              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Tóm tắt:</div>
-              <div style={{ fontSize: '15px', color: 'var(--text-main)' }}>
-                {version.summary}
+            <div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.04em', marginBottom: '4px' }}>
+                Loại tác vụ
+              </div>
+              <div>
+                <Badge variant={version.action_type === 'CREATE' ? 'success' : (version.action_type === 'UPDATE' ? 'info' : (version.action_type === 'DELETE' ? 'danger' : 'warning'))}>
+                  {version.action_type}
+                </Badge>
               </div>
             </div>
 
-            <div style={{ marginBottom: '24px' }}>
-              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '12px' }}>Dữ liệu thay đổi:</div>
-              
-              {isLoading ? (
-                <div style={{ padding: '16px', background: 'var(--surface-hover)', borderRadius: '8px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                  Đang tải chi tiết...
-                </div>
-              ) : !changes || changes.length === 0 ? (
-                <div style={{ padding: '16px', background: 'var(--surface-hover)', borderRadius: '8px', color: 'var(--text-secondary)' }}>
-                  Không có thay đổi dữ liệu nào được ghi nhận.
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {Object.entries(stats).map(([table, stat]) => (
-                    <div key={table} style={{ padding: '12px 16px', background: 'var(--surface-hover)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontWeight: 500, color: 'var(--text-main)' }}>{tableLabels[table] || table}</span>
-                      <div style={{ display: 'flex', gap: '12px', fontSize: '13px' }}>
-                        {stat.inserted > 0 && <span style={{ color: 'var(--success)' }}>+{stat.inserted} thêm mới</span>}
-                        {stat.updated > 0 && <span style={{ color: 'var(--warning)' }}>~{stat.updated} cập nhật</span>}
-                        {stat.deleted > 0 && <span style={{ color: 'var(--danger)' }}>-{stat.deleted} đã xóa</span>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+            <div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.04em', marginBottom: '4px' }}>
+                Thời điểm ghi nhận
+              </div>
+              <div style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-main)' }}>
+                {formatBusinessDateVN(version.created_at)} ({formatBusinessTime(version.created_at)})
+              </div>
             </div>
           </div>
 
-          <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'flex-end', gap: '12px', background: 'var(--surface-hover)', borderBottomLeftRadius: '12px', borderBottomRightRadius: '12px' }}>
-            <button 
-              onClick={onClose}
-              className="btn btn-outline"
-            >
-              Đóng
-            </button>
-            
-            {isAdminOrOwner && !isCurrent && (
-              <button 
-                onClick={() => onRestoreRequest(version)}
-                className="btn btn-primary"
-                style={{ background: 'var(--danger)', borderColor: 'var(--danger)' }}
-              >
-                Khôi phục phiên bản này
-              </button>
+          {/* Summary Box */}
+          <div>
+            <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span className="material-icons-round" style={{ fontSize: '16px', color: 'var(--primary)' }}>description</span>
+              Nội dung tóm tắt
+            </div>
+            <div style={{ 
+              padding: '14px 16px', 
+              background: 'var(--surface-hover)', 
+              borderRadius: 'var(--radius-lg)', 
+              color: 'var(--text-main)',
+              fontSize: '0.9375rem',
+              lineHeight: 1.5,
+              border: '1px solid var(--border-light)'
+            }}>
+              {version.summary || 'Không có mô tả chi tiết'}
+            </div>
+          </div>
+
+          {/* Data Changes Breakdown */}
+          <div>
+            <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span className="material-icons-round" style={{ fontSize: '16px', color: 'var(--primary)' }}>data_object</span>
+              Các bảng dữ liệu bị ảnh hưởng
+            </div>
+
+            {isLoading ? (
+              <div style={{ padding: '24px', background: 'var(--surface-hover)', borderRadius: 'var(--radius-lg)', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                Đang tải chi tiết các thay đổi...
+              </div>
+            ) : !changes || changes.length === 0 ? (
+              <div style={{ padding: '20px', background: 'var(--surface-hover)', borderRadius: 'var(--radius-lg)', color: 'var(--text-secondary)', textAlign: 'center', fontSize: '0.875rem' }}>
+                Không có bản ghi chi tiết riêng lẻ (Ghi nhận ở mức hệ thống).
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {Object.entries(stats).map(([table, stat]) => (
+                  <div 
+                    key={table} 
+                    style={{ 
+                      padding: '12px 18px', 
+                      background: 'var(--surface-hover)', 
+                      borderRadius: 'var(--radius-lg)', 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      border: '1px solid var(--border-light)'
+                    }}
+                  >
+                    <div>
+                      <span style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.9375rem' }}>
+                        {tableLabels[table] || table}
+                      </span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '8px' }}>
+                        ({table})
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '10px', fontSize: '0.8125rem', fontWeight: 600 }}>
+                      {stat.inserted > 0 && (
+                        <span style={{ color: 'var(--success)', background: 'var(--success-bg)', padding: '3px 8px', borderRadius: 'var(--radius-sm)' }}>
+                          +{stat.inserted} thêm mới
+                        </span>
+                      )}
+                      {stat.updated > 0 && (
+                        <span style={{ color: 'var(--warning)', background: 'var(--warning-bg)', padding: '3px 8px', borderRadius: 'var(--radius-sm)' }}>
+                          ~{stat.updated} cập nhật
+                        </span>
+                      )}
+                      {stat.deleted > 0 && (
+                        <span style={{ color: 'var(--danger)', background: 'var(--danger-bg)', padding: '3px 8px', borderRadius: 'var(--radius-sm)' }}>
+                          -{stat.deleted} đã xóa
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </div>
+
+        {/* MODAL FOOTER */}
+        <div style={{ 
+          padding: '16px 24px', 
+          borderTop: '1px solid var(--border-light)', 
+          display: 'flex', 
+          justifyContent: 'flex-end', 
+          gap: '12px', 
+          background: 'var(--surface)'
+        }}>
+          <Button 
+            variant="outline" 
+            onClick={onClose}
+          >
+            Đóng
+          </Button>
+
+          {isAdminOrOwner && !isCurrent && (
+            <Button 
+              variant="danger"
+              onClick={() => onRestoreRequest(version)}
+              leftIcon={<span className="material-icons-round">restore</span>}
+            >
+              Khôi phục về phiên bản này
+            </Button>
+          )}
+        </div>
       </div>
-    </>
+    </div>
   );
 }
