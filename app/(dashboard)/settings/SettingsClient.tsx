@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import { updateOrganizationAction, seedSampleDataAction } from './actions';
+import { updateOrganizationAction, seedSampleDataAction, resetOrganizationDataAction } from './actions';
 import { useDashboardContext } from '../DashboardProvider';
 
 // UI Components
@@ -33,6 +33,11 @@ export default function SettingsClient() {
   // Seed sample data state
   const [seedLoading, setSeedLoading] = useState(false);
   const [seedResult, setSeedResult] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  // Reset all data state
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [resetConfirmInput, setResetConfirmInput] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
 
   const isAdminOrOwner = currentUserRole === 'admin' || currentUserRole === 'owner';
 
@@ -90,6 +95,39 @@ export default function SettingsClient() {
     }
   };
 
+  const handleResetData = async () => {
+    if (!isAdminOrOwner) return;
+
+    setResetLoading(true);
+    setSeedResult(null);
+
+    try {
+      const res = await resetOrganizationDataAction();
+      if (res.success) {
+        setSeedResult({ 
+          type: 'success', 
+          message: res.message || 'Đã xóa toàn bộ dữ liệu tổ chức thành công. Hệ thống đã trở về trạng thái sạch sẽ.' 
+        });
+        setIsResetModalOpen(false);
+        setResetConfirmInput('');
+        await queryClient.invalidateQueries();
+        router.refresh();
+      } else {
+        setSeedResult({ 
+          type: 'error', 
+          message: res.error || 'Lỗi khi xóa dữ liệu tổ chức.' 
+        });
+      }
+    } catch (err: any) {
+      setSeedResult({ 
+        type: 'error', 
+        message: err.message || 'Đã xảy ra lỗi không xác định.' 
+      });
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   const planName = (organization?.subscription_plan || 'starter').toUpperCase();
   const planStatus = (organization?.subscription_status || 'active').toLowerCase();
   const expiryText = organization?.subscription_expires_at 
@@ -103,6 +141,12 @@ export default function SettingsClient() {
       : (currentUserRole === 'head_coach' 
         ? 'HLV Trưởng' 
         : 'Trợ giảng'));
+
+  const isResetInputValid = () => {
+    const trimmed = resetConfirmInput.trim().toLowerCase();
+    const orgName = (organization?.name || '').trim().toLowerCase();
+    return trimmed === 'xóa dữ liệu' || trimmed === 'xoa du lieu' || trimmed === 'xoa het' || (orgName && trimmed === orgName);
+  };
 
   return (
     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
@@ -330,7 +374,7 @@ export default function SettingsClient() {
           </CardContent>
         </Card>
 
-        {/* CARD 2: DỮ LIỆU MẪU KIỂM THỬ (SAMPLE DATA) */}
+        {/* CARD 2: QUẢN TRỊ DỮ LIỆU & DỮ LIỆU MẪU KIỂM THỬ */}
         {isAdminOrOwner && (
           <Card style={{ 
             background: 'var(--surface)', 
@@ -353,12 +397,12 @@ export default function SettingsClient() {
                   }}>
                     <span className="material-icons-round" style={{ fontSize: '20px' }}>auto_awesome</span>
                   </div>
-                  Dữ Liệu Mẫu Kiểm Thử (Sample Data)
+                  Quản Trị Dữ Liệu & Kiểm Thử
                 </CardTitle>
                 <Badge variant="warning">Môi trường thử nghiệm</Badge>
               </div>
               <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', margin: '6px 0 0 0', lineHeight: 1.4 }}>
-                Khởi tạo dữ liệu thực tế 1-chạm để kiểm tra toàn bộ tính năng: Chi nhánh, Lớp học, HLV, Học viên, Lịch học, Điểm danh, Học phí và Sổ quỹ.
+                Khởi tạo dữ liệu thực tế để kiểm tra tính năng hoặc xóa toàn bộ dữ liệu để chuẩn bị vận hành chính thức.
               </p>
             </CardHeader>
             
@@ -366,7 +410,7 @@ export default function SettingsClient() {
               {seedResult && (
                 <div 
                   style={{
-                    marginBottom: '16px',
+                    marginBottom: '20px',
                     fontSize: '0.875rem',
                     padding: '14px 16px',
                     borderRadius: 'var(--radius-xl)',
@@ -386,6 +430,7 @@ export default function SettingsClient() {
               )}
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {/* 1. SEED SAMPLE DATA BLOCK */}
                 <div 
                   style={{
                     padding: '18px',
@@ -427,19 +472,18 @@ export default function SettingsClient() {
                   display: 'flex', 
                   alignItems: 'center', 
                   justifyContent: 'space-between', 
-                  paddingTop: '8px', 
                   flexWrap: 'wrap', 
                   gap: '12px' 
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
                     <span className="material-icons-round" style={{ fontSize: '16px', color: 'var(--primary)' }}>shield</span>
-                    <span>An toàn: Không ghi đè hay xóa dữ liệu hiện có</span>
+                    <span>Khởi tạo dữ liệu mẫu kiểm thử</span>
                   </div>
                   <Button
                     type="button"
                     variant="primary"
                     isLoading={seedLoading}
-                    disabled={seedLoading}
+                    disabled={seedLoading || resetLoading}
                     onClick={handleSeedData}
                     leftIcon={<span className="material-icons-round">play_circle_filled</span>}
                     style={{
@@ -450,11 +494,231 @@ export default function SettingsClient() {
                     Nạp Dữ Liệu Mẫu Ngay
                   </Button>
                 </div>
+
+                {/* 2. DANGER ZONE: XÓA TOÀN BỘ DỮ LIỆU */}
+                <div style={{
+                  marginTop: '10px',
+                  paddingTop: '20px',
+                  borderTop: '1px solid var(--border-light)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px'
+                }}>
+                  <div style={{
+                    padding: '16px 20px',
+                    borderRadius: 'var(--radius-xl)',
+                    background: 'rgba(239, 68, 68, 0.05)',
+                    border: '1px solid rgba(239, 68, 68, 0.25)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '16px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: '240px' }}>
+                      <div style={{
+                        width: '42px',
+                        height: '42px',
+                        borderRadius: 'var(--radius-lg)',
+                        background: 'var(--danger-bg)',
+                        color: 'var(--danger)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                      }}>
+                        <span className="material-icons-round" style={{ fontSize: '24px' }}>delete_forever</span>
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          Vùng Nguy Hiểm: Xóa Toàn Bộ Dữ Liệu
+                        </div>
+                        <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '2px', lineHeight: 1.4 }}>
+                          Dọn sạch học viên, lớp học, điểm danh, lịch học & tài chính để đưa trung tâm về trạng thái trắng.
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="danger"
+                      disabled={seedLoading || resetLoading}
+                      onClick={() => {
+                        setResetConfirmInput('');
+                        setIsResetModalOpen(true);
+                      }}
+                      leftIcon={<span className="material-icons-round">delete_forever</span>}
+                      style={{
+                        borderRadius: 'var(--radius-full)',
+                        boxShadow: '0 4px 14px rgba(239, 68, 68, 0.25)'
+                      }}
+                    >
+                      Xóa Toàn Bộ Dữ Liệu
+                    </Button>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
         )}
       </div>
+
+      {/* MODAL XÁC NHẬN XÓA TOÀN BỘ DỮ LIỆU (DANGER ZONE MODAL) */}
+      {isResetModalOpen && (
+        <div 
+          className="modal-backdrop"
+          onClick={() => {
+            if (!resetLoading) setIsResetModalOpen(false);
+          }}
+          style={{ 
+            position: 'fixed', 
+            inset: 0, 
+            background: 'rgba(0, 0, 0, 0.75)', 
+            backdropFilter: 'blur(5px)',
+            zIndex: 1100, 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            padding: '20px'
+          }}
+        >
+          <div 
+            className="modal-content"
+            onClick={e => e.stopPropagation()}
+            style={{ 
+              background: 'var(--surface)', 
+              borderRadius: 'var(--radius-2xl)', 
+              width: '100%', 
+              maxWidth: '540px', 
+              boxShadow: 'var(--shadow-xl)',
+              overflow: 'hidden',
+              border: '1px solid rgba(239, 68, 68, 0.3)'
+            }}
+          >
+            {/* Header Cảnh báo */}
+            <div style={{ padding: '28px 24px 20px 24px', textAlign: 'center' }}>
+              <div style={{ 
+                width: '64px', 
+                height: '64px', 
+                borderRadius: '50%', 
+                background: 'var(--danger-bg)', 
+                color: 'var(--danger)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                margin: '0 auto 16px auto',
+                boxShadow: '0 0 25px rgba(239, 68, 68, 0.3)'
+              }}>
+                <span className="material-icons-round" style={{ fontSize: '38px' }}>warning</span>
+              </div>
+
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--danger)', margin: '0 0 8px 0' }}>
+                Xác nhận Xóa Toàn Bộ Dữ Liệu?
+              </h2>
+
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '18px', lineHeight: 1.5 }}>
+                Bạn đang chuẩn bị dọn sạch toàn bộ dữ liệu của trung tâm <strong>{organization?.name}</strong>. Hành động này là <strong>vĩnh viễn và không thể hoàn tác</strong>.
+              </p>
+
+              {/* Danh sách những gì sẽ bị xóa */}
+              <div style={{ 
+                background: 'var(--surface-hover)', 
+                padding: '16px', 
+                borderRadius: 'var(--radius-xl)', 
+                marginBottom: '16px', 
+                textAlign: 'left',
+                border: '1px solid var(--border-light)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                fontSize: '0.8125rem'
+              }}>
+                <div style={{ fontWeight: 700, color: 'var(--danger)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span className="material-icons-round" style={{ fontSize: '16px' }}>delete_sweep</span>
+                  Dữ liệu sẽ bị xóa hoàn toàn:
+                </div>
+                <div style={{ color: 'var(--text-secondary)' }}>• Toàn bộ học viên, đai đẳng và danh sách ghi danh lớp</div>
+                <div style={{ color: 'var(--text-secondary)' }}>• Toàn bộ chi nhánh, lớp học và lịch học định kỳ</div>
+                <div style={{ color: 'var(--text-secondary)' }}>• Toàn bộ buổi học thực tế, điểm danh HLV & học viên</div>
+                <div style={{ color: 'var(--text-secondary)' }}>• Toàn bộ học phí, sổ quỹ thu chi & bảng lương HLV</div>
+                <div style={{ color: 'var(--text-secondary)' }}>• Danh sách HLV & lời mời (trừ tài khoản Chủ sở hữu)</div>
+              </div>
+
+              {/* Thông tin được bảo toàn */}
+              <div style={{ 
+                background: 'rgba(34, 197, 94, 0.08)', 
+                padding: '12px 16px', 
+                borderRadius: 'var(--radius-lg)', 
+                marginBottom: '20px', 
+                textAlign: 'left',
+                border: '1px solid rgba(34, 197, 94, 0.2)',
+                fontSize: '0.8125rem',
+                color: 'var(--success)'
+              }}>
+                <strong>Được bảo toàn an toàn:</strong>
+                <div style={{ marginTop: '4px', color: 'var(--text-secondary)' }}>
+                  ✓ Tài khoản Chủ sở hữu (Owner) và quyền đăng nhập<br />
+                  ✓ Tên trung tâm & Gói dịch vụ bản quyền SaaS
+                </div>
+              </div>
+
+              {/* Hộp gõ xác nhận an toàn */}
+              <div style={{ textAlign: 'left', marginBottom: '8px' }}>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
+                  Nhập chữ <strong style={{ color: 'var(--danger)' }}>XÓA DỮ LIỆU</strong> để xác nhận:
+                </label>
+                <input 
+                  type="text"
+                  placeholder="Gõ XÓA DỮ LIỆU vào đây..."
+                  value={resetConfirmInput}
+                  onChange={e => setResetConfirmInput(e.target.value)}
+                  disabled={resetLoading}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px solid var(--border-light)',
+                    background: 'var(--surface-hover)',
+                    color: 'var(--text-main)',
+                    fontSize: '0.875rem',
+                    outline: 'none'
+                  }}
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            {/* Footer Buttons */}
+            <div style={{ 
+              padding: '16px 24px', 
+              borderTop: '1px solid var(--border-light)', 
+              display: 'flex', 
+              gap: '12px', 
+              background: 'var(--surface)' 
+            }}>
+              <Button 
+                onClick={() => setIsResetModalOpen(false)}
+                disabled={resetLoading}
+                variant="outline"
+                style={{ flex: 1 }}
+              >
+                Hủy bỏ
+              </Button>
+              
+              <Button 
+                onClick={handleResetData}
+                disabled={resetLoading || !isResetInputValid()}
+                isLoading={resetLoading}
+                variant="danger"
+                style={{ flex: 1.4 }}
+                leftIcon={<span className="material-icons-round">delete_forever</span>}
+              >
+                {resetLoading ? 'Đang xóa sạch...' : 'Xác nhận Xóa Hết'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
