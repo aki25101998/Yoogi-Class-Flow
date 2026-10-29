@@ -1,6 +1,6 @@
 # 📜 HIẾN PHÁP DỰ ÁN — YOOGI CLASS FLOW
 
-> **Phiên bản:** 1.7.2  
+> **Phiên bản:** 1.7.3  
 > **Cập nhật lần cuối:** 2026-10-29  
 > **Mục đích:** Đây là tài liệu gốc, bất khả xâm phạm. Mọi thay đổi code PHẢI tuân thủ các quy tắc trong file này. Khi có tính năng mới, file này PHẢI được cập nhật đồng thời.
 
@@ -776,6 +776,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-10-29 | 1.7.0 | Mở rộng toàn diện giao diện Lịch sử phiên bản (/settings/version-history): Loại bỏ giới hạn co cụm maxWidth: 800px; margin: 0 auto; mở rộng toàn màn hình chuẩn Vibrant Athletic Design System; tích hợp PageHeader với nút Làm mới dữ liệu thời gian thực; lưới 4 thẻ Bento KPI cân đối (Tổng phiên bản, Phiên bản hiện tại, Thay đổi gần nhất, Điểm khôi phục) kèm watermark chìm; thanh công cụ tìm kiếm tức thì & 6 tabs lọc phân loại tác vụ (Tất cả, Tạo mới, Cập nhật, Đã xóa, Khôi phục, Hệ thống); danh sách Thẻ ngang thể thao (PlatformCard) hiển thị capsule phiên bản, avatar tác giả, huy hiệu phân loại, ngày giờ GMT+7 và nút tác vụ pill [Chi tiết] / [Khôi phục]; nâng cấp giao diện Modal Chi tiết phiên bản (maxWidth: 720px) và Modal Xác nhận khôi phục an toàn (maxWidth: 520px) |
 | 2026-10-29 | 1.7.1 | Mở rộng toàn diện giao diện Cài đặt Chung / Thông tin trung tâm (/settings): Loại bỏ triệt để giới hạn co cụm max-w-2xl (672px), mở rộng toàn màn hình 100% cân đối hoàn hảo; tích hợp lưới 4 thẻ Bento KPI tổng quan (Tên trung tâm, Gói bản quyền, Hạn dùng, Quyền hạn người dùng) kèm watermark chìm; tái cấu trúc 2 cột thẻ ngang thể thao thích ứng (Thẻ Thông tin tổ chức & Bản quyền SaaS tích hợp khối sao chép Organization ID, Thẻ Dữ liệu Mẫu Kiểm thử 1-chạm tích hợp lưới 6 module dữ liệu) |
 | 2026-10-29 | 1.7.2 | Bổ sung tính năng Xóa Toàn Bộ Dữ Liệu (Reset Organization Data) trong Cài đặt (/settings): Migration 041_reset_organization_data.sql với stored procedure public.reset_organization_data atomic kèm fallback; Server Action resetOrganizationDataAction; tích hợp khối Vùng Nguy Hiểm (Danger Zone) và Modal xác nhận 2 tầng bảo vệ với cơ chế gõ chữ xác nhận an toàn (Type-to-confirm: "XÓA DỮ LIỆU"); xóa sạch toàn bộ học viên, chi nhánh, lớp học, lịch học, điểm danh, học phí, sổ quỹ và HLV nhưng bảo toàn tuyệt đối tài khoản Chủ sở hữu (Owner), tên trung tâm và gói bản quyền SaaS |
+| 2026-10-29 | 1.7.3 | Khắc phục triệt để lỗi "column organization_id does not exist" khi Xóa Toàn Bộ Dữ Liệu (/settings): Cập nhật 041_reset_organization_data.sql xóa salary_rule_tiers qua rule_id (bảng này không có cột organization_id); loại bỏ tham chiếu dư thừa teacher_salary_sessions; thêm cờ set_config('app.disable_audit', 'true', true) tránh bão trigger khi xóa hàng loạt; tăng cường độ bền vững cho Server Action resetOrganizationDataAction tự động kích hoạt fallback service-role sạch sẽ khi RPC cơ sở dữ liệu gặp lỗi schema cũ |
 
 ---
 

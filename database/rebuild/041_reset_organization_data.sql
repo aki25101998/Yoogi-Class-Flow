@@ -39,7 +39,10 @@ BEGIN
     WHERE organization_id = p_target_org_id AND organization_member_id = v_owner_member_id;
   END IF;
 
-  -- 3. Delete Operational Attendance & Sessions
+  -- 3. Temporarily disable trigger audit to prevent massive individual change logs
+  PERFORM set_config('app.disable_audit', 'true', true);
+
+  -- 4. Delete Operational Attendance & Sessions
   DELETE FROM public.student_session_attendance WHERE organization_id = p_target_org_id;
   DELETE FROM public.session_coaches WHERE organization_id = p_target_org_id;
   DELETE FROM public.attendance WHERE organization_id = p_target_org_id;
@@ -58,10 +61,11 @@ BEGIN
   DELETE FROM public.payroll_periods WHERE organization_id = p_target_org_id;
   DELETE FROM public.salary_adjustments WHERE organization_id = p_target_org_id;
   DELETE FROM public.salary_profiles WHERE organization_id = p_target_org_id;
-  DELETE FROM public.salary_rule_tiers WHERE organization_id = p_target_org_id;
+  DELETE FROM public.salary_rule_tiers WHERE rule_id IN (
+    SELECT id FROM public.salary_rules WHERE organization_id = p_target_org_id
+  );
   DELETE FROM public.salary_rules WHERE organization_id = p_target_org_id;
   DELETE FROM public.salary_audit_logs WHERE organization_id = p_target_org_id;
-  DELETE FROM public.teacher_salary_sessions WHERE organization_id = p_target_org_id;
   DELETE FROM public.teacher_salaries WHERE organization_id = p_target_org_id;
 
   -- 6. Delete Students & Enrollments

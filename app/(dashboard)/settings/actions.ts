@@ -120,60 +120,102 @@ export async function resetOrganizationDataAction() {
       };
     }
     if (rpcData && rpcData.success === false) {
-      return { success: false, error: rpcData.error };
+      if (rpcData.error?.includes('Chỉ Quản trị viên')) {
+        return { success: false, error: rpcData.error };
+      }
+      console.warn('RPC reset unsuccessful in database, proceeding to robust fallback:', rpcData.error);
     }
   } catch (rpcErr) {
     console.warn('RPC reset exception, proceeding to fallback:', rpcErr);
   }
 
-  // 2. Fallback step-by-step deletion if RPC is not available
+  // 2. Fallback step-by-step deletion if RPC is not available or outdated in database
   try {
     const ownerMemberId = context.membership.id;
     const ownerCoachId = context.coach?.id;
 
+    // Use admin client if available, else standard authenticated supabase client
+    let db = supabase;
+    try {
+      const { createAdminClient } = await import('@/utils/supabase/admin');
+      db = createAdminClient();
+    } catch {
+      db = supabase;
+    }
+
     // Delete in sequence to respect foreign keys
-    await supabase.from('student_session_attendance').delete().eq('organization_id', orgId);
-    await supabase.from('session_coaches').delete().eq('organization_id', orgId);
-    await supabase.from('attendance').delete().eq('organization_id', orgId);
-    await supabase.from('student_attendance').delete().eq('organization_id', orgId);
-    await supabase.from('class_sessions').delete().eq('organization_id', orgId);
+    await db.from('student_session_attendance').delete().eq('organization_id', orgId);
+    await db.from('session_coaches').delete().eq('organization_id', orgId);
+    await db.from('attendance').delete().eq('organization_id', orgId);
+    await db.from('student_attendance').delete().eq('organization_id', orgId);
+    await db.from('class_sessions').delete().eq('organization_id', orgId);
 
-    await supabase.from('schedule_coaches').delete().eq('organization_id', orgId);
-    await supabase.from('schedules').delete().eq('organization_id', orgId);
+    await db.from('schedule_coaches').delete().eq('organization_id', orgId);
+    await db.from('schedules').delete().eq('organization_id', orgId);
 
-    await supabase.from('finance_transactions').delete().eq('organization_id', orgId);
-    await supabase.from('tuition').delete().eq('organization_id', orgId);
-    await supabase.from('payroll_payment_sessions').delete().eq('organization_id', orgId);
-    await supabase.from('payroll_payments').delete().eq('organization_id', orgId);
-    await supabase.from('payroll_periods').delete().eq('organization_id', orgId);
-    await supabase.from('salary_adjustments').delete().eq('organization_id', orgId);
-    await supabase.from('salary_profiles').delete().eq('organization_id', orgId);
-    await supabase.from('salary_rule_tiers').delete().eq('organization_id', orgId);
-    await supabase.from('salary_rules').delete().eq('organization_id', orgId);
-    await supabase.from('salary_audit_logs').delete().eq('organization_id', orgId);
-    await supabase.from('teacher_salary_sessions').delete().eq('organization_id', orgId);
-    await supabase.from('teacher_salaries').delete().eq('organization_id', orgId);
+    await db.from('finance_transactions').delete().eq('organization_id', orgId);
+    await db.from('tuition').delete().eq('organization_id', orgId);
+    await db.from('payroll_payment_sessions').delete().eq('organization_id', orgId);
+    await db.from('payroll_payments').delete().eq('organization_id', orgId);
+    await db.from('payroll_periods').delete().eq('organization_id', orgId);
+    await db.from('salary_adjustments').delete().eq('organization_id', orgId);
+    await db.from('salary_profiles').delete().eq('organization_id', orgId);
 
-    await supabase.from('class_students').delete().eq('organization_id', orgId);
-    await supabase.from('students').delete().eq('organization_id', orgId);
+    // salary_rule_tiers references salary_rules(id) via rule_id (it has no organization_id column)
+    const { data: rules } = await db.from('salary_rules').select('id').eq('organization_id', orgId);
+    if (rules && rules.length > 0) {
+      const ruleIds = rules.map(r => r.id);
+      await db.from('salary_rule_tiers').delete().in('rule_id', ruleIds);
+    }
+    await db.from('salary_rules').delete().eq('organization_id', orgId);
+    await db.from('salary_audit_logs').delete().eq('organization_id', orgId);
+    await db.from('teacher_salaries').delete().eq('organization_id', orgId);
 
-    await supabase.from('class_coaches').delete().eq('organization_id', orgId);
-    await supabase.from('venue_classes').delete().eq('organization_id', orgId);
-    await supabase.from('venues').delete().eq('organization_id', orgId);
+    await db.from('class_students').delete().eq('organization_id', orgId);
+    await db.from('students').delete().eq('organization_id', orgId);
 
-    await supabase.from('organization_belts').delete().eq('organization_id', orgId);
-    await supabase.from('organization_invitations').delete().eq('organization_id', orgId);
+    await db.from('class_coaches').delete().eq('organization_id', orgId);
+    await db.from('venue_classes').delete().eq('organization_id', orgId);
+    await db.from('venues').delete().eq('organization_id', orgId);
+
+    await db.from('organization_belts').delete().eq('organization_id', orgId);
+    await db.from('organization_invitations').delete().eq('organization_id', orgId);
 
     if (ownerCoachId) {
-      await supabase.from('coaches').delete().eq('organization_id', orgId).neq('id', ownerCoachId);
+      await db.from('coaches').delete().eq('organization_id', orgId).neq('id', ownerCoachId);
     } else {
-      await supabase.from('coaches').delete().eq('organization_id', orgId);
+      await db.from('coaches').delete().eq('organization_id', orgId);
     }
 
     if (ownerMemberId) {
-      await supabase.from('organization_members').delete().eq('organization_id', orgId).neq('id', ownerMemberId);
+      await db.from('organization_members').delete().eq('organization_id', orgId).neq('id', ownerMemberId);
     } else {
-      await supabase.from('organization_members').delete().eq('organization_id', orgId).neq('role', 'owner');
+      await db.from('organization_members').delete().eq('organization_id', orgId).neq('role', 'owner');
+    }
+
+    // Record in version history
+    try {
+      const { data: counter } = await db
+        .from('organization_version_counters')
+        .select('current_version')
+        .eq('organization_id', orgId)
+        .single();
+      const nextVer = (counter?.current_version || 0) + 1;
+      
+      await db.from('version_history').insert({
+        organization_id: orgId,
+        version_number: nextVer,
+        summary: 'Xóa toàn bộ dữ liệu tổ chức (Khôi phục trạng thái trắng khởi tạo)',
+        action_type: 'RESTORE',
+        created_by: context.profile.id
+      });
+      await db.from('organization_version_counters').upsert({
+        organization_id: orgId,
+        current_version: nextVer,
+        updated_at: new Date().toISOString()
+      });
+    } catch (vhErr) {
+      console.warn('Non-blocking: could not record reset in version history:', vhErr);
     }
 
     revalidateAllOrganizationPaths();
