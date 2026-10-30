@@ -1,6 +1,6 @@
 # 📜 HIẾN PHÁP DỰ ÁN — YOOGI CLASS FLOW
 
-> **Phiên bản:** 1.8.4  
+> **Phiên bản:** 1.8.5  
 > **Cập nhật lần cuối:** 2026-10-30  
 > **Mục đích:** Đây là tài liệu gốc, bất khả xâm phạm. Mọi thay đổi code PHẢI tuân thủ các quy tắc trong file này. Khi có tính năng mới, file này PHẢI được cập nhật đồng thời.
 
@@ -782,6 +782,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-10-30 | 1.8.2 | Tinh giản giao diện Quản lý Cấp đai (/settings/belts): Loại bỏ khối Tổng quan phân cấp võ đạo (Overview KPI 4 ô) theo yêu cầu người dùng, giúp giao diện tập trung trực tiếp vào danh sách thẻ cấp đai võ thuật (Martial Arts Belt Strips) và tác vụ thêm/sửa/xóa đai |
 | 2026-10-30 | 1.8.3 | Nâng cấp toàn diện giao diện Lịch dạy tuần (/schedule - Admin) lên chuẩn Athletic Hybrid Multi-View: Đồng bộ thiết kế với Lịch cá nhân HLV (/my-schedule) loại bỏ triệt để bố cục 7 cột tĩnh và thanh cuộn ngang 1100px; tích hợp bộ chuyển đổi 3 góc nhìn tức thì [Hàng ngày] (Dải 7 ngày tương tác Weekly Strip + Focus Agenda), [Lưới tuần thích ứng] (Adaptive Week Grid tự co giãn theo màn hình) và [Theo lớp Bento] (Gom nhóm lớp kèm dải ngày trong tuần); bổ sung Thanh Quick KPI Bar (Tổng ca, Thời lượng, Lớp hoạt động, HLV phụ trách); bổ sung Bộ lọc thông minh theo Cơ sở (Venue) và Huấn luyện viên (Coach); nâng cấp thẻ ca học theo chuẩn Athletic Session Card (dải accent gradient teal, khối giờ & thời lượng, tiêu đề Nơi dạy cam san hô, chip lớp học võ đạo, chip HLV) kèm đầy đủ tác vụ quản trị [Thêm mới], [Sửa], [Xóa], [Điểm danh] |
 | 2026-10-30 | 1.8.4 | Bổ sung toàn diện khả năng Chỉnh sửa quy tắc lương (/payroll/salary-rules): Bổ sung nút [Sửa] (icon edit) và nút [Kích hoạt lại] (icon check_circle) trên từng dòng bảng quy tắc; hoàn thiện Server Action updateSalaryRuleAction hỗ trợ cập nhật toàn diện cấu hình (loại tính lương, phạm vi, chi nhánh, lớp, HLV, vai trò, số tiền, phần trăm, các bậc học viên tiers, điều kiện ngày/giờ, mức min/max và thời gian hiệu lực) có kiểm tra xung đột rule conflicts (p_exclude_rule_id) và audit log; bổ sung Server Action activateSalaryRuleAction cho phép kích hoạt lại các quy tắc đã tắt an toàn |
+| 2026-10-30 | 1.8.5 | Loại bỏ mục Lương theo bậc học viên (TIERED_STUDENT_COUNT) trên giao diện cấu hình quy tắc lương (/payroll/salary-rules): Lọc bỏ tùy chọn Lương theo bậc học viên khỏi dropdown Loại tính lương; loại bỏ hoàn toàn khối nhập Bậc học viên (min/max học viên và số tiền từng bậc) trong form tạo/sửa quy tắc giúp giao diện tinh gọn và tập trung vào các hình thức tính lương phổ biến (lương buổi, lương theo số học viên, lương % doanh thu, thưởng, phụ cấp) |
 
 ---
 

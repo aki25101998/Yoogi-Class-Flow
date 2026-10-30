@@ -21,7 +21,7 @@ import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/app/components/ui/
 import { Input } from '@/app/components/ui/Input';
 import { EmptyState } from '@/app/components/ui/EmptyState';
 
-import type { SalaryRule, CreateSalaryRuleInput, CalculationType, ScopeType, MergeMode, CreateTierInput } from '@/types/salary';
+import type { SalaryRule, CreateSalaryRuleInput, CalculationType, ScopeType, MergeMode } from '@/types/salary';
 import {
   CALCULATION_TYPE_LABELS,
   SCOPE_TYPE_LABELS,
@@ -66,7 +66,6 @@ export default function SalaryRulesClient() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<SalaryRule | null>(null);
   const [form, setForm] = useState<CreateSalaryRuleInput>({ ...DEFAULT_FORM });
-  const [tiers, setTiers] = useState<CreateTierInput[]>([{ min_students: 1, max_students: 5, amount: 0 }]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -80,7 +79,6 @@ export default function SalaryRulesClient() {
   const openCreateModal = () => {
     setEditingRule(null);
     setForm({ ...DEFAULT_FORM });
-    setTiers([{ min_students: 1, max_students: 5, amount: 0 }]);
     setError('');
     setIsModalOpen(true);
   };
@@ -90,7 +88,7 @@ export default function SalaryRulesClient() {
     setForm({
       name: rule.name,
       description: rule.description || '',
-      calculation_type: rule.calculation_type,
+      calculation_type: rule.calculation_type === 'TIERED_STUDENT_COUNT' ? 'PER_STUDENT' : rule.calculation_type,
       scope_type: rule.scope_type,
       scope_venue_id: rule.scope_venue_id || undefined,
       scope_class_id: rule.scope_class_id || undefined,
@@ -109,15 +107,6 @@ export default function SalaryRulesClient() {
       effective_from: rule.effective_from,
       effective_to: rule.effective_to || undefined,
     });
-    if (rule.tiers && rule.tiers.length > 0) {
-      setTiers(rule.tiers.map(t => ({
-        min_students: t.min_students,
-        max_students: t.max_students ?? undefined,
-        amount: Number(t.amount) || 0,
-      })));
-    } else {
-      setTiers([{ min_students: 1, max_students: 5, amount: 0 }]);
-    }
     setError('');
     setIsModalOpen(true);
   };
@@ -141,7 +130,6 @@ export default function SalaryRulesClient() {
 
     const input: CreateSalaryRuleInput = {
       ...form,
-      tiers: form.calculation_type === 'TIERED_STUDENT_COUNT' ? tiers : undefined,
     };
 
     let res;
@@ -209,23 +197,6 @@ export default function SalaryRulesClient() {
       CLASS_TYPE: 25,
     };
     updateForm({ scope_type: scopeType, priority: priorityMap[scopeType] });
-  };
-
-  const addTier = () => {
-    const lastTier = tiers[tiers.length - 1];
-    setTiers([...tiers, {
-      min_students: (lastTier?.max_students || 0) + 1,
-      max_students: (lastTier?.max_students || 0) + 5,
-      amount: 0,
-    }]);
-  };
-
-  const removeTier = (idx: number) => {
-    setTiers(tiers.filter((_, i) => i !== idx));
-  };
-
-  const updateTier = (idx: number, updates: Partial<CreateTierInput>) => {
-    setTiers(tiers.map((t, i) => i === idx ? { ...t, ...updates } : t));
   };
 
   const formatMoney = (amount: number) =>
@@ -454,9 +425,11 @@ export default function SalaryRulesClient() {
                 value={form.calculation_type}
                 onChange={e => updateForm({ calculation_type: e.target.value as CalculationType })}
               >
-                {Object.entries(CALCULATION_TYPE_LABELS).map(([key, label]) => (
-                  <option key={key} value={key}>{label}</option>
-                ))}
+                {Object.entries(CALCULATION_TYPE_LABELS)
+                  .filter(([key]) => key !== 'TIERED_STUDENT_COUNT')
+                  .map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
               </select>
             </div>
 
@@ -562,7 +535,7 @@ export default function SalaryRulesClient() {
             )}
 
             {/* Amount */}
-            {form.calculation_type !== 'TIERED_STUDENT_COUNT' && form.calculation_type !== 'PERCENT_REVENUE' && (
+            {form.calculation_type !== 'PERCENT_REVENUE' && (
               <Input
                 label="Số tiền (đ) *"
                 type="number"
@@ -585,52 +558,6 @@ export default function SalaryRulesClient() {
                 value={(form.percentage || 0).toString()}
                 onChange={e => updateForm({ percentage: Number(e.target.value) })}
               />
-            )}
-
-            {/* Tiers for TIERED_STUDENT_COUNT */}
-            {form.calculation_type === 'TIERED_STUDENT_COUNT' && (
-              <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '6px' }}>
-                  Bậc học viên
-                </label>
-                {tiers.map((tier, idx) => (
-                  <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
-                    <Input
-                      label=""
-                      type="number"
-                      min="0"
-                      placeholder="Từ"
-                      value={tier.min_students.toString()}
-                      onChange={e => updateTier(idx, { min_students: Number(e.target.value) })}
-                    />
-                    <span style={{ color: 'var(--text-secondary)' }}>—</span>
-                    <Input
-                      label=""
-                      type="number"
-                      min="0"
-                      placeholder="Đến"
-                      value={(tier.max_students || '').toString()}
-                      onChange={e => updateTier(idx, { max_students: e.target.value ? Number(e.target.value) : undefined })}
-                    />
-                    <Input
-                      label=""
-                      type="number"
-                      min="0"
-                      placeholder="Số tiền"
-                      value={tier.amount.toString()}
-                      onChange={e => updateTier(idx, { amount: Number(e.target.value) })}
-                    />
-                    {tiers.length > 1 && (
-                      <Button type="button" variant="ghost" size="sm" onClick={() => removeTier(idx)}>
-                        <span className="material-icons-round" style={{ fontSize: '16px', color: 'var(--danger)' }}>close</span>
-                      </Button>
-                    )}
-                  </div>
-                ))}
-                <Button type="button" variant="ghost" size="sm" onClick={addTier}>
-                  + Thêm bậc
-                </Button>
-              </div>
             )}
 
             {/* Merge Mode */}
