@@ -200,7 +200,7 @@ export default function ScheduleClient() {
     } else {
       res = await addScheduleAction(formData);
     }
-    
+
     setLoading(false);
     if (res.success) {
       resetForm();
@@ -220,11 +220,11 @@ export default function ScheduleClient() {
 
   return (
     <div className={styles.container}>
-      <PageHeader 
-        title="Lịch dạy tuần" 
+      <PageHeader
+        title="Lịch dạy tuần"
         description="Quản lý và điều phối lịch học định kỳ toàn trung tâm"
         primaryAction={isAdminOrOwner ? (
-          <Button 
+          <Button
             onClick={openAddModal}
             leftIcon={<span className="material-icons-round">calendar_today</span>}
           >
@@ -336,61 +336,61 @@ export default function ScheduleClient() {
       </div>
 
       {/* Modal Add / Edit Schedule */}
-      <Modal isOpen={isModalOpen} onClose={loading ? () => {} : resetForm}>
-        <ModalHeader title={editingId ? "Sửa Lịch Dạy" : "Thêm Lịch Dạy"} onClose={loading ? () => {} : resetForm} />
+      <Modal isOpen={isModalOpen} onClose={loading ? () => { } : resetForm}>
+        <ModalHeader title={editingId ? "Sửa Lịch Dạy" : "Thêm Lịch Dạy"} onClose={loading ? () => { } : resetForm} />
         <ModalBody>
           {error && <div style={{ color: 'var(--danger)', marginBottom: '16px', fontSize: '0.875rem' }}>{error}</div>}
           <form id="schedule-form" onSubmit={handleSubmit} style={{ display: 'grid', gap: '16px' }}>
-            <Select 
+            <Select
               label="Lớp học *"
-              required 
-              value={formData.class_id} 
-              onChange={e => setFormData({...formData, class_id: e.target.value})}
+              required
+              value={formData.class_id}
+              onChange={e => setFormData({ ...formData, class_id: e.target.value })}
               options={[
                 { value: '', label: '-- Chọn lớp --' },
                 ...classes.map((c: any) => ({ value: c.id, label: c.name }))
               ]}
             />
-            <Select 
+            <Select
               label="Huấn luyện viên *"
-              required 
-              value={formData.coach_id} 
-              onChange={e => setFormData({...formData, coach_id: e.target.value})}
+              required
+              value={formData.coach_id}
+              onChange={e => setFormData({ ...formData, coach_id: e.target.value })}
               options={[
                 { value: '', label: '-- Chọn HLV --' },
                 ...coaches.map((c: any) => ({ value: c.id, label: c.name }))
               ]}
             />
-            <Select 
+            <Select
               label="Địa điểm / Cơ sở *"
-              required 
-              value={formData.venue_id} 
-              onChange={e => setFormData({...formData, venue_id: e.target.value})}
+              required
+              value={formData.venue_id}
+              onChange={e => setFormData({ ...formData, venue_id: e.target.value })}
               options={[
                 { value: '', label: '-- Chọn địa điểm --' },
                 ...venues.map((v: any) => ({ value: v.id, label: v.name }))
               ]}
             />
-            <Select 
+            <Select
               label="Ngày trong tuần *"
-              value={formData.day_of_week.toString()} 
-              onChange={e => setFormData({...formData, day_of_week: Number(e.target.value)})}
+              value={formData.day_of_week.toString()}
+              onChange={e => setFormData({ ...formData, day_of_week: Number(e.target.value) })}
               options={DAYS_OF_WEEK.map(d => ({ value: d.value.toString(), label: d.label }))}
             />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <Input 
+              <Input
                 label="Giờ bắt đầu *"
-                type="time" 
-                required 
-                value={formData.start_time} 
-                onChange={e => setFormData({...formData, start_time: e.target.value})} 
+                type="time"
+                required
+                value={formData.start_time}
+                onChange={e => setFormData({ ...formData, start_time: e.target.value })}
               />
-              <Input 
+              <Input
                 label="Giờ kết thúc *"
-                type="time" 
-                required 
-                value={formData.end_time} 
-                onChange={e => setFormData({...formData, end_time: e.target.value})} 
+                type="time"
+                required
+                value={formData.end_time}
+                onChange={e => setFormData({ ...formData, end_time: e.target.value })}
               />
             </div>
           </form>

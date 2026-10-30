@@ -171,7 +171,10 @@ export async function createSalaryRuleAction(input: CreateSalaryRuleInput) {
   return { success: true, ruleId: rule?.id };
 }
 
-export async function updateSalaryRuleAction(ruleId: string, input: Partial<CreateSalaryRuleInput>) {
+export async function updateSalaryRuleAction(
+  ruleId: string, 
+  input: Partial<CreateSalaryRuleInput> & { status?: string }
+) {
   const context = await getCurrentOrganizationContext();
   if (!context?.organization) return { success: false, error: 'Access Denied' };
   if (context.membership?.role !== 'admin' && context.membership?.role !== 'owner') {
@@ -182,42 +185,116 @@ export async function updateSalaryRuleAction(ruleId: string, input: Partial<Crea
   const supabase = await createClient();
 
   // Fetch existing rule
-  const { data: existingRule } = await supabase
+  const { data: existingRule, error: fetchErr } = await supabase
     .from('salary_rules')
     .select('*')
     .eq('id', ruleId)
     .eq('organization_id', orgId)
     .single();
 
-  if (!existingRule) return { success: false, error: 'Rule not found.' };
+  if (fetchErr || !existingRule) return { success: false, error: 'Không tìm thấy quy tắc lương.' };
 
-  // Check if rule has been used in approved/paid sessions
-  // If so, we should close the old rule and create a new version
-  const { count: usedCount } = await supabase
-    .from('class_sessions')
-    .select('id', { count: 'exact', head: true })
-    .eq('organization_id', orgId)
-    .in('status', ['approved', 'paid'])
-    .not('salary_config_snapshot', 'is', null);
+  const calcType = input.calculation_type || existingRule.calculation_type;
+  const amount = input.amount !== undefined ? input.amount : existingRule.amount;
 
-  // For now, simple update if not locked by payroll
+  // Validate amount
+  if (calcType !== 'DEDUCTION' && amount < 0) {
+    return { success: false, error: 'Số tiền không được âm cho loại quy tắc này.' };
+  }
+
+  // Validate min/max
+  const minSal = input.minimum_salary !== undefined ? input.minimum_salary : existingRule.minimum_salary;
+  const maxSal = input.maximum_salary !== undefined ? input.maximum_salary : existingRule.maximum_salary;
+  if (minSal !== null && minSal !== undefined && minSal < 0) {
+    return { success: false, error: 'Lương tối thiểu không được âm.' };
+  }
+  if (maxSal !== null && maxSal !== undefined && maxSal < 0) {
+    return { success: false, error: 'Lương tối đa không được âm.' };
+  }
+  if (minSal !== null && minSal !== undefined && maxSal !== null && maxSal !== undefined && minSal > maxSal) {
+    return { success: false, error: 'Lương tối thiểu không được lớn hơn lương tối đa.' };
+  }
+
+  // Validate percentage for PERCENT_REVENUE
+  if (calcType === 'PERCENT_REVENUE') {
+    const percentage = input.percentage !== undefined ? input.percentage : existingRule.percentage;
+    if (percentage === undefined || percentage === null || percentage < 0 || percentage > 100) {
+      return { success: false, error: 'Phần trăm phải từ 0 đến 100.' };
+    }
+  }
+
+  // Validate tiers for TIERED_STUDENT_COUNT
+  if (calcType === 'TIERED_STUDENT_COUNT' && input.tiers !== undefined) {
+    if (!input.tiers || input.tiers.length === 0) {
+      return { success: false, error: 'Phải có ít nhất một bậc cho quy tắc theo bậc học viên.' };
+    }
+    for (const tier of input.tiers) {
+      if (tier.min_students < 0) {
+        return { success: false, error: 'Số học viên tối thiểu không được âm.' };
+      }
+      if (tier.amount < 0) {
+        return { success: false, error: 'Số tiền bậc không được âm.' };
+      }
+    }
+  }
+
+  const scopeType = input.scope_type || existingRule.scope_type;
+  const priority = input.priority !== undefined ? input.priority : existingRule.priority;
+  const effFrom = input.effective_from || existingRule.effective_from;
+  const effTo = input.effective_to !== undefined ? input.effective_to : existingRule.effective_to;
+
+  // Check for conflicts excluding this rule
+  const { data: conflicts } = await supabase.rpc('check_salary_rule_conflicts', {
+    p_organization_id: orgId,
+    p_scope_type: scopeType,
+    p_scope_venue_id: ('scope_venue_id' in input ? input.scope_venue_id : existingRule.scope_venue_id) || null,
+    p_scope_class_id: ('scope_class_id' in input ? input.scope_class_id : existingRule.scope_class_id) || null,
+    p_scope_coach_id: ('scope_coach_id' in input ? input.scope_coach_id : existingRule.scope_coach_id) || null,
+    p_scope_coach_role: ('scope_coach_role' in input ? input.scope_coach_role : existingRule.scope_coach_role) || null,
+    p_scope_class_type: ('scope_class_type' in input ? input.scope_class_type : existingRule.scope_class_type) || null,
+    p_calculation_type: calcType,
+    p_priority: priority,
+    p_effective_from: effFrom,
+    p_effective_to: effTo || null,
+    p_exclude_rule_id: ruleId,
+  });
+
+  if (conflicts && conflicts.length > 0) {
+    const conflictNames = conflicts.map((c: RuleConflict) => c.conflict_rule_name).join(', ');
+    return {
+      success: false,
+      error: `Phát hiện xung đột với quy tắc: ${conflictNames}. Hãy thay đổi priority hoặc phạm vi.`,
+      conflicts: conflicts as RuleConflict[],
+    };
+  }
+
   const updateData: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   };
 
   // Only update provided fields
   if (input.name !== undefined) updateData.name = input.name;
-  if (input.description !== undefined) updateData.description = input.description;
-  if (input.amount !== undefined) updateData.amount = input.amount;
-  if (input.percentage !== undefined) updateData.percentage = input.percentage;
+  if ('description' in input) updateData.description = input.description || null;
+  if (input.calculation_type !== undefined) updateData.calculation_type = input.calculation_type;
+  if (input.scope_type !== undefined) updateData.scope_type = input.scope_type;
+  if ('scope_venue_id' in input) updateData.scope_venue_id = input.scope_venue_id || null;
+  if ('scope_class_id' in input) updateData.scope_class_id = input.scope_class_id || null;
+  if ('scope_coach_id' in input) updateData.scope_coach_id = input.scope_coach_id || null;
+  if ('scope_coach_role' in input) updateData.scope_coach_role = input.scope_coach_role || null;
+  if ('scope_class_type' in input) updateData.scope_class_type = input.scope_class_type || null;
   if (input.merge_mode !== undefined) updateData.merge_mode = input.merge_mode;
   if (input.priority !== undefined) updateData.priority = input.priority;
-  if (input.minimum_salary !== undefined) updateData.minimum_salary = input.minimum_salary;
-  if (input.maximum_salary !== undefined) updateData.maximum_salary = input.maximum_salary;
-  if (input.condition_days_of_week !== undefined) updateData.condition_days_of_week = input.condition_days_of_week;
-  if (input.condition_start_time !== undefined) updateData.condition_start_time = input.condition_start_time;
-  if (input.condition_end_time !== undefined) updateData.condition_end_time = input.condition_end_time;
-  if (input.effective_to !== undefined) updateData.effective_to = input.effective_to;
+  if (input.amount !== undefined) updateData.amount = input.amount;
+  if ('percentage' in input) updateData.percentage = input.percentage ?? null;
+  if ('revenue_source' in input) updateData.revenue_source = input.revenue_source || 'COLLECTED_REVENUE';
+  if ('minimum_salary' in input) updateData.minimum_salary = input.minimum_salary ?? null;
+  if ('maximum_salary' in input) updateData.maximum_salary = input.maximum_salary ?? null;
+  if ('condition_days_of_week' in input) updateData.condition_days_of_week = input.condition_days_of_week || null;
+  if ('condition_start_time' in input) updateData.condition_start_time = input.condition_start_time || null;
+  if ('condition_end_time' in input) updateData.condition_end_time = input.condition_end_time || null;
+  if (input.effective_from !== undefined) updateData.effective_from = input.effective_from;
+  if ('effective_to' in input) updateData.effective_to = input.effective_to || null;
+  if (input.status !== undefined) updateData.status = input.status;
 
   const { error } = await supabase
     .from('salary_rules')
@@ -228,7 +305,7 @@ export async function updateSalaryRuleAction(ruleId: string, input: Partial<Crea
   if (error) return { success: false, error: error.message };
 
   // Update tiers if provided
-  if (input.tiers !== undefined && existingRule.calculation_type === 'TIERED_STUDENT_COUNT') {
+  if (calcType === 'TIERED_STUDENT_COUNT' && input.tiers !== undefined) {
     // Delete old tiers
     await supabase.from('salary_rule_tiers').delete().eq('rule_id', ruleId);
 
@@ -254,6 +331,77 @@ export async function updateSalaryRuleAction(ruleId: string, input: Partial<Crea
     p_old_value: existingRule,
     p_new_value: updateData,
     p_reason: null,
+  });
+
+  revalidatePath('/payroll');
+  return { success: true };
+}
+
+export async function activateSalaryRuleAction(ruleId: string) {
+  const context = await getCurrentOrganizationContext();
+  if (!context?.organization) return { success: false, error: 'Access Denied' };
+  if (context.membership?.role !== 'admin' && context.membership?.role !== 'owner') {
+    return { success: false, error: 'Permission denied.' };
+  }
+
+  const orgId = context.organization.id;
+  const supabase = await createClient();
+
+  const { data: existing } = await supabase
+    .from('salary_rules')
+    .select('*')
+    .eq('id', ruleId)
+    .eq('organization_id', orgId)
+    .single();
+
+  if (!existing) return { success: false, error: 'Không tìm thấy quy tắc.' };
+
+  // Check conflicts before activating
+  const { data: conflicts } = await supabase.rpc('check_salary_rule_conflicts', {
+    p_organization_id: orgId,
+    p_scope_type: existing.scope_type,
+    p_scope_venue_id: existing.scope_venue_id || null,
+    p_scope_class_id: existing.scope_class_id || null,
+    p_scope_coach_id: existing.scope_coach_id || null,
+    p_scope_coach_role: existing.scope_coach_role || null,
+    p_scope_class_type: existing.scope_class_type || null,
+    p_calculation_type: existing.calculation_type,
+    p_priority: existing.priority,
+    p_effective_from: getBusinessDateString(),
+    p_effective_to: null,
+    p_exclude_rule_id: ruleId,
+  });
+
+  if (conflicts && conflicts.length > 0) {
+    const conflictNames = conflicts.map((c: RuleConflict) => c.conflict_rule_name).join(', ');
+    return {
+      success: false,
+      error: `Không thể kích hoạt lại do xung đột với: ${conflictNames}.`,
+    };
+  }
+
+  const { error } = await supabase
+    .from('salary_rules')
+    .update({
+      status: 'active',
+      effective_from: getBusinessDateString(),
+      effective_to: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', ruleId)
+    .eq('organization_id', orgId);
+
+  if (error) return { success: false, error: error.message };
+
+  await supabase.rpc('log_salary_audit', {
+    p_organization_id: orgId,
+    p_action: 'UPDATE_RULE',
+    p_target_type: 'salary_rule',
+    p_target_id: ruleId,
+    p_actor_id: context.profile?.id || null,
+    p_old_value: existing,
+    p_new_value: { status: 'active' },
+    p_reason: 'Reactivated rule',
   });
 
   revalidatePath('/payroll');

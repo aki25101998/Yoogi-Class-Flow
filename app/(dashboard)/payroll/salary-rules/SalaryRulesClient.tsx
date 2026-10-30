@@ -6,7 +6,9 @@ import { useDashboardContext } from '../../DashboardProvider';
 import { useSalaryRules } from '@/hooks/useSalaryRules';
 import {
   createSalaryRuleAction,
+  updateSalaryRuleAction,
   deactivateSalaryRuleAction,
+  activateSalaryRuleAction,
 } from './actions';
 
 import { getBusinessDateString } from '@/utils/date';
@@ -61,7 +63,8 @@ export default function SalaryRulesClient() {
     name: m.name || m.profiles?.name || 'Unknown',
   }));
 
-  const [showCreate, setShowCreate] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingRule, setEditingRule] = useState<SalaryRule | null>(null);
   const [form, setForm] = useState<CreateSalaryRuleInput>({ ...DEFAULT_FORM });
   const [tiers, setTiers] = useState<CreateTierInput[]>([{ min_students: 1, max_students: 5, amount: 0 }]);
   const [loading, setLoading] = useState(false);
@@ -74,7 +77,59 @@ export default function SalaryRulesClient() {
     return r.status === filter;
   });
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const openCreateModal = () => {
+    setEditingRule(null);
+    setForm({ ...DEFAULT_FORM });
+    setTiers([{ min_students: 1, max_students: 5, amount: 0 }]);
+    setError('');
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (rule: SalaryRule) => {
+    setEditingRule(rule);
+    setForm({
+      name: rule.name,
+      description: rule.description || '',
+      calculation_type: rule.calculation_type,
+      scope_type: rule.scope_type,
+      scope_venue_id: rule.scope_venue_id || undefined,
+      scope_class_id: rule.scope_class_id || undefined,
+      scope_coach_id: rule.scope_coach_id || undefined,
+      scope_coach_role: rule.scope_coach_role || undefined,
+      scope_class_type: rule.scope_class_type || undefined,
+      merge_mode: rule.merge_mode,
+      priority: rule.priority,
+      amount: Number(rule.amount) || 0,
+      percentage: rule.percentage !== null && rule.percentage !== undefined ? Number(rule.percentage) : undefined,
+      minimum_salary: rule.minimum_salary !== null && rule.minimum_salary !== undefined ? Number(rule.minimum_salary) : undefined,
+      maximum_salary: rule.maximum_salary !== null && rule.maximum_salary !== undefined ? Number(rule.maximum_salary) : undefined,
+      condition_days_of_week: rule.condition_days_of_week || undefined,
+      condition_start_time: rule.condition_start_time || undefined,
+      condition_end_time: rule.condition_end_time || undefined,
+      effective_from: rule.effective_from,
+      effective_to: rule.effective_to || undefined,
+    });
+    if (rule.tiers && rule.tiers.length > 0) {
+      setTiers(rule.tiers.map(t => ({
+        min_students: t.min_students,
+        max_students: t.max_students ?? undefined,
+        amount: Number(t.amount) || 0,
+      })));
+    } else {
+      setTiers([{ min_students: 1, max_students: 5, amount: 0 }]);
+    }
+    setError('');
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    if (loading) return;
+    setIsModalOpen(false);
+    setEditingRule(null);
+    setError('');
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) {
       setError('Vui lòng nhập tên quy tắc.');
@@ -89,18 +144,22 @@ export default function SalaryRulesClient() {
       tiers: form.calculation_type === 'TIERED_STUDENT_COUNT' ? tiers : undefined,
     };
 
-    const res = await createSalaryRuleAction(input);
+    let res;
+    if (editingRule) {
+      res = await updateSalaryRuleAction(editingRule.id, input);
+    } else {
+      res = await createSalaryRuleAction(input);
+    }
+
     setLoading(false);
 
     if (res.success) {
-      setShowCreate(false);
-      setForm({ ...DEFAULT_FORM });
-      setTiers([{ min_students: 1, max_students: 5, amount: 0 }]);
-      setSuccess('Đã tạo quy tắc lương thành công!');
+      closeModal();
+      setSuccess(editingRule ? 'Đã cập nhật quy tắc lương thành công!' : 'Đã tạo quy tắc lương thành công!');
       setTimeout(() => setSuccess(''), 3000);
       queryClient.invalidateQueries({ queryKey: ['salaryRules', organizationId] });
     } else {
-      setError(res.error || 'Lỗi tạo quy tắc');
+      setError(res.error || (editingRule ? 'Lỗi cập nhật quy tắc' : 'Lỗi tạo quy tắc'));
     }
   };
 
@@ -117,6 +176,21 @@ export default function SalaryRulesClient() {
       queryClient.invalidateQueries({ queryKey: ['salaryRules', organizationId] });
     } else {
       setError(res.error || 'Lỗi');
+    }
+  };
+
+  const handleActivate = async (ruleId: string, ruleName: string) => {
+    setLoading(true);
+    setError('');
+    const res = await activateSalaryRuleAction(ruleId);
+    setLoading(false);
+
+    if (res.success) {
+      setSuccess(`Đã kích hoạt lại quy tắc "${ruleName}".`);
+      setTimeout(() => setSuccess(''), 3000);
+      queryClient.invalidateQueries({ queryKey: ['salaryRules', organizationId] });
+    } else {
+      setError(res.error || 'Lỗi khi kích hoạt lại');
     }
   };
 
@@ -201,7 +275,7 @@ export default function SalaryRulesClient() {
         {isAdmin && (
           <Button
             variant="primary"
-            onClick={() => setShowCreate(true)}
+            onClick={openCreateModal}
             leftIcon={<span className="material-icons-round" style={{ fontSize: '18px' }}>add</span>}
           >
             Thêm quy tắc
@@ -291,18 +365,47 @@ export default function SalaryRulesClient() {
                       </Td>
                       {isAdmin && (
                         <Td className="text-right">
-                          {rule.status === 'active' && (
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => handleDeactivate(rule.id, rule.name)}
+                              onClick={() => openEditModal(rule)}
                               disabled={loading}
+                              title="Chỉnh sửa quy tắc lương"
+                              style={{ padding: '4px 6px' }}
                             >
-                              <span className="material-icons-round" style={{ fontSize: '16px', color: 'var(--danger)' }}>
-                                block
+                              <span className="material-icons-round" style={{ fontSize: '18px', color: 'var(--primary)' }}>
+                                edit
                               </span>
                             </Button>
-                          )}
+                            {rule.status === 'active' ? (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleDeactivate(rule.id, rule.name)}
+                                disabled={loading}
+                                title="Vô hiệu hóa quy tắc"
+                                style={{ padding: '4px 6px' }}
+                              >
+                                <span className="material-icons-round" style={{ fontSize: '18px', color: 'var(--danger)' }}>
+                                  block
+                                </span>
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleActivate(rule.id, rule.name)}
+                                disabled={loading}
+                                title="Kích hoạt lại quy tắc"
+                                style={{ padding: '4px 6px' }}
+                              >
+                                <span className="material-icons-round" style={{ fontSize: '18px', color: 'var(--success)' }}>
+                                  check_circle
+                                </span>
+                              </Button>
+                            )}
+                          </div>
                         </Td>
                       )}
                     </Tr>
@@ -314,14 +417,14 @@ export default function SalaryRulesClient() {
         </Card>
       )}
 
-      {/* Create Rule Modal */}
-      <Modal isOpen={showCreate} onClose={loading ? () => {} : () => setShowCreate(false)}>
+      {/* Create / Edit Rule Modal */}
+      <Modal isOpen={isModalOpen} onClose={closeModal}>
         <ModalHeader
-          title="Tạo quy tắc lương mới"
-          onClose={loading ? () => {} : () => setShowCreate(false)}
+          title={editingRule ? `Chỉnh sửa quy tắc: ${editingRule.name}` : "Tạo quy tắc lương mới"}
+          onClose={closeModal}
         />
         <ModalBody>
-          <form id="create-rule-form" onSubmit={handleCreate} className="flex-col gap-4">
+          <form id="rule-form" onSubmit={handleSubmit} className="flex-col gap-4">
             <Input
               label="Tên quy tắc *"
               placeholder="VD: HLV Trưởng — Chi nhánh Quận 1"
@@ -648,11 +751,11 @@ export default function SalaryRulesClient() {
           </form>
         </ModalBody>
         <ModalFooter>
-          <Button type="button" variant="secondary" onClick={() => setShowCreate(false)} disabled={loading}>
+          <Button type="button" variant="secondary" onClick={closeModal} disabled={loading}>
             Hủy
           </Button>
-          <Button type="submit" form="create-rule-form" isLoading={loading} variant="primary">
-            Tạo quy tắc
+          <Button type="submit" form="rule-form" isLoading={loading} variant="primary">
+            {editingRule ? "Lưu thay đổi" : "Tạo quy tắc"}
           </Button>
         </ModalFooter>
       </Modal>
