@@ -1,6 +1,6 @@
 # 📜 HIẾN PHÁP DỰ ÁN — YOOGI CLASS FLOW
 
-> **Phiên bản:** 1.8.5  
+> **Phiên bản:** 1.8.6  
 > **Cập nhật lần cuối:** 2026-10-30  
 > **Mục đích:** Đây là tài liệu gốc, bất khả xâm phạm. Mọi thay đổi code PHẢI tuân thủ các quy tắc trong file này. Khi có tính năng mới, file này PHẢI được cập nhật đồng thời.
 
@@ -239,19 +239,33 @@ const hasPermission = (perm) => {
 ```
 manage_coaches      — Quản lý HLV
 manage_students     — Quản lý học viên
-manage_venues       — Quản lý chi nhánh
+manage_venues       — Quản lý chi nhánh & lớp học
 manage_classes      — Quản lý lớp học
-manage_schedule     — Quản lý lịch dạy
-manage_settings     — Cài đặt tổ chức
-manage_attendance   — Quản lý điểm danh
-view_payroll        — Xem bảng lương
-manage_members      — Quản lý thành viên
+manage_schedule     — Quản lý lịch dạy tuần
+manage_settings     — Cài đặt tổ chức, cấp đai & phiên bản
+manage_attendance   — Quản lý điểm danh & duyệt ca học
+view_payroll        — Xem bảng lương & quy tắc lương
+manage_members      — Quản lý thành viên & phân quyền
 manage_organization — Quản lý tổ chức (owner only)
-manage_tuition      — Quản lý học phí
-manage_finance      — Quản lý tài chính
+manage_tuition      — Quản lý học phí & thu phí
+manage_finance      — Quản lý tài chính & sổ quỹ
 ```
 
-### 4.4 Quy Tắc Phân Quyền KHÔNG ĐƯỢC PHẠM
+### 4.4 Tùy Biến Tên Vai Trò & Ma Trận Quyền Hạn (Granular Permissions & Custom Titles)
+
+Hệ thống cho phép tổ chức tự do định nghĩa tên chức danh/vai trò thực tế theo cơ cấu công ty (ví dụ: *Giám đốc kỹ thuật*, *Quản lý cơ sở*, *Trợ giảng*, *Lễ tân & CSKH*, *Kế toán trung tâm*), đồng thời tùy biến bật/tắt từng chức năng cụ thể theo 4 nhóm:
+
+1. **Vận hành & Đào tạo**: `manage_coaches`, `manage_students`, `manage_venues`
+2. **Lịch dạy & Điểm danh**: `manage_schedule`, `manage_attendance`
+3. **Tài chính & Lương**: `view_payroll`, `manage_tuition`, `manage_finance`
+4. **Hệ thống & Cài đặt**: `manage_members`, `manage_settings`
+
+**Cơ chế lưu trữ kép (Dual-Storage Resilience):**
+- Cột `custom_role_title` (migration `042_custom_role_title.sql`) trên bảng `organization_members` và `organization_invitations`.
+- Nhúng thẻ fallback `title:<Tên vai trò>` trực tiếp vào mảng `permissions` (JSONB) nhằm đảm bảo hệ thống vận hành 100% trơn tru không lỗi kể cả khi database chưa áp dụng schema migration.
+- Hiển thị trên `RoleBadge` và thanh người dùng của `Sidebar`.
+
+### 4.5 Quy Tắc Phân Quyền KHÔNG ĐƯỢC PHẠM
 
 1. **Admin/Owner LUÔN bypass permission check** — `isAdminOrOwner` return true cho mọi permission
 2. **Coach chỉ thấy dữ liệu được phân công** — enforced bởi cả RLS (database) và UI (frontend)
@@ -783,6 +797,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-10-30 | 1.8.3 | Nâng cấp toàn diện giao diện Lịch dạy tuần (/schedule - Admin) lên chuẩn Athletic Hybrid Multi-View: Đồng bộ thiết kế với Lịch cá nhân HLV (/my-schedule) loại bỏ triệt để bố cục 7 cột tĩnh và thanh cuộn ngang 1100px; tích hợp bộ chuyển đổi 3 góc nhìn tức thì [Hàng ngày] (Dải 7 ngày tương tác Weekly Strip + Focus Agenda), [Lưới tuần thích ứng] (Adaptive Week Grid tự co giãn theo màn hình) và [Theo lớp Bento] (Gom nhóm lớp kèm dải ngày trong tuần); bổ sung Thanh Quick KPI Bar (Tổng ca, Thời lượng, Lớp hoạt động, HLV phụ trách); bổ sung Bộ lọc thông minh theo Cơ sở (Venue) và Huấn luyện viên (Coach); nâng cấp thẻ ca học theo chuẩn Athletic Session Card (dải accent gradient teal, khối giờ & thời lượng, tiêu đề Nơi dạy cam san hô, chip lớp học võ đạo, chip HLV) kèm đầy đủ tác vụ quản trị [Thêm mới], [Sửa], [Xóa], [Điểm danh] |
 | 2026-10-30 | 1.8.4 | Bổ sung toàn diện khả năng Chỉnh sửa quy tắc lương (/payroll/salary-rules): Bổ sung nút [Sửa] (icon edit) và nút [Kích hoạt lại] (icon check_circle) trên từng dòng bảng quy tắc; hoàn thiện Server Action updateSalaryRuleAction hỗ trợ cập nhật toàn diện cấu hình (loại tính lương, phạm vi, chi nhánh, lớp, HLV, vai trò, số tiền, phần trăm, các bậc học viên tiers, điều kiện ngày/giờ, mức min/max và thời gian hiệu lực) có kiểm tra xung đột rule conflicts (p_exclude_rule_id) và audit log; bổ sung Server Action activateSalaryRuleAction cho phép kích hoạt lại các quy tắc đã tắt an toàn |
 | 2026-10-30 | 1.8.5 | Loại bỏ mục Lương theo bậc học viên (TIERED_STUDENT_COUNT) trên giao diện cấu hình quy tắc lương (/payroll/salary-rules): Lọc bỏ tùy chọn Lương theo bậc học viên khỏi dropdown Loại tính lương; loại bỏ hoàn toàn khối nhập Bậc học viên (min/max học viên và số tiền từng bậc) trong form tạo/sửa quy tắc giúp giao diện tinh gọn và tập trung vào các hình thức tính lương phổ biến (lương buổi, lương theo số học viên, lương % doanh thu, thưởng, phụ cấp) |
+| 2026-10-30 | 1.8.6 | Nâng cấp toàn diện tính năng Chỉnh sửa vai trò & Tùy biến chức năng (/settings/members): Bổ sung khả năng đặt Tên chức danh/vai trò tùy chỉnh (custom_role_title) theo cơ cấu thực tế của doanh nghiệp (ví dụ: Giám đốc chuyên môn, Quản lý cơ sở, Trợ giảng, Lễ tân & CSKH, Kế toán trung tâm); tích hợp 6 mẫu vai trò nhanh (Role Presets); bổ sung Ma trận phân quyền chi tiết 10 chức năng chia thành 4 nhóm nghiệp vụ (Vận hành & Đào tạo, Lịch dạy & Điểm danh, Tài chính & Lương, Hệ thống & Cài đặt) kèm nút chọn nhanh; hỗ trợ cơ chế lưu trữ kép Dual-Storage Resilience (cột DB + thẻ fallback permissions) bảo đảm không lỗi khi chưa chạy migration; hiển thị tên vai trò tùy chỉnh trên RoleBadge và Sidebar; bổ sung migration 042_custom_role_title.sql |
 
 ---
 

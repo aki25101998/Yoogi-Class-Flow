@@ -212,7 +212,11 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
   };
 
   const displayName = context?.profile?.name || userData?.name || user?.user_metadata?.full_name || 'User';
-  const displayRole = role === 'owner' ? 'OWNER' : role === 'admin' ? 'ADMIN' : role === 'head_coach' ? 'HEAD COACH' : 'ASSISTANT COACH';
+  const customRoleTitle = (context?.membership as any)?.custom_role_title || 
+    (context?.membership?.permissions?.find((p: string) => typeof p === 'string' && p.startsWith('title:'))?.replace('title:', ''));
+  const displayRole = (customRoleTitle && customRoleTitle.trim())
+    ? customRoleTitle.trim().toUpperCase()
+    : (role === 'owner' ? 'OWNER' : role === 'admin' ? 'ADMIN' : role === 'head_coach' ? 'HEAD COACH' : 'ASSISTANT COACH');
 
   const isFounder = (user?.email?.toLowerCase() === 'aki251098@gmail.com') || (context?.profile?.email?.toLowerCase() === 'aki251098@gmail.com');
   const multiWorkspace = context?.allMemberships && context.allMemberships.length > 1;

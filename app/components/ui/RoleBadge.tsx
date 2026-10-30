@@ -25,20 +25,22 @@ const ROLE_BADGE_VARIANTS: Record<OrganizationRole, BadgeVariant> = {
 
 interface RoleBadgeProps {
   role: OrganizationRole;
+  customTitle?: string;
   onClick?: () => void;
   className?: string;
 }
 
-export function RoleBadge({ role, onClick, className = '' }: RoleBadgeProps) {
-  const label = ROLE_LABELS[role] || 'Không xác định';
+export function RoleBadge({ role, customTitle, onClick, className = '' }: RoleBadgeProps) {
+  const defaultLabel = ROLE_LABELS[role] || 'Không xác định';
+  const label = customTitle?.trim() ? customTitle.trim() : defaultLabel;
   const variant = ROLE_BADGE_VARIANTS[role] || 'default';
 
   return (
     <Badge
       variant={variant}
-      className={`uppercase font-bold tracking-normal !px-2.5 ${onClick ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''} ${className}`}
+      className={`font-bold tracking-normal !px-2.5 ${onClick ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''} ${className}`}
       onClick={onClick}
-      title={ROLE_DESCRIPTIONS[role] || label}
+      title={customTitle?.trim() ? `${customTitle.trim()} (${defaultLabel})` : (ROLE_DESCRIPTIONS[role] || label)}
     >
       <span className="inline-flex items-center gap-[4px] leading-none">
         {label}

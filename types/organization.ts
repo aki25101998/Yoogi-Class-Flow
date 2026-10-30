@@ -19,6 +19,7 @@ export interface OrganizationMember {
   organization_id: string;
   user_id: string; // references profiles.id
   role: OrganizationRole;
+  custom_role_title?: string;
   status: string;
   permissions: string[];
   created_at: string;
@@ -30,6 +31,7 @@ export interface OrganizationInvitation {
   organization_id: string;
   email: string;
   role: OrganizationRole;
+  custom_role_title?: string;
   permissions: string[];
   invited_by: string; // references profiles.id
   status: InvitationStatus;

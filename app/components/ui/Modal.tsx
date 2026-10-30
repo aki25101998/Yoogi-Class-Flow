@@ -5,9 +5,11 @@ interface ModalProps {
   onClose: () => void;
   children: React.ReactNode;
   title?: string; // For backward compatibility
+  maxWidth?: string;
+  style?: React.CSSProperties;
 }
 
-export function Modal({ isOpen, onClose, title, children }: ModalProps) {
+export function Modal({ isOpen, onClose, title, maxWidth, style, children }: ModalProps) {
   // Handle ESC key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -33,11 +35,16 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
 
   if (!isOpen) return null;
 
+  const containerStyle = {
+    ...(maxWidth ? { maxWidth } : {}),
+    ...(style || {})
+  };
+
   // If title is provided, use the legacy single-prop layout
   if (title) {
     return (
       <div className="modal-overlay">
-        <div className="modal-container" role="dialog" aria-modal="true">
+        <div className="modal-container" role="dialog" aria-modal="true" style={Object.keys(containerStyle).length > 0 ? containerStyle : undefined}>
           <ModalHeader title={title} onClose={onClose} />
           <ModalBody>
             {children}
@@ -50,7 +57,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
   // Composite layout: caller provides <ModalHeader>, <ModalBody>, <ModalFooter>
   return (
     <div className="modal-overlay">
-      <div className="modal-container" role="dialog" aria-modal="true">
+      <div className="modal-container" role="dialog" aria-modal="true" style={Object.keys(containerStyle).length > 0 ? containerStyle : undefined}>
         {children}
       </div>
     </div>
@@ -83,11 +90,12 @@ export function ModalHeader({ title, onClose }: ModalHeaderProps) {
 interface ModalBodyProps {
   children: React.ReactNode;
   className?: string;
+  style?: React.CSSProperties;
 }
 
-export function ModalBody({ children, className = '' }: ModalBodyProps) {
+export function ModalBody({ children, className = '', style }: ModalBodyProps) {
   return (
-    <div className={`modal-body ${className}`}>
+    <div className={`modal-body ${className}`} style={style}>
       {children}
     </div>
   );

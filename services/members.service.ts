@@ -3,7 +3,12 @@ import { OrganizationRole } from '@/types/organization';
 import { getCurrentOrganizationContext } from './organization.service';
 import { getAppUrl } from '@/utils/app-url';
 
-export async function inviteMember(email: string, role: OrganizationRole): Promise<{ success: boolean; error?: string; invitationCreated?: boolean; invitationUrl?: string; invitationId?: string; expiresAt?: string }> {
+export async function inviteMember(
+  email: string, 
+  role: OrganizationRole,
+  customRoleTitle?: string,
+  customPermissions?: string[]
+): Promise<{ success: boolean; error?: string; invitationCreated?: boolean; invitationUrl?: string; invitationId?: string; expiresAt?: string }> {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Not authenticated or no organization context' };
 
@@ -40,28 +45,54 @@ export async function inviteMember(email: string, role: OrganizationRole): Promi
   }
 
   let permissions: string[] = [];
-  if (role === 'head_coach') {
-    permissions = ['VIEW_CLASSES', 'VIEW_STUDENTS', 'TAKE_ATTENDANCE', 'VIEW_ATTENDANCE', 'VIEW_SCHEDULE', 'VIEW_SALARY'];
-  } else if (role === 'assistant_coach') {
-    permissions = ['VIEW_ASSIGNED_CLASSES', 'VIEW_ASSIGNED_STUDENTS', 'TAKE_ATTENDANCE', 'VIEW_ATTENDANCE', 'VIEW_SCHEDULE', 'VIEW_MY_EARNINGS'];
-  } else if (role === 'admin') {
-    permissions = ['manage_coaches', 'manage_students', 'manage_venues', 'manage_classes', 'manage_schedule', 'manage_settings', 'manage_attendance', 'view_payroll', 'manage_members'];
-  } else if (role === 'owner') {
-    permissions = ['manage_coaches', 'manage_students', 'manage_venues', 'manage_classes', 'manage_schedule', 'manage_settings', 'manage_attendance', 'view_payroll', 'manage_members', 'manage_organization'];
+  if (customPermissions && Array.isArray(customPermissions)) {
+    const baseCoachPerms = role === 'head_coach'
+      ? ['VIEW_CLASSES', 'VIEW_STUDENTS', 'TAKE_ATTENDANCE', 'VIEW_ATTENDANCE', 'VIEW_SCHEDULE', 'VIEW_SALARY']
+      : role === 'assistant_coach'
+      ? ['VIEW_ASSIGNED_CLASSES', 'VIEW_ASSIGNED_STUDENTS', 'TAKE_ATTENDANCE', 'VIEW_ATTENDANCE', 'VIEW_SCHEDULE', 'VIEW_MY_EARNINGS']
+      : [];
+    permissions = Array.from(new Set([...customPermissions, ...baseCoachPerms]));
+  } else {
+    if (role === 'head_coach') {
+      permissions = ['VIEW_CLASSES', 'VIEW_STUDENTS', 'TAKE_ATTENDANCE', 'VIEW_ATTENDANCE', 'VIEW_SCHEDULE', 'VIEW_SALARY', 'manage_attendance'];
+    } else if (role === 'assistant_coach') {
+      permissions = ['VIEW_ASSIGNED_CLASSES', 'VIEW_ASSIGNED_STUDENTS', 'TAKE_ATTENDANCE', 'VIEW_ATTENDANCE', 'VIEW_SCHEDULE', 'VIEW_MY_EARNINGS'];
+    } else if (role === 'admin') {
+      permissions = ['manage_coaches', 'manage_students', 'manage_venues', 'manage_classes', 'manage_schedule', 'manage_settings', 'manage_attendance', 'view_payroll', 'manage_members', 'manage_tuition', 'manage_finance'];
+    } else if (role === 'owner') {
+      permissions = ['manage_coaches', 'manage_students', 'manage_venues', 'manage_classes', 'manage_schedule', 'manage_settings', 'manage_attendance', 'view_payroll', 'manage_members', 'manage_organization', 'manage_tuition', 'manage_finance'];
+    }
+  }
+
+  const trimmedTitle = customRoleTitle?.trim() || '';
+  permissions = permissions.filter(p => !p.startsWith('title:'));
+  if (trimmedTitle) {
+    permissions.push(`title:${trimmedTitle}`);
   }
 
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiration
 
-  const { data: newInvite, error } = await supabase.from('organization_invitations').insert([{
+  const invitePayload: Record<string, any> = {
     organization_id: context.organization.id,
     email: email.toLowerCase(),
     role,
     permissions,
+    custom_role_title: trimmedTitle,
     invited_by: context.profile.id,
     status: 'pending',
     expires_at: expiresAt.toISOString()
-  }]).select().single();
+  };
+
+  let { data: newInvite, error } = await supabase.from('organization_invitations').insert([invitePayload]).select().single();
+
+  // If column custom_role_title doesn't exist yet, retry without it
+  if (error && (error.code === '42703' || error.message?.includes('custom_role_title'))) {
+    delete invitePayload.custom_role_title;
+    const retry = await supabase.from('organization_invitations').insert([invitePayload]).select().single();
+    newInvite = retry.data;
+    error = retry.error;
+  }
 
   if (error) {
     return { success: false, error: error.message };
@@ -204,7 +235,12 @@ export async function reactivateMember(memberId: string): Promise<{ success: boo
   return { success: true };
 }
 
-export async function changeRole(memberId: string, newRole: OrganizationRole): Promise<{ success: boolean; error?: string }> {
+export async function changeRole(
+  memberId: string, 
+  newRole: OrganizationRole,
+  customRoleTitle?: string,
+  customPermissions?: string[]
+): Promise<{ success: boolean; error?: string }> {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Not authenticated' };
   if (context.membership?.role !== 'admin' && context.membership?.role !== 'owner') return { success: false, error: 'Permission denied' };
@@ -230,14 +266,56 @@ export async function changeRole(memberId: string, newRole: OrganizationRole): P
   }
 
   let permissions: string[] = [];
-  if (newRole === 'head_coach') permissions = ['VIEW_CLASSES', 'VIEW_STUDENTS', 'TAKE_ATTENDANCE', 'VIEW_ATTENDANCE', 'VIEW_SCHEDULE', 'VIEW_SALARY'];
-  else if (newRole === 'assistant_coach') permissions = ['VIEW_ASSIGNED_CLASSES', 'VIEW_ASSIGNED_STUDENTS', 'TAKE_ATTENDANCE', 'VIEW_ATTENDANCE', 'VIEW_SCHEDULE', 'VIEW_MY_EARNINGS'];
-  else if (newRole === 'admin') permissions = ['manage_coaches', 'manage_students', 'manage_venues', 'manage_classes', 'manage_schedule', 'manage_settings', 'manage_attendance', 'view_payroll', 'manage_members'];
-  else if (newRole === 'owner') permissions = ['manage_coaches', 'manage_students', 'manage_venues', 'manage_classes', 'manage_schedule', 'manage_settings', 'manage_attendance', 'view_payroll', 'manage_members', 'manage_organization'];
+  if (customPermissions && Array.isArray(customPermissions)) {
+    const baseCoachPerms = newRole === 'head_coach'
+      ? ['VIEW_CLASSES', 'VIEW_STUDENTS', 'TAKE_ATTENDANCE', 'VIEW_ATTENDANCE', 'VIEW_SCHEDULE', 'VIEW_SALARY']
+      : newRole === 'assistant_coach'
+      ? ['VIEW_ASSIGNED_CLASSES', 'VIEW_ASSIGNED_STUDENTS', 'TAKE_ATTENDANCE', 'VIEW_ATTENDANCE', 'VIEW_SCHEDULE', 'VIEW_MY_EARNINGS']
+      : [];
+    permissions = Array.from(new Set([...customPermissions, ...baseCoachPerms]));
+  } else {
+    if (newRole === 'head_coach') {
+      permissions = ['VIEW_CLASSES', 'VIEW_STUDENTS', 'TAKE_ATTENDANCE', 'VIEW_ATTENDANCE', 'VIEW_SCHEDULE', 'VIEW_SALARY', 'manage_attendance'];
+    } else if (newRole === 'assistant_coach') {
+      permissions = ['VIEW_ASSIGNED_CLASSES', 'VIEW_ASSIGNED_STUDENTS', 'TAKE_ATTENDANCE', 'VIEW_ATTENDANCE', 'VIEW_SCHEDULE', 'VIEW_MY_EARNINGS'];
+    } else if (newRole === 'admin') {
+      permissions = ['manage_coaches', 'manage_students', 'manage_venues', 'manage_classes', 'manage_schedule', 'manage_settings', 'manage_attendance', 'view_payroll', 'manage_members', 'manage_tuition', 'manage_finance'];
+    } else if (newRole === 'owner') {
+      permissions = ['manage_coaches', 'manage_students', 'manage_venues', 'manage_classes', 'manage_schedule', 'manage_settings', 'manage_attendance', 'view_payroll', 'manage_members', 'manage_organization', 'manage_tuition', 'manage_finance'];
+    }
+  }
 
-  const { error } = await supabase.from('organization_members').update({ role: newRole, permissions }).eq('id', memberId).eq('organization_id', context.organization.id);
+  const trimmedTitle = customRoleTitle?.trim() || '';
+  permissions = permissions.filter(p => !p.startsWith('title:'));
+  if (trimmedTitle) {
+    permissions.push(`title:${trimmedTitle}`);
+  }
+
+  // Update organization_members with dual storage support
+  const memberPayload: Record<string, any> = {
+    role: newRole,
+    permissions,
+    custom_role_title: trimmedTitle
+  };
+
+  let { error: updateError } = await supabase
+    .from('organization_members')
+    .update(memberPayload)
+    .eq('id', memberId)
+    .eq('organization_id', context.organization.id);
+
+  // If custom_role_title column doesn't exist yet, retry without it
+  if (updateError && (updateError.code === '42703' || updateError.message?.includes('custom_role_title'))) {
+    delete memberPayload.custom_role_title;
+    const retry = await supabase
+      .from('organization_members')
+      .update(memberPayload)
+      .eq('id', memberId)
+      .eq('organization_id', context.organization.id);
+    updateError = retry.error;
+  }
   
-  if (error) return { success: false, error: error.message };
+  if (updateError) return { success: false, error: updateError.message };
   
   const coachRole = newRole === 'admin' || newRole === 'owner' ? 'admin' : 'coach';
   await supabase.from('coaches').update({ role: coachRole, permissions }).eq('organization_member_id', memberId);

@@ -24,6 +24,7 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
   const [isInviting, setIsInviting] = useState(false);
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<OrganizationRole>('assistant_coach');
+  const [inviteCustomTitle, setInviteCustomTitle] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
@@ -32,7 +33,13 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
   const [filterRole, setFilterRole] = useState<'all' | 'admins' | 'coaches' | 'invitations'>('all');
 
   // Role change state
-  const [selectedMember, setSelectedMember] = useState<{ id: string; role: OrganizationRole; name: string } | null>(null);
+  const [selectedMember, setSelectedMember] = useState<{ 
+    id: string; 
+    role: OrganizationRole; 
+    customRoleTitle?: string;
+    permissions?: string[];
+    name: string;
+  } | null>(null);
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [roleChangeLoading, setRoleChangeLoading] = useState(false);
 
@@ -42,11 +49,12 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
     e.preventDefault();
     setError('');
     setLoading(true);
-    const res = await inviteMemberAction(email, role);
+    const res = await inviteMemberAction(email, role, inviteCustomTitle.trim() || undefined);
     setLoading(false);
     if (res.success) {
       setIsInviting(false);
       setEmail('');
+      setInviteCustomTitle('');
       router.refresh();
     } else {
       setError(res.error || 'Lỗi gửi lời mời');
@@ -78,15 +86,24 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
   const handleOpenRoleModal = (member: any) => {
     if (isAdminOrOwner && member.id !== currentUserId) {
       if (currentUserRole === 'admin' && member.role === 'owner') return;
-      setSelectedMember({ id: member.id, role: member.role, name: member.profiles?.name || 'Thành viên' });
+      const customTitle = member.custom_role_title || 
+        (member.permissions?.find((p: string) => typeof p === 'string' && p.startsWith('title:'))?.replace('title:', '')) || '';
+      
+      setSelectedMember({ 
+        id: member.id, 
+        role: member.role, 
+        customRoleTitle: customTitle,
+        permissions: member.permissions || [],
+        name: member.profiles?.name || 'Thành viên' 
+      });
       setIsRoleModalOpen(true);
     }
   };
 
-  const handleRoleSave = async (newRole: OrganizationRole) => {
+  const handleRoleSave = async (newRole: OrganizationRole, customTitle?: string, permissions?: string[]) => {
     if (!selectedMember) return;
     setRoleChangeLoading(true);
-    const res = await changeRoleAction(selectedMember.id, newRole);
+    const res = await changeRoleAction(selectedMember.id, newRole, customTitle, permissions);
     setRoleChangeLoading(false);
     if (res.success) {
       setIsRoleModalOpen(false);
@@ -231,7 +248,7 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
               </div>
             )}
             <form onSubmit={handleInvite} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
                 <Input 
                   label="Địa chỉ Email người được mời *"
                   type="email" 
@@ -241,14 +258,21 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
                   required 
                 />
                 <Select 
-                  label="Vai trò cấp quyền *"
+                  label="Cấp độ vai trò hệ thống *"
                   value={role} 
                   onChange={(e) => setRole(e.target.value as OrganizationRole)}
                   options={[
-                    { value: 'assistant_coach', label: 'Trợ giảng (Assistant Coach)' },
-                    { value: 'head_coach', label: 'Huấn luyện viên Trưởng (Head Coach)' },
+                    { value: 'assistant_coach', label: 'Huấn luyện viên Phụ / Nhân viên' },
+                    { value: 'head_coach', label: 'Huấn luyện viên Trưởng' },
                     ...(currentUserRole === 'owner' ? [{ value: 'admin', label: 'Quản trị viên (Admin)' }] : [])
                   ]}
+                />
+                <Input 
+                  label="Chức danh tùy chỉnh (Tùy chọn)"
+                  type="text" 
+                  value={inviteCustomTitle} 
+                  onChange={e => setInviteCustomTitle(e.target.value)} 
+                  placeholder="VD: Quản lý cơ sở, Lễ tân & CSKH, Trợ giảng..."
                 />
               </div>
 
@@ -403,7 +427,10 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
 
                 {/* Center: Role + Status */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <RoleBadge role={m.role} />
+                  <RoleBadge 
+                    role={m.role} 
+                    customTitle={m.custom_role_title || (m.permissions?.find((p: string) => typeof p === 'string' && p.startsWith('title:'))?.replace('title:', ''))} 
+                  />
                   <Badge variant="success">Hoạt động</Badge>
                 </div>
 
@@ -488,7 +515,10 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
 
               {/* Center: Role + Status */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <RoleBadge role={inv.role} />
+                <RoleBadge 
+                  role={inv.role} 
+                  customTitle={inv.custom_role_title || (inv.permissions?.find((p: string) => typeof p === 'string' && p.startsWith('title:'))?.replace('title:', ''))} 
+                />
                 <Badge variant="warning">Chờ chấp thuận</Badge>
               </div>
 
@@ -513,12 +543,14 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
         </div>
       )}
 
-      {/* MODAL THAY ĐỔI VAI TRÒ */}
+      {/* MODAL THAY ĐỔI VAI TRÒ & PHÂN QUYỀN */}
       {selectedMember && (
         <ChangeRoleModal
           isOpen={isRoleModalOpen}
           onClose={() => setIsRoleModalOpen(false)}
           currentRole={selectedMember.role}
+          currentCustomTitle={selectedMember.customRoleTitle}
+          currentPermissions={selectedMember.permissions}
           memberName={selectedMember.name}
           onSave={handleRoleSave}
           isLoading={roleChangeLoading}
