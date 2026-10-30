@@ -1,6 +1,6 @@
 # 📜 HIẾN PHÁP DỰ ÁN — YOOGI CLASS FLOW
 
-> **Phiên bản:** 1.8.0  
+> **Phiên bản:** 1.8.1  
 > **Cập nhật lần cuối:** 2026-10-30  
 > **Mục đích:** Đây là tài liệu gốc, bất khả xâm phạm. Mọi thay đổi code PHẢI tuân thủ các quy tắc trong file này. Khi có tính năng mới, file này PHẢI được cập nhật đồng thời.
 
@@ -778,6 +778,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-10-29 | 1.7.2 | Bổ sung tính năng Xóa Toàn Bộ Dữ Liệu (Reset Organization Data) trong Cài đặt (/settings): Migration 041_reset_organization_data.sql với stored procedure public.reset_organization_data atomic kèm fallback; Server Action resetOrganizationDataAction; tích hợp khối Vùng Nguy Hiểm (Danger Zone) và Modal xác nhận 2 tầng bảo vệ với cơ chế gõ chữ xác nhận an toàn (Type-to-confirm: "XÓA DỮ LIỆU"); xóa sạch toàn bộ học viên, chi nhánh, lớp học, lịch học, điểm danh, học phí, sổ quỹ và HLV nhưng bảo toàn tuyệt đối tài khoản Chủ sở hữu (Owner), tên trung tâm và gói bản quyền SaaS |
 | 2026-10-29 | 1.7.3 | Khắc phục triệt để lỗi "column organization_id does not exist" khi Xóa Toàn Bộ Dữ Liệu (/settings): Cập nhật 041_reset_organization_data.sql xóa salary_rule_tiers qua rule_id (bảng này không có cột organization_id); loại bỏ tham chiếu dư thừa teacher_salary_sessions; thêm cờ set_config('app.disable_audit', 'true', true) tránh bão trigger khi xóa hàng loạt; tăng cường độ bền vững cho Server Action resetOrganizationDataAction tự động kích hoạt fallback service-role sạch sẽ khi RPC cơ sở dữ liệu gặp lỗi schema cũ |
 | 2026-10-30 | 1.8.0 | Tái cấu trúc toàn diện phân hệ Cài đặt (/settings) chuẩn SaaS hiện đại: Bổ sung thanh điều hướng Sub-Nav Tabs (SettingsNavTabs) dùng chung kết nối 5 phân vùng; tách riêng Quản trị dữ liệu (Seed Data & Danger Zone Reset Data) sang /settings/data; tinh chỉnh trang Thông tin trung tâm (/settings) tập trung vào định danh cơ sở & bản quyền SaaS; nâng cấp toàn diện giao diện Thành viên (/settings/members) lên chuẩn Card-Row Entity List kèm KPI 4 ô và Instant Search; nâng cấp giao diện Cấp đai (/settings/belts) với visual dải màu võ đạo (Martial Arts Belt Strips) và KPI phân cấp; loại bỏ triệt để các class Tailwind thừa trên toàn bộ phân hệ Cài đặt |
+| 2026-10-30 | 1.8.1 | Hợp nhất phân hệ Quản trị dữ liệu và Thông tin trung tâm vào chung trang Cài đặt (/settings): Rút gọn hệ thống Sub-Nav Tabs còn 4 mục chính (Thông tin trung tâm, Đội ngũ & Phân quyền, Hệ thống cấp đai, Lịch sử phiên bản); tích hợp khối Quản trị dữ liệu (Khởi tạo dữ liệu mẫu kiểm thử 1-chạm & Vùng nguy hiểm Xóa toàn bộ dữ liệu kèm Type-to-confirm modal) trực tiếp bên dưới thông tin định danh và bản quyền SaaS; tự động điều hướng /settings/data về /settings và dọn dẹp Sidebar tinh gọn |
 
 ---
 

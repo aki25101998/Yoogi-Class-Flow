@@ -15,7 +15,6 @@ const SETTINGS_TABS: TabItem[] = [
   { label: 'Đội ngũ & Phân quyền', icon: 'manage_accounts', route: '/settings/members' },
   { label: 'Hệ thống cấp đai', icon: 'military_tech', route: '/settings/belts' },
   { label: 'Lịch sử phiên bản', icon: 'history', route: '/settings/version-history' },
-  { label: 'Quản trị dữ liệu', icon: 'tune', route: '/settings/data' },
 ];
 
 export function SettingsNavTabs() {

@@ -1,6 +1,5 @@
-import DataManagementClient from './DataManagementClient';
+import { redirect } from 'next/navigation';
 
 export default function DataManagementPage() {
-  return <DataManagementClient />;
+  redirect('/settings');
 }
-
