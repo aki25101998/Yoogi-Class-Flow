@@ -40,13 +40,11 @@ export default async function MembersPage() {
   ]);
 
   return (
-    <div style={{ padding: '24px' }}>
-      <MembersClient 
-        initialMembers={members || []}
-        initialInvitations={invitations || []}
-        currentUserRole={context.membership?.role}
-        currentUserId={context.membership?.id}
-      />
-    </div>
+    <MembersClient 
+      initialMembers={members || []}
+      initialInvitations={invitations || []}
+      currentUserRole={context.membership?.role}
+      currentUserId={context.membership?.id}
+    />
   );
 }

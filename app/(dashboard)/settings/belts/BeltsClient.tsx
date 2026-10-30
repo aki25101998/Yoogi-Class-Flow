@@ -3,13 +3,44 @@
 import { useState } from 'react';
 import { getBeltsAction, addBeltsAction, updateBeltAction, deleteBeltAction } from './actions';
 import { PageHeader } from '@/app/components/ui/PageHeader';
+import { SettingsNavTabs } from '../components/SettingsNavTabs';
 import { Button } from '@/app/components/ui/Button';
-import { Input, Select } from '@/app/components/ui/Input';
+import { Input } from '@/app/components/ui/Input';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/app/components/ui/Modal';
 import { Badge } from '@/app/components/ui/Badge';
-import { Card } from '@/app/components/ui/Card';
-import { Table, Thead, Tbody, Tr, Th, Td } from '@/app/components/ui/Table';
 import { EmptyState } from '@/app/components/ui/EmptyState';
+import styles from '@/app/styles/page-standard.module.css';
+
+// Helper nhận diện màu sắc đai võ thuật trực quan
+function getBeltStyle(beltName: string) {
+  const lower = (beltName || '').toLowerCase();
+  if (lower.includes('trắng')) {
+    return { bg: '#ffffff', border: '#cbd5e1', text: '#334155', stripe: '#94a3b8' };
+  }
+  if (lower.includes('vàng')) {
+    return { bg: '#fef08a', border: '#eab308', text: '#854d0e', stripe: '#ca8a04' };
+  }
+  if (lower.includes('cam')) {
+    return { bg: '#fed7aa', border: '#f97316', text: '#9a3412', stripe: '#ea580c' };
+  }
+  if (lower.includes('xanh lá') || lower.includes('lục')) {
+    return { bg: '#bbf7d0', border: '#22c55e', text: '#166534', stripe: '#16a34a' };
+  }
+  if (lower.includes('xanh lam') || lower.includes('xanh dương') || lower.includes('lam')) {
+    return { bg: '#bfdbfe', border: '#3b82f6', text: '#1e40af', stripe: '#2563eb' };
+  }
+  if (lower.includes('đỏ')) {
+    return { bg: '#fecaca', border: '#ef4444', text: '#991b1b', stripe: '#dc2626' };
+  }
+  if (lower.includes('nâu')) {
+    return { bg: '#d7ccc8', border: '#8d6e63', text: '#3e2723', stripe: '#6d4c41' };
+  }
+  if (lower.includes('đen')) {
+    return { bg: '#0f172a', border: '#020617', text: '#f8fafc', stripe: '#ef4444' };
+  }
+  // Mặc định Teal Athletic
+  return { bg: 'var(--surface-hover)', border: 'var(--border-light)', text: 'var(--text-main)', stripe: 'var(--primary)' };
+}
 
 export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[] }) {
   const [belts, setBelts] = useState<any[]>(initialBelts);
@@ -70,7 +101,6 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
     setError('');
     
     if (!editingId) {
-      // Validate bulk add
       const validNames = beltNames.map(n => n.trim()).filter(n => n.length > 0);
       if (validNames.length === 0) {
         setError('Vui lòng nhập ít nhất một tên cấp đai hợp lệ.');
@@ -133,174 +163,324 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
     }
   };
 
+  // KPI Calculations
+  const totalBelts = belts.length;
+  const activeBelts = belts.filter(b => b.is_active).length;
+  const hiddenBelts = belts.filter(b => !b.is_active).length;
+  const highestBeltName = belts.length > 0 ? belts[belts.length - 1]?.name : 'Chưa có';
+
   return (
-    <div className="flex flex-col gap-6">
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+      {/* 1. PAGE HEADER */}
       <PageHeader 
-        title="Quản lý Cấp Đai" 
-        description="Quản lý các cấp đai được sử dụng trong trung tâm"
+        title="Hệ thống Cấp Đai" 
+        description="Quản lý hệ thống cấp bậc võ đạo, thứ tự đai và lộ trình thăng cấp của học viên"
         primaryAction={
           <Button 
             onClick={handleOpenAdd}
             leftIcon={<span className="material-icons-round">add</span>}
+            style={{ borderRadius: 'var(--radius-full)', boxShadow: 'var(--shadow-teal-glow)' }}
           >
             Thêm cấp đai
           </Button>
         }
       />
 
+      {/* 2. SUB NAVIGATION TABS */}
+      <SettingsNavTabs />
+
+      {/* 3. OVERVIEW KPI GRID (4 CÂN ĐỐI) */}
+      <div className={styles.overviewCard}>
+        <div className={styles.overviewHeader}>
+          <div className={styles.overviewTitle}>
+            <span className="material-icons-round" style={{ fontSize: '18px', color: 'var(--primary)' }}>military_tech</span>
+            TỔNG QUAN PHÂN CẤP VÕ ĐẠO
+          </div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+            Lộ trình thăng cấp trung tâm
+          </div>
+        </div>
+        <div className={styles.overviewGrid}>
+          {/* 1. Tổng cấp đai */}
+          <div className={`${styles.kpiItem} ${styles.kpiPrimary}`}>
+            <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Tổng số cấp đai</div>
+            <div className={styles.kpiValue}>{totalBelts}</div>
+            <div className={styles.kpiCaption}>Đã thiết lập trong hệ thống</div>
+            <span className={`material-icons-round ${styles.kpiWatermark}`} style={{ color: 'var(--primary)' }}>military_tech</span>
+          </div>
+
+          {/* 2. Đang áp dụng */}
+          <div className={`${styles.kpiItem} ${styles.kpiSuccess}`}>
+            <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Đang áp dụng</div>
+            <div className={styles.kpiValue}>{activeBelts}</div>
+            <div className={styles.kpiCaption}>Khả dụng cho học viên</div>
+            <span className={`material-icons-round ${styles.kpiWatermark}`} style={{ color: 'var(--success)' }}>verified</span>
+          </div>
+
+          {/* 3. Tạm ẩn */}
+          <div className={`${styles.kpiItem} ${styles.kpiWarning}`}>
+            <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Tạm ngưng áp dụng</div>
+            <div className={styles.kpiValue}>{hiddenBelts}</div>
+            <div className={styles.kpiCaption}>Đai cũ hoặc tạm ẩn</div>
+            <span className={`material-icons-round ${styles.kpiWatermark}`} style={{ color: 'var(--warning)' }}>visibility_off</span>
+          </div>
+
+          {/* 4. Cấp cao nhất */}
+          <div className={`${styles.kpiItem} ${styles.kpiInfo}`}>
+            <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Cấp đai cao nhất</div>
+            <div className={styles.kpiValue} style={{ fontSize: '1.15rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {highestBeltName}
+            </div>
+            <div className={styles.kpiCaption}>Đỉnh lộ trình đào tạo</div>
+            <span className={`material-icons-round ${styles.kpiWatermark}`} style={{ color: 'var(--info)' }}>sports_martial_arts</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. MODAL THÊM / SỬA CẤP ĐAI */}
       <Modal isOpen={isAdding || !!editingId} onClose={loading ? () => {} : resetForm}>
-        <ModalHeader title={editingId ? 'Sửa cấp đai' : 'Thêm cấp đai'} onClose={loading ? () => {} : resetForm} />
+        <ModalHeader title={editingId ? 'Chỉnh sửa cấp đai' : 'Thêm cấp đai mới'} onClose={loading ? () => {} : resetForm} />
         <ModalBody>
-          {error && <div className="text-danger mb-4 text-sm bg-danger-bg p-3 rounded-md">{error}</div>}
-          <form id="belt-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
-            
+          {error && (
+            <div style={{
+              color: 'var(--danger)',
+              background: 'var(--danger-bg)',
+              padding: '12px 16px',
+              borderRadius: 'var(--radius-lg)',
+              fontSize: '0.875rem',
+              marginBottom: '16px'
+            }}>
+              {error}
+            </div>
+          )}
+          <form id="belt-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {editingId ? (
               // EDIT FORM
               <>
                 <Input 
                   label="Tên cấp đai *" 
                   required 
-                  className="w-full"
                   value={editFormData.name} 
                   onChange={e => setEditFormData({...editFormData, name: e.target.value})} 
+                  placeholder="Ví dụ: Đai Vàng, Đai Lam, Đai Đen Nhất Đẳng..."
                 />
                 <Input 
-                  label="Thứ tự hiển thị" 
+                  label="Thứ tự hiển thị (từ thấp đến cao)" 
                   type="number"
                   required 
-                  className="w-full"
                   value={editFormData.display_order} 
                   onChange={e => setEditFormData({...editFormData, display_order: parseInt(e.target.value) || 0})} 
-                  helperText="Thay đổi thứ tự sẽ tự động sắp xếp lại các cấp đai khác"
+                  helperText="Cấp đai có thứ tự nhỏ hơn sẽ được xếp trước trong lộ trình thăng cấp"
                 />
               </>
             ) : (
               // ADD BULK FORM
-              <>
-                <div className="flex flex-col gap-3 w-full">
-                  {/* Label row: label left, + button right */}
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-main">Tên cấp đai *</label>
-                    <button 
-                      type="button"
-                      onClick={() => setBeltNames(prev => [...prev, ''])} 
-                      className="icon-btn icon-btn-add"
-                      title="Thêm cấp đai"
-                      aria-label="Thêm cấp đai"
-                      disabled={loading}
-                    >
-                      <span className="material-icons-round text-[18px]">add</span>
-                    </button>
-                  </div>
-                  
-                  {/* Input rows: input stretches, × button on the right */}
-                  {beltNames.map((name, index) => (
-                    <div key={index} className="flex items-center gap-2">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <label style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                    Danh sách tên cấp đai *
+                  </label>
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setBeltNames(prev => [...prev, ''])} 
+                    disabled={loading}
+                    leftIcon={<span className="material-icons-round" style={{ fontSize: '16px' }}>add</span>}
+                    style={{ borderRadius: 'var(--radius-full)' }}
+                  >
+                    Thêm dòng
+                  </Button>
+                </div>
+                
+                {beltNames.map((name, index) => (
+                  <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ flex: 1 }}>
                       <Input 
                         required 
-                        className="flex-1 min-w-0 m-0"
                         value={name} 
                         onChange={e => {
                           const newNames = [...beltNames];
                           newNames[index] = e.target.value;
                           setBeltNames(newNames);
                         }} 
-                        placeholder={`Tên cấp đai ${index + 1}`}
+                        placeholder={`Tên cấp đai ${index + 1} (vd: Đai Vàng, Đai Lam...)`}
                         disabled={loading}
                       />
-                      {beltNames.length > 1 ? (
-                        <button 
-                          type="button"
-                          onClick={() => {
-                            const newNames = [...beltNames];
-                            newNames.splice(index, 1);
-                            setBeltNames(newNames);
-                          }}
-                          className="shrink-0 icon-btn icon-btn-delete"
-                          title="Xóa dòng"
-                          aria-label={`Xóa cấp đai ${index + 1}`}
-                          disabled={loading}
-                        >
-                          <span className="material-icons-round text-[18px]">close</span>
-                        </button>
-                      ) : (
-                        <div className="shrink-0 w-8 h-8" />
-                      )}
                     </div>
-                  ))}
-                </div>
-              </>
+                    {beltNames.length > 1 && (
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          const newNames = [...beltNames];
+                          newNames.splice(index, 1);
+                          setBeltNames(newNames);
+                        }}
+                        style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '50%',
+                          border: 'none',
+                          background: 'var(--danger-bg)',
+                          color: 'var(--danger)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0
+                        }}
+                        title="Xóa dòng này"
+                        disabled={loading}
+                      >
+                        <span className="material-icons-round" style={{ fontSize: '18px' }}>close</span>
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
             )}
-
           </form>
         </ModalBody>
         <ModalFooter>
-          <Button type="button" variant="secondary" onClick={resetForm} disabled={loading}>Hủy</Button>
-          <Button type="submit" form="belt-form" isLoading={loading} variant="primary">
-            Lưu
+          <Button type="button" variant="outline" onClick={resetForm} disabled={loading}>
+            Hủy
+          </Button>
+          <Button 
+            type="submit" 
+            form="belt-form" 
+            isLoading={loading} 
+            variant="primary"
+            style={{ borderRadius: 'var(--radius-full)' }}
+          >
+            Lưu Cấp Đai
           </Button>
         </ModalFooter>
       </Modal>
 
+      {/* 5. DANH SÁCH CẤP ĐAI */}
       {belts.length === 0 ? (
         <EmptyState 
-          title="Chưa có cấp đai" 
-          description="Chưa có cấp đai nào trong hệ thống. Hãy tạo cấp đai đầu tiên." 
+          title="Chưa có cấp đai nào" 
+          description="Chưa có cấp đai võ thuật nào trong hệ thống. Hãy tạo các cấp đai đầu tiên hoặc nạp dữ liệu mẫu." 
           icon="sports_martial_arts"
+          action={
+            <Button onClick={handleOpenAdd} leftIcon={<span className="material-icons-round">add</span>}>
+              Thêm cấp đai ngay
+            </Button>
+          }
         />
       ) : (
-        <Card className={isRefreshing ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}>
-          <div className="overflow-x-auto">
-            <Table>
-              <Thead>
-                <Tr>
-                  <Th>Thứ tự</Th>
-                  <Th>Tên cấp đai</Th>
-                  <Th>Trạng thái</Th>
-                  <Th className="text-right font-semibold">Hành động</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {belts.map((belt) => (
-                  <Tr key={belt.id}>
-                    <Td className="font-medium text-main">{belt.display_order}</Td>
-                    <Td>{belt.name}</Td>
-                    <Td>
-                      <Badge variant={belt.is_active ? 'success' : 'default'}>
-                        {belt.is_active ? 'Đang dùng' : 'Tạm ẩn'}
-                      </Badge>
-                    </Td>
-                    <Td className="text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleEdit(belt)}
-                          className="text-action text-action-primary"
-                          disabled={deletingId === belt.id}
-                        >
-                          Sửa
-                        </button>
-                        <span className="text-secondary/40 select-none">|</span>
-                        {deletingId === belt.id ? (
-                          <span className="text-secondary/60 text-sm flex items-center gap-1">
-                            <span className="material-icons-round animate-spin text-[16px]">autorenew</span> Đang xóa...
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() => handleDelete(belt.id)}
-                            className="text-action text-action-danger"
-                            disabled={deletingId !== null}
-                          >
-                            Xóa
-                          </button>
-                        )}
-                      </div>
-                    </Td>
-                  </Tr>
-                ))}
-              </Tbody>
-            </Table>
-          </div>
-        </Card>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {belts.map((belt) => {
+            const beltStyle = getBeltStyle(belt.name);
+            return (
+              <div 
+                key={belt.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '14px 20px',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border-light)',
+                  borderRadius: 'var(--radius-xl)',
+                  gap: '16px',
+                  flexWrap: 'wrap',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                {/* Left: Belt Order + Belt Visual Capsule */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: '240px' }}>
+                  {/* Order Circle */}
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    background: 'var(--surface-hover)',
+                    border: '1px solid var(--border-light)',
+                    color: 'var(--text-muted)',
+                    fontWeight: 700,
+                    fontSize: '0.875rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    #{belt.display_order}
+                  </div>
+
+                  {/* Belt Visual Strip */}
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '8px 16px',
+                    borderRadius: 'var(--radius-full)',
+                    background: beltStyle.bg,
+                    border: `1.5px solid ${beltStyle.border}`,
+                    color: beltStyle.text,
+                    fontWeight: 700,
+                    fontSize: '0.9375rem',
+                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.05)',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}>
+                    <span 
+                      style={{
+                        width: '8px',
+                        height: '18px',
+                        borderRadius: '2px',
+                        background: beltStyle.stripe,
+                        display: 'inline-block'
+                      }}
+                    />
+                    <span>{belt.name}</span>
+                  </div>
+                </div>
+
+                {/* Center: Status */}
+                <div>
+                  <Badge variant={belt.is_active ? 'success' : 'default'}>
+                    {belt.is_active ? 'Đang dùng' : 'Tạm ẩn'}
+                  </Badge>
+                </div>
+
+                {/* Right: Actions */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEdit(belt)}
+                    disabled={deletingId === belt.id}
+                    leftIcon={<span className="material-icons-round" style={{ fontSize: '15px' }}>edit</span>}
+                    style={{ borderRadius: 'var(--radius-full)' }}
+                  >
+                    Sửa
+                  </Button>
+                  
+                  {deletingId === belt.id ? (
+                    <Button type="button" variant="ghost" size="sm" disabled>
+                      Đang xóa...
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(belt.id)}
+                      disabled={deletingId !== null}
+                      leftIcon={<span className="material-icons-round" style={{ fontSize: '15px', color: 'var(--danger)' }}>delete</span>}
+                      style={{ color: 'var(--danger)', borderRadius: 'var(--radius-full)' }}
+                    >
+                      Xóa
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );

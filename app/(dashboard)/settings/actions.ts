@@ -18,6 +18,7 @@ function revalidateAllOrganizationPaths() {
   revalidatePath('/settings/belts');
   revalidatePath('/settings/members');
   revalidatePath('/settings/version-history');
+  revalidatePath('/settings/data');
 }
 
 export async function updateOrganizationAction(data: { name: string }) {
@@ -30,7 +31,7 @@ export async function updateOrganizationAction(data: { name: string }) {
   }
 
   const supabase = await createClient();
-  
+
   const { error } = await supabase.from('organizations')
     .update(data)
     .eq('id', context.organization.id);
@@ -38,7 +39,7 @@ export async function updateOrganizationAction(data: { name: string }) {
   if (error) {
     return { success: false, error: error.message };
   }
-  
+
   revalidatePath('/settings');
   return { success: true };
 }
@@ -64,8 +65,8 @@ export async function seedSampleDataAction() {
 
     if (!rpcError && rpcData?.success) {
       revalidateAllOrganizationPaths();
-      return { 
-        success: true, 
+      return {
+        success: true,
         message: 'Nạp dữ liệu mẫu thành công! Đã tạo 3 chi nhánh, 4 HLV, 6 lớp học, 16 học viên, 8 lịch học, buổi học thực tế, điểm danh, học phí và sổ quỹ.',
         data: rpcData
       };
@@ -77,7 +78,7 @@ export async function seedSampleDataAction() {
   // 2. Fallback if RPC is not deployed yet in Supabase
   const { seedFallbackSampleData } = await import('@/services/seed.service');
   const fallbackResult = await seedFallbackSampleData(supabase, orgId, context.coach?.id);
-  
+
   if (fallbackResult.success) {
     revalidateAllOrganizationPaths();
     return {
@@ -114,9 +115,9 @@ export async function resetOrganizationDataAction() {
 
     if (!rpcError && rpcData?.success) {
       revalidateAllOrganizationPaths();
-      return { 
-        success: true, 
-        message: rpcData.message || 'Đã xóa toàn bộ dữ liệu tổ chức thành công!' 
+      return {
+        success: true,
+        message: rpcData.message || 'Đã xóa toàn bộ dữ liệu tổ chức thành công!'
       };
     }
     if (rpcData && rpcData.success === false) {
@@ -201,7 +202,7 @@ export async function resetOrganizationDataAction() {
         .eq('organization_id', orgId)
         .single();
       const nextVer = (counter?.current_version || 0) + 1;
-      
+
       await db.from('version_history').insert({
         organization_id: orgId,
         version_number: nextVer,

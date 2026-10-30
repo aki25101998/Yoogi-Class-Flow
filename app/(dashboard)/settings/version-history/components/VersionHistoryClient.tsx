@@ -9,6 +9,7 @@ import RestoreConfirmation from "./RestoreConfirmation";
 
 import { getBusinessDate, formatBusinessDateVN, formatBusinessTime, getBusinessDateString } from "@/utils/date";
 import { PageHeader } from "@/app/components/ui/PageHeader";
+import { SettingsNavTabs } from "../../components/SettingsNavTabs";
 import { Button } from "@/app/components/ui/Button";
 import { Badge } from "@/app/components/ui/Badge";
 import { EmptyState } from "@/app/components/ui/EmptyState";
@@ -173,6 +174,7 @@ export default function VersionHistoryClient() {
           title="Lịch sử phiên bản" 
           description="Xem các thay đổi dữ liệu của tổ chức và khôi phục về trạng thái trước đó."
         />
+        <SettingsNavTabs />
         <div className={styles.overviewCard}>
           <div className={styles.overviewHeader}>
             <div className={styles.overviewTitle}>
@@ -202,6 +204,7 @@ export default function VersionHistoryClient() {
           title="Lịch sử phiên bản" 
           description="Xem các thay đổi dữ liệu của tổ chức và khôi phục về trạng thái trước đó."
         />
+        <SettingsNavTabs />
         <EmptyState 
           icon="error_outline"
           title="Không thể tải lịch sử phiên bản"
@@ -233,6 +236,9 @@ export default function VersionHistoryClient() {
           </Button>
         }
       />
+
+      {/* SUB NAVIGATION TABS */}
+      <SettingsNavTabs />
 
       {/* 2. OVERVIEW KPI GRID (4 CÂN ĐỐI) */}
       <div className={styles.overviewCard}>
