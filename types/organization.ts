@@ -40,6 +40,20 @@ export interface OrganizationInvitation {
   created_at: string;
 }
 
+export interface OrganizationRoleDefinition {
+  id: string;
+  organization_id: string;
+  name: string;
+  code: string;
+  base_role: OrganizationRole;
+  description: string;
+  permissions: string[];
+  is_system: boolean;
+  member_count?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface ClassCoach {
   id: string;
   organization_id: string;

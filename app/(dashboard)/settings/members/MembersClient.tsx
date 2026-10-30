@@ -100,10 +100,10 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
     }
   };
 
-  const handleRoleSave = async (newRole: OrganizationRole, customTitle?: string, permissions?: string[]) => {
+  const handleRoleSave = async (newRole: OrganizationRole, customTitle?: string) => {
     if (!selectedMember) return;
     setRoleChangeLoading(true);
-    const res = await changeRoleAction(selectedMember.id, newRole, customTitle, permissions);
+    const res = await changeRoleAction(selectedMember.id, newRole, customTitle);
     setRoleChangeLoading(false);
     if (res.success) {
       setIsRoleModalOpen(false);
@@ -543,14 +543,13 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
         </div>
       )}
 
-      {/* MODAL THAY ĐỔI VAI TRÒ & PHÂN QUYỀN */}
+      {/* MODAL THAY ĐỔI VAI TRÒ */}
       {selectedMember && (
         <ChangeRoleModal
           isOpen={isRoleModalOpen}
           onClose={() => setIsRoleModalOpen(false)}
           currentRole={selectedMember.role}
           currentCustomTitle={selectedMember.customRoleTitle}
-          currentPermissions={selectedMember.permissions}
           memberName={selectedMember.name}
           onSave={handleRoleSave}
           isLoading={roleChangeLoading}

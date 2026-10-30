@@ -12,7 +12,8 @@ interface TabItem {
 
 const SETTINGS_TABS: TabItem[] = [
   { label: 'Thông tin trung tâm', icon: 'apartment', route: '/settings', exact: true },
-  { label: 'Đội ngũ & Phân quyền', icon: 'manage_accounts', route: '/settings/members' },
+  { label: 'Thành viên & Đội ngũ', icon: 'manage_accounts', route: '/settings/members' },
+  { label: 'Vai trò & Phân quyền', icon: 'admin_panel_settings', route: '/settings/roles' },
   { label: 'Hệ thống cấp đai', icon: 'military_tech', route: '/settings/belts' },
   { label: 'Lịch sử phiên bản', icon: 'history', route: '/settings/version-history' },
 ];

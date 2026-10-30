@@ -7,3 +7,4 @@ ADD COLUMN IF NOT EXISTS custom_role_title TEXT DEFAULT '';
 
 ALTER TABLE public.organization_invitations 
 ADD COLUMN IF NOT EXISTS custom_role_title TEXT DEFAULT '';
+
