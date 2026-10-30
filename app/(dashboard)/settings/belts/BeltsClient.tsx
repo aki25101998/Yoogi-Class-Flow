@@ -9,7 +9,6 @@ import { Input } from '@/app/components/ui/Input';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/app/components/ui/Modal';
 import { Badge } from '@/app/components/ui/Badge';
 import { EmptyState } from '@/app/components/ui/EmptyState';
-import styles from '@/app/styles/page-standard.module.css';
 
 // Helper nhận diện màu sắc đai võ thuật trực quan
 function getBeltStyle(beltName: string) {
@@ -163,12 +162,6 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
     }
   };
 
-  // KPI Calculations
-  const totalBelts = belts.length;
-  const activeBelts = belts.filter(b => b.is_active).length;
-  const hiddenBelts = belts.filter(b => !b.is_active).length;
-  const highestBeltName = belts.length > 0 ? belts[belts.length - 1]?.name : 'Chưa có';
-
   return (
     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
       {/* 1. PAGE HEADER */}
@@ -189,55 +182,7 @@ export default function BeltsClient({ initialBelts = [] }: { initialBelts?: any[
       {/* 2. SUB NAVIGATION TABS */}
       <SettingsNavTabs />
 
-      {/* 3. OVERVIEW KPI GRID (4 CÂN ĐỐI) */}
-      <div className={styles.overviewCard}>
-        <div className={styles.overviewHeader}>
-          <div className={styles.overviewTitle}>
-            <span className="material-icons-round" style={{ fontSize: '18px', color: 'var(--primary)' }}>military_tech</span>
-            TỔNG QUAN PHÂN CẤP VÕ ĐẠO
-          </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-            Lộ trình thăng cấp trung tâm
-          </div>
-        </div>
-        <div className={styles.overviewGrid}>
-          {/* 1. Tổng cấp đai */}
-          <div className={`${styles.kpiItem} ${styles.kpiPrimary}`}>
-            <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Tổng số cấp đai</div>
-            <div className={styles.kpiValue}>{totalBelts}</div>
-            <div className={styles.kpiCaption}>Đã thiết lập trong hệ thống</div>
-            <span className={`material-icons-round ${styles.kpiWatermark}`} style={{ color: 'var(--primary)' }}>military_tech</span>
-          </div>
-
-          {/* 2. Đang áp dụng */}
-          <div className={`${styles.kpiItem} ${styles.kpiSuccess}`}>
-            <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Đang áp dụng</div>
-            <div className={styles.kpiValue}>{activeBelts}</div>
-            <div className={styles.kpiCaption}>Khả dụng cho học viên</div>
-            <span className={`material-icons-round ${styles.kpiWatermark}`} style={{ color: 'var(--success)' }}>verified</span>
-          </div>
-
-          {/* 3. Tạm ẩn */}
-          <div className={`${styles.kpiItem} ${styles.kpiWarning}`}>
-            <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Tạm ngưng áp dụng</div>
-            <div className={styles.kpiValue}>{hiddenBelts}</div>
-            <div className={styles.kpiCaption}>Đai cũ hoặc tạm ẩn</div>
-            <span className={`material-icons-round ${styles.kpiWatermark}`} style={{ color: 'var(--warning)' }}>visibility_off</span>
-          </div>
-
-          {/* 4. Cấp cao nhất */}
-          <div className={`${styles.kpiItem} ${styles.kpiInfo}`}>
-            <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Cấp đai cao nhất</div>
-            <div className={styles.kpiValue} style={{ fontSize: '1.15rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {highestBeltName}
-            </div>
-            <div className={styles.kpiCaption}>Đỉnh lộ trình đào tạo</div>
-            <span className={`material-icons-round ${styles.kpiWatermark}`} style={{ color: 'var(--info)' }}>sports_martial_arts</span>
-          </div>
-        </div>
-      </div>
-
-      {/* 4. MODAL THÊM / SỬA CẤP ĐAI */}
+      {/* 3. MODAL THÊM / SỬA CẤP ĐAI */}
       <Modal isOpen={isAdding || !!editingId} onClose={loading ? () => {} : resetForm}>
         <ModalHeader title={editingId ? 'Chỉnh sửa cấp đai' : 'Thêm cấp đai mới'} onClose={loading ? () => {} : resetForm} />
         <ModalBody>
