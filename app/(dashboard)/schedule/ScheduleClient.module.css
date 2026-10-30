@@ -1,43 +1,703 @@
-.scheduleContainer {
+/* ScheduleClient.module.css — Vibrant Athletic & Martial Arts (Admin Schedule) */
+
+.container {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-6, 24px);
   width: 100%;
 }
 
-.boardScrollWrapper {
+/* Header & Controls */
+.topControlsRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.viewSwitcher {
+  display: inline-flex;
+  background-color: var(--surface-hover);
+  padding: 4px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-light);
+  gap: 4px;
+}
+
+.switchBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.switchBtn:hover {
+  color: var(--text-main);
+}
+
+.switchBtnActive {
+  background: var(--surface);
+  color: var(--primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  font-weight: 600;
+}
+
+.switchBtnActive .switchIcon {
+  color: var(--primary);
+}
+
+.switchIcon {
+  font-size: 16px;
+}
+
+/* Filter Bar */
+.filterBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  background-color: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 10px 14px;
+  box-shadow: var(--shadow-sm);
+}
+
+.filterLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.filterSelect {
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  background-color: var(--surface-hover);
+  color: var(--text-main);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+  min-width: 160px;
+}
+
+.filterSelect:focus {
+  outline: none;
+  border-color: var(--primary);
+  background-color: var(--surface);
+}
+
+.clearFilterBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--accent-energy, #FF6B35);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: opacity 0.15s ease;
+}
+
+.clearFilterBtn:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+/* Quick KPI Bar */
+.kpiBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.kpiPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  background-color: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-full);
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.kpiPill:hover {
+  border-color: var(--border);
+  transform: translateY(-1px);
+}
+
+.kpiDotTeal {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  box-shadow: 0 0 6px rgba(20, 184, 166, 0.5);
+}
+
+.kpiDotOrange {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--accent-energy, #FF6B35);
+  box-shadow: 0 0 6px rgba(255, 107, 53, 0.5);
+}
+
+.kpiDotBlue {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #0284c7;
+  box-shadow: 0 0 6px rgba(2, 132, 199, 0.5);
+}
+
+.kpiDotPurple {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #8b5cf6;
+  box-shadow: 0 0 6px rgba(139, 92, 246, 0.5);
+}
+
+.kpiValue {
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+/* ================================================================ */
+/* CHẾ ĐỘ 1: HÀNG NGÀY (DAILY STRIP + FOCUS AGENDA)                 */
+/* ================================================================ */
+
+.dayStripWrapper {
   width: 100%;
   overflow-x: auto;
-  padding-bottom: var(--space-4);
+  padding-top: 18px;
+  padding-bottom: 10px;
+  margin-top: -10px;
   -webkit-overflow-scrolling: touch;
 }
 
-.scheduleGrid {
+.dayStripGrid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(210px, 1fr));
-  gap: var(--space-4);
-  min-width: 1100px;
+  grid-template-columns: repeat(7, minmax(110px, 1fr));
+  gap: 12px;
+  min-width: 770px;
 }
 
-.dayColumn {
+@media (max-width: 900px) {
+  .dayStripGrid {
+    min-width: 720px;
+  }
+}
+
+.dayPill {
+  background-color: var(--surface);
+  border: 1.5px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: 14px 8px 12px;
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  user-select: none;
+}
+
+.dayPill:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.dayPillActive {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  border-color: transparent !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 18px rgba(20, 184, 166, 0.35) !important;
+  transform: translateY(-2px);
+}
+
+.dayPillActive .dayName {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.dayPillActive .dayDate {
+  color: #ffffff !important;
+}
+
+.dayPillActive .dayBadge {
+  background: rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+}
+
+.dayPillToday {
+  border: 2px solid var(--accent-energy, #FF6B35) !important;
+  background-color: rgba(255, 107, 53, 0.04);
+}
+
+.dayPillActiveToday {
+  box-shadow: 0 0 0 2px var(--accent-energy, #FF6B35), 0 8px 24px rgba(20, 184, 166, 0.4) !important;
+}
+
+.todayTag {
+  position: absolute;
+  top: -11px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, var(--accent-energy, #FF6B35), #ea580c);
+  color: #ffffff;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  box-shadow: 0 3px 8px rgba(255, 107, 53, 0.45);
+  white-space: nowrap;
+  z-index: 10;
+  border: 2px solid var(--surface);
+  line-height: 1.3;
+}
+
+.dayName {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: capitalize;
+}
+
+.dayDate {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-main);
+  line-height: 1.25;
+}
+
+.dayBadge {
+  font-size: 0.725rem;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  margin-top: 2px;
+  background-color: var(--surface-hover);
+  color: var(--primary);
+}
+
+.dayBadgeZero {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/* Focused Day Detail Section */
+.focusContainer {
+  background-color: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-6, 24px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5, 20px);
+  box-shadow: var(--shadow-sm);
+}
+
+.focusHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: var(--space-4, 16px);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.focusTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.focusTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-main);
+  letter-spacing: normal;
+}
+
+.todayHeaderBadge {
+  background: linear-gradient(135deg, var(--accent-energy, #FF6B35), #ea580c);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 6px rgba(255, 107, 53, 0.3);
+}
+
+.focusCountBadge {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.backToTodayBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-light);
+  background-color: var(--surface-hover);
+  color: var(--primary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.backToTodayBtn:hover {
+  background-color: var(--primary-light);
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.sessionList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 16px);
+}
+
+.focusSessionCard {
+  background-color: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: 18px 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.focusSessionCard::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background: linear-gradient(to bottom, var(--primary), var(--primary-hover));
+}
+
+.focusSessionCard:hover {
+  transform: translateY(-2px);
+  border-color: var(--border);
+  box-shadow: var(--shadow-md);
+}
+
+.sessionLeft {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex: 1;
+  min-width: 280px;
+}
+
+.sessionTimeBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--primary-light);
+  color: var(--primary);
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  min-width: 110px;
+  text-align: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(20, 184, 166, 0.2);
+}
+
+.sessionTimeRange {
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  white-space: nowrap;
+}
+
+.sessionDuration {
+  font-size: 0.75rem;
+  font-weight: 400;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+
+.sessionMainInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sessionCategoryRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.venueBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent-energy, #FF6B35);
+  background: rgba(255, 107, 53, 0.08);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.venueBadge .material-icons-round {
+  font-size: 14px;
+  color: var(--accent-energy, #FF6B35);
+}
+
+.sessionVenueTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-main);
+  letter-spacing: normal;
+  line-height: 1.35;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sessionVenueTitle .material-icons-round {
+  font-size: 18px;
+  color: var(--accent-energy, #FF6B35);
+}
+
+.sessionClassSubRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.classSubChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--surface-hover);
+  border: 1px solid var(--border-light);
+  padding: 3px 10px;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.coachChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: rgba(20, 184, 166, 0.08);
+  border: 1px solid rgba(20, 184, 166, 0.2);
+  color: var(--primary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: var(--radius-md);
+}
+
+.coachChip .material-icons-round {
+  font-size: 14px;
+}
+
+.coachChipUnassigned {
+  background-color: var(--surface-hover);
+  border: 1px dashed var(--border-light);
+  color: var(--text-muted);
+}
+
+.sessionActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.actionBtnSecondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-light);
+  background: var(--surface);
+  color: var(--text-main);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.actionBtnSecondary:hover {
+  background: var(--surface-hover);
+  border-color: var(--border);
+  transform: translateY(-1px);
+}
+
+.actionBtnEdit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(20, 184, 166, 0.3);
+  background: rgba(20, 184, 166, 0.06);
+  color: var(--primary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.actionBtnEdit:hover {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(20, 184, 166, 0.3);
+}
+
+.actionBtnDelete {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.05);
+  color: var(--danger, #ef4444);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.actionBtnDelete:hover {
+  background: var(--danger, #ef4444);
+  color: #ffffff;
+  border-color: var(--danger, #ef4444);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(239, 68, 68, 0.3);
+}
+
+.emptyStateCard {
+  padding: 48px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.emptyIcon {
+  font-size: 48px;
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.emptyTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.emptySubtext {
+  font-size: 0.825rem;
+  color: var(--text-secondary);
+  max-width: 420px;
+}
+
+/* ================================================================ */
+/* CHẾ ĐỘ 2: LƯỚI TUẦN THÍCH ỨNG (ADAPTIVE WEEKLY BOARD)            */
+/* ================================================================ */
+
+.weekBoardWrapper {
+  width: 100%;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.weekBoardGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(180px, 1fr));
+  gap: 12px;
+  min-width: 980px;
+}
+
+.weekCol {
   background-color: var(--surface);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
-  min-height: 480px;
+  min-height: auto;
   box-shadow: var(--shadow-sm);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   overflow: hidden;
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.dayColumn:hover {
+.weekCol:hover {
   border-color: var(--border);
   box-shadow: var(--shadow-md);
 }
 
-.dayHeader {
-  padding: var(--space-3) var(--space-4);
+.weekColToday {
+  border: 2px solid var(--accent-energy, #FF6B35) !important;
+  box-shadow: 0 4px 14px rgba(255, 107, 53, 0.15);
+}
+
+.weekColHeader {
+  padding: 10px 12px;
   background-color: var(--surface-hover);
   border-bottom: 1px solid var(--border-light);
   display: flex;
@@ -45,15 +705,18 @@
   justify-content: space-between;
 }
 
-.dayTitle {
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: var(--text-main);
-  letter-spacing: -0.01em;
+.weekColToday .weekColHeader {
+  background-color: rgba(255, 107, 53, 0.08);
 }
 
-.dayBadge {
-  font-size: 0.7rem;
+.weekColTitle {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.weekColBadge {
+  font-size: 0.6875rem;
   font-weight: 600;
   padding: 2px 7px;
   border-radius: var(--radius-full);
@@ -62,148 +725,298 @@
   border: 1px solid var(--border-light);
 }
 
-.dayBadgeActive {
+.weekColBadgeActive {
   background-color: var(--primary-light);
   color: var(--primary);
   border-color: transparent;
 }
 
-.dayBody {
-  padding: var(--space-3);
+.weekColBody {
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: 8px;
   flex: 1;
 }
 
-.emptyDay {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  padding: var(--space-8) var(--space-2);
-  color: var(--text-muted);
-  font-size: 0.8rem;
-  border: 1px dashed var(--border-light);
-  border-radius: var(--radius-md);
-  margin-top: var(--space-2);
-  text-align: center;
-}
-
-.emptyDayIcon {
-  font-size: 20px;
-  opacity: 0.5;
-}
-
-.sessionCard {
+.weekSessionCard {
   background-color: var(--surface);
   border: 1px solid var(--border-light);
-  border-left: 4px solid var(--primary);
+  border-left: 3px solid var(--primary);
   border-radius: var(--radius-md);
-  padding: var(--space-3);
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.18s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.18s ease;
+  gap: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.18s ease;
   position: relative;
 }
 
-.sessionCard:hover {
+.weekSessionCard:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
   border-color: var(--border);
-  border-left-color: var(--primary-hover);
+  box-shadow: var(--shadow-md);
 }
 
-.sessionTimeHeader {
+.weekSessionHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-2);
+  gap: 6px;
 }
 
-.timePill {
+.weekSessionTime {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   font-size: 0.725rem;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--primary);
   background-color: var(--primary-light);
-  padding: 3px 8px;
+  padding: 2px 7px;
   border-radius: var(--radius-full);
-  letter-spacing: 0.01em;
+  width: fit-content;
 }
 
-.timePill .material-icons-round {
-  font-size: 13px;
-}
-
-.className {
-  font-size: 0.875rem;
+.weekSessionVenue {
+  font-size: 0.8125rem;
   font-weight: 600;
   color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 4px;
   line-height: 1.3;
 }
 
-.sessionMeta {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.weekSessionClass {
   font-size: 0.75rem;
+  font-weight: 500;
   color: var(--text-secondary);
-}
-
-.metaRow {
   display: flex;
   align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  gap: 4px;
 }
 
-.metaRow .material-icons-round {
-  font-size: 14px;
+.weekSessionCoach {
+  font-size: 0.7rem;
   color: var(--text-muted);
-  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.sessionActions {
+.weekSessionCoach .material-icons-round {
+  font-size: 13px;
+}
+
+.weekSessionActions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: var(--space-2);
-  padding-top: var(--space-2);
+  gap: 6px;
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-light);
+}
+
+.weekActionBtn {
+  background: none;
+  border: none;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s ease;
+}
+
+.weekActionBtnEdit {
+  color: var(--primary);
+}
+
+.weekActionBtnEdit:hover {
+  background-color: var(--primary-light);
+}
+
+.weekActionBtnDelete {
+  color: var(--danger, #ef4444);
+}
+
+.weekActionBtnDelete:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+.weekEmptyDay {
+  padding: 20px 8px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  border: 1px dashed var(--border-light);
+  border-radius: var(--radius-md);
+  margin: 4px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ================================================================ */
+/* CHẾ ĐỘ 3: THEO LỚP HỌC (CLASS BENTO CARDS)                       */
+/* ================================================================ */
+
+.classBentoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 18px;
+}
+
+.classBentoCard {
+  background-color: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-2xl);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.classBentoCard:hover {
+  transform: translateY(-2px);
+  border-color: var(--border);
+  box-shadow: var(--shadow-md);
+}
+
+.classCardHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.classCardCategoryRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.classCardVenueTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-main);
+  letter-spacing: normal;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.classCardClassRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.classFreqBadge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  background-color: var(--primary-light);
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+.classTimeBanner {
+  background-color: var(--surface-hover);
+  border-radius: var(--radius-lg);
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.classTimeText {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.classDurationText {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.classCoachRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.classCoachRow .material-icons-round {
+  font-size: 16px;
+  color: var(--primary);
+}
+
+.classDaysSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.classDaysLabel {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
+.classDaysList {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.dayChip {
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.dayChipActive {
+  background-color: var(--primary);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(20, 184, 166, 0.3);
+}
+
+.dayChipInactive {
+  background-color: var(--surface-hover);
+  color: var(--text-muted);
+}
+
+.classCardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
   border-top: 1px solid var(--border-light);
   margin-top: 2px;
 }
 
-.actionBtn {
-  background: none;
-  border: none;
-  font-size: 0.725rem;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 3px 6px;
-  border-radius: var(--radius-sm);
-  transition: background-color 0.15s ease, color 0.15s ease;
-}
-
-.actionBtnEdit {
-  color: var(--primary);
-}
-
-.actionBtnEdit:hover {
-  background-color: var(--primary-light);
-}
-
-.actionBtnDelete {
-  color: var(--danger);
-}
-
-.actionBtnDelete:hover {
-  background-color: var(--danger-bg);
+.classActionGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }

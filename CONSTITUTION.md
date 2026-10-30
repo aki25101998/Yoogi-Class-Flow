@@ -1,6 +1,6 @@
 # 📜 HIẾN PHÁP DỰ ÁN — YOOGI CLASS FLOW
 
-> **Phiên bản:** 1.8.2  
+> **Phiên bản:** 1.8.3  
 > **Cập nhật lần cuối:** 2026-10-30  
 > **Mục đích:** Đây là tài liệu gốc, bất khả xâm phạm. Mọi thay đổi code PHẢI tuân thủ các quy tắc trong file này. Khi có tính năng mới, file này PHẢI được cập nhật đồng thời.
 
@@ -780,6 +780,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-10-30 | 1.8.0 | Tái cấu trúc toàn diện phân hệ Cài đặt (/settings) chuẩn SaaS hiện đại: Bổ sung thanh điều hướng Sub-Nav Tabs (SettingsNavTabs) dùng chung kết nối 5 phân vùng; tách riêng Quản trị dữ liệu (Seed Data & Danger Zone Reset Data) sang /settings/data; tinh chỉnh trang Thông tin trung tâm (/settings) tập trung vào định danh cơ sở & bản quyền SaaS; nâng cấp toàn diện giao diện Thành viên (/settings/members) lên chuẩn Card-Row Entity List kèm KPI 4 ô và Instant Search; nâng cấp giao diện Cấp đai (/settings/belts) với visual dải màu võ đạo (Martial Arts Belt Strips) và KPI phân cấp; loại bỏ triệt để các class Tailwind thừa trên toàn bộ phân hệ Cài đặt |
 | 2026-10-30 | 1.8.1 | Hợp nhất phân hệ Quản trị dữ liệu và Thông tin trung tâm vào chung trang Cài đặt (/settings): Rút gọn hệ thống Sub-Nav Tabs còn 4 mục chính (Thông tin trung tâm, Đội ngũ & Phân quyền, Hệ thống cấp đai, Lịch sử phiên bản); tích hợp khối Quản trị dữ liệu (Khởi tạo dữ liệu mẫu kiểm thử 1-chạm & Vùng nguy hiểm Xóa toàn bộ dữ liệu kèm Type-to-confirm modal) trực tiếp bên dưới thông tin định danh và bản quyền SaaS; tự động điều hướng /settings/data về /settings và dọn dẹp Sidebar tinh gọn |
 | 2026-10-30 | 1.8.2 | Tinh giản giao diện Quản lý Cấp đai (/settings/belts): Loại bỏ khối Tổng quan phân cấp võ đạo (Overview KPI 4 ô) theo yêu cầu người dùng, giúp giao diện tập trung trực tiếp vào danh sách thẻ cấp đai võ thuật (Martial Arts Belt Strips) và tác vụ thêm/sửa/xóa đai |
+| 2026-10-30 | 1.8.3 | Nâng cấp toàn diện giao diện Lịch dạy tuần (/schedule - Admin) lên chuẩn Athletic Hybrid Multi-View: Đồng bộ thiết kế với Lịch cá nhân HLV (/my-schedule) loại bỏ triệt để bố cục 7 cột tĩnh và thanh cuộn ngang 1100px; tích hợp bộ chuyển đổi 3 góc nhìn tức thì [Hàng ngày] (Dải 7 ngày tương tác Weekly Strip + Focus Agenda), [Lưới tuần thích ứng] (Adaptive Week Grid tự co giãn theo màn hình) và [Theo lớp Bento] (Gom nhóm lớp kèm dải ngày trong tuần); bổ sung Thanh Quick KPI Bar (Tổng ca, Thời lượng, Lớp hoạt động, HLV phụ trách); bổ sung Bộ lọc thông minh theo Cơ sở (Venue) và Huấn luyện viên (Coach); nâng cấp thẻ ca học theo chuẩn Athletic Session Card (dải accent gradient teal, khối giờ & thời lượng, tiêu đề Nơi dạy cam san hô, chip lớp học võ đạo, chip HLV) kèm đầy đủ tác vụ quản trị [Thêm mới], [Sửa], [Xóa], [Điểm danh] |
 
 ---
 
