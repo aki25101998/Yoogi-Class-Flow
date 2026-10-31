@@ -197,3 +197,4 @@ CREATE TRIGGER trg_seed_finance_categories_on_org_created
   AFTER INSERT ON public.organizations
   FOR EACH ROW
   EXECUTE FUNCTION public.trigger_seed_finance_categories_on_org_created();
+

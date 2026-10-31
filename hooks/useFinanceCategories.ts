@@ -52,3 +52,4 @@ export function useFinanceCategories(organizationId: string | undefined) {
     error,
   };
 }
+

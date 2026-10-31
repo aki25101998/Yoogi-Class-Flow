@@ -1,6 +1,6 @@
 # 📜 HIẾN PHÁP DỰ ÁN — YOOGI CLASS FLOW
 
-> **Phiên bản:** 1.8.8  
+> **Phiên bản:** 1.9.0  
 > **Cập nhật lần cuối:** 2026-10-31  
 > **Mục đích:** Đây là tài liệu gốc, bất khả xâm phạm. Mọi thay đổi code PHẢI tuân thủ các quy tắc trong file này. Khi có tính năng mới, file này PHẢI được cập nhật đồng thời.
 
@@ -511,11 +511,24 @@ scheduled → checked_in → approved → paid
 - Hỗ trợ thanh toán từng phần (`paid_amount`)
 - Thanh toán qua RPC `record_tuition_payment` — **atomic operation** với `FOR UPDATE` lock
 
-### 10.2 Sổ Quỹ (Finance Transactions)
+### 10.2 Sổ Quỹ (Finance Transactions & Categories)
 
-- Type: `income` hoặc `expense`
-- `source_type`: `MANUAL`, `TUITION_PAYMENT`, `PAYROLL_PAYMENT`
-- **QUY TẮC:** Giao dịch hệ thống (auto-generated) KHÔNG thể bị xóa thủ công
+- **Cấu trúc Danh mục 2 cấp (`finance_categories`):**
+  - Quản lý phân cấp: Nhóm cha (`parent_id IS NULL`) → Hạng mục con chi tiết (Võ phục, Tiền điện, v.v.).
+  - Phân loại rõ `type`: `income` (Thu) hoặc `expense` (Chi).
+  - Có danh mục hệ thống mặc định (`is_system = true`) bảo vệ chống xóa, hỗ trợ Admin tự thêm/xóa danh mục con tùy chỉnh.
+  - Tự động nạp sẵn (seed) cho mọi tổ chức mới qua trigger `SECURITY DEFINER`.
+- **Bảng `finance_transactions`:**
+  - Type: `income` hoặc `expense`
+  - `source_type`: `MANUAL`, `TUITION_PAYMENT`, `PAYROLL_PAYMENT`
+  - `venue_id`: Khóa ngoại composite tới `venues(organization_id, id)` — cho phép `NULL` = Chung toàn trung tâm.
+  - `category_id`: Khóa ngoại composite tới `finance_categories(organization_id, id)` kèm snapshot tên `parent_category` và `sub_category`.
+  - `payment_method`: `cash` (Tiền mặt) hoặc `bank_transfer` (Chuyển khoản).
+- **Bộ lọc thời gian & Phân tích trực quan:**
+  - Hỗ trợ dải chọn nhanh: Hôm nay, Tuần này, Tháng này (mặc định), Tháng trước, Quý này, Năm nay, Tùy chọn ngày.
+  - Lưới 4 Thẻ Bento KPI cân đối (Tổng thu, Tổng chi, Lợi nhuận ròng, Tỷ lệ Tiền mặt vs Ngân hàng).
+  - 2 biểu đồ trực quan (Xu hướng dòng tiền theo thời gian & Cơ cấu chi phí theo nhóm cha) dựng bằng SVG/CSS thuần siêu nhẹ.
+- **QUY TẮC:** Giao dịch hệ thống (auto-generated từ Học phí hoặc Lương) KHÔNG thể bị xóa thủ công.
 
 ### 10.3 Payroll
 
@@ -733,7 +746,8 @@ useDashboardStats.ts — Dashboard statistics
 | `payroll_payment_sessions` | Session → payment mapping |
 | `salary_audit_logs` | Audit log lương |
 | `tuition` | Học phí học viên |
-| `finance_transactions` | Thu chi tổng hợp |
+| `finance_categories` | Cây danh mục thu chi 2 cấp đa tổ chức |
+| `finance_transactions` | Thu chi tổng hợp (gắn cơ sở, 2 cấp danh mục, phương thức) |
 
 ### System
 | Bảng | Mô tả |
@@ -799,6 +813,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-10-30 | 1.8.6 | Nâng cấp toàn diện tính năng Chỉnh sửa vai trò & Tùy biến chức năng (/settings/members): Bổ sung khả năng đặt Tên chức danh/vai trò tùy chỉnh (custom_role_title) theo cơ cấu thực tế của doanh nghiệp (ví dụ: Giám đốc chuyên môn, Quản lý cơ sở, Trợ giảng, Lễ tân & CSKH, Kế toán trung tâm); tích hợp 6 mẫu vai trò nhanh (Role Presets); bổ sung Ma trận phân quyền chi tiết 10 chức năng chia thành 4 nhóm nghiệp vụ (Vận hành & Đào tạo, Lịch dạy & Điểm danh, Tài chính & Lương, Hệ thống & Cài đặt) kèm nút chọn nhanh; hỗ trợ cơ chế lưu trữ kép Dual-Storage Resilience (cột DB + thẻ fallback permissions) bảo đảm không lỗi khi chưa chạy migration; hiển thị tên vai trò tùy chỉnh trên RoleBadge và Sidebar; bổ sung migration 042_custom_role_title.sql |
 | 2026-10-31 | 1.8.7 | Tách riêng phân hệ Quản lý & Cấu hình Vai trò thành tab độc lập trong Cài đặt (/settings/roles); khôi phục Modal chọn vai trò thành viên/HLV (/settings/members) về giao diện tối giản chuẩn Ảnh 2 (chọn nhanh 4 vai trò cốt lõi hoặc vai trò tùy biến kèm lưu trực tiếp 1-chạm); trang /settings/roles cho phép xem tổng quan Bento KPI vai trò, danh sách vai trò hệ thống & tùy biến, tùy biến tên vai trò, mô tả, cấp độ bảo mật hệ thống và ma trận phân quyền chi tiết 10 module; bổ sung migration 043_organization_roles.sql |
 | 2026-10-31 | 1.8.8 | Chuẩn hóa 10 module quyền hạn cốt lõi trên toàn hệ thống: Loại bỏ triệt để quyền hạn cũ manage_classes (đã được bao hàm bởi manage_venues - Cơ sở & Lớp học) trong tất cả các service (members, roles, platform-admin, organization, workspace); khắc phục lỗi Quản trị viên bị hiển thị 11/10 quyền hạn và 110% phạm vi kèm thẻ thô `✓ manage_classes` trên trang Cấu hình vai trò (/settings/roles); bổ sung bộ lọc nghiêm ngặt ALL_PERMISSION_KEYS và chặn tràn ngưỡng 100% khi tính tỷ lệ |
+| 2026-10-31 | 1.9.0 | Nâng cấp toàn diện Sổ Quỹ Thu - Chi (/finance): Bảng mới finance_categories (cây danh mục 2 cấp đa tổ chức), gắn cơ sở (venue_id) và phương thức thanh toán (cash/bank_transfer) trên finance_transactions; dải bộ lọc thời gian chuẩn kế toán (Hôm nay, Tuần, Tháng, Quý, Năm, Tùy chọn), lưới 4 thẻ Bento KPI cân đối (Tổng thu, Tổng chi, Lợi nhuận ròng, Tỷ lệ Tiền mặt vs Bank), 2 biểu đồ trực quan SVG/CSS xu hướng dòng tiền & cơ cấu chi phí, form cascade 2 cấp và modal quản lý danh mục (migration 044_finance_categories_and_enhancements.sql) |
 
 ---
 

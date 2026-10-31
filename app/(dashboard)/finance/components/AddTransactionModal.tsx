@@ -333,3 +333,4 @@ export function AddTransactionModal({
     </Modal>
   );
 }
+

@@ -105,3 +105,4 @@ export function FinanceKpiGrid({ summary }: Props) {
     </div>
   );
 }
+

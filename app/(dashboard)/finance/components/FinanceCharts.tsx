@@ -193,3 +193,4 @@ export function FinanceCharts({ trends, expenseDistribution }: Props) {
     </div>
   );
 }
+

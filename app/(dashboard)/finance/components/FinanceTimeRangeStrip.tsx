@@ -72,6 +72,7 @@ export function FinanceTimeRangeStrip({ onRangeChange }: Props) {
     setCustomStart(range.startDate);
     setCustomEnd(range.endDate);
     onRangeChange({ ...range, preset: 'this_month' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSelectPreset = (preset: TimeRangePreset) => {
@@ -152,3 +153,4 @@ export function FinanceTimeRangeStrip({ onRangeChange }: Props) {
     </div>
   );
 }
+

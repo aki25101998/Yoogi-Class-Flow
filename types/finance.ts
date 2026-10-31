@@ -80,3 +80,4 @@ export interface ExpenseDistributionItem {
   amount: number;
   percentage: number; // 0 to 100
 }
+
