@@ -2,36 +2,50 @@
 
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { getBusinessDateString } from '@/utils/date';
-import { addTransactionAction, deleteTransactionAction } from './actions';
+import { deleteTransactionAction } from './actions';
 import { useFinance } from '@/hooks/useFinance';
+import { useFinanceCategories } from '@/hooks/useFinanceCategories';
+import { useVenues } from '@/hooks/useVenues';
 import { useDashboardContext } from '../DashboardProvider';
 import dynamic from 'next/dynamic';
+import type { FinancePaymentMethod, FinanceTransactionType, TimeRangePreset } from '@/types/finance';
+
 const ExportButton = dynamic(() => import('@/app/components/excel/ExportButton').then(mod => mod.ExportButton), { ssr: false });
 import { FinanceExportDef } from '@/services/excel/definitions/finance.def';
 
 // UI Components
 import { PageHeader } from '@/app/components/ui/PageHeader';
 import { Button } from '@/app/components/ui/Button';
-import { Input, Select } from '@/app/components/ui/Input';
-import { Card, CardContent } from '@/app/components/ui/Card';
+import { Card } from '@/app/components/ui/Card';
 import { EmptyState } from '@/app/components/ui/EmptyState';
-import { Badge } from '@/app/components/ui/Badge';
 import { Table, Thead, Tbody, Tr, Th, Td } from '@/app/components/ui/Table';
-import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/app/components/ui/Modal';
-import styles from '@/app/styles/page-standard.module.css';
+
+// Finance Sub-Components
+import { FinanceTimeRangeStrip, computeRangeFromPreset } from './components/FinanceTimeRangeStrip';
+import { FinanceFiltersBar } from './components/FinanceFiltersBar';
+import { FinanceKpiGrid } from './components/FinanceKpiGrid';
+import { FinanceCharts } from './components/FinanceCharts';
+import { AddTransactionModal } from './components/AddTransactionModal';
+import { ManageCategoriesModal } from './components/ManageCategoriesModal';
+
+import pageStyles from '@/app/styles/page-standard.module.css';
+import clientStyles from './FinanceClient.module.css';
 
 function FinanceSkeleton() {
   return (
-    <div className="flex-col gap-6 animate-pulse">
-      <div className={styles.overviewCard}>
-        <div className={styles.overviewGrid}>
-          <div className="h-16 bg-surface-hover rounded w-full"></div>
-          <div className="h-16 bg-surface-hover rounded w-full"></div>
-          <div className="h-16 bg-surface-hover rounded w-full"></div>
-        </div>
+    <div className="flex flex-col gap-6 animate-pulse">
+      <div className="h-20 bg-surface-hover rounded-2xl w-full" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="h-28 bg-surface-hover rounded-2xl w-full" />
+        <div className="h-28 bg-surface-hover rounded-2xl w-full" />
+        <div className="h-28 bg-surface-hover rounded-2xl w-full" />
+        <div className="h-28 bg-surface-hover rounded-2xl w-full" />
       </div>
-      <Card><CardContent className="h-64 bg-surface-hover mt-6"></CardContent></Card>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="h-64 bg-surface-hover rounded-2xl w-full" />
+        <div className="h-64 bg-surface-hover rounded-2xl w-full" />
+      </div>
+      <div className="h-64 bg-surface-hover rounded-2xl w-full" />
     </div>
   );
 }
@@ -40,64 +54,85 @@ export default function FinanceClient() {
   const { context } = useDashboardContext();
   const organizationId = context?.organization?.id;
   const currentUserRole = context?.membership?.role;
-
-  const { transactions, isLoading: isFetching } = useFinance(organizationId);
   const queryClient = useQueryClient();
 
-  const [isAdding, setIsAdding] = useState(false);
-  const [formData, setFormData] = useState({ type: 'income', category: '', amount: 0, date: getBusinessDateString(), description: '' });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
   const isAdminOrOwner = currentUserRole === 'admin' || currentUserRole === 'owner';
+  const hasFinancePermission = isAdminOrOwner || (context?.permissions && context.permissions.includes('manage_finance'));
 
-  const totalIncome = transactions.filter((t: any) => t.type === 'income').reduce((acc: number, t: any) => acc + Number(t.amount), 0);
-  const totalExpense = transactions.filter((t: any) => t.type === 'expense').reduce((acc: number, t: any) => acc + Number(t.amount), 0);
-  const balance = totalIncome - totalExpense;
+  // 1. Venues & Categories
+  const { venues } = useVenues(organizationId);
+  const { incomeCategories, expenseCategories } = useFinanceCategories(organizationId);
 
-  const resetForm = () => {
-    setFormData({ type: 'income', category: '', amount: 0, date: getBusinessDateString(), description: '' });
-    setIsAdding(false);
-    setError('');
-  };
+  // 2. Filter States
+  const defaultRange = computeRangeFromPreset('this_month');
+  const [dateRange, setDateRange] = useState<{ startDate: string; endDate: string; preset: TimeRangePreset }>({
+    startDate: defaultRange.startDate,
+    endDate: defaultRange.endDate,
+    preset: 'this_month',
+  });
+  const [selectedVenue, setSelectedVenue] = useState<string>('all');
+  const [selectedType, setSelectedType] = useState<'all' | FinanceTransactionType>('all');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'all' | FinancePaymentMethod>('all');
 
-  const handleSuccess = () => {
+  // 3. Modals
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isManageCategoriesOpen, setIsManageCategoriesOpen] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  // 4. Data Fetching
+  const { 
+    rawTransactions,
+    transactions, 
+    summary, 
+    cashflowTrends, 
+    expenseDistribution, 
+    isLoading 
+  } = useFinance(organizationId, {
+    startDate: dateRange.startDate,
+    endDate: dateRange.endDate,
+    venueId: selectedVenue,
+    type: selectedType,
+    paymentMethod: selectedPaymentMethod,
+  });
+
+  const handleTransactionSuccess = () => {
     queryClient.invalidateQueries({ queryKey: ['financeTransactions', organizationId] });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    const res = await addTransactionAction(formData);
-    setLoading(false);
-    if (res.success) {
-      resetForm();
-      handleSuccess();
-    } else setError(res.error || 'Lỗi khi thêm giao dịch');
-  };
-
   const handleDelete = async (id: string) => {
-    if (confirm('Bạn có chắc muốn xóa giao dịch này? Hành động này không thể hoàn tác.')) {
-      setLoading(true);
-      const res = await deleteTransactionAction(id);
-      setLoading(false);
-      if (res.success) handleSuccess();
-      else alert(res.error || 'Lỗi khi xóa');
+    if (!confirm('Bạn có chắc muốn xóa giao dịch này? Hành động này không thể hoàn tác.')) {
+      return;
+    }
+    setActionLoading(true);
+    const res = await deleteTransactionAction(id);
+    setActionLoading(false);
+    if (res.success) {
+      handleTransactionSuccess();
+    } else {
+      alert(res.error || 'Lỗi khi xóa giao dịch');
     }
   };
 
   return (
-    <div className="flex-col gap-6">
+    <div className={clientStyles.financeContainer}>
+      {/* 1. Header */}
       <PageHeader 
-        title="Quản lý Tài chính" 
-        description="Theo dõi dòng tiền thu chi của trung tâm"
-        primaryAction={isAdminOrOwner ? (
-          <div className="flex gap-2">
+        title="Quản Lý Tài Chính & Sổ Quỹ" 
+        description="Theo dõi dòng tiền thu chi, phân bổ chi phí và lợi nhuận trung tâm"
+        primaryAction={hasFinancePermission ? (
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="secondary"
+              onClick={() => setIsManageCategoriesOpen(true)}
+              leftIcon={<span className="material-icons-round">folder_special</span>}
+            >
+              Danh Mục
+            </Button>
             <ExportButton data={transactions} definition={FinanceExportDef} />
             <Button 
-              onClick={() => setIsAdding(true)}
-              leftIcon={<span className="material-icons-round">add_circle_outline</span>}
+              onClick={() => setIsAddModalOpen(true)}
+              leftIcon={<span className="material-icons-round">add_circle</span>}
+              variant="primary"
             >
               Thêm Giao Dịch
             </Button>
@@ -107,150 +142,181 @@ export default function FinanceClient() {
         )}
       />
 
-      {isFetching ? (
+      {/* 2. Time Range Strip */}
+      <FinanceTimeRangeStrip onRangeChange={setDateRange} />
+
+      {/* 3. Secondary Filters Bar */}
+      <FinanceFiltersBar
+        venues={venues}
+        selectedVenue={selectedVenue}
+        onVenueChange={setSelectedVenue}
+        selectedType={selectedType}
+        onTypeChange={setSelectedType}
+        selectedPaymentMethod={selectedPaymentMethod}
+        onPaymentMethodChange={setSelectedPaymentMethod}
+      />
+
+      {isLoading ? (
         <FinanceSkeleton />
       ) : (
         <>
-          <div className={styles.overviewCard}>
-            <div className={styles.overviewGrid}>
-              <div className={`${styles.kpiItem} ${styles.kpiSuccess}`}>
-                <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Tổng thu</div>
-                <div className={styles.kpiValue}>{totalIncome.toLocaleString('vi-VN')} đ</div>
-                <div className={styles.kpiCaption}>Khoản thu đã ghi nhận</div>
-                <span className={`material-icons-round ${styles.kpiWatermark}`} style={{ color: 'var(--success)' }}>trending_up</span>
-              </div>
-              <div className={`${styles.kpiItem} ${styles.kpiDanger}`}>
-                <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Tổng chi</div>
-                <div className={styles.kpiValue}>{totalExpense.toLocaleString('vi-VN')} đ</div>
-                <div className={styles.kpiCaption}>Chi phí hoạt động</div>
-                <span className={`material-icons-round ${styles.kpiWatermark}`} style={{ color: 'var(--danger)' }}>trending_down</span>
-              </div>
-              <div className={`${styles.kpiItem} ${balance >= 0 ? styles.kpiPrimary : styles.kpiDanger}`}>
-                <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Số dư (Lợi nhuận)</div>
-                <div className={styles.kpiValue}>{balance.toLocaleString('vi-VN')} đ</div>
-                <div className={styles.kpiCaption}>Lợi nhuận ròng hiện tại</div>
-                <span className={`material-icons-round ${styles.kpiWatermark}`} style={{ color: balance >= 0 ? 'var(--primary)' : 'var(--danger)' }}>account_balance_wallet</span>
-              </div>
+          {/* 4. Bento KPI Grid */}
+          <FinanceKpiGrid summary={summary} />
+
+          {/* 5. Charts Grid */}
+          <FinanceCharts 
+            trends={cashflowTrends} 
+            expenseDistribution={expenseDistribution} 
+          />
+
+          {/* 6. Transactions Table List */}
+          <div className={pageStyles.listContainer}>
+            <div className={pageStyles.sectionHeader}>
+              <h3 className={pageStyles.sectionTitle}>
+                <span className="material-icons-round text-primary" style={{ fontSize: '20px' }}>receipt_long</span>
+                Danh Sách Giao Dịch
+              </h3>
+              <span className={pageStyles.sectionCount}>
+                Hiển thị {transactions.length} / {rawTransactions.length} giao dịch
+              </span>
             </div>
-          </div>
 
-          <Modal isOpen={isAdding} onClose={loading ? () => {} : resetForm}>
-            <ModalHeader title="Thêm giao dịch mới" onClose={loading ? () => {} : resetForm} />
-            <ModalBody>
-              {error && <div style={{ color: 'var(--danger)', marginBottom: '16px', fontSize: '0.875rem' }}>{error}</div>}
-              <form id="finance-form" onSubmit={handleSubmit} style={{ display: 'grid', gap: '16px' }}>
-                <Select 
-                  label="Loại giao dịch *"
-                  required 
-                  value={formData.type} 
-                  onChange={e => setFormData({...formData, type: e.target.value})}
-                  options={[
-                    { value: 'income', label: 'Thu' },
-                    { value: 'expense', label: 'Chi' }
-                  ]}
-                />
-                <Input 
-                  label="Danh mục *"
-                  required 
-                  placeholder="VD: Học phí, Tiền thuê mặt bằng, Tiền điện..." 
-                  value={formData.category} 
-                  onChange={e => setFormData({...formData, category: e.target.value})} 
-                />
-                <Input 
-                  label="Số tiền (VNĐ) *"
-                  type="number" 
-                  required 
-                  min="1" 
-                  value={formData.amount} 
-                  onChange={e => setFormData({...formData, amount: Number(e.target.value)})} 
-                />
-                <Input 
-                  label="Ngày *"
-                  type="date" 
-                  required 
-                  value={formData.date} 
-                  onChange={e => setFormData({...formData, date: e.target.value})} 
-                />
-                <div>
-                  <Input 
-                    label="Mô tả thêm"
-                    value={formData.description} 
-                    onChange={e => setFormData({...formData, description: e.target.value})} 
-                  />
-                </div>
-              </form>
-            </ModalBody>
-            <ModalFooter>
-              <Button type="button" variant="secondary" onClick={resetForm} disabled={loading}>Hủy</Button>
-              <Button type="submit" form="finance-form" isLoading={loading} variant="primary">Lưu</Button>
-            </ModalFooter>
-          </Modal>
-
-          {transactions.length === 0 ? (
-            <EmptyState 
-              title="Chưa có giao dịch" 
-              description="Hệ thống chưa ghi nhận dòng tiền nào." 
-              icon="receipt_long"
-              compact
-            />
-          ) : (
-            <div className={styles.listContainer}>
-              <div className={styles.sectionHeader}>
-                <h3 className={styles.sectionTitle}>Lịch sử giao dịch</h3>
-                <span className={styles.sectionCount}>{transactions.length} giao dịch</span>
-              </div>
+            {transactions.length === 0 ? (
+              <EmptyState 
+                title={rawTransactions.length === 0 ? "Chưa có giao dịch trong kỳ" : "Không tìm thấy giao dịch phù hợp"} 
+                description={rawTransactions.length === 0 
+                  ? "Hệ thống chưa ghi nhận dòng tiền nào trong khoảng thời gian đã chọn."
+                  : "Vui lòng điều chỉnh lại bộ lọc Loại hoặc Phương thức thanh toán."}
+                icon="receipt_long"
+                compact
+              />
+            ) : (
               <Card>
                 <div className="overflow-x-auto">
                   <Table>
                     <Thead>
                       <Tr>
-                        <Th>Ngày</Th>
-                        <Th>Danh mục</Th>
-                        <Th>Mô tả</Th>
-                        <Th className="text-right">Số tiền</Th>
-                        {isAdminOrOwner && <Th className="text-right">Thao tác</Th>}
+                        <Th style={{ minWidth: '105px' }}>Ngày</Th>
+                        <Th style={{ minWidth: '180px' }}>Danh mục</Th>
+                        <Th style={{ minWidth: '150px' }}>Cơ sở</Th>
+                        <Th style={{ minWidth: '130px' }}>Phương thức</Th>
+                        <Th style={{ minWidth: '220px' }}>Mô tả</Th>
+                        <Th className="text-right" style={{ minWidth: '140px' }}>Số tiền</Th>
+                        {hasFinancePermission && <Th className="text-right" style={{ minWidth: '80px' }}>Thao tác</Th>}
                       </Tr>
                     </Thead>
                     <Tbody>
-                    {transactions.map((t: any) => {
-                      const isIncome = t.type === 'income';
-                      return (
-                        <Tr key={t.id}>
-                          <Td>{t.date}</Td>
-                          <Td className="font-medium text-main">
-                            <Badge variant={isIncome ? 'success' : 'danger'} className="mr-2">
-                              {isIncome ? 'THU' : 'CHI'}
-                            </Badge>
-                            {t.category}
-                          </Td>
-                          <Td className="max-w-[200px] truncate" title={t.description}>{t.description}</Td>
-                          <Td className={`text-right font-bold ${isIncome ? 'text-success' : 'text-danger'}`}>
-                            {isIncome ? '+' : '-'}{Number(t.amount).toLocaleString('vi-VN')} đ
-                          </Td>
-                          {isAdminOrOwner && (
-                            <Td className="text-right whitespace-nowrap">
-                              <Button 
-                                variant="ghost"
-                                size="sm"
-                                className="text-danger hover:bg-danger-bg"
-                                onClick={() => handleDelete(t.id)}
-                                disabled={loading}
-                              >
-                                Xóa
-                              </Button>
+                      {transactions.map(t => {
+                        const isIncome = t.type === 'income';
+                        const parentName = t.parent_category || (isIncome ? 'Khoản thu' : 'Chi phí');
+                        const subName = t.sub_category || t.category || 'Chung';
+                        const venueName = t.venues?.name || '🏢 Chung toàn trung tâm';
+                        const isSystem = t.source_type && t.source_type !== 'MANUAL';
+
+                        return (
+                          <Tr key={t.id}>
+                            {/* 1. Date */}
+                            <Td className="whitespace-nowrap text-secondary font-medium">
+                              {t.date}
                             </Td>
-                          )}
-                        </Tr>
-                      );
-                    })}
-                  </Tbody>
-                </Table>
-              </div>
-            </Card>
-            </div>
-          )}
+
+                            {/* 2. Category */}
+                            <Td>
+                              <div className={clientStyles.categoryCell}>
+                                <span className={`${clientStyles.parentBadge} ${!isIncome ? clientStyles.parentBadgeExpense : ''}`}>
+                                  {parentName}
+                                </span>
+                                <span className={clientStyles.subCategoryText}>
+                                  {subName}
+                                </span>
+                              </div>
+                            </Td>
+
+                            {/* 3. Venue */}
+                            <Td className="whitespace-nowrap">
+                              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-surface-hover text-secondary border border-border-light">
+                                <span className="material-icons-round text-xs" style={{ fontSize: '13px' }}>
+                                  {t.venue_id ? 'location_on' : 'domain'}
+                                </span>
+                                {venueName}
+                              </span>
+                            </Td>
+
+                            {/* 4. Payment Method */}
+                            <Td className="whitespace-nowrap">
+                              <span className="text-xs font-medium text-main inline-flex items-center gap-1">
+                                {t.payment_method === 'bank_transfer' ? '🏦 Ngân hàng' : '💵 Tiền mặt'}
+                              </span>
+                            </Td>
+
+                            {/* 5. Description */}
+                            <Td className="max-w-[260px] truncate" title={t.description || ''}>
+                              <span className="text-secondary text-sm">
+                                {t.description || <span className="italic text-xs opacity-60">Không có ghi chú</span>}
+                              </span>
+                            </Td>
+
+                            {/* 6. Amount */}
+                            <Td className={`text-right font-bold text-sm whitespace-nowrap ${isIncome ? 'text-success' : 'text-danger'}`}>
+                              {isIncome ? '+' : '-'}{Number(t.amount).toLocaleString('vi-VN')} đ
+                            </Td>
+
+                            {/* 7. Action */}
+                            {hasFinancePermission && (
+                              <Td className="text-right whitespace-nowrap">
+                                {!isSystem ? (
+                                  <Button 
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-danger hover:bg-danger-bg"
+                                    onClick={() => handleDelete(t.id)}
+                                    disabled={actionLoading}
+                                  >
+                                    Xóa
+                                  </Button>
+                                ) : (
+                                  <span 
+                                    className="text-[11px] text-secondary italic px-2 py-0.5 rounded bg-surface-hover"
+                                    title="Giao dịch sinh tự động từ hệ thống (Học phí / Lương), không thể xóa trực tiếp"
+                                  >
+                                    Hệ thống
+                                  </span>
+                                )}
+                              </Td>
+                            )}
+                          </Tr>
+                        );
+                      })}
+                    </Tbody>
+                  </Table>
+                </div>
+              </Card>
+            )}
+          </div>
         </>
       )}
+
+      {/* Modals */}
+      <AddTransactionModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSuccess={handleTransactionSuccess}
+        venues={venues}
+        incomeCategories={incomeCategories}
+        expenseCategories={expenseCategories}
+        onOpenManageCategories={() => {
+          setIsAddModalOpen(false);
+          setIsManageCategoriesOpen(true);
+        }}
+      />
+
+      <ManageCategoriesModal
+        isOpen={isManageCategoriesOpen}
+        onClose={() => setIsManageCategoriesOpen(false)}
+        organizationId={organizationId}
+        incomeCategories={incomeCategories}
+        expenseCategories={expenseCategories}
+      />
     </div>
   );
 }
