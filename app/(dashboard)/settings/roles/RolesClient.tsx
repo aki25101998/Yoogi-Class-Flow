@@ -164,60 +164,55 @@ export default function RolesClient({
       {/* 2. SUB-NAV TABS */}
       <SettingsNavTabs />
 
-      {/* 3. BENTO KPI CARDS */}
-      <div className={styles.kpiGrid}>
-        <div className={styles.kpiCard}>
-          <div className={styles.kpiWatermark}>
-            <span className="material-icons-round">admin_panel_settings</span>
+      {/* 3. OVERVIEW KPI CARDS (MATCHING YOOGI DESIGN SYSTEM) */}
+      <div className={styles.overviewCard}>
+        <div className={styles.overviewHeader}>
+          <div className={styles.overviewTitle}>
+            <span className="material-icons-round" style={{ fontSize: '18px', color: 'var(--primary)' }}>admin_panel_settings</span>
+            TỔNG QUAN VAI TRÒ & PHÂN QUYỀN
           </div>
-          <div className={styles.kpiIconWrapper} style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
-            <span className="material-icons-round">security</span>
-          </div>
-          <div className={styles.kpiValue}>{totalRolesCount}</div>
-          <div className={styles.kpiLabel}>Tổng số vai trò</div>
-          <div className={styles.kpiSubtext}>
-            <strong style={{ color: 'var(--primary)' }}>{systemRolesCount}</strong> mặc định • <strong style={{ color: 'var(--accent-energy)' }}>{customRolesCount}</strong> tùy biến
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+            Cấu hình theo cơ cấu tổ chức trung tâm
           </div>
         </div>
+        <div className={styles.overviewGrid}>
+          {/* Card 1: Tổng vai trò */}
+          <div className={`${styles.kpiItem} ${styles.kpiPrimary}`}>
+            <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Tổng số vai trò</div>
+            <div className={styles.kpiValue}>{totalRolesCount}</div>
+            <div className={styles.kpiCaption}>
+              <strong style={{ color: 'var(--primary)' }}>{systemRolesCount}</strong> mặc định • <strong style={{ color: 'var(--accent-energy)' }}>{customRolesCount}</strong> tùy biến
+            </div>
+            <span className={`material-icons-round ${styles.kpiWatermark}`} style={{ color: 'var(--primary)' }}>security</span>
+          </div>
 
-        <div className={styles.kpiCard}>
-          <div className={styles.kpiWatermark}>
-            <span className="material-icons-round">manage_accounts</span>
+          {/* Card 2: Nhân sự quản trị */}
+          <div className={`${styles.kpiItem} ${styles.kpiSuccess}`}>
+            <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Nhân sự Quản trị</div>
+            <div className={styles.kpiValue}>{adminMembersCount}</div>
+            <div className={styles.kpiCaption}>Chủ trung tâm & Quản trị viên</div>
+            <span className={`material-icons-round ${styles.kpiWatermark}`} style={{ color: 'var(--success)' }}>manage_accounts</span>
           </div>
-          <div className={styles.kpiIconWrapper} style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}>
-            <span className="material-icons-round">supervisor_account</span>
-          </div>
-          <div className={styles.kpiValue}>{adminMembersCount}</div>
-          <div className={styles.kpiLabel}>Nhân sự Quản trị</div>
-          <div className={styles.kpiSubtext}>Chủ trung tâm & Quản trị viên</div>
-        </div>
 
-        <div className={styles.kpiCard}>
-          <div className={styles.kpiWatermark}>
-            <span className="material-icons-round">sports_martial_arts</span>
+          {/* Card 3: Đội ngũ chuyên môn */}
+          <div className={`${styles.kpiItem} ${styles.kpiInfo}`}>
+            <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Đội ngũ Chuyên môn</div>
+            <div className={styles.kpiValue}>{coachMembersCount}</div>
+            <div className={styles.kpiCaption}>HLV trưởng & HLV phụ</div>
+            <span className={`material-icons-round ${styles.kpiWatermark}`} style={{ color: 'var(--info)' }}>sports_martial_arts</span>
           </div>
-          <div className={styles.kpiIconWrapper} style={{ background: 'rgba(255, 179, 0, 0.1)', color: 'var(--warning)' }}>
-            <span className="material-icons-round">sports_martial_arts</span>
-          </div>
-          <div className={styles.kpiValue}>{coachMembersCount}</div>
-          <div className={styles.kpiLabel}>Đội ngũ Chuyên môn</div>
-          <div className={styles.kpiSubtext}>HLV trưởng & HLV phụ</div>
-        </div>
 
-        <div className={styles.kpiCard}>
-          <div className={styles.kpiWatermark}>
-            <span className="material-icons-round">tune</span>
+          {/* Card 4: Module chức năng */}
+          <div className={`${styles.kpiItem} ${styles.kpiWarning}`}>
+            <div className={styles.kpiLabel}><div className={styles.kpiDot}></div> Chức Năng Phân Quyền</div>
+            <div className={styles.kpiValue}>{ALL_PERMISSION_KEYS.length}</div>
+            <div className={styles.kpiCaption}>10 module chia 4 nhóm nghiệp vụ</div>
+            <span className={`material-icons-round ${styles.kpiWatermark}`} style={{ color: 'var(--warning)' }}>checklist</span>
           </div>
-          <div className={styles.kpiIconWrapper} style={{ background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7' }}>
-            <span className="material-icons-round">checklist</span>
-          </div>
-          <div className={styles.kpiValue}>{ALL_PERMISSION_KEYS.length}</div>
-          <div className={styles.kpiLabel}>Module Chức Năng</div>
-          <div className={styles.kpiSubtext}>Phân chia 4 nhóm nghiệp vụ</div>
         </div>
       </div>
 
-      {/* 4. TOOLBAR & FILTER GROUP */}
+      {/* 4. TOOLBAR & FILTER PILLS */}
       <div className={styles.toolbar}>
         <div className={styles.searchWrapper}>
           <span className={`material-icons-round ${styles.searchIcon}`}>search</span>
@@ -240,27 +235,27 @@ export default function RolesClient({
           )}
         </div>
 
-        <div className={styles.segmentedControl}>
+        <div className={styles.filterGroup}>
           <button 
             type="button" 
-            className={`${styles.segmentedBtn} ${filterType === 'all' ? styles.segmentedBtnActive : ''}`}
+            className={`${styles.filterPill} ${filterType === 'all' ? styles.filterPillActive : ''}`}
             onClick={() => setFilterType('all')}
           >
-            Tất cả ({totalRolesCount})
+            Tất cả <span className={styles.filterPillCount}>{totalRolesCount}</span>
           </button>
           <button 
             type="button" 
-            className={`${styles.segmentedBtn} ${filterType === 'system' ? styles.segmentedBtnActive : ''}`}
+            className={`${styles.filterPill} ${filterType === 'system' ? styles.filterPillActive : ''}`}
             onClick={() => setFilterType('system')}
           >
-            Hệ thống ({systemRolesCount})
+            Hệ thống <span className={styles.filterPillCount}>{systemRolesCount}</span>
           </button>
           <button 
             type="button" 
-            className={`${styles.segmentedBtn} ${filterType === 'custom' ? styles.segmentedBtnActive : ''}`}
+            className={`${styles.filterPill} ${filterType === 'custom' ? styles.filterPillActive : ''}`}
             onClick={() => setFilterType('custom')}
           >
-            Tùy biến ({customRolesCount})
+            Tùy biến <span className={styles.filterPillCount}>{customRolesCount}</span>
           </button>
         </div>
       </div>
@@ -284,7 +279,7 @@ export default function RolesClient({
           }
         />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {filteredRoles.map((role) => {
             const isOwner = role.base_role === 'owner';
             const memberCount = role.member_count || 0;
@@ -299,23 +294,28 @@ export default function RolesClient({
                   background: 'var(--surface)',
                   border: '1px solid var(--border-light)',
                   borderRadius: 'var(--radius-xl)',
-                  padding: '18px 22px',
+                  padding: '16px 20px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '14px',
-                  transition: 'all 0.2s ease',
-                  boxShadow: 'var(--shadow-sm)'
+                  gap: '12px',
+                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                  boxShadow: 'var(--shadow-xs)'
                 }}
               >
-                {/* TOP ROW: Identity & Actions */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-                  
-                  {/* Left: Icon & Info */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: '240px' }}>
+                {/* TOP ROW: Identity + Member Count + Actions */}
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between', 
+                  gap: '16px',
+                  flexWrap: 'wrap'
+                }}>
+                  {/* Left: Avatar Icon + Title + Badges */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
                     <div style={{
-                      width: '44px',
-                      height: '44px',
-                      borderRadius: 'var(--radius-xl)',
+                      width: '42px',
+                      height: '42px',
+                      borderRadius: 'var(--radius-lg)',
                       background: isOwner ? 'rgba(255, 107, 53, 0.12)' : 'var(--primary-light)',
                       color: isOwner ? 'var(--accent-energy)' : 'var(--primary)',
                       display: 'flex',
@@ -328,7 +328,7 @@ export default function RolesClient({
                       </span>
                     </div>
 
-                    <div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                         <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-main)' }}>
                           {role.name}
@@ -337,31 +337,32 @@ export default function RolesClient({
                         <RoleBadge role={role.base_role} />
 
                         {role.is_system ? (
-                          <Badge variant="info">Mặc định hệ thống</Badge>
+                          <Badge variant="info">Mặc định</Badge>
                         ) : (
                           <Badge variant="warning">Tùy biến</Badge>
                         )}
                       </div>
 
-                      <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '3px' }}>
+                      <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
                         {role.description || 'Chưa có mô tả chi tiết cho vai trò này.'}
                       </div>
                     </div>
                   </div>
 
-                  {/* Right: Member Count & Actions */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  {/* Right: Member count + Action Buttons */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                     <div style={{
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '6px',
-                      padding: '4px 12px',
+                      gap: '5px',
+                      padding: '4px 10px',
                       background: 'var(--surface-hover)',
                       borderRadius: 'var(--radius-full)',
                       border: '1px solid var(--border-light)',
                       fontSize: '0.8125rem',
                       fontWeight: 600,
-                      color: 'var(--text-main)'
+                      color: 'var(--text-main)',
+                      whiteSpace: 'nowrap'
                     }}>
                       <span className="material-icons-round" style={{ fontSize: '16px', color: 'var(--primary)' }}>group</span>
                       {memberCount} thành viên
@@ -375,7 +376,7 @@ export default function RolesClient({
                         onClick={() => handleEditRole(role)}
                         disabled={isLoading}
                         leftIcon={<span className="material-icons-round" style={{ fontSize: '15px' }}>tune</span>}
-                        style={{ borderRadius: 'var(--radius-full)' }}
+                        style={{ borderRadius: 'var(--radius-full)', whiteSpace: 'nowrap' }}
                       >
                         Chỉnh sửa quyền
                       </Button>
@@ -390,7 +391,7 @@ export default function RolesClient({
                         disabled={isLoading}
                         title="Khôi phục quyền mặc định"
                         leftIcon={<span className="material-icons-round" style={{ fontSize: '15px' }}>restart_alt</span>}
-                        style={{ borderRadius: 'var(--radius-full)' }}
+                        style={{ borderRadius: 'var(--radius-full)', whiteSpace: 'nowrap' }}
                       >
                         Đặt lại
                       </Button>
@@ -405,7 +406,7 @@ export default function RolesClient({
                         disabled={isLoading || memberCount > 0}
                         title={memberCount > 0 ? "Không thể xóa vai trò đang có thành viên" : "Xóa vai trò"}
                         leftIcon={<span className="material-icons-round" style={{ fontSize: '15px', color: memberCount > 0 ? 'var(--text-muted)' : 'var(--danger)' }}>delete</span>}
-                        style={{ color: memberCount > 0 ? 'var(--text-muted)' : 'var(--danger)', borderRadius: 'var(--radius-full)' }}
+                        style={{ color: memberCount > 0 ? 'var(--text-muted)' : 'var(--danger)', borderRadius: 'var(--radius-full)', whiteSpace: 'nowrap' }}
                       >
                         Xóa
                       </Button>
@@ -413,48 +414,48 @@ export default function RolesClient({
                   </div>
                 </div>
 
-                {/* BOTTOM ROW: Permissions Pills & Progress Bar */}
+                {/* BOTTOM ROW: Progress bar & Permissions Pill Cloud */}
                 <div style={{
                   paddingTop: '10px',
                   borderTop: '1px solid var(--border-light)',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '8px'
+                  gap: '6px'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                     <span>
-                      Quyền hạn: <strong style={{ color: 'var(--primary)' }}>{permCount}</strong> / {ALL_PERMISSION_KEYS.length} chức năng được cấp phép
+                      Quyền hạn: <strong style={{ color: 'var(--primary)' }}>{permCount}</strong> / {ALL_PERMISSION_KEYS.length} chức năng
                     </span>
                     <span style={{ fontWeight: 600 }}>{permPercentage}% phạm vi</span>
                   </div>
 
-                  {/* Progress Bar */}
+                  {/* Progress Line */}
                   <div style={{ width: '100%', height: '4px', background: 'var(--surface-hover)', borderRadius: '2px', overflow: 'hidden' }}>
                     <div style={{
                       width: `${permPercentage}%`,
                       height: '100%',
-                      background: 'var(--primary)',
+                      background: isOwner ? 'linear-gradient(90deg, var(--accent-energy), #ff8f00)' : 'linear-gradient(90deg, var(--primary), var(--primary-hover))',
                       borderRadius: '2px',
                       transition: 'width 0.3s ease'
                     }} />
                   </div>
 
-                  {/* Permission Tag Cloud */}
+                  {/* Permission Pills */}
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
                     {isOwner ? (
                       <span style={{
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '4px',
-                        padding: '2px 8px',
+                        gap: '5px',
+                        padding: '3px 10px',
                         borderRadius: 'var(--radius-full)',
-                        fontSize: '0.71875rem',
+                        fontSize: '0.75rem',
                         fontWeight: 600,
                         background: 'rgba(255, 107, 53, 0.1)',
                         color: 'var(--accent-energy)',
-                        border: '1px solid rgba(255, 107, 53, 0.2)'
+                        border: '1px solid rgba(255, 107, 53, 0.25)'
                       }}>
-                        <span className="material-icons-round" style={{ fontSize: '13px' }}>verified</span>
+                        <span className="material-icons-round" style={{ fontSize: '14px' }}>verified</span>
                         Toàn quyền tuyệt đối trên tất cả các phân hệ của tổ chức
                       </span>
                     ) : validPerms.length === 0 ? (
@@ -468,17 +469,17 @@ export default function RolesClient({
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '3px',
-                            padding: '2px 8px',
+                            gap: '4px',
+                            padding: '3px 10px',
                             borderRadius: 'var(--radius-full)',
-                            fontSize: '0.71875rem',
+                            fontSize: '0.75rem',
                             fontWeight: 500,
                             background: 'var(--primary-light)',
                             color: 'var(--primary)',
-                            border: '1px solid rgba(20, 184, 166, 0.2)'
+                            border: '1px solid rgba(20, 184, 166, 0.25)'
                           }}
                         >
-                          <span className="material-icons-round" style={{ fontSize: '12px' }}>check</span>
+                          <span className="material-icons-round" style={{ fontSize: '13px' }}>check</span>
                           {getPermissionLabel(permKey)}
                         </span>
                       ))

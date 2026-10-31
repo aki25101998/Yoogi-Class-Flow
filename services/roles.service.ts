@@ -299,3 +299,4 @@ export async function resetRolePermissionsToDefault(roleCode: OrganizationRole):
     permissions: defaultConfig.permissions
   });
 }
+
