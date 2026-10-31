@@ -23,7 +23,7 @@ export const DEFAULT_ROLES_CONFIG = [
     description: 'Toàn quyền sở hữu và quản lý trung tâm',
     is_system: true,
     permissions: [
-      'manage_coaches', 'manage_students', 'manage_venues', 'manage_classes',
+      'manage_coaches', 'manage_students', 'manage_venues',
       'manage_schedule', 'manage_settings', 'manage_attendance',
       'view_payroll', 'manage_members', 'manage_tuition', 'manage_finance', 'manage_organization'
     ]
@@ -35,7 +35,7 @@ export const DEFAULT_ROLES_CONFIG = [
     description: 'Quản lý vận hành toàn diện và điều phối thành viên',
     is_system: true,
     permissions: [
-      'manage_coaches', 'manage_students', 'manage_venues', 'manage_classes',
+      'manage_coaches', 'manage_students', 'manage_venues',
       'manage_schedule', 'manage_settings', 'manage_attendance',
       'view_payroll', 'manage_members', 'manage_tuition', 'manage_finance'
     ]
@@ -110,7 +110,9 @@ export async function getOrganizationRoles(): Promise<{
     if (!error && data && data.length > 0) {
       dbRoles = data.map(r => ({
         ...r,
-        permissions: Array.isArray(r.permissions) ? r.permissions : []
+        permissions: Array.isArray(r.permissions) 
+          ? r.permissions.filter((p: string) => p !== 'manage_classes') 
+          : []
       }));
     }
   } catch (e) {

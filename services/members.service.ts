@@ -58,9 +58,9 @@ export async function inviteMember(
     } else if (role === 'assistant_coach') {
       permissions = ['VIEW_ASSIGNED_CLASSES', 'VIEW_ASSIGNED_STUDENTS', 'TAKE_ATTENDANCE', 'VIEW_ATTENDANCE', 'VIEW_SCHEDULE', 'VIEW_MY_EARNINGS'];
     } else if (role === 'admin') {
-      permissions = ['manage_coaches', 'manage_students', 'manage_venues', 'manage_classes', 'manage_schedule', 'manage_settings', 'manage_attendance', 'view_payroll', 'manage_members', 'manage_tuition', 'manage_finance'];
+      permissions = ['manage_coaches', 'manage_students', 'manage_venues', 'manage_schedule', 'manage_settings', 'manage_attendance', 'view_payroll', 'manage_members', 'manage_tuition', 'manage_finance'];
     } else if (role === 'owner') {
-      permissions = ['manage_coaches', 'manage_students', 'manage_venues', 'manage_classes', 'manage_schedule', 'manage_settings', 'manage_attendance', 'view_payroll', 'manage_members', 'manage_organization', 'manage_tuition', 'manage_finance'];
+      permissions = ['manage_coaches', 'manage_students', 'manage_venues', 'manage_schedule', 'manage_settings', 'manage_attendance', 'view_payroll', 'manage_members', 'manage_organization', 'manage_tuition', 'manage_finance'];
     }
   }
 
@@ -279,9 +279,9 @@ export async function changeRole(
     } else if (newRole === 'assistant_coach') {
       permissions = ['VIEW_ASSIGNED_CLASSES', 'VIEW_ASSIGNED_STUDENTS', 'TAKE_ATTENDANCE', 'VIEW_ATTENDANCE', 'VIEW_SCHEDULE', 'VIEW_MY_EARNINGS'];
     } else if (newRole === 'admin') {
-      permissions = ['manage_coaches', 'manage_students', 'manage_venues', 'manage_classes', 'manage_schedule', 'manage_settings', 'manage_attendance', 'view_payroll', 'manage_members', 'manage_tuition', 'manage_finance'];
+      permissions = ['manage_coaches', 'manage_students', 'manage_venues', 'manage_schedule', 'manage_settings', 'manage_attendance', 'view_payroll', 'manage_members', 'manage_tuition', 'manage_finance'];
     } else if (newRole === 'owner') {
-      permissions = ['manage_coaches', 'manage_students', 'manage_venues', 'manage_classes', 'manage_schedule', 'manage_settings', 'manage_attendance', 'view_payroll', 'manage_members', 'manage_organization', 'manage_tuition', 'manage_finance'];
+      permissions = ['manage_coaches', 'manage_students', 'manage_venues', 'manage_schedule', 'manage_settings', 'manage_attendance', 'view_payroll', 'manage_members', 'manage_organization', 'manage_tuition', 'manage_finance'];
     }
   }
 

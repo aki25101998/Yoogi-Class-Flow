@@ -95,8 +95,8 @@ export async function createOrganization(name: string): Promise<{ success: boole
 
   // Create owner membership with full permissions
   const permissions = [
-    'manage_coaches', 'manage_students', 'manage_venues', 'manage_classes', 
-    'manage_schedule', 'manage_settings', 'manage_attendance', 'view_payroll', 'manage_members', 'manage_organization'
+    'manage_coaches', 'manage_students', 'manage_venues', 
+    'manage_schedule', 'manage_settings', 'manage_attendance', 'view_payroll', 'manage_members', 'manage_organization', 'manage_tuition', 'manage_finance'
   ];
 
   const { error: memberError } = await supabase

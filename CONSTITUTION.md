@@ -1,6 +1,6 @@
 # 📜 HIẾN PHÁP DỰ ÁN — YOOGI CLASS FLOW
 
-> **Phiên bản:** 1.8.7  
+> **Phiên bản:** 1.8.8  
 > **Cập nhật lần cuối:** 2026-10-31  
 > **Mục đích:** Đây là tài liệu gốc, bất khả xâm phạm. Mọi thay đổi code PHẢI tuân thủ các quy tắc trong file này. Khi có tính năng mới, file này PHẢI được cập nhật đồng thời.
 
@@ -234,21 +234,20 @@ const hasPermission = (perm) => {
 };
 ```
 
-### 4.3 Danh Sách Permission
+### 4.3 Danh Sách Permission (10 Module Cốt Lõi)
 
 ```
 manage_coaches      — Quản lý HLV
 manage_students     — Quản lý học viên
 manage_venues       — Quản lý chi nhánh & lớp học
-manage_classes      — Quản lý lớp học
 manage_schedule     — Quản lý lịch dạy tuần
-manage_settings     — Cài đặt tổ chức, cấp đai & phiên bản
+manage_settings     — Cài đặt trung tâm, cấp đai & phiên bản
 manage_attendance   — Quản lý điểm danh & duyệt ca học
 view_payroll        — Xem bảng lương & quy tắc lương
 manage_members      — Quản lý thành viên & phân quyền
-manage_organization — Quản lý tổ chức (owner only)
 manage_tuition      — Quản lý học phí & thu phí
 manage_finance      — Quản lý tài chính & sổ quỹ
+manage_organization — Quản lý tổ chức (chủ trung tâm - owner only)
 ```
 
 ### 4.4 Tùy Biến Tên Vai Trò & Ma Trận Quyền Hạn (Granular Permissions & Custom Titles)
@@ -799,6 +798,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-10-30 | 1.8.5 | Loại bỏ mục Lương theo bậc học viên (TIERED_STUDENT_COUNT) trên giao diện cấu hình quy tắc lương (/payroll/salary-rules): Lọc bỏ tùy chọn Lương theo bậc học viên khỏi dropdown Loại tính lương; loại bỏ hoàn toàn khối nhập Bậc học viên (min/max học viên và số tiền từng bậc) trong form tạo/sửa quy tắc giúp giao diện tinh gọn và tập trung vào các hình thức tính lương phổ biến (lương buổi, lương theo số học viên, lương % doanh thu, thưởng, phụ cấp) |
 | 2026-10-30 | 1.8.6 | Nâng cấp toàn diện tính năng Chỉnh sửa vai trò & Tùy biến chức năng (/settings/members): Bổ sung khả năng đặt Tên chức danh/vai trò tùy chỉnh (custom_role_title) theo cơ cấu thực tế của doanh nghiệp (ví dụ: Giám đốc chuyên môn, Quản lý cơ sở, Trợ giảng, Lễ tân & CSKH, Kế toán trung tâm); tích hợp 6 mẫu vai trò nhanh (Role Presets); bổ sung Ma trận phân quyền chi tiết 10 chức năng chia thành 4 nhóm nghiệp vụ (Vận hành & Đào tạo, Lịch dạy & Điểm danh, Tài chính & Lương, Hệ thống & Cài đặt) kèm nút chọn nhanh; hỗ trợ cơ chế lưu trữ kép Dual-Storage Resilience (cột DB + thẻ fallback permissions) bảo đảm không lỗi khi chưa chạy migration; hiển thị tên vai trò tùy chỉnh trên RoleBadge và Sidebar; bổ sung migration 042_custom_role_title.sql |
 | 2026-10-31 | 1.8.7 | Tách riêng phân hệ Quản lý & Cấu hình Vai trò thành tab độc lập trong Cài đặt (/settings/roles); khôi phục Modal chọn vai trò thành viên/HLV (/settings/members) về giao diện tối giản chuẩn Ảnh 2 (chọn nhanh 4 vai trò cốt lõi hoặc vai trò tùy biến kèm lưu trực tiếp 1-chạm); trang /settings/roles cho phép xem tổng quan Bento KPI vai trò, danh sách vai trò hệ thống & tùy biến, tùy biến tên vai trò, mô tả, cấp độ bảo mật hệ thống và ma trận phân quyền chi tiết 10 module; bổ sung migration 043_organization_roles.sql |
+| 2026-10-31 | 1.8.8 | Chuẩn hóa 10 module quyền hạn cốt lõi trên toàn hệ thống: Loại bỏ triệt để quyền hạn cũ manage_classes (đã được bao hàm bởi manage_venues - Cơ sở & Lớp học) trong tất cả các service (members, roles, platform-admin, organization, workspace); khắc phục lỗi Quản trị viên bị hiển thị 11/10 quyền hạn và 110% phạm vi kèm thẻ thô `✓ manage_classes` trên trang Cấu hình vai trò (/settings/roles); bổ sung bộ lọc nghiêm ngặt ALL_PERMISSION_KEYS và chặn tràn ngưỡng 100% khi tính tỷ lệ |
 
 ---
 

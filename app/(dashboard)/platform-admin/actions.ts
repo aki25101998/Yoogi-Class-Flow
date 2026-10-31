@@ -86,7 +86,7 @@ export async function switchIntoWorkspaceAction(organizationId: string) {
         role: 'owner',
         status: 'active',
         permissions: [
-          'manage_coaches', 'manage_students', 'manage_venues', 'manage_classes', 
+          'manage_coaches', 'manage_students', 'manage_venues', 
           'manage_schedule', 'manage_settings', 'manage_attendance', 'view_payroll', 
           'manage_members', 'manage_organization', 'manage_tuition', 'manage_finance'
         ]

@@ -283,9 +283,9 @@ export default function RolesClient({
           {filteredRoles.map((role) => {
             const isOwner = role.base_role === 'owner';
             const memberCount = role.member_count || 0;
-            const validPerms = (role.permissions || []).filter(p => !p.startsWith('title:'));
+            const validPerms = (role.permissions || []).filter(p => ALL_PERMISSION_KEYS.includes(p));
             const permCount = isOwner ? ALL_PERMISSION_KEYS.length : validPerms.length;
-            const permPercentage = Math.round((permCount / ALL_PERMISSION_KEYS.length) * 100);
+            const permPercentage = Math.min(100, Math.round((permCount / ALL_PERMISSION_KEYS.length) * 100));
 
             return (
               <div 
