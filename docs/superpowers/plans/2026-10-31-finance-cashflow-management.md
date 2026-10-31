@@ -122,9 +122,9 @@ CREATE POLICY "Admins can manage finance categories"
   ON public.finance_categories FOR ALL 
   USING (public.is_org_admin(organization_id));
 
--- 4. Stored Procedure nạp cây danh mục mặc định cho 1 tổ chức
+-- 4. Stored Procedure nạp cây danh mục mặc định cho 1 tổ chức (SECURITY DEFINER để vượt qua RLS khi khởi tạo)
 CREATE OR REPLACE FUNCTION public.seed_default_finance_categories_for_org(p_org_id UUID)
-RETURNS void LANGUAGE plpgsql AS $$
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   v_parent_id UUID;
 BEGIN
@@ -228,9 +228,9 @@ BEGIN
   END LOOP;
 END $$;
 
--- 6. Trigger tự động nạp danh mục chuẩn khi có tổ chức mới được tạo
+-- 6. Trigger tự động nạp danh mục chuẩn khi có tổ chức mới được tạo (SECURITY DEFINER để an toàn RLS)
 CREATE OR REPLACE FUNCTION public.trigger_seed_finance_categories_on_org_created()
-RETURNS TRIGGER LANGUAGE plpgsql AS $$
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
   PERFORM public.seed_default_finance_categories_for_org(NEW.id);
   RETURN NEW;
@@ -277,11 +277,13 @@ git commit -m "feat(database): add migration 044 for finance categories, venue a
   - Nhận `organizationId` và `filters: FinanceFilters`
   - Query Supabase lọc theo `organization_id`, `gte('date', filters.startDate)`, `lte('date', filters.endDate)`
   - Điều kiện lọc `venueId`: nếu `unassigned` thì `.is('venue_id', null)`, nếu UUID thì `.eq('venue_id', filters.venueId)`, nếu `all` thì không filter
-  - Điều kiện lọc `type` và `paymentMethod`
   - Join lấy `venues(id, name)`
-  - Tính toán sẵn `summary` (chú ý kiểm tra chia cho 0: `cashRatio`, `bankRatio`, `profitMargin` mặc định là 0 nếu tổng thu/chi bằng 0)
-  - Tính `cashflowTrends`: tự động chuyển đổi gom nhóm linh hoạt — gom theo ngày nếu khoảng thời gian <= 31 ngày, gom theo tháng (ví dụ: `T1`, `T2`...) nếu khoảng thời gian > 31 ngày để tránh nén thanh biểu đồ quá nhỏ
-  - Tính `expenseDistribution`: gom nhóm theo `parent_category`, tính tổng tiền và tỷ lệ % đóng góp
+  - **Tách bạch tính toán KPI & Biểu đồ vs Danh sách hiển thị:**
+    - Tính `summary` (Tổng thu, Tổng chi, Lợi nhuận ròng, Tỷ lệ Tiền mặt/Ngân hàng) và `cashflowTrends` trên **toàn bộ giao dịch trong kỳ & cơ sở** (trước khi lọc `type` Thu/Chi) để tránh việc khi người dùng bấm tab xem "Chi" thì Tổng thu bị nhảy về 0đ làm méo mó các thẻ Bento KPI.
+    - Danh sách `transactions` hiển thị sẽ được áp dụng thêm bộ lọc `type` (`income` / `expense`) và `paymentMethod` (`cash` / `bank_transfer`).
+  - Chú ý kiểm tra chia cho 0: `cashRatio`, `bankRatio`, `profitMargin` mặc định là 0 nếu tổng thu/chi bằng 0.
+  - Tính `cashflowTrends`: tự động gom nhóm linh hoạt — gom theo ngày nếu khoảng thời gian <= 31 ngày, gom theo tháng (ví dụ: `T1`, `T2`...) nếu khoảng thời gian > 31 ngày để tránh nén thanh biểu đồ quá nhỏ.
+  - Tính `expenseDistribution`: gom nhóm theo `parent_category`, tính tổng tiền và tỷ lệ % đóng góp.
 
 - [ ] **Step 4: Commit types và hooks**
 ```bash
@@ -297,20 +299,23 @@ git commit -m "feat(finance): add finance types and enhanced hooks for categorie
 - Modify: `app/(dashboard)/finance/actions.ts`
 
 - [ ] **Step 1: Nâng cấp `addTransactionAction`**
-  - Kiểm tra quyền qua `getCurrentOrganizationContext()`: `const isAdminOrOwner = context.membership?.role === 'admin' || context.membership?.role === 'owner'; const hasPermission = isAdminOrOwner || (context.permissions && context.permissions.includes('manage_finance'));` — nếu không có quyền, trả về `{ success: false, error: 'Bạn không có quyền quản lý tài chính.' }` (không dùng `requirePermission` vì sẽ ném exception redirect).
-  - Validate: `type` in `['income', 'expense']`, `amount > 0`, `date` định dạng `YYYY-MM-DD`
-  - Nếu có `category_id`: truy vấn lấy `parent_category` và `sub_category`, gán `category = sub_category || parent_category`
-  - Hỗ trợ `venue_id` (nếu rỗng hoặc 'unassigned' thì lưu `null`)
-  - Hỗ trợ `payment_method` (`cash` hoặc `bank_transfer`)
-  - Insert bản ghi với `source_type = 'MANUAL'`
-  - `revalidatePath('/finance')`
+  - Kiểm tra quyền qua `getCurrentOrganizationContext()`: `const isAdminOrOwner = context.membership?.role === 'admin' || context.membership?.role === 'owner'; const hasPermission = isAdminOrOwner || (context.permissions && context.permissions.includes('manage_finance'));` — nếu không có quyền, trả về `{ success: false, error: 'Bạn không có quyền quản lý tài chính.' }`.
+  - Validate: `type` in `['income', 'expense']`, `amount > 0`, `date` định dạng `YYYY-MM-DD`.
+  - **Kiểm tra danh mục:** Chấp nhận nếu có `category_id` HOẶC `category` (không ép buộc phải có chuỗi `category` cũ ngay từ đầu).
+  - Nếu có `category_id`: truy vấn lấy `parent_category` và `sub_category`, đồng thời gán `category = sub_category || parent_category` để duy trì tương thích ngược.
+  - Hỗ trợ `venue_id` (nếu rỗng hoặc 'unassigned' thì lưu `null`).
+  - Hỗ trợ `payment_method` (`cash` hoặc `bank_transfer`).
+  - Insert bản ghi với `source_type = 'MANUAL'`.
+  - `revalidatePath('/finance')`.
 
-- [ ] **Step 2: Giữ nguyên logic bảo vệ trong `deleteTransactionAction`**
-  - Chặn xóa nếu `source_type !== 'MANUAL'`
+- [ ] **Step 2: Nâng cấp `deleteTransactionAction` với kiểm tra phân quyền và bảo vệ hệ thống**
+  - Kiểm tra quyền: `const isAdminOrOwner = context.membership?.role === 'admin' || context.membership?.role === 'owner'; const hasPermission = isAdminOrOwner || (context.permissions && context.permissions.includes('manage_finance'));` — nếu không có quyền, trả về `{ success: false, error: 'Bạn không có quyền xóa giao dịch.' }`.
+  - Chặn xóa nếu `source_type !== 'MANUAL'`.
+  - Xóa giao dịch theo `id` và `organization_id`.
 
 - [ ] **Step 3: Bổ sung `addCategoryAction` và `deleteCategoryAction`**
-  - `addCategoryAction({ parent_id, name, type, icon })`: kiểm tra quyền Admin/Owner hoặc `manage_finance`, insert vào `finance_categories`
-  - `deleteCategoryAction(id)`: kiểm tra quyền, không cho xóa nếu `is_system === true`
+  - `addCategoryAction({ parent_id, name, type, icon })`: kiểm tra quyền Admin/Owner hoặc `manage_finance`, insert vào `finance_categories`.
+  - `deleteCategoryAction(id)`: kiểm tra quyền, không cho xóa nếu `is_system === true`.
 
 - [ ] **Step 4: Commit actions**
 ```bash
@@ -347,8 +352,9 @@ git commit -m "feat(finance): update transaction and category server actions"
     - Thẻ 4: Cơ cấu dòng tiền (Tiền mặt vs Ngân hàng kèm thanh tỷ lệ 2 màu + watermark `payments`)
 
 - [ ] **Step 4: Xây dựng `FinanceCharts.tsx`**
-  - Biểu đồ 1: Cashflow Trend Chart (Cột kép SVG thuần mượt mà, cột Thu màu Teal/Xanh, cột Chi màu Đỏ cam, nhãn ngày bên dưới, tooltip khi hover)
-  - Biểu đồ 2: Expense Distribution Bars (Danh sách nhóm chi phí cha, số tiền và thanh progress bar tỷ lệ %, hiển thị icon thể thao tương ứng)
+  - Biểu đồ 1: Cashflow Trend Chart (Cột kép SVG thuần mượt mà, cột Thu màu Teal/Xanh, cột Chi màu Đỏ cam, nhãn ngày bên dưới, tooltip khi hover).
+  - Biểu đồ 2: Expense Distribution Bars (Danh sách nhóm chi phí cha, số tiền và thanh progress bar tỷ lệ %, hiển thị icon thể thao tương ứng).
+  - **Xử lý an toàn khi không có dữ liệu:** Có fallback Empty State nhẹ nhàng khi không có giao dịch hoặc khi tổng chi = 0 (tránh tính toán tọa độ chia cho 0 trong không gian SVG).
 
 - [ ] **Step 5: Xây dựng `FinanceClient.module.css`**
   - Styling chuẩn theo CSS Variables (`globals.css`), tương thích 100% Dark và Light mode
