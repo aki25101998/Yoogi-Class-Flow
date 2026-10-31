@@ -49,6 +49,10 @@ CREATE TABLE IF NOT EXISTS public.finance_categories (
   CONSTRAINT uq_finance_categories_org_name_parent UNIQUE (organization_id, parent_id, name)
 );
 
+-- Ràng buộc duy nhất cho danh mục cha (parent_id IS NULL)
+CREATE UNIQUE INDEX IF NOT EXISTS uq_finance_categories_parent_null 
+  ON public.finance_categories (organization_id, name) WHERE parent_id IS NULL;
+
 -- Ràng buộc toàn vẹn Multi-tenant
 ALTER TABLE public.finance_categories 
   ADD CONSTRAINT uq_finance_categories_org_id UNIQUE (organization_id, id);
@@ -58,17 +62,31 @@ ALTER TABLE public.finance_categories
 Bổ sung các trường danh mục 2 cấp, cơ sở và phương thức thanh toán:
 
 ```sql
+-- Cho phép category cũ nullable nếu cần, nhưng code vẫn gán fallback category = sub_category
 ALTER TABLE public.finance_transactions 
-  ADD COLUMN IF NOT EXISTS category_id UUID REFERENCES public.finance_categories(id) ON DELETE SET NULL,
+  ALTER COLUMN category DROP NOT NULL;
+
+ALTER TABLE public.finance_transactions 
+  ADD COLUMN IF NOT EXISTS category_id UUID,
   ADD COLUMN IF NOT EXISTS parent_category TEXT,       -- Snapshot tên nhóm cha (vd: "Hóa đơn & Mặt bằng")
   ADD COLUMN IF NOT EXISTS sub_category TEXT,          -- Snapshot tên mục con (vd: "Tiền điện")
   ADD COLUMN IF NOT EXISTS venue_id UUID,              -- NULL = "Chung toàn trung tâm"
   ADD COLUMN IF NOT EXISTS payment_method TEXT DEFAULT 'cash' 
     CHECK (payment_method IN ('cash', 'bank_transfer', 'other'));
 
--- Ràng buộc khóa ngoại composite tới bảng venues
+-- Ràng buộc khóa ngoại composite đa tổ chức chuẩn Hiến Pháp §11.3
 DO $$
 BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints 
+    WHERE constraint_name = 'fk_finance_transactions_category' 
+      AND table_name = 'finance_transactions'
+  ) THEN
+    ALTER TABLE public.finance_transactions
+      ADD CONSTRAINT fk_finance_transactions_category 
+      FOREIGN KEY (organization_id, category_id) REFERENCES public.finance_categories(organization_id, id) ON DELETE SET NULL;
+  END IF;
+
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.table_constraints 
     WHERE constraint_name = 'fk_finance_transactions_venue' 
@@ -245,3 +263,4 @@ CREATE POLICY "Admins can manage finance categories"
 - [ ] Giao dịch cũ vẫn hiển thị bình thường không lỗi.
 - [ ] Chặn xóa giao dịch hệ thống từ Lương và Học phí.
 - [ ] Build dự án thành công không lỗi type/linting.
+
