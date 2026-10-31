@@ -43,7 +43,7 @@ CONSTITUTION.md                                   # Cập nhật Hiến Pháp v�
 **Files:**
 - Create: `database/rebuild/044_finance_categories_and_enhancements.sql`
 
-- [ ] **Step 1: Viết migration SQL tạo bảng `finance_categories`, cập nhật `finance_transactions`, thiết lập RLS và seed danh mục chuẩn**
+- [x] **Step 1: Viết migration SQL tạo bảng `finance_categories`, cập nhật `finance_transactions`, thiết lập RLS và seed danh mục chuẩn**
 
 ```sql
 -- database/rebuild/044_finance_categories_and_enhancements.sql
@@ -244,8 +244,8 @@ CREATE TRIGGER trg_seed_finance_categories_on_org_created
   EXECUTE FUNCTION public.trigger_seed_finance_categories_on_org_created();
 ```
 
-- [ ] **Step 2: Áp dụng migration vào Supabase và kiểm tra cấu trúc bảng**
-- [ ] **Step 3: Commit migration**
+- [x] **Step 2: Áp dụng migration vào Supabase và kiểm tra cấu trúc bảng**
+- [x] **Step 3: Commit migration**
 ```bash
 git add database/rebuild/044_finance_categories_and_enhancements.sql
 git commit -m "feat(database): add migration 044 for finance categories, venue attribution and payment methods"
@@ -260,7 +260,7 @@ git commit -m "feat(database): add migration 044 for finance categories, venue a
 - Create: `hooks/useFinanceCategories.ts`
 - Modify: `hooks/useFinance.ts`
 
-- [ ] **Step 1: Tạo `types/finance.ts` định nghĩa các interface chuẩn**
+- [x] **Step 1: Tạo `types/finance.ts` định nghĩa các interface chuẩn**
   - `FinanceCategory`: id, organization_id, parent_id, name, type, icon, display_order, is_system, subcategories
   - `FinanceTransaction`: id, organization_id, type, category, category_id, parent_category, sub_category, amount, date, description, venue_id, payment_method, source_type, created_at, venues?: { name: string }
   - `FinanceFilters`: startDate, endDate, venueId ('all' | 'unassigned' | string), type ('all' | 'income' | 'expense'), paymentMethod ('all' | 'cash' | 'bank_transfer' | 'other')
@@ -268,12 +268,12 @@ git commit -m "feat(database): add migration 044 for finance categories, venue a
   - `CashflowDataPoint`: date, label, income, expense, net
   - `ExpenseDistributionItem`: parentCategory, icon, amount, percentage
 
-- [ ] **Step 2: Tạo hook `hooks/useFinanceCategories.ts`**
+- [x] **Step 2: Tạo hook `hooks/useFinanceCategories.ts`**
   - Fetch categories theo `organization_id`
   - Group thành: `incomeCategories` (danh sách cha kèm mảng con) và `expenseCategories` (danh sách cha kèm mảng con)
   - Flatten helpers để dễ dùng trong select/dropdown
 
-- [ ] **Step 3: Cập nhật `hooks/useFinance.ts`**
+- [x] **Step 3: Cập nhật `hooks/useFinance.ts`**
   - Nhận `organizationId` và `filters: FinanceFilters`
   - Query Supabase lọc theo `organization_id`, `gte('date', filters.startDate)`, `lte('date', filters.endDate)`
   - Điều kiện lọc `venueId`: nếu `unassigned` thì `.is('venue_id', null)`, nếu UUID thì `.eq('venue_id', filters.venueId)`, nếu `all` thì không filter
@@ -285,7 +285,7 @@ git commit -m "feat(database): add migration 044 for finance categories, venue a
   - Tính `cashflowTrends`: tự động gom nhóm linh hoạt — gom theo ngày nếu khoảng thời gian <= 31 ngày, gom theo tháng (ví dụ: `T1`, `T2`...) nếu khoảng thời gian > 31 ngày để tránh nén thanh biểu đồ quá nhỏ.
   - Tính `expenseDistribution`: gom nhóm theo `parent_category`, tính tổng tiền và tỷ lệ % đóng góp.
 
-- [ ] **Step 4: Commit types và hooks**
+- [x] **Step 4: Commit types và hooks**
 ```bash
 git add types/finance.ts hooks/useFinanceCategories.ts hooks/useFinance.ts
 git commit -m "feat(finance): add finance types and enhanced hooks for categories and filtered transactions"
@@ -298,7 +298,7 @@ git commit -m "feat(finance): add finance types and enhanced hooks for categorie
 **Files:**
 - Modify: `app/(dashboard)/finance/actions.ts`
 
-- [ ] **Step 1: Nâng cấp `addTransactionAction`**
+- [x] **Step 1: Nâng cấp `addTransactionAction`**
   - Kiểm tra quyền qua `getCurrentOrganizationContext()`: `const isAdminOrOwner = context.membership?.role === 'admin' || context.membership?.role === 'owner'; const hasPermission = isAdminOrOwner || (context.permissions && context.permissions.includes('manage_finance'));` — nếu không có quyền, trả về `{ success: false, error: 'Bạn không có quyền quản lý tài chính.' }`.
   - Validate: `type` in `['income', 'expense']`, `amount > 0`, `date` định dạng `YYYY-MM-DD`.
   - **Kiểm tra danh mục:** Chấp nhận nếu có `category_id` HOẶC `category` (không ép buộc phải có chuỗi `category` cũ ngay từ đầu).
@@ -308,16 +308,16 @@ git commit -m "feat(finance): add finance types and enhanced hooks for categorie
   - Insert bản ghi với `source_type = 'MANUAL'`.
   - `revalidatePath('/finance')`.
 
-- [ ] **Step 2: Nâng cấp `deleteTransactionAction` với kiểm tra phân quyền và bảo vệ hệ thống**
+- [x] **Step 2: Nâng cấp `deleteTransactionAction` với kiểm tra phân quyền và bảo vệ hệ thống**
   - Kiểm tra quyền: `const isAdminOrOwner = context.membership?.role === 'admin' || context.membership?.role === 'owner'; const hasPermission = isAdminOrOwner || (context.permissions && context.permissions.includes('manage_finance'));` — nếu không có quyền, trả về `{ success: false, error: 'Bạn không có quyền xóa giao dịch.' }`.
   - Chặn xóa nếu `source_type !== 'MANUAL'`.
   - Xóa giao dịch theo `id` và `organization_id`.
 
-- [ ] **Step 3: Bổ sung `addCategoryAction` và `deleteCategoryAction`**
+- [x] **Step 3: Bổ sung `addCategoryAction` và `deleteCategoryAction`**
   - `addCategoryAction({ parent_id, name, type, icon })`: kiểm tra quyền Admin/Owner hoặc `manage_finance`, insert vào `finance_categories`.
   - `deleteCategoryAction(id)`: kiểm tra quyền, không cho xóa nếu `is_system === true`.
 
-- [ ] **Step 4: Commit actions**
+- [x] **Step 4: Commit actions**
 ```bash
 git add app/\(dashboard\)/finance/actions.ts
 git commit -m "feat(finance): update transaction and category server actions"
@@ -334,32 +334,32 @@ git commit -m "feat(finance): update transaction and category server actions"
 - Create: `app/(dashboard)/finance/components/FinanceCharts.tsx`
 - Create: `app/(dashboard)/finance/FinanceClient.module.css`
 
-- [ ] **Step 1: Xây dựng `FinanceTimeRangeStrip.tsx`**
+- [x] **Step 1: Xây dựng `FinanceTimeRangeStrip.tsx`**
   - Nút preset: `Hôm nay`, `Tuần này`, `Tháng này` (default active), `Tháng trước`, `Quý này`, `Năm nay`, `Tùy chọn`
   - Khi chọn preset: tự động tính `startDate` và `endDate` theo định dạng `YYYY-MM-DD`
   - Khi chọn `Tùy chọn`: hiển thị 2 input date (Từ ngày - Đến ngày) với nút Áp dụng
 
-- [ ] **Step 2: Xây dựng `FinanceFiltersBar.tsx`**
+- [x] **Step 2: Xây dựng `FinanceFiltersBar.tsx`**
   - Dropdown Cơ sở: `Tất cả cơ sở`, danh sách các venue từ `useVenues`, `Chung toàn trung tâm`
   - Segmented pills Loại giao dịch: `Tất cả`, `Thu (+)`, `Chi (-)`
   - Segmented pills Phương thức: `Tất cả`, `💵 Tiền mặt`, `🏦 Chuyển khoản`
 
-- [ ] **Step 3: Xây dựng `FinanceKpiGrid.tsx`**
+- [x] **Step 3: Xây dựng `FinanceKpiGrid.tsx`**
   - 4 Thẻ Bento KPI theo chuẩn Athletic:
     - Thẻ 1: Tổng thu (Màu xanh lá + watermark `trending_up`)
     - Thẻ 2: Tổng chi (Màu đỏ cam + watermark `trending_down`)
     - Thẻ 3: Lợi nhuận ròng (Teal nếu >= 0, Đỏ nếu < 0 + watermark `account_balance_wallet` + chú thích Tỷ suất)
     - Thẻ 4: Cơ cấu dòng tiền (Tiền mặt vs Ngân hàng kèm thanh tỷ lệ 2 màu + watermark `payments`)
 
-- [ ] **Step 4: Xây dựng `FinanceCharts.tsx`**
+- [x] **Step 4: Xây dựng `FinanceCharts.tsx`**
   - Biểu đồ 1: Cashflow Trend Chart (Cột kép SVG thuần mượt mà, cột Thu màu Teal/Xanh, cột Chi màu Đỏ cam, nhãn ngày bên dưới, tooltip khi hover).
   - Biểu đồ 2: Expense Distribution Bars (Danh sách nhóm chi phí cha, số tiền và thanh progress bar tỷ lệ %, hiển thị icon thể thao tương ứng).
   - **Xử lý an toàn khi không có dữ liệu:** Có fallback Empty State nhẹ nhàng khi không có giao dịch hoặc khi tổng chi = 0 (tránh tính toán tọa độ chia cho 0 trong không gian SVG).
 
-- [ ] **Step 5: Xây dựng `FinanceClient.module.css`**
+- [x] **Step 5: Xây dựng `FinanceClient.module.css`**
   - Styling chuẩn theo CSS Variables (`globals.css`), tương thích 100% Dark và Light mode
 
-- [ ] **Step 6: Commit components và styles**
+- [x] **Step 6: Commit components và styles**
 ```bash
 git add app/\(dashboard\)/finance/components/ app/\(dashboard\)/finance/FinanceClient.module.css
 git commit -m "feat(finance): add time range strip, filter bar, KPI grid, and SVG/CSS charts"
@@ -373,7 +373,7 @@ git commit -m "feat(finance): add time range strip, filter bar, KPI grid, and SV
 - Create: `app/(dashboard)/finance/components/AddTransactionModal.tsx`
 - Create: `app/(dashboard)/finance/components/ManageCategoriesModal.tsx`
 
-- [ ] **Step 1: Xây dựng `AddTransactionModal.tsx`**
+- [x] **Step 1: Xây dựng `AddTransactionModal.tsx`**
   - Toggle Loại: `[Thu (+)]` | `[Chi (-)]`
   - Chọn Cơ sở: Dropdown từ danh sách venues + "Chung toàn trung tâm"
   - Chọn Nhóm Cha: Tự động lọc theo Loại Thu hoặc Chi
@@ -383,14 +383,14 @@ git commit -m "feat(finance): add time range strip, filter bar, KPI grid, and SV
   - Ngày ghi nhận & Mô tả thêm
   - Xử lý submit qua `addTransactionAction`
 
-- [ ] **Step 2: Xây dựng `ManageCategoriesModal.tsx`**
+- [x] **Step 2: Xây dựng `ManageCategoriesModal.tsx`**
   - Hiển thị cây danh mục 2 cấp chia 2 tab: Tab Thu và Tab Chi
   - Mỗi nhóm cha hiển thị danh sách các mục con dạng badges/chips
   - Form thêm nhanh mục con vào nhóm cha bất kỳ
   - Nút xóa cho các mục con do người dùng tự tạo (`is_system = false`)
   - Khi thêm hoặc xóa thành công: gọi `queryClient.invalidateQueries({ queryKey: ['financeCategories', organizationId] })` để cập nhật cây danh mục tức thì cho modal thêm giao dịch
 
-- [ ] **Step 3: Commit 2 modals**
+- [x] **Step 3: Commit 2 modals**
 ```bash
 git add app/\(dashboard\)/finance/components/AddTransactionModal.tsx app/\(dashboard\)/finance/components/ManageCategoriesModal.tsx
 git commit -m "feat(finance): add cascading transaction modal and category management modal"
@@ -404,15 +404,15 @@ git commit -m "feat(finance): add cascading transaction modal and category manag
 - Modify: `app/(dashboard)/finance/FinanceClient.tsx`
 - Modify: `services/excel/definitions/finance.def.ts`
 
-- [ ] **Step 1: Cập nhật `services/excel/definitions/finance.def.ts`**
+- [x] **Step 1: Cập nhật `services/excel/definitions/finance.def.ts`**
   - Bổ sung các cột mới: Cơ sở (`format: (_, row) => row.venues?.name || 'Chung toàn trung tâm'`), Nhóm danh mục (`parent_category`), Hạng mục con (`sub_category || category`), Phương thức thanh toán (`payment_method === 'cash' ? 'Tiền mặt' : 'Chuyển khoản'`) vào file Excel xuất ra
 
-- [ ] **Step 2: Tái cấu trúc hoàn thiện `FinanceClient.tsx`**
+- [x] **Step 2: Tái cấu trúc hoàn thiện `FinanceClient.tsx`**
   - Ráp nối toàn bộ: PageHeader, TimeRangeStrip, FiltersBar, KpiGrid, Charts, Table danh sách giao dịch, AddModal, ManageCategoriesModal
   - Cập nhật bảng giao dịch hiển thị rõ Nhóm cha + Mục con, chip Cơ sở, icon Phương thức thanh toán
   - Phân quyền: Nút Thêm giao dịch và Quản lý danh mục chỉ dành cho `isAdminOrOwner` hoặc có quyền `manage_finance`
 
-- [ ] **Step 3: Commit FinanceClient hoàn chỉnh**
+- [x] **Step 3: Commit FinanceClient hoàn chỉnh**
 ```bash
 git add app/\(dashboard\)/finance/FinanceClient.tsx services/excel/definitions/finance.def.ts
 git commit -m "feat(finance): integrate enhanced finance page with 2-level categories and multi-filter analytics"
@@ -425,18 +425,18 @@ git commit -m "feat(finance): integrate enhanced finance page with 2-level categ
 **Files:**
 - Modify: `CONSTITUTION.md`
 
-- [ ] **Step 1: Cập nhật `CONSTITUTION.md`**
+- [x] **Step 1: Cập nhật `CONSTITUTION.md`**
   - Cập nhật mục §10 (Hệ Thống Tài Chính): ghi nhận kiến trúc Danh mục 2 cấp (`finance_categories`), gắn cơ sở (`venue_id`), phương thức thanh toán (`payment_method`), bộ lọc thời gian và biểu đồ dòng tiền.
   - Cập nhật mục §14 (Danh Sách Bảng Database): thêm bảng `finance_categories`.
   - Cập nhật mục §15 (Nhật Ký Cập Nhật Hiến Pháp): ghi nhận phiên bản mới (1.9.0).
 
-- [ ] **Step 2: Chạy kiểm tra TypeScript và Build**
+- [x] **Step 2: Chạy kiểm tra TypeScript và Build**
 ```bash
 npm run build
 ```
 Expected: Build Next.js thành công không có bất kỳ lỗi nào.
 
-- [ ] **Step 3: Commit và Push GitHub, Deploy tự động theo quy tắc bắt buộc**
+- [x] **Step 3: Commit và Push GitHub, Deploy tự động theo quy tắc bắt buộc**
 ```bash
 git add CONSTITUTION.md
 git commit -m "docs(constitution): bump version to 1.9.0 with 2-level finance categories and cashflow management"
