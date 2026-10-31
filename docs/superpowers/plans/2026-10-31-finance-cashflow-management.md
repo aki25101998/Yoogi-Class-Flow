@@ -227,6 +227,21 @@ BEGIN
     PERFORM public.seed_default_finance_categories_for_org(r.id);
   END LOOP;
 END $$;
+
+-- 6. Trigger tự động nạp danh mục chuẩn khi có tổ chức mới được tạo
+CREATE OR REPLACE FUNCTION public.trigger_seed_finance_categories_on_org_created()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  PERFORM public.seed_default_finance_categories_for_org(NEW.id);
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_seed_finance_categories_on_org_created ON public.organizations;
+CREATE TRIGGER trg_seed_finance_categories_on_org_created
+  AFTER INSERT ON public.organizations
+  FOR EACH ROW
+  EXECUTE FUNCTION public.trigger_seed_finance_categories_on_org_created();
 ```
 
 - [ ] **Step 2: Áp dụng migration vào Supabase và kiểm tra cấu trúc bảng**
@@ -264,7 +279,9 @@ git commit -m "feat(database): add migration 044 for finance categories, venue a
   - Điều kiện lọc `venueId`: nếu `unassigned` thì `.is('venue_id', null)`, nếu UUID thì `.eq('venue_id', filters.venueId)`, nếu `all` thì không filter
   - Điều kiện lọc `type` và `paymentMethod`
   - Join lấy `venues(id, name)`
-  - Tính toán sẵn `summary`, `cashflowTrends`, và `expenseDistribution`
+  - Tính toán sẵn `summary` (chú ý kiểm tra chia cho 0: `cashRatio`, `bankRatio`, `profitMargin` mặc định là 0 nếu tổng thu/chi bằng 0)
+  - Tính `cashflowTrends`: tự động chuyển đổi gom nhóm linh hoạt — gom theo ngày nếu khoảng thời gian <= 31 ngày, gom theo tháng (ví dụ: `T1`, `T2`...) nếu khoảng thời gian > 31 ngày để tránh nén thanh biểu đồ quá nhỏ
+  - Tính `expenseDistribution`: gom nhóm theo `parent_category`, tính tổng tiền và tỷ lệ % đóng góp
 
 - [ ] **Step 4: Commit types và hooks**
 ```bash
@@ -280,7 +297,7 @@ git commit -m "feat(finance): add finance types and enhanced hooks for categorie
 - Modify: `app/(dashboard)/finance/actions.ts`
 
 - [ ] **Step 1: Nâng cấp `addTransactionAction`**
-  - Kiểm tra `requirePermission('manage_finance')`
+  - Kiểm tra quyền qua `getCurrentOrganizationContext()`: `const isAdminOrOwner = context.membership?.role === 'admin' || context.membership?.role === 'owner'; const hasPermission = isAdminOrOwner || (context.permissions && context.permissions.includes('manage_finance'));` — nếu không có quyền, trả về `{ success: false, error: 'Bạn không có quyền quản lý tài chính.' }` (không dùng `requirePermission` vì sẽ ném exception redirect).
   - Validate: `type` in `['income', 'expense']`, `amount > 0`, `date` định dạng `YYYY-MM-DD`
   - Nếu có `category_id`: truy vấn lấy `parent_category` và `sub_category`, gán `category = sub_category || parent_category`
   - Hỗ trợ `venue_id` (nếu rỗng hoặc 'unassigned' thì lưu `null`)
@@ -292,7 +309,7 @@ git commit -m "feat(finance): add finance types and enhanced hooks for categorie
   - Chặn xóa nếu `source_type !== 'MANUAL'`
 
 - [ ] **Step 3: Bổ sung `addCategoryAction` và `deleteCategoryAction`**
-  - `addCategoryAction({ parent_id, name, type, icon })`: kiểm tra quyền Admin/Owner, insert vào `finance_categories`
+  - `addCategoryAction({ parent_id, name, type, icon })`: kiểm tra quyền Admin/Owner hoặc `manage_finance`, insert vào `finance_categories`
   - `deleteCategoryAction(id)`: kiểm tra quyền, không cho xóa nếu `is_system === true`
 
 - [ ] **Step 4: Commit actions**
@@ -365,6 +382,7 @@ git commit -m "feat(finance): add time range strip, filter bar, KPI grid, and SV
   - Mỗi nhóm cha hiển thị danh sách các mục con dạng badges/chips
   - Form thêm nhanh mục con vào nhóm cha bất kỳ
   - Nút xóa cho các mục con do người dùng tự tạo (`is_system = false`)
+  - Khi thêm hoặc xóa thành công: gọi `queryClient.invalidateQueries({ queryKey: ['financeCategories', organizationId] })` để cập nhật cây danh mục tức thì cho modal thêm giao dịch
 
 - [ ] **Step 3: Commit 2 modals**
 ```bash
@@ -381,7 +399,7 @@ git commit -m "feat(finance): add cascading transaction modal and category manag
 - Modify: `services/excel/definitions/finance.def.ts`
 
 - [ ] **Step 1: Cập nhật `services/excel/definitions/finance.def.ts`**
-  - Bổ sung các cột mới: Cơ sở, Nhóm danh mục, Hạng mục con, Phương thức thanh toán vào file Excel xuất ra
+  - Bổ sung các cột mới: Cơ sở (`format: (_, row) => row.venues?.name || 'Chung toàn trung tâm'`), Nhóm danh mục (`parent_category`), Hạng mục con (`sub_category || category`), Phương thức thanh toán (`payment_method === 'cash' ? 'Tiền mặt' : 'Chuyển khoản'`) vào file Excel xuất ra
 
 - [ ] **Step 2: Tái cấu trúc hoàn thiện `FinanceClient.tsx`**
   - Ráp nối toàn bộ: PageHeader, TimeRangeStrip, FiltersBar, KpiGrid, Charts, Table danh sách giao dịch, AddModal, ManageCategoriesModal
@@ -424,3 +442,4 @@ git push origin main
 ## Plan Review Loop
 
 Sau khi hoàn thành kế hoạch, điều phối `plan-document-reviewer` subagent để kiểm định tính khả thi và chặt chẽ của kế hoạch trước khi bắt tay thực thi.
+
