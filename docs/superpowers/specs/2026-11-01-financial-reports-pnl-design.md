@@ -51,15 +51,18 @@ Nhờ nền tảng vững chắc của Migration `044_finance_categories_and_enh
 $\rightarrow$ **Quyết định kiến trúc:** Sử dụng bảng `finance_transactions` làm **Single Source of Truth** tuyệt đối. Không thêm bảng snapshot hay RPC phức tạp, giúp loại bỏ 100% rủi ro lệch số liệu hoặc xung đột migration.
 
 ### 2.2 Quy Tắc Phân Bổ Chi Nhánh & Chi Phí Chung
-1. **Khi xem Toàn trung tâm (`selectedVenueId = 'ALL'`):**
-   - Tổng Doanh thu = Tất cả các khoản thu (bao gồm của từng cơ sở và khoản thu chung).
-   - Tổng Chi phí = Tất cả các khoản chi (bao gồm chi phí của từng cơ sở và chi phí chung).
-   - Lợi nhuận ròng = Tổng Thu - Tổng Chi.
-2. **Khi lọc xem riêng Cơ sở X (`selectedVenueId = 'uuid_x'`):**
-   - Doanh thu = Các khoản thu có `venue_id = uuid_x`.
-   - Chi phí = Các khoản chi có `venue_id = uuid_x`.
+1. **Chiến lược Fetch Dữ Liệu Toàn Tổ Chức (Organization-Wide Query Scope):**
+   - Hook `useFinancialReport` luôn truy vấn toàn bộ giao dịch của tổ chức trong cả Kỳ hiện tại và Kỳ đối chiếu (Previous Period).
+   - Danh sách chi nhánh luôn được nạp đầy đủ từ bảng `venues` (kể cả cơ sở chưa phát sinh giao dịch trong kỳ, giá trị sẽ là 0) để đảm bảo cấu trúc cột trên Bảng So Sánh và Biểu Đồ luôn ổn định 100%, không bị co giật (layout shift) khi đổi ngày.
+   - Fallback giao dịch cũ: Đối với các giao dịch lịch sử chưa có `parent_category` hoặc `sub_category`, hệ thống tự động fallback lấy giá trị từ cột `category` cũ hoặc gán vào nhóm "Khác" để bảo đảm 100% dòng tiền đều được hạch toán vào P&L.
+2. **Khi xem Toàn trung tâm (`selectedVenueId = 'ALL'`):**
+   - Lưới 4 Thẻ Bento KPI hiển thị toàn bộ chỉ số tổng hợp của trung tâm (bao gồm tất cả cơ sở và các khoản thu/chi chung).
+   - Biểu đồ và Bảng so sánh hiển thị đầy đủ các cột của từng cơ sở, cột "Chung toàn trung tâm" và cột "Tổng cộng".
+3. **Khi lọc xem riêng Cơ sở X (`selectedVenueId = 'uuid_x'`):**
+   - Lưới 4 Thẻ Bento KPI tự động cập nhật hiển thị số liệu riêng của Cơ sở X (Doanh thu, Chi phí, Lợi nhuận ròng, Tỷ suất lợi nhuận và các chỉ số so sánh % tăng trưởng MoM/QoQ riêng của Cơ sở X).
+   - Bảng ma trận P&L và Biểu đồ so sánh vẫn giữ trọn vẹn dữ liệu đa cơ sở nhưng tự động highlight nổi bật cột Cơ sở X (hoặc cung cấp nút toggle "Chỉ xem cơ sở đã chọn" / "Xem so sánh tất cả").
    - Tuân thủ nguyên tắc người dùng lựa chọn: Giữ nguyên tuyệt đối, không tự ý phân bổ chia đều chi phí chung vào cơ sở để phản ánh trung thực nhất số liệu thực tế phát sinh tại cơ sở đó.
-3. **Trên Bảng So Sánh Đa Chi Nhánh (Venue Comparison Matrix):**
+4. **Trên Bảng So Sánh Đa Chi Nhánh (Venue Comparison Matrix):**
    - Các cột bao gồm: `[ Danh mục ]` | `[ Cơ sở 1 ]` | `[ Cơ sở 2 ]` | ... | `[ Chung toàn trung tâm ]` | `[ Tổng cộng ]`.
    - Cột "Chung toàn trung tâm" tập hợp tất cả các dòng giao dịch có `venue_id IS NULL`.
 
@@ -90,11 +93,21 @@ export interface PnLCategoryGroup {
 export interface VenuePnlSummary {
   venueId: string;
   venueName: string;
+  // Kỳ hiện tại
   revenue: number;
   expense: number;
   netProfit: number;
   profitMargin: number; // percentage
   revenueContribution: number; // % of total revenue
+  // Kỳ đối chiếu (Previous Period)
+  prevRevenue: number;
+  prevExpense: number;
+  prevNetProfit: number;
+  prevProfitMargin: number;
+  // Tỷ lệ tăng trưởng riêng của cơ sở
+  revenueGrowthRate: number | null;
+  expenseGrowthRate: number | null;
+  profitGrowthRate: number | null;
 }
 
 export interface FinancialReportData {
@@ -137,26 +150,29 @@ export interface FinancialReportData {
 }
 ```
 
-### 3.2 Thuật Toán Xác Định Kỳ Đối Chiếu (MoM / QoQ Engine)
-Trong hook `useFinancialReport`:
-- **Đầu vào:** `preset`: `'today' | 'week' | 'month' | 'last_month' | 'quarter' | 'year' | 'custom'`, kèm `customStartDate`, `customEndDate`.
+### 3.2 Thuật Toán Xác Định Kỳ Đối Chiếu & Tính Toán Tăng Trưởng (MoM / QoQ Engine)
+Trong hook `useFinancialReport(organizationId: string | undefined, filters: FinancialReportFilters)`:
+- **Chuẩn hóa bộ lọc thời gian:** Tái sử dụng `TimeRangePreset` từ `@/types/finance` gồm: `'today' | 'this_week' | 'this_month' | 'last_month' | 'this_quarter' | 'this_year' | 'custom'`, kèm `customStartDate`, `customEndDate`.
 - **Hàm `calculatePeriodRanges(preset, customStart, customEnd)`:**
-  - Nếu `month` (ví dụ: `2026-10-01` đến `2026-10-31`):
+  - Nếu `this_month` (ví dụ: `2026-10-01` đến `2026-10-31`):
     - `currentPeriod`: Tháng này (10/2026).
     - `previousPeriod`: Tháng trước (01/09/2026 đến 30/09/2026).
-  - Nếu `quarter` (ví dụ Quý 3: 01/07 đến 30/09):
+  - Nếu `this_quarter` (ví dụ Quý 3: 01/07 đến 30/09):
     - `previousPeriod`: Quý 2 (01/04 đến 30/06).
-  - Nếu `year` (2026):
+  - Nếu `this_year` (2026):
     - `previousPeriod`: Năm trước (2025).
   - Nếu `custom` (khoảng cách $D$ ngày):
     - `previousPeriod`: Khoảng thời gian $D$ ngày liền trước `customStartDate`.
-- **Hàm tính Tỷ lệ Tăng trưởng (`calculateGrowthRate`):**
+- **Hàm tính Tỷ lệ Tăng trưởng Chống Lỗi Chia Cho 0 Tuyệt Đối (`calculateGrowthRate`):**
+  Xử lý triệt để mọi trường hợp $prev = 0$ (kể cả khi $current < 0$) để không bao giờ xảy ra phép chia cho 0:
   $$\Delta \% = \begin{cases} 
   \text{null} & \text{khi } prev = 0 \text{ và } current = 0 \\
   +100\% & \text{khi } prev = 0 \text{ và } current > 0 \\
+  -100\% & \text{khi } prev = 0 \text{ và } current < 0 \\
   -100\% & \text{khi } prev > 0 \text{ và } current = 0 \\
-  \frac{current - prev}{|prev|} \times 100\% & \text{trường hợp thông thường}
+  \frac{current - prev}{|prev|} \times 100\% & \text{khi } prev \neq 0
   \end{cases}$$
+  Thuật toán này đảm bảo an toàn toán học 100%, trả về số hữu hạn hoặc `null` và không bao giờ xuất hiện `NaN`, `Infinity` hay `-Infinity` trên giao diện người dùng.
 
 ---
 
@@ -305,3 +321,4 @@ app/styles/
 ## 7. QUY TRÌNH ĐÓNG GÓI & DEPLOY (Hiến Pháp & GEMINI.md)
 1. Cập nhật `CONSTITUTION.md` lên phiên bản **1.9.2** ghi nhận kiến trúc P&L Engine & Financial Analytics.
 2. Tự động commit và push toàn bộ lên GitHub `origin/main` để kích hoạt Vercel Production Deployment.
+
