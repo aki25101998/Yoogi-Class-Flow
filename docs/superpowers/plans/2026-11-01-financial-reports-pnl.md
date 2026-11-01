@@ -156,6 +156,7 @@ import { TimeRangePreset } from '@/types/finance';
 
 /**
  * Calculates current and previous period date ranges based on preset.
+ * Uses local date parts to prevent UTC timezone shift off-by-one errors (GMT+7).
  */
 export function calculatePeriodRanges(
   preset: TimeRangePreset,
@@ -166,7 +167,12 @@ export function calculatePeriodRanges(
   previousPeriod: { startDate: string; endDate: string };
 } {
   const now = new Date();
-  const formatYMD = (d: Date) => d.toISOString().split('T')[0];
+  const formatYMD = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
 
   let curStart = new Date();
   let curEnd = new Date();
@@ -491,9 +497,10 @@ export function useFinancialReport(
         profitGrowthRate: calculateGrowthRate(sharedNetProfit, sharedPrevNetProfit),
       };
 
-      // Identify selected venue totals or organization totals
-      const isSingleVenue = filters.venueId && filters.venueId !== 'ALL';
-      const targetVenue = isSingleVenue ? venueSummaries.find((v) => v.venueId === filters.venueId) : null;
+      // Identify selected venue totals or organization totals (case-insensitive check)
+      const isSingleVenue = !!filters.venueId && filters.venueId.toUpperCase() !== 'ALL';
+      const allSummaries = [...venueSummaries, sharedSummary];
+      const targetVenue = isSingleVenue ? allSummaries.find((v) => v.venueId === filters.venueId) : null;
 
       const totalRevenue = targetVenue ? targetVenue.revenue : orgTotalRev;
       const totalExpense = targetVenue ? targetVenue.expense : orgTotalExp;
@@ -505,12 +512,15 @@ export function useFinancialReport(
       const prevNetProfit = prevRevenue - prevExpense;
       const prevProfitMargin = prevRevenue > 0 ? Number(((prevNetProfit / prevRevenue) * 100).toFixed(1)) : 0;
 
-      // Expense structure percentage
-      const expenseStructure = expenseGroups.map((g) => ({
-        category: g.parentCategory,
-        amount: g.total,
-        percentage: totalExpense > 0 ? Number(((g.total / totalExpense) * 100).toFixed(1)) : 0,
-      }));
+      // Expense structure percentage (scoped accurately when a single venue is filtered)
+      const expenseStructure = expenseGroups.map((g) => {
+        const amount = isSingleVenue && filters.venueId ? (g.byVenue[filters.venueId] || 0) : g.total;
+        return {
+          category: g.parentCategory,
+          amount,
+          percentage: totalExpense > 0 ? Number(((amount / totalExpense) * 100).toFixed(1)) : 0,
+        };
+      });
 
       // Top performing venue (with positive revenue, highest profit)
       const validVenues = [...venueSummaries].filter((v) => v.revenue > 0);
@@ -813,6 +823,7 @@ git commit -m "feat(finance-reports): add hierarchical pnl matrix table with acc
 **Files:**
 - Create: `app/(dashboard)/finance/FinanceReportsClient.tsx`
 - Modify: `app/(dashboard)/finance/FinanceClient.tsx`
+- Modify: `app/(dashboard)/finance/page.tsx`
 
 - [ ] **Step 1: Write `FinanceReportsClient.tsx`**
   - Manages `filters: FinancialReportFilters` state.
@@ -822,7 +833,8 @@ git commit -m "feat(finance-reports): add hierarchical pnl matrix table with acc
   - Implements Excel export trigger calling `exportPnLToExcel(reportData, organization.name)`.
   - Implements print trigger calling `window.print()`.
 
-- [ ] **Step 2: Update `FinanceClient.tsx` with Sub-Nav Tab Switcher**
+- [ ] **Step 2: Update `FinanceClient.tsx` & `page.tsx` with Suspense & Sub-Nav Tab Switcher**
+  - Wrap `<FinanceClient />` with `<Suspense>` in `app/(dashboard)/finance/page.tsx` (Next.js requirement for `useSearchParams`).
   - Read active tab from URL query params: `const searchParams = useSearchParams(); const activeTab = searchParams.get('tab') === 'reports' ? 'reports' : 'transactions';`
   - Sub-nav tabs:
     - `[ 📋 Sổ Quỹ Giao Dịch ]` (`router.push('/finance')`)
@@ -837,8 +849,8 @@ Expected: 35/35 routes compile with 0 errors.
 
 - [ ] **Step 4: Commit**
 ```bash
-git add app/\(dashboard\)/finance/FinanceReportsClient.tsx app/\(dashboard\)/finance/FinanceClient.tsx
-git commit -m "feat(finance): integrate financial reports pnl tab with url persistence"
+git add app/\(dashboard\)/finance/FinanceReportsClient.tsx app/\(dashboard\)/finance/FinanceClient.tsx app/\(dashboard\)/finance/page.tsx
+git commit -m "feat(finance): integrate financial reports pnl tab with suspense and url persistence"
 ```
 
 ---
@@ -864,3 +876,4 @@ git commit -m "docs(constitution): bump version to 1.9.2 for financial reports a
 git push origin main
 ```
 Expected: All commits pushed to GitHub `origin/main`, triggering Vercel build.
+
