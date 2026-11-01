@@ -10,6 +10,10 @@ export interface Organization {
   subscription_status: string;
   subscription_started_at: string | null;
   subscription_expires_at: string | null;
+  bank_bin?: string | null;
+  bank_account_number?: string | null;
+  bank_account_name?: string | null;
+  bank_name?: string | null;
   created_at: string;
   updated_at: string;
 }
