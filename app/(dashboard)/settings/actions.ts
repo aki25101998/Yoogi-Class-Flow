@@ -250,7 +250,7 @@ export async function updateOrgBankSettingsAction(data: {
 
   const { error } = await supabase.from('organizations')
     .update({
-      bank_bin: data.bank_bin,
+      bank_bin: (data.bank_bin || '').trim(),
       bank_account_number: (data.bank_account_number || '').trim().replace(/[\s-]+/g, ''),
       bank_account_name: (data.bank_account_name || '').trim().toUpperCase(),
       bank_name: (data.bank_name || '').trim(),

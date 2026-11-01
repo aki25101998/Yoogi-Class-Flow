@@ -3,7 +3,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { getCurrentOrganizationContext } from '@/services/organization.service';
 import { revalidatePath } from 'next/cache';
-import { assignCoachToClass, removeCoachFromClass } from '@/services/class-coaches.service';
 
 // --- VENUES ---
 
@@ -238,7 +237,7 @@ export async function addClassAction(data: { name: string; venue_id: string; sta
     venue_id: data.venue_id,
     name: data.name.trim(),
     status: data.status,
-    default_tuition_fee: Number(data.default_tuition_fee) || 0,
+    default_tuition_fee: Math.max(0, Number(data.default_tuition_fee) || 0),
     start_time: '18:00', // default
     end_time: '20:00'
   }).select().single();
@@ -304,7 +303,7 @@ export async function updateClassAction(id: string, data: { name: string; venue_
       name: data.name.trim(),
       venue_id: data.venue_id,
       status: data.status,
-      default_tuition_fee: Number(data.default_tuition_fee) || 0
+      default_tuition_fee: Math.max(0, Number(data.default_tuition_fee) || 0)
     })
     .eq('id', id)
     .eq('organization_id', orgId);

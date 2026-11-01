@@ -15,8 +15,20 @@ export async function addTuitionAction(data: {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
+  const role = context.membership?.role;
+  const permissions = context.membership?.permissions || [];
+  const canManage = role === 'owner' || role === 'admin' || permissions.includes('manage_tuition');
+
+  if (!canManage) {
+    return { success: false, error: 'Bạn không có quyền quản lý học phí.' };
+  }
+
   if (!data.amount || data.amount <= 0 || !isFinite(data.amount)) {
     return { success: false, error: 'Số tiền học phí phải lớn hơn 0 và hợp lệ.' };
+  }
+
+  if (!data.due_date || typeof data.due_date !== 'string') {
+    return { success: false, error: 'Kỳ thu học phí không hợp lệ.' };
   }
 
   const supabase = await createClient();
@@ -95,7 +107,7 @@ export async function createBatchTuitionAction(payload: {
 
   const { data, error } = await supabase.rpc('create_batch_tuition', {
     p_organization_id: orgId,
-    p_class_id: payload.class_id,
+    p_class_id: payload.class_id || null,
     p_due_date: payload.due_date,
     p_students: payload.students,
   });
@@ -117,6 +129,14 @@ export async function createBatchTuitionAction(payload: {
 export async function deleteTuitionAction(id: string) {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
+
+  const role = context.membership?.role;
+  const permissions = context.membership?.permissions || [];
+  const canManage = role === 'owner' || role === 'admin' || permissions.includes('manage_tuition');
+
+  if (!canManage) {
+    return { success: false, error: 'Bạn không có quyền xóa học phí.' };
+  }
 
   const supabase = await createClient();
   const orgId = context.organization.id;
