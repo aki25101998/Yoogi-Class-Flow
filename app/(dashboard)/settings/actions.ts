@@ -232,3 +232,35 @@ export async function resetOrganizationDataAction() {
     };
   }
 }
+
+export async function updateOrgBankSettingsAction(data: {
+  bank_bin: string;
+  bank_account_number: string;
+  bank_account_name: string;
+  bank_name: string;
+}) {
+  const context = await getCurrentOrganizationContext();
+  if (!context || !context.organization) return { success: false, error: 'Access Denied' };
+
+  if (context.membership?.role !== 'owner' && context.membership?.role !== 'admin') {
+    return { success: false, error: 'Chỉ Admin hoặc Chủ sở hữu mới có quyền cấu hình tài khoản ngân hàng.' };
+  }
+
+  const supabase = await createClient();
+
+  const { error } = await supabase.from('organizations')
+    .update({
+      bank_bin: data.bank_bin,
+      bank_account_number: (data.bank_account_number || '').trim().replace(/[\s-]+/g, ''),
+      bank_account_name: (data.bank_account_name || '').trim().toUpperCase(),
+      bank_name: (data.bank_name || '').trim(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', context.organization.id);
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath('/settings');
+  revalidatePath('/tuition');
+  return { success: true };
+}

@@ -72,3 +72,4 @@ export interface ReceiptData {
   bank_account_number?: string | null;
   bank_account_name?: string | null;
 }
+

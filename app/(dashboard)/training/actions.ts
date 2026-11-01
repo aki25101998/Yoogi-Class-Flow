@@ -207,7 +207,7 @@ export async function importVenuesBatchAction(venues: any[]) {
 
 // --- CLASSES ---
 
-export async function addClassAction(data: { name: string; venue_id: string; status: string }) {
+export async function addClassAction(data: { name: string; venue_id: string; status: string; default_tuition_fee?: number }) {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
@@ -238,6 +238,7 @@ export async function addClassAction(data: { name: string; venue_id: string; sta
     venue_id: data.venue_id,
     name: data.name.trim(),
     status: data.status,
+    default_tuition_fee: Number(data.default_tuition_fee) || 0,
     start_time: '18:00', // default
     end_time: '20:00'
   }).select().single();
@@ -250,7 +251,7 @@ export async function addClassAction(data: { name: string; venue_id: string; sta
   return { success: true };
 }
 
-export async function updateClassAction(id: string, data: { name: string; venue_id: string; status: string }) {
+export async function updateClassAction(id: string, data: { name: string; venue_id: string; status: string; default_tuition_fee?: number }) {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
@@ -302,7 +303,8 @@ export async function updateClassAction(id: string, data: { name: string; venue_
     .update({
       name: data.name.trim(),
       venue_id: data.venue_id,
-      status: data.status
+      status: data.status,
+      default_tuition_fee: Number(data.default_tuition_fee) || 0
     })
     .eq('id', id)
     .eq('organization_id', orgId);
