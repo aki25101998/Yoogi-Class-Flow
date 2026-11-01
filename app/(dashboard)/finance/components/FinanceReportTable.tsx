@@ -58,7 +58,22 @@ export function FinanceReportTable({ data, filters }: FinanceReportTableProps) {
     return [...data.venueSummaries, data.sharedSummary];
   }, [data.venueSummaries, data.sharedSummary]);
 
-  // Track expanded parent categories
+  // Compute table matrix totals across all displayed venue columns
+  const matrixTotalRevenue = useMemo(() => {
+    return allVenues.reduce((sum, v) => sum + (v.revenue || 0), 0);
+  }, [allVenues]);
+
+  const matrixTotalExpense = useMemo(() => {
+    return allVenues.reduce((sum, v) => sum + (v.expense || 0), 0);
+  }, [allVenues]);
+
+  const matrixNetProfit = matrixTotalRevenue - matrixTotalExpense;
+  const matrixProfitMargin =
+    matrixTotalRevenue > 0
+      ? Number(((matrixNetProfit / matrixTotalRevenue) * 100).toFixed(1))
+      : 0;
+
+  // Track expanded parent categories using an inverse collapsed set so new categories default to expanded
   const allParentCategories = useMemo(() => {
     return [
       ...data.revenueGroups.map((g) => g.parentCategory),
@@ -66,12 +81,12 @@ export function FinanceReportTable({ data, filters }: FinanceReportTableProps) {
     ];
   }, [data.revenueGroups, data.expenseGroups]);
 
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
-    () => new Set(allParentCategories)
-  );
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
+  const isGroupExpanded = (cat: string) => !collapsedGroups.has(cat);
 
   const toggleGroup = (parentCategory: string) => {
-    setExpandedGroups((prev) => {
+    setCollapsedGroups((prev) => {
       const next = new Set(prev);
       if (next.has(parentCategory)) {
         next.delete(parentCategory);
@@ -83,11 +98,11 @@ export function FinanceReportTable({ data, filters }: FinanceReportTableProps) {
   };
 
   const expandAll = () => {
-    setExpandedGroups(new Set(allParentCategories));
+    setCollapsedGroups(new Set());
   };
 
   const collapseAll = () => {
-    setExpandedGroups(new Set());
+    setCollapsedGroups(new Set(allParentCategories));
   };
 
   // Determine highlighted venue column
@@ -207,13 +222,22 @@ export function FinanceReportTable({ data, filters }: FinanceReportTableProps) {
               </tr>
             ) : (
               data.revenueGroups.map((grp) => {
-                const isExpanded = expandedGroups.has(grp.parentCategory);
+                const isExpanded = isGroupExpanded(grp.parentCategory);
                 return (
                   <React.Fragment key={grp.parentCategory}>
                     {/* Parent Group Row */}
                     <tr
                       className={styles.categoryGroupRow}
                       onClick={() => toggleGroup(grp.parentCategory)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          toggleGroup(grp.parentCategory);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      aria-expanded={isExpanded}
                       title="Nhấn để mở rộng/thu gọn các hạng mục con"
                     >
                       <td className={styles.td}>
@@ -250,8 +274,8 @@ export function FinanceReportTable({ data, filters }: FinanceReportTableProps) {
                         {formatTotal(grp.total)}
                       </td>
                       <td className={`${styles.td} ${styles.textRight}`}>
-                        {data.totalRevenue > 0
-                          ? `${((grp.total / data.totalRevenue) * 100).toFixed(1)}%`
+                        {matrixTotalRevenue > 0
+                          ? `${((grp.total / matrixTotalRevenue) * 100).toFixed(1)}%`
                           : '0%'}
                       </td>
                       <td className={`${styles.td} ${styles.textCenter}`}>
@@ -286,8 +310,8 @@ export function FinanceReportTable({ data, filters }: FinanceReportTableProps) {
                             {formatTotal(item.total)}
                           </td>
                           <td className={`${styles.td} ${styles.textRight}`}>
-                            {data.totalRevenue > 0
-                              ? `${((item.total / data.totalRevenue) * 100).toFixed(1)}%`
+                            {matrixTotalRevenue > 0
+                              ? `${((item.total / matrixTotalRevenue) * 100).toFixed(1)}%`
                               : '0%'}
                           </td>
                           <td className={`${styles.td} ${styles.textCenter}`}>
@@ -325,7 +349,7 @@ export function FinanceReportTable({ data, filters }: FinanceReportTableProps) {
                 className={`${styles.td} ${styles.textRight}`}
                 style={{ color: 'var(--primary)' }}
               >
-                {formatTotal(data.totalRevenue)}
+                {formatTotal(matrixTotalRevenue)}
               </td>
               <td
                 className={`${styles.td} ${styles.textRight}`}
@@ -363,13 +387,22 @@ export function FinanceReportTable({ data, filters }: FinanceReportTableProps) {
               </tr>
             ) : (
               data.expenseGroups.map((grp) => {
-                const isExpanded = expandedGroups.has(grp.parentCategory);
+                const isExpanded = isGroupExpanded(grp.parentCategory);
                 return (
                   <React.Fragment key={grp.parentCategory}>
                     {/* Parent Group Row */}
                     <tr
                       className={styles.categoryGroupRow}
                       onClick={() => toggleGroup(grp.parentCategory)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          toggleGroup(grp.parentCategory);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      aria-expanded={isExpanded}
                       title="Nhấn để mở rộng/thu gọn các hạng mục con"
                     >
                       <td className={styles.td}>
@@ -406,8 +439,8 @@ export function FinanceReportTable({ data, filters }: FinanceReportTableProps) {
                         {formatTotal(grp.total)}
                       </td>
                       <td className={`${styles.td} ${styles.textRight}`}>
-                        {data.totalRevenue > 0
-                          ? `${((grp.total / data.totalRevenue) * 100).toFixed(1)}%`
+                        {matrixTotalRevenue > 0
+                          ? `${((grp.total / matrixTotalRevenue) * 100).toFixed(1)}%`
                           : '-'}
                       </td>
                       <td className={`${styles.td} ${styles.textCenter}`}>
@@ -442,8 +475,8 @@ export function FinanceReportTable({ data, filters }: FinanceReportTableProps) {
                             {formatTotal(item.total)}
                           </td>
                           <td className={`${styles.td} ${styles.textRight}`}>
-                            {data.totalRevenue > 0
-                              ? `${((item.total / data.totalRevenue) * 100).toFixed(1)}%`
+                            {matrixTotalRevenue > 0
+                              ? `${((item.total / matrixTotalRevenue) * 100).toFixed(1)}%`
                               : '-'}
                           </td>
                           <td className={`${styles.td} ${styles.textCenter}`}>
@@ -481,14 +514,14 @@ export function FinanceReportTable({ data, filters }: FinanceReportTableProps) {
                 className={`${styles.td} ${styles.textRight}`}
                 style={{ color: 'var(--danger)' }}
               >
-                {formatTotal(data.totalExpense)}
+                {formatTotal(matrixTotalExpense)}
               </td>
               <td
                 className={`${styles.td} ${styles.textRight}`}
                 style={{ color: 'var(--danger)' }}
               >
-                {data.totalRevenue > 0
-                  ? `${((data.totalExpense / data.totalRevenue) * 100).toFixed(1)}%`
+                {matrixTotalRevenue > 0
+                  ? `${((matrixTotalExpense / matrixTotalRevenue) * 100).toFixed(1)}%`
                   : '-'}
               </td>
               <td className={`${styles.td} ${styles.textCenter}`}>
@@ -529,11 +562,11 @@ export function FinanceReportTable({ data, filters }: FinanceReportTableProps) {
               <td
                 className={`${styles.td} ${styles.textRight}`}
                 style={{
-                  color: data.netProfit >= 0 ? 'var(--primary)' : 'var(--danger)',
+                  color: matrixNetProfit >= 0 ? 'var(--primary)' : 'var(--danger)',
                   fontWeight: 800,
                 }}
               >
-                {formatProfit(data.netProfit)}
+                {formatProfit(matrixNetProfit)}
               </td>
               <td className={`${styles.td} ${styles.textRight}`}>-</td>
               <td className={`${styles.td} ${styles.textCenter}`}>
@@ -574,11 +607,11 @@ export function FinanceReportTable({ data, filters }: FinanceReportTableProps) {
               <td
                 className={`${styles.td} ${styles.textRight}`}
                 style={{
-                  color: data.profitMargin >= 0 ? 'var(--primary)' : 'var(--danger)',
+                  color: matrixProfitMargin >= 0 ? 'var(--primary)' : 'var(--danger)',
                   fontWeight: 700,
                 }}
               >
-                {data.totalRevenue > 0 ? `${data.profitMargin}%` : '-'}
+                {matrixTotalRevenue > 0 ? `${matrixProfitMargin}%` : '-'}
               </td>
               <td className={`${styles.td} ${styles.textRight}`}>-</td>
               <td className={`${styles.td} ${styles.textCenter}`}>-</td>
