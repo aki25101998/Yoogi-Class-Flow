@@ -80,15 +80,8 @@ export function VietQRModal({
   const formatCurrency = (val: number) => new Intl.NumberFormat('vi-VN').format(val) + ' đ';
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="md">
-      <ModalHeader onClose={onClose}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span className="material-symbols-outlined" style={{ color: 'var(--primary)', fontSize: '24px' }}>
-            qr_code_2
-          </span>
-          <span>Mã Thanh Toán VietQR (Napas 247)</span>
-        </div>
-      </ModalHeader>
+    <Modal isOpen={isOpen} onClose={onClose} maxWidth="540px">
+      <ModalHeader title="Mã Thanh Toán VietQR (Napas 247)" onClose={onClose} />
 
       <ModalBody>
         {!isBankConfigured ? (
@@ -229,3 +222,4 @@ export function VietQRModal({
     </Modal>
   );
 }
+

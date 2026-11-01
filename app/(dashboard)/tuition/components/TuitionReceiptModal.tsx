@@ -52,15 +52,8 @@ export function TuitionReceiptModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg">
-      <ModalHeader onClose={onClose}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span className="material-symbols-outlined" style={{ color: '#3B82F6', fontSize: '24px' }}>
-            receipt
-          </span>
-          <span>Phiếu Thu Điện Tử</span>
-        </div>
-      </ModalHeader>
+    <Modal isOpen={isOpen} onClose={onClose} maxWidth="650px">
+      <ModalHeader title="Phiếu Thu Điện Tử" onClose={onClose} />
 
       <ModalBody>
         {/* Printable E-Receipt with CSS Print Isolation */}
@@ -174,3 +167,4 @@ export function TuitionReceiptModal({
     </Modal>
   );
 }
+

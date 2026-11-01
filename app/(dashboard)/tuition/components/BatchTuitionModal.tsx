@@ -133,15 +133,8 @@ export function BatchTuitionModal({
   const formatCurrency = (val: number) => new Intl.NumberFormat('vi-VN').format(val) + ' đ';
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg">
-      <ModalHeader onClose={onClose}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span className="material-symbols-outlined" style={{ color: 'var(--primary)', fontSize: '24px' }}>
-            playlist_add
-          </span>
-          <span>Tạo Học Phí Hàng Loạt Cho Lớp</span>
-        </div>
-      </ModalHeader>
+    <Modal isOpen={isOpen} onClose={onClose} maxWidth="800px">
+      <ModalHeader title="Tạo Học Phí Hàng Loạt Cho Lớp" onClose={onClose} />
 
       <ModalBody>
         {error && (
@@ -168,13 +161,11 @@ export function BatchTuitionModal({
             <Select
               value={selectedClassId}
               onChange={(e) => setSelectedClassId(e.target.value)}
-            >
-              {classes.map((cls) => (
-                <option key={cls.id} value={cls.id}>
-                  {cls.name} {cls.default_tuition_fee ? `(${formatCurrency(cls.default_tuition_fee)}/tháng)` : ''}
-                </option>
-              ))}
-            </Select>
+              options={classes.map((cls) => ({
+                value: cls.id,
+                label: `${cls.name} ${cls.default_tuition_fee ? `(${formatCurrency(cls.default_tuition_fee)}/tháng)` : ''}`,
+              }))}
+            />
           </div>
 
           <div>
@@ -330,3 +321,4 @@ export function BatchTuitionModal({
     </Modal>
   );
 }
+

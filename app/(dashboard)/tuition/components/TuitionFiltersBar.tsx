@@ -48,14 +48,11 @@ export function TuitionFiltersBar({
           <Select
             value={filters.classId}
             onChange={(e) => onFilterChange({ ...filters, classId: e.target.value })}
-          >
-            <option value="all">Tất cả lớp học</option>
-            {classes.map((cls) => (
-              <option key={cls.id} value={cls.id}>
-                {cls.name}
-              </option>
-            ))}
-          </Select>
+            options={[
+              { value: 'all', label: 'Tất cả lớp học' },
+              ...classes.map((cls) => ({ value: cls.id, label: cls.name })),
+            ]}
+          />
         </div>
 
         {/* Status Pills */}
@@ -114,3 +111,4 @@ export function TuitionFiltersBar({
     </div>
   );
 }
+
