@@ -73,6 +73,13 @@ $\rightarrow$ **Quyết định kiến trúc:** Sử dụng bảng `finance_tran
 ### 3.1 Type Definitions (`types/financeReport.ts`)
 
 ```typescript
+export interface FinancialReportFilters {
+  preset: TimeRangePreset;
+  customStartDate?: string;
+  customEndDate?: string;
+  venueId?: string; // 'ALL' or specific venue UUID
+}
+
 export interface PnLSubCategoryItem {
   name: string;
   total: number;
@@ -114,7 +121,7 @@ export interface FinancialReportData {
   currentPeriod: { startDate: string; endDate: string };
   previousPeriod: { startDate: string; endDate: string };
   
-  // Tổng hợp chỉ số
+  // Tổng hợp chỉ số toàn hệ thống
   totalRevenue: number;
   totalExpense: number;
   netProfit: number;
@@ -133,13 +140,9 @@ export interface FinancialReportData {
   revenueGroups: PnLCategoryGroup[];
   expenseGroups: PnLCategoryGroup[];
   
-  // Bóc tách theo từng chi nhánh
+  // Bóc tách theo từng chi nhánh & Chung toàn trung tâm
   venueSummaries: VenuePnlSummary[];
-  sharedSummary: {
-    revenue: number;
-    expense: number;
-    netProfit: number;
-  };
+  sharedSummary: VenuePnlSummary; // Đồng nhất type với venueId: 'SHARED', venueName: 'Chung toàn trung tâm'
   
   // Phân bổ cơ cấu chi phí (% từng nhóm cha)
   expenseStructure: {
