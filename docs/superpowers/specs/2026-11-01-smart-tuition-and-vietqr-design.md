@@ -49,12 +49,14 @@ ALTER TABLE public.organizations
 ```
 
 ### 2.3 Cập nhật bảng `tuition`
+Bổ sung phương thức thanh toán (nullable khi chưa nộp), ghi chú, mã biên lai và thời điểm thanh toán:
 ```sql
 ALTER TABLE public.tuition 
-  ADD COLUMN IF NOT EXISTS payment_method TEXT DEFAULT 'bank_transfer'
-    CHECK (payment_method IN ('cash', 'bank_transfer', 'other')),
+  ADD COLUMN IF NOT EXISTS payment_method TEXT 
+    CHECK (payment_method IS NULL OR payment_method IN ('cash', 'bank_transfer', 'other')),
   ADD COLUMN IF NOT EXISTS notes TEXT,               -- Ghi chú (học bổng, giảm anh em ruột...)
-  ADD COLUMN IF NOT EXISTS receipt_number TEXT;       -- Mã biên lai (vd: PT-2611-001)
+  ADD COLUMN IF NOT EXISTS receipt_number TEXT,       -- Mã biên lai (vd: PT-2611-001)
+  ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ;      -- Thời điểm nộp tiền thực tế
 
 -- Index tìm kiếm nhanh theo kỳ và lớp
 CREATE INDEX IF NOT EXISTS idx_tuition_class_due_date 
@@ -80,12 +82,14 @@ DECLARE
   v_receipt_number TEXT;
   v_has_perm BOOLEAN := false;
 BEGIN
-  -- Kiểm tra quyền Admin/Owner hoặc có permission manage_tuition
+  -- Kiểm tra quyền Admin/Owner hoặc có permission manage_tuition (Join đúng profiles.auth_user_id)
   SELECT (
     public.is_org_admin(p_organization_id) OR EXISTS (
-      SELECT 1 FROM public.organization_members om
+      SELECT 1 
+      FROM public.organization_members om
+      JOIN public.profiles p ON p.id = om.user_id
       WHERE om.organization_id = p_organization_id 
-        AND om.user_id = auth.uid() 
+        AND p.auth_user_id = auth.uid() 
         AND (om.role IN ('owner', 'admin') OR om.permissions ? 'manage_tuition')
     )
   ) INTO v_has_perm;
@@ -120,7 +124,9 @@ BEGIN
         status,
         paid_amount,
         notes,
-        receipt_number
+        receipt_number,
+        payment_method,
+        paid_at
       ) VALUES (
         p_organization_id,
         v_student_id,
@@ -130,7 +136,9 @@ BEGIN
         'unpaid',
         0,
         v_notes,
-        v_receipt_number
+        v_receipt_number,
+        NULL,
+        NULL
       );
 
       v_count := v_count + 1;
@@ -140,11 +148,11 @@ BEGIN
   RETURN jsonb_build_object('success', true, 'count', v_count);
 END;
 $$;
+
+GRANT EXECUTE ON FUNCTION public.create_batch_tuition(UUID, UUID, TEXT, JSONB) TO authenticated;
 ```
 
 ### 2.5 Nâng Cấp RPC `record_tuition_payment` (Đồng Bộ Sang Sổ Quỹ `/finance`)
-Drop overload cũ nếu cần và tạo phiên bản có thêm tham số `p_payment_method`:
-
 ```sql
 DROP FUNCTION IF EXISTS public.record_tuition_payment(UUID, NUMERIC, UUID, UUID);
 
@@ -158,12 +166,12 @@ CREATE OR REPLACE FUNCTION public.record_tuition_payment(
 RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   v_tuition RECORD;
-  v_class RECORD;
   v_new_paid NUMERIC;
   v_new_status TEXT;
   v_txn_id UUID;
   v_student_name TEXT;
   v_venue_id UUID := NULL;
+  v_category_id UUID := NULL;
   v_method TEXT := COALESCE(p_payment_method, 'cash');
 BEGIN
   -- 1. Validate amount
@@ -201,24 +209,33 @@ BEGIN
     WHERE id = v_tuition.class_id AND organization_id = p_organization_id;
   END IF;
 
-  -- 6. Lấy tên học viên để mô tả
+  -- 6. Lấy category_id chuẩn từ finance_categories (ưu tiên mục "Học phí lớp thường")
+  SELECT id INTO v_category_id 
+  FROM public.finance_categories 
+  WHERE organization_id = p_organization_id 
+    AND name = 'Học phí lớp thường'
+  LIMIT 1;
+
+  -- 7. Lấy tên học viên để mô tả
   SELECT name INTO v_student_name 
   FROM public.students 
   WHERE id = v_tuition.student_id;
 
-  -- 7. Update tuition
+  -- 8. Update tuition
   UPDATE public.tuition
   SET paid_amount = v_new_paid,
       status = v_new_status,
       payment_method = v_method,
+      paid_at = NOW(),
       updated_at = NOW()
   WHERE id = p_tuition_id;
 
-  -- 8. Tự động insert Sổ Quỹ finance_transactions với category 2 cấp & venue
+  -- 9. Tự động insert Sổ Quỹ finance_transactions với category 2 cấp & venue
   INSERT INTO public.finance_transactions (
     organization_id,
     type,
     category,
+    category_id,
     parent_category,
     sub_category,
     amount,
@@ -232,6 +249,7 @@ BEGIN
     p_organization_id,
     'income',
     'Thu học phí',
+    v_category_id,
     'Học phí',
     'Học phí lớp thường',
     p_amount,
@@ -251,6 +269,8 @@ BEGIN
   );
 END;
 $$;
+
+GRANT EXECUTE ON FUNCTION public.record_tuition_payment(UUID, NUMERIC, UUID, UUID, TEXT) TO authenticated;
 ```
 
 ---
@@ -311,7 +331,7 @@ $$;
    - Khi lưu: Tự động cập nhật trạng thái học phí và đẩy ngay sang Sổ Quỹ `/finance`.
 
 8. **Modal Phiếu Thu Điện Tử (`TuitionReceiptModal`):**
-   - Thiết kế chuẩn mẫu Phiếu Thu Thể Thao: Logo trung tâm, Mã phiếu thu (`PT-YYYYMM-XXXX`), Tên học viên, Lớp học, Kỳ học, Số tiền đã nộp, Phương thức (Tiền mặt/Chuyển khoản), Ngày giờ nộp.
+   - Thiết kế chuẩn mẫu Phiếu Thu Thể Thao: Logo trung tâm, Mã phiếu thu (`PT-YYYYMM-XXXX`), Tên học viên, Lớp học, Kỳ học, Số tiền đã nộp, Phương thức (Tiền mặt/Chuyển khoản), Ngày giờ nộp (`paid_at`).
    - Tối ưu hóa in ấn với CSS `@media print` chuẩn mực: Bấm `[In Phiếu Thu]` gọi `window.print()` trực tiếp mở trình xem trước in hoặc lưu PDF cực kỳ sắc nét mà không cần cài thêm thư viện bên ngoài gây nặng app.
 
 9. **Khu Vực Cài Đặt Ngân Hàng Trong `/settings`:**
@@ -370,7 +390,7 @@ export function generateVietQRUrl(params: {
 1. **Migration `045_tuition_enhancements_and_vietqr.sql`:**
    - Thêm `default_tuition_fee` trên `venue_classes`.
    - Thêm thông tin ngân hàng trên `organizations`.
-   - Thêm thuộc tính trên `tuition`.
+   - Thêm thuộc tính `payment_method`, `notes`, `receipt_number`, `paid_at` trên `tuition`.
    - Tạo SP `create_batch_tuition`.
    - Cập nhật RPC `record_tuition_payment` đồng bộ sang Sổ Quỹ.
 2. **Types & Constants:**
