@@ -1,7 +1,7 @@
 # 📜 HIẾN PHÁP DỰ ÁN — YOOGI CLASS FLOW
 
-> **Phiên bản:** 1.9.0  
-> **Cập nhật lần cuối:** 2026-10-31  
+> **Phiên bản:** 1.9.1  
+> **Cập nhật lần cuối:** 2026-11-01  
 > **Mục đích:** Đây là tài liệu gốc, bất khả xâm phạm. Mọi thay đổi code PHẢI tuân thủ các quy tắc trong file này. Khi có tính năng mới, file này PHẢI được cập nhật đồng thời.
 
 ---
@@ -507,9 +507,25 @@ scheduled → checked_in → approved → paid
 
 ### 10.1 Học Phí (Tuition)
 
-- Status: `unpaid` → `partial` → `paid`
-- Hỗ trợ thanh toán từng phần (`paid_amount`)
-- Thanh toán qua RPC `record_tuition_payment` — **atomic operation** với `FOR UPDATE` lock
+- **Học phí mặc định lớp học (`default_tuition_fee` trên `venue_classes`):**
+  - Cấu hình trực tiếp khi thêm/sửa lớp học trong Chi tiết địa điểm (`/training/[venueId]`).
+  - Tự động điền làm giá trị học phí cơ sở khi tạo phiếu thu hàng loạt cho học viên của lớp.
+- **Tạo học phí hàng loạt theo lớp (`create_batch_tuition` RPC & `BatchTuitionModal`):**
+  - Cho phép chọn lớp, tháng/kỳ thu, tự động tải danh sách võ sinh đang theo học (`class_students`).
+  - Hỗ trợ tùy chỉnh số tiền và ghi chú riêng từng học viên trước khi lưu, kèm tính tổng số tiền tự động.
+  - Xử lý nguyên tử (atomic transaction) ở tầng database, tránh duplicate phiếu thu trong cùng một tháng.
+- **VietQR Động Napas 247 (`VietQRModal`):**
+  - Tích hợp thông tin tài khoản ngân hàng trung tâm của tổ chức (`bank_bin`, `bank_account_number`, `bank_account_name`, `bank_name` trên `organizations`).
+  - Cấu hình trực quan tại Cài đặt (`/settings`) với preview thẻ ngân hàng và danh mục ngân hàng Việt Nam (`VIETNAM_BANKS`).
+  - Tạo URL VietQR chuẩn Napas 247 (`https://img.vietqr.io/image/...`) với số tiền còn nợ (`remaining_amount`) và nội dung chuyển khoản chuẩn hóa (loại bỏ dấu tiếng Việt, ký tự đặc biệt, giới hạn tối đa 50 ký tự).
+- **In Biên Lai Điện Tử Chuẩn In Ấn (`TuitionReceiptModal`):**
+  - Biên lai thu tiền học phí định dạng chuẩn A5/A4 với logo, số biên lai (`receipt_number`), thông tin võ sinh, lớp học, chi tiết các khoản thanh toán, và phần chữ ký người nộp/người thu.
+  - Cách ly trang in (`@media print`) trong `app/globals.css`, ẩn hoàn toàn sidebar, header và modal backdrop khi kích hoạt `window.print()`.
+- **Ghi Nhận Thanh Toán & Đồng Bộ Sổ Quỹ Tự Động:**
+  - Status: `unpaid` → `partial` → `paid`.
+  - Hỗ trợ thanh toán từng phần (`paid_amount`) và chọn phương thức (`cash` / `bank_transfer`) kèm ghi chú (`notes`).
+  - Thực thi qua RPC `record_tuition_payment` — **atomic operation** với `FOR UPDATE` lock, tự động sinh mã biên lai `receipt_number` nếu chưa có.
+  - Tự động tạo giao dịch thu (`income`) trong `finance_transactions` với `source_type = 'TUITION_PAYMENT'`, `source_id = tuition.id`, `reference_id = receipt_number`, gắn đúng `venue_id`, phương thức thanh toán và danh mục 2 cấp (Học phí võ sinh).
 
 ### 10.2 Sổ Quỹ (Finance Transactions & Categories)
 
@@ -704,7 +720,7 @@ useDashboardStats.ts — Dashboard statistics
 | Bảng | Mô tả |
 |---|---|
 | `profiles` | Thông tin cá nhân (name, email, avatar) |
-| `organizations` | Tổ chức/workspace |
+| `organizations` | Tổ chức/workspace (kèm cấu hình ngân hàng & VietQR: bank_bin, bank_account_number, bank_account_name, bank_name) |
 | `organization_members` | Membership + role + permissions |
 | `organization_invitations` | Lời mời tham gia |
 
@@ -713,7 +729,7 @@ useDashboardStats.ts — Dashboard statistics
 |---|---|
 | `coaches` | Thông tin chuyên môn HLV |
 | `venues` | Địa điểm/chi nhánh |
-| `venue_classes` | Lớp học (thuộc venue) |
+| `venue_classes` | Lớp học (thuộc venue, kèm default_tuition_fee) |
 | `class_coaches` | Phân công HLV → lớp |
 | `organization_belts` | Hệ thống cấp đai |
 
@@ -745,7 +761,7 @@ useDashboardStats.ts — Dashboard statistics
 | `payroll_payments` | Thanh toán lương |
 | `payroll_payment_sessions` | Session → payment mapping |
 | `salary_audit_logs` | Audit log lương |
-| `tuition` | Học phí học viên |
+| `tuition` | Học phí học viên (status, payment_method, notes, receipt_number, paid_at) |
 | `finance_categories` | Cây danh mục thu chi 2 cấp đa tổ chức |
 | `finance_transactions` | Thu chi tổng hợp (gắn cơ sở, 2 cấp danh mục, phương thức) |
 
@@ -814,6 +830,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-10-31 | 1.8.7 | Tách riêng phân hệ Quản lý & Cấu hình Vai trò thành tab độc lập trong Cài đặt (/settings/roles); khôi phục Modal chọn vai trò thành viên/HLV (/settings/members) về giao diện tối giản chuẩn Ảnh 2 (chọn nhanh 4 vai trò cốt lõi hoặc vai trò tùy biến kèm lưu trực tiếp 1-chạm); trang /settings/roles cho phép xem tổng quan Bento KPI vai trò, danh sách vai trò hệ thống & tùy biến, tùy biến tên vai trò, mô tả, cấp độ bảo mật hệ thống và ma trận phân quyền chi tiết 10 module; bổ sung migration 043_organization_roles.sql |
 | 2026-10-31 | 1.8.8 | Chuẩn hóa 10 module quyền hạn cốt lõi trên toàn hệ thống: Loại bỏ triệt để quyền hạn cũ manage_classes (đã được bao hàm bởi manage_venues - Cơ sở & Lớp học) trong tất cả các service (members, roles, platform-admin, organization, workspace); khắc phục lỗi Quản trị viên bị hiển thị 11/10 quyền hạn và 110% phạm vi kèm thẻ thô `✓ manage_classes` trên trang Cấu hình vai trò (/settings/roles); bổ sung bộ lọc nghiêm ngặt ALL_PERMISSION_KEYS và chặn tràn ngưỡng 100% khi tính tỷ lệ |
 | 2026-10-31 | 1.9.0 | Nâng cấp toàn diện Sổ Quỹ Thu - Chi (/finance): Bảng mới finance_categories (cây danh mục 2 cấp đa tổ chức), gắn cơ sở (venue_id) và phương thức thanh toán (cash/bank_transfer) trên finance_transactions; dải bộ lọc thời gian chuẩn kế toán (Hôm nay, Tuần, Tháng, Quý, Năm, Tùy chọn), lưới 4 thẻ Bento KPI cân đối (Tổng thu, Tổng chi, Lợi nhuận ròng, Tỷ lệ Tiền mặt vs Bank), 2 biểu đồ trực quan SVG/CSS xu hướng dòng tiền & cơ cấu chi phí, form cascade 2 cấp và modal quản lý danh mục (migration 044_finance_categories_and_enhancements.sql) |
+| 2026-11-01 | 1.9.1 | Nâng cấp toàn diện Quản lý Học Phí & VietQR Động (/tuition): Học phí mặc định lớp học (default_tuition_fee trên venue_classes); tạo học phí hàng loạt cho lớp học (RPC create_batch_tuition & BatchTuitionModal); cấu hình tài khoản ngân hàng trung tâm trong Cài đặt (/settings) và tạo mã VietQR Napas 247 động với cú pháp chuẩn hóa (VietQRModal); in biên lai thu tiền điện tử chuẩn A5/A4 (TuitionReceiptModal) với print isolation; ghi nhận thanh toán nguyên tử (RPC record_tuition_payment atomic) kèm ghi chú và tự động đồng bộ sang Sổ quỹ (/finance) với danh mục 2 cấp; bổ sung migration 045_tuition_enhancements_and_vietqr.sql |
 
 ---
 
