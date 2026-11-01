@@ -148,14 +148,14 @@ export function TuitionReceiptModal({
       </ModalBody>
 
       <ModalFooter>
-        <Button type="button" variant="ghost" onClick={onClose} className={styles.noPrint}>
+        <Button type="button" variant="ghost" onClick={onClose} className="noPrint">
           Đóng
         </Button>
         <Button
           type="button"
           variant="primary"
           onClick={handlePrint}
-          className={styles.noPrint}
+          className="noPrint"
           style={{ borderRadius: 'var(--radius-full)' }}
         >
           <span className="material-icons-round" style={{ fontSize: '18px', marginRight: '6px' }}>
