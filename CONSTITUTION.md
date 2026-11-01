@@ -1,6 +1,6 @@
 # 📜 HIẾN PHÁP DỰ ÁN — YOOGI CLASS FLOW
 
-> **Phiên bản:** 1.9.1  
+> **Phiên bản:** 1.9.2  
 > **Cập nhật lần cuối:** 2026-11-01  
 > **Mục đích:** Đây là tài liệu gốc, bất khả xâm phạm. Mọi thay đổi code PHẢI tuân thủ các quy tắc trong file này. Khi có tính năng mới, file này PHẢI được cập nhật đồng thời.
 
@@ -552,6 +552,26 @@ scheduled → checked_in → approved → paid
 - Status: `open` → `calculated` → `review` → `approved` → `paid`
 - Thanh toán lương tạo `finance_transactions` type `expense` tự động
 
+### 10.4 Báo Cáo Tài Chính Đa Chiều & Phân Tích Lợi Nhuận (P&L Analytics)
+
+- **Vị trí & Điều hướng:** Tab chuyên dụng `[Báo Cáo Lãi - Lỗ & Phân Tích (P&L)]` tích hợp trực tiếp trong Sổ Quỹ (`/finance?tab=reports`), hỗ trợ liên kết URL cố định (URL parameter persistence) và bọc `<Suspense>` chuẩn Next.js App Router.
+- **Data Aggregator Engine (`useFinancialReport`):**
+  - Single Source of Truth: Tổng hợp trực tiếp từ bảng `finance_transactions` và danh sách chi nhánh từ `venues`.
+  - Phân tầng P&L chuẩn kế toán quản trị: Doanh thu thuần (Học phí, Bán võ phục/dụng cụ, Khác) $\rightarrow$ Chi phí vận hành (Lương HLV, Mặt bằng, Điện nước, Marketing, Khác) $\rightarrow$ Lợi nhuận ròng ($Net\ Profit = Doanh\ thu - Chi\ phí$) $\rightarrow$ Biên lợi nhuận ròng ($Margin\ \% = \frac{Net\ Profit}{Revenue} \times 100\%$).
+  - Bóc tách theo Cơ sở (Venue P&L): Phân bổ từng dòng thu/chi theo chi nhánh đào tạo, tách riêng chi phí chung (`venue_id IS NULL`) thành cột "Chung toàn trung tâm" minh bạch.
+  - So sánh tăng trưởng kỳ trước (MoM / QoQ Comparison): Tự động tính tỷ lệ tăng trưởng (+/- %) so với kỳ liền trước với thuật toán chống chia cho 0 tuyệt đối và an toàn múi giờ địa phương (GMT+7).
+- **Giao diện & Trực quan hóa dữ liệu:**
+  - Lưới 4 Thẻ Bento KPI cân đối (Doanh thu thuần, Chi phí vận hành, Lợi nhuận ròng, Biên lợi nhuận & Cơ sở dẫn đầu) kèm watermark tài chính chìm và badge biến động tỷ lệ tăng trưởng đảo chiều chi phí.
+  - Biểu đồ cột SVG so sánh P&L giữa các cơ sở (Doanh thu Teal, Chi phí Coral, Lợi nhuận Emerald/Red, hỗ trợ hiển thị lợi nhuận âm dưới đường baseline 0đ và thanh cuộn ngang trên thiết bị di động).
+  - Biểu đồ phân rã cơ cấu chi phí dạng thanh ngang xếp chồng (Stacked Horizontal Bar) kèm danh mục chú giải chi tiết.
+- **Bảng Ma Trận P&L Phân Tầng (`FinanceReportTable`):**
+  - Cây danh mục 2 cấp hỗ trợ gập/mở (Accordion) nhóm cha và hạng mục con, hỗ trợ phím tắt bàn phím (Enter / Space) và nút Mở rộng / Thu gọn tất cả.
+  - Cột ma trận: Hạng mục | Cơ sở 1..N | Chung toàn trung tâm | Tổng cộng | Tỷ trọng % | So với kỳ trước %.
+  - Tự động highlight nổi bật cột cơ sở được chọn khi lọc theo từng chi nhánh cụ thể.
+- **Xuất Excel & In ấn chuyên nghiệp:**
+  - Xuất file `.xlsx` (`exportPnLToExcel`) đa cột chi nhánh, định dạng tiền tệ VND, tỷ trọng % và so sánh kỳ trước.
+  - Cách ly trang in (`@media print`) trong `FinanceReports.module.css`, tự động ẩn thanh công cụ điều hướng, tối ưu in báo cáo khổ A4 nộp ban quản trị.
+
 ---
 
 ## 11. BẢO MẬT & TOÀN VẸN DỮ LIỆU
@@ -831,6 +851,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-10-31 | 1.8.8 | Chuẩn hóa 10 module quyền hạn cốt lõi trên toàn hệ thống: Loại bỏ triệt để quyền hạn cũ manage_classes (đã được bao hàm bởi manage_venues - Cơ sở & Lớp học) trong tất cả các service (members, roles, platform-admin, organization, workspace); khắc phục lỗi Quản trị viên bị hiển thị 11/10 quyền hạn và 110% phạm vi kèm thẻ thô `✓ manage_classes` trên trang Cấu hình vai trò (/settings/roles); bổ sung bộ lọc nghiêm ngặt ALL_PERMISSION_KEYS và chặn tràn ngưỡng 100% khi tính tỷ lệ |
 | 2026-10-31 | 1.9.0 | Nâng cấp toàn diện Sổ Quỹ Thu - Chi (/finance): Bảng mới finance_categories (cây danh mục 2 cấp đa tổ chức), gắn cơ sở (venue_id) và phương thức thanh toán (cash/bank_transfer) trên finance_transactions; dải bộ lọc thời gian chuẩn kế toán (Hôm nay, Tuần, Tháng, Quý, Năm, Tùy chọn), lưới 4 thẻ Bento KPI cân đối (Tổng thu, Tổng chi, Lợi nhuận ròng, Tỷ lệ Tiền mặt vs Bank), 2 biểu đồ trực quan SVG/CSS xu hướng dòng tiền & cơ cấu chi phí, form cascade 2 cấp và modal quản lý danh mục (migration 044_finance_categories_and_enhancements.sql) |
 | 2026-11-01 | 1.9.1 | Nâng cấp toàn diện Quản lý Học Phí & VietQR Động (/tuition): Học phí mặc định lớp học (default_tuition_fee trên venue_classes); tạo học phí hàng loạt cho lớp học (RPC create_batch_tuition & BatchTuitionModal); cấu hình tài khoản ngân hàng trung tâm trong Cài đặt (/settings) và tạo mã VietQR Napas 247 động với cú pháp chuẩn hóa (VietQRModal); in biên lai thu tiền điện tử chuẩn A5/A4 (TuitionReceiptModal) với print isolation; ghi nhận thanh toán nguyên tử (RPC record_tuition_payment atomic) kèm ghi chú và tự động đồng bộ sang Sổ quỹ (/finance) với danh mục 2 cấp; bổ sung migration 045_tuition_enhancements_and_vietqr.sql |
+| 2026-11-01 | 1.9.2 | Nâng cấp toàn diện Báo Cáo Tài Chính Đa Chiều & Phân Tích Lợi Nhuận P&L Theo Cơ Sở (/finance?tab=reports): Tích hợp tab P&L với URL query param persistence và Suspense; Single-source aggregator engine (useFinancialReport) tổng hợp dòng tiền từ finance_transactions; ma trận P&L phân tầng chuẩn kế toán quản trị (Doanh thu, Chi phí, Lợi nhuận ròng, Tỷ suất %); bóc tách đa cơ sở và minh bạch chi phí chung (venue_id IS NULL); so sánh tăng trưởng MoM/QoQ chống lỗi chia cho 0; 4 thẻ Bento KPI, biểu đồ cột SVG so sánh cơ sở & cơ cấu chi phí; bảng ma trận accordion 2 cấp; xuất file Excel (.xlsx) chuẩn kế toán quản trị và in ấn cách ly @media print |
 
 ---
 
