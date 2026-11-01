@@ -5,6 +5,14 @@ export interface BankDefinition {
   logo: string;
 }
 
+export interface GenerateVietQRParams {
+  bankBin: string;
+  accountNumber: string;
+  accountName: string;
+  amount: number;
+  addInfo?: string | null;
+}
+
 export const VIETNAM_BANKS: BankDefinition[] = [
   { bin: '970422', shortName: 'MBBank', name: 'Ngân hàng Quân Đội', logo: 'https://api.vietqr.io/img/MB.png' },
   { bin: '970436', shortName: 'Vietcombank', name: 'Ngân hàng Ngoại Thương Việt Nam', logo: 'https://api.vietqr.io/img/VCB.png' },
@@ -28,7 +36,8 @@ export const VIETNAM_BANKS: BankDefinition[] = [
   { bin: '970426', shortName: 'MSB', name: 'Ngân hàng Hàng Hải', logo: 'https://api.vietqr.io/img/MSB.png' }
 ];
 
-export function removeVietnameseAccents(str: string): string {
+export function removeVietnameseAccents(str?: string | null): string {
+  if (!str) return '';
   return str
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -38,15 +47,19 @@ export function removeVietnameseAccents(str: string): string {
     .trim();
 }
 
-export function generateVietQRUrl(params: {
-  bankBin: string;
-  accountNumber: string;
-  accountName: string;
-  amount: number;
-  addInfo: string;
-}): string {
+export function getBankByBin(bin?: string | null): BankDefinition | undefined {
+  if (!bin) return undefined;
+  return VIETNAM_BANKS.find(b => b.bin === bin.trim());
+}
+
+export function generateVietQRUrl(params: GenerateVietQRParams): string {
+  const cleanBin = (params.bankBin || '').trim();
+  const cleanAcc = (params.accountNumber || '').replace(/[\s-]+/g, '');
+  const cleanAmount = Math.max(0, Math.round(params.amount || 0));
   const sanitizedInfo = removeVietnameseAccents(params.addInfo).slice(0, 50);
   const info = encodeURIComponent(sanitizedInfo);
-  const name = encodeURIComponent(params.accountName);
-  return `https://img.vietqr.io/image/${params.bankBin}-${params.accountNumber}-compact2.png?amount=${params.amount}&addInfo=${info}&accountName=${name}`;
+  const sanitizedName = removeVietnameseAccents(params.accountName).toUpperCase();
+  const name = encodeURIComponent(sanitizedName);
+
+  return `https://img.vietqr.io/image/${cleanBin}-${cleanAcc}-compact2.png?amount=${cleanAmount}&addInfo=${info}&accountName=${name}`;
 }
