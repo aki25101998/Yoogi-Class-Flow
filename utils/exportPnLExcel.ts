@@ -26,8 +26,12 @@ export function exportPnLToExcel(
   ];
   rows.push(header);
 
-  // Format currency helper
-  const fmt = (val: number | undefined) => val || 0;
+  // Helpers
+  const fmt = (val: number | undefined) => val ?? 0;
+  const formatGrowth = (rate?: number | null) =>
+    typeof rate === 'number' ? `${rate > 0 ? '+' : ''}${rate}%` : '-';
+  const formatRatio = (amount: number) =>
+    totalRevenue > 0 ? `${((amount / totalRevenue) * 100).toFixed(1)}%` : '0%';
 
   // 3. Section I: DOANH THU
   rows.push(['I. DOANH THU THUẦN']);
@@ -36,8 +40,8 @@ export function exportPnLToExcel(
       `  ${grp.parentCategory.toUpperCase()}`,
       ...venues.map((v) => fmt(grp.byVenue[v.venueId])),
       grp.total,
-      totalRevenue > 0 ? `${((grp.total / totalRevenue) * 100).toFixed(1)}%` : '0%',
-      grp.growthRate !== null ? `${grp.growthRate > 0 ? '+' : ''}${grp.growthRate}%` : '-',
+      formatRatio(grp.total),
+      formatGrowth(grp.growthRate),
     ];
     rows.push(grpRow);
 
@@ -46,8 +50,8 @@ export function exportPnLToExcel(
         `    • ${item.name}`,
         ...venues.map((v) => fmt(item.byVenue[v.venueId])),
         item.total,
-        totalRevenue > 0 ? `${((item.total / totalRevenue) * 100).toFixed(1)}%` : '0%',
-        item.growthRate !== null ? `${item.growthRate > 0 ? '+' : ''}${item.growthRate}%` : '-',
+        formatRatio(item.total),
+        formatGrowth(item.growthRate),
       ];
       rows.push(itmRow);
     }
@@ -56,12 +60,10 @@ export function exportPnLToExcel(
   // Total Revenue Row
   rows.push([
     'TỔNG DOANH THU (I)',
-    ...venues.map((v) => v.revenue),
-    reportData.totalRevenue,
+    ...venues.map((v) => fmt(v.revenue)),
+    totalRevenue,
     '100.0%',
-    reportData.revenueGrowthRate !== null
-      ? `${reportData.revenueGrowthRate > 0 ? '+' : ''}${reportData.revenueGrowthRate}%`
-      : '-',
+    formatGrowth(reportData.revenueGrowthRate),
   ]);
   rows.push([]); // Spacer
 
@@ -72,8 +74,8 @@ export function exportPnLToExcel(
       `  ${grp.parentCategory.toUpperCase()}`,
       ...venues.map((v) => fmt(grp.byVenue[v.venueId])),
       grp.total,
-      totalRevenue > 0 ? `${((grp.total / totalRevenue) * 100).toFixed(1)}%` : '0%',
-      grp.growthRate !== null ? `${grp.growthRate > 0 ? '+' : ''}${grp.growthRate}%` : '-',
+      formatRatio(grp.total),
+      formatGrowth(grp.growthRate),
     ];
     rows.push(grpRow);
 
@@ -82,8 +84,8 @@ export function exportPnLToExcel(
         `    • ${item.name}`,
         ...venues.map((v) => fmt(item.byVenue[v.venueId])),
         item.total,
-        totalRevenue > 0 ? `${((item.total / totalRevenue) * 100).toFixed(1)}%` : '0%',
-        item.growthRate !== null ? `${item.growthRate > 0 ? '+' : ''}${item.growthRate}%` : '-',
+        formatRatio(item.total),
+        formatGrowth(item.growthRate),
       ];
       rows.push(itmRow);
     }
@@ -92,24 +94,20 @@ export function exportPnLToExcel(
   // Total Expense Row
   rows.push([
     'TỔNG CHI PHÍ VẬN HÀNH (II)',
-    ...venues.map((v) => v.expense),
+    ...venues.map((v) => fmt(v.expense)),
     reportData.totalExpense,
-    totalRevenue > 0 ? `${((reportData.totalExpense / totalRevenue) * 100).toFixed(1)}%` : '0%',
-    reportData.expenseGrowthRate !== null
-      ? `${reportData.expenseGrowthRate > 0 ? '+' : ''}${reportData.expenseGrowthRate}%`
-      : '-',
+    formatRatio(reportData.totalExpense),
+    formatGrowth(reportData.expenseGrowthRate),
   ]);
   rows.push([]); // Spacer
 
   // 5. Section III & IV: LỢI NHUẬN RÒNG & BIÊN LỢI NHUẬN
   rows.push([
     'III. LỢI NHUẬN RÒNG (I - II)',
-    ...venues.map((v) => v.netProfit),
+    ...venues.map((v) => fmt(v.netProfit)),
     reportData.netProfit,
     '-',
-    reportData.profitGrowthRate !== null
-      ? `${reportData.profitGrowthRate > 0 ? '+' : ''}${reportData.profitGrowthRate}%`
-      : '-',
+    formatGrowth(reportData.profitGrowthRate),
   ]);
 
   rows.push([
