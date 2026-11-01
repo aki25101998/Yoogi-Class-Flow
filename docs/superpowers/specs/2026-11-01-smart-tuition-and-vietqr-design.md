@@ -244,6 +244,7 @@ BEGIN
     venue_id,
     payment_method,
     source_type,
+    source_id,
     reference_id
   ) VALUES (
     p_organization_id,
@@ -258,6 +259,7 @@ BEGIN
     v_venue_id,
     v_method,
     'TUITION_PAYMENT',
+    p_tuition_id,
     p_tuition_id
   ) RETURNING id INTO v_txn_id;
 
@@ -332,7 +334,7 @@ GRANT EXECUTE ON FUNCTION public.record_tuition_payment(UUID, NUMERIC, UUID, UUI
 
 8. **Modal Phiếu Thu Điện Tử (`TuitionReceiptModal`):**
    - Thiết kế chuẩn mẫu Phiếu Thu Thể Thao: Logo trung tâm, Mã phiếu thu (`PT-YYYYMM-XXXX`), Tên học viên, Lớp học, Kỳ học, Số tiền đã nộp, Phương thức (Tiền mặt/Chuyển khoản), Ngày giờ nộp (`paid_at`).
-   - Tối ưu hóa in ấn với CSS `@media print` chuẩn mực: Bấm `[In Phiếu Thu]` gọi `window.print()` trực tiếp mở trình xem trước in hoặc lưu PDF cực kỳ sắc nét mà không cần cài thêm thư viện bên ngoài gây nặng app.
+   - Tối ưu hóa in ấn với CSS `@media print` chuẩn mực: Bấm `[In Phiếu Thu]` gọi `window.print()` trực tiếp mở trình xem trước in hoặc lưu PDF cực kỳ sắc nét mà không cần cài thêm thư viện bên ngoài gây nặng app. Sử dụng kỹ thuật CSS Print Isolation (ẩn toàn bộ Sidebar, Header, Modal Backdrop ngoài và chỉ hiển thị duy nhất khung Phiếu thu thể thao trên trang in khổ A4/A5).
 
 9. **Khu Vực Cài Đặt Ngân Hàng Trong `/settings`:**
    - Thêm khối **Tài Khoản Ngân Hàng Nhận Học Phí (VietQR)** trong Cài đặt trung tâm:
@@ -363,7 +365,18 @@ Tạo file danh mục ngân hàng Việt Nam hỗ trợ chuẩn Napas 247 (VietQ
 - ... cùng đầy đủ các ngân hàng khác.
 
 ### 4.2 Cú Pháp Sinh VietQR Chuẩn
+- Bổ sung helper `removeVietnameseAccents` để chuẩn hóa chuỗi tiếng Việt không dấu (ví dụ: `HP Nguyen Van An 2026-11`), cắt tối đa 50 ký tự nhằm tương thích 100% với các ứng dụng ngân hàng Napas 247 kén ký tự Unicode.
 ```typescript
+export function removeVietnameseAccents(str: string): string {
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .replace(/[^a-zA-Z0-9\s-_]/g, '')
+    .trim();
+}
+
 export function generateVietQRUrl(params: {
   bankBin: string;
   accountNumber: string;
@@ -371,7 +384,8 @@ export function generateVietQRUrl(params: {
   amount: number;
   addInfo: string;
 }): string {
-  const info = encodeURIComponent(params.addInfo);
+  const sanitizedInfo = removeVietnameseAccents(params.addInfo).slice(0, 50);
+  const info = encodeURIComponent(sanitizedInfo);
   const name = encodeURIComponent(params.accountName);
   return `https://img.vietqr.io/image/${params.bankBin}-${params.accountNumber}-compact2.png?amount=${params.amount}&addInfo=${info}&accountName=${name}`;
 }
@@ -394,8 +408,9 @@ export function generateVietQRUrl(params: {
    - Tạo SP `create_batch_tuition`.
    - Cập nhật RPC `record_tuition_payment` đồng bộ sang Sổ Quỹ.
 2. **Types & Constants:**
-   - Tạo `constants/banks.ts` (danh sách ngân hàng Napas VietQR).
-   - Mở rộng `types/tuition.ts` và `types/organization.ts`.
+   - Tạo `constants/banks.ts` (danh sách ngân hàng Napas VietQR, helper `removeVietnameseAccents`, `generateVietQRUrl`).
+   - Tạo mới `types/tuition.ts` (định nghĩa `TuitionItem`, `BatchTuitionPayload`, `ReceiptData`, `TuitionSummary`, v.v.).
+   - Mở rộng `types/organization.ts` bổ sung các trường tài khoản ngân hàng.
 3. **Server Actions:**
    - Viết `createBatchTuitionAction`, `updateOrgBankSettingsAction`, nâng cấp `recordPaymentAction`.
    - Cập nhật `addTuitionAction` tự sinh `receipt_number`.
