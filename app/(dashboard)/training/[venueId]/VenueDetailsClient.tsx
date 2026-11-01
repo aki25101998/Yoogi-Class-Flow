@@ -29,7 +29,7 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
   // Class Modal State
   const [isClassModalOpen, setIsClassModalOpen] = useState(false);
   const [editingClassId, setEditingClassId] = useState<string | null>(null);
-  const [classForm, setClassForm] = useState({ name: '', status: 'active', default_tuition_fee: 0 });
+  const [classForm, setClassForm] = useState({ name: '', status: 'inactive', default_tuition_fee: 0 });
 
   // Student Modal State
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
@@ -40,7 +40,7 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
   const [loading, setLoading] = useState(false);
 
   const resetForms = () => {
-    setClassForm({ name: '', status: 'active', default_tuition_fee: 0 });
+    setClassForm({ name: '', status: 'inactive', default_tuition_fee: 0 });
     setStudentForm({ name: '', phone: '', parent_name: '', parent_phone: '', dob: '', current_belt_id: '', class_id: '' });
     setIsClassModalOpen(false);
     setIsStudentModalOpen(false);
@@ -51,11 +51,13 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
 
   const handleSuccess = () => {
     queryClient.invalidateQueries({ queryKey: ['training', organizationId] });
+    queryClient.invalidateQueries({ queryKey: ['activeClasses', organizationId] });
   };
 
   // --- Class Submission ---
   const handleClassSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAdminOrOwner) return;
     setError('');
     
     if (!classForm.name.trim()) {
@@ -65,25 +67,33 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
 
     setLoading(true);
     
-    const payload = {
-      ...classForm,
-      venue_id: venueId,
-    };
+    try {
+      const payload = {
+        ...classForm,
+        venue_id: venueId,
+      };
 
-    if (editingClassId) {
-      const res = await updateClassAction(editingClassId, payload);
+      if (editingClassId) {
+        const res = await updateClassAction(editingClassId, payload);
+        if (res.success) {
+          resetForms();
+          handleSuccess();
+        } else {
+          setError(res.error || 'Lỗi khi cập nhật lớp');
+        }
+      } else {
+        const res = await addClassAction(payload);
+        if (res.success) {
+          resetForms();
+          handleSuccess();
+        } else {
+          setError(res.error || 'Lỗi khi thêm lớp');
+        }
+      }
+    } catch (err: any) {
+      setError(err.message || 'Đã xảy ra lỗi không xác định.');
+    } finally {
       setLoading(false);
-      if (res.success) {
-        resetForms();
-        handleSuccess();
-      } else setError(res.error || 'Lỗi khi cập nhật lớp');
-    } else {
-      const res = await addClassAction(payload);
-      setLoading(false);
-      if (res.success) {
-        resetForms();
-        handleSuccess();
-      } else setError(res.error || 'Lỗi khi thêm lớp');
     }
   };
 
@@ -112,33 +122,35 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
     }
 
     setLoading(true);
-    const payload = {
-      ...studentForm,
-      venue_id: venueId,
-      current_belt_id: studentForm.current_belt_id || undefined,
-      class_id: studentForm.class_id || undefined,
-    };
+    try {
+      const payload = {
+        ...studentForm,
+        venue_id: venueId,
+        current_belt_id: studentForm.current_belt_id || undefined,
+        class_id: studentForm.class_id || undefined,
+      };
 
-    if (editingStudentId) {
-      const res = await updateStudentAction(editingStudentId, payload, payload.class_id);
-      setLoading(false);
-      
-      if (res.success) {
-        resetForms();
-        handleSuccess();
+      if (editingStudentId) {
+        const res = await updateStudentAction(editingStudentId, payload, payload.class_id);
+        if (res.success) {
+          resetForms();
+          handleSuccess();
+        } else {
+          setError(res.error || 'Lỗi khi cập nhật học viên');
+        }
       } else {
-        setError(res.error || 'Lỗi khi cập nhật học viên');
+        const res = await addStudentAction(payload);
+        if (res.success) {
+          resetForms();
+          handleSuccess();
+        } else {
+          setError(res.error || 'Lỗi khi thêm học viên');
+        }
       }
-    } else {
-      const res = await addStudentAction(payload);
+    } catch (err: any) {
+      setError(err.message || 'Đã xảy ra lỗi không xác định.');
+    } finally {
       setLoading(false);
-      
-      if (res.success) {
-        resetForms();
-        handleSuccess();
-      } else {
-        setError(res.error || 'Lỗi khi thêm học viên');
-      }
     }
   };
 

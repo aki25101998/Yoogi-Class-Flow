@@ -210,6 +210,10 @@ export async function addClassAction(data: { name: string; venue_id: string; sta
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
+  if (context.membership?.role !== 'owner' && context.membership?.role !== 'admin') {
+    return { success: false, error: 'Chỉ Admin hoặc Chủ sở hữu mới có quyền thay đổi thông tin và học phí lớp học.' };
+  }
+
   if (!data.name || data.name.trim().length === 0) {
     return { success: false, error: 'Tên lớp học không được để trống.' };
   }
@@ -253,6 +257,10 @@ export async function addClassAction(data: { name: string; venue_id: string; sta
 export async function updateClassAction(id: string, data: { name: string; venue_id: string; status: string; default_tuition_fee?: number }) {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
+
+  if (context.membership?.role !== 'owner' && context.membership?.role !== 'admin') {
+    return { success: false, error: 'Chỉ Admin hoặc Chủ sở hữu mới có quyền thay đổi thông tin và học phí lớp học.' };
+  }
 
   if (!data.name || data.name.trim().length === 0) {
     return { success: false, error: 'Tên lớp học không được để trống.' };

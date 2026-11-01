@@ -45,6 +45,9 @@ export default function SettingsClient() {
 
   useEffect(() => {
     if (organization) {
+      setFormData({
+        name: organization.name || '',
+      });
       setBankData({
         bank_bin: organization.bank_bin || '970422',
         bank_account_number: organization.bank_account_number || '',
@@ -80,17 +83,20 @@ export default function SettingsClient() {
     setSuccess('');
     setIsSubmitting(true);
     
-    const res = await updateOrganizationAction(formData);
-    
-    if (res.success) {
-      setSuccess('Cập nhật thông tin trung tâm thành công!');
-      setTimeout(() => setSuccess(''), 3000);
-      router.refresh();
-    } else {
-      setError(res.error || 'Lỗi khi cập nhật');
+    try {
+      const res = await updateOrganizationAction(formData);
+      if (res.success) {
+        setSuccess('Cập nhật thông tin trung tâm thành công!');
+        setTimeout(() => setSuccess(''), 3000);
+        router.refresh();
+      } else {
+        setError(res.error || 'Lỗi khi cập nhật');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Lỗi khi cập nhật thông tin');
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    setIsSubmitting(false);
   };
 
   const handleSaveBank = async (e: React.FormEvent) => {
@@ -110,15 +116,19 @@ export default function SettingsClient() {
     setBankSuccess('');
     setIsSavingBank(true);
 
-    const res = await updateOrgBankSettingsAction(bankData);
-    setIsSavingBank(false);
-
-    if (res.success) {
-      setBankSuccess('Đã lưu cấu hình tài khoản ngân hàng nhận học phí!');
-      setTimeout(() => setBankSuccess(''), 4000);
-      router.refresh();
-    } else {
-      setBankError(res.error || 'Lỗi khi lưu thông tin ngân hàng');
+    try {
+      const res = await updateOrgBankSettingsAction(bankData);
+      if (res.success) {
+        setBankSuccess('Đã lưu cấu hình tài khoản ngân hàng nhận học phí!');
+        setTimeout(() => setBankSuccess(''), 4000);
+        router.refresh();
+      } else {
+        setBankError(res.error || 'Lỗi khi lưu thông tin ngân hàng');
+      }
+    } catch (err: any) {
+      setBankError(err.message || 'Lỗi khi lưu thông tin ngân hàng');
+    } finally {
+      setIsSavingBank(false);
     }
   };
 
