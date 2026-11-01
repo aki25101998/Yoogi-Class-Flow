@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { deleteTransactionAction } from './actions';
 import { useFinance } from '@/hooks/useFinance';
@@ -9,6 +10,7 @@ import { useVenues } from '@/hooks/useVenues';
 import { useDashboardContext } from '../DashboardProvider';
 import dynamic from 'next/dynamic';
 import type { FinancePaymentMethod, FinanceTransactionType, TimeRangePreset } from '@/types/finance';
+import FinanceReportsClient from './FinanceReportsClient';
 
 const ExportButton = dynamic(() => import('@/app/components/excel/ExportButton').then(mod => mod.ExportButton), { ssr: false });
 import { FinanceExportDef } from '@/services/excel/definitions/finance.def';
@@ -51,6 +53,10 @@ function FinanceSkeleton() {
 }
 
 export default function FinanceClient() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const activeTab = searchParams.get('tab') === 'reports' ? 'reports' : 'transactions';
+
   const { context } = useDashboardContext();
   const organizationId = context?.organization?.id;
   const currentUserRole = context?.membership?.role;
@@ -118,8 +124,8 @@ export default function FinanceClient() {
       {/* 1. Header */}
       <PageHeader 
         title="Quản Lý Tài Chính & Sổ Quỹ" 
-        description="Theo dõi dòng tiền thu chi, phân bổ chi phí và lợi nhuận trung tâm"
-        primaryAction={hasFinancePermission ? (
+        description={activeTab === 'reports' ? "Báo cáo kết quả hoạt động kinh doanh (P&L), phân tích chi phí và hiệu quả từng cơ sở" : "Theo dõi dòng tiền thu chi, phân bổ chi phí và lợi nhuận trung tâm"}
+        primaryAction={activeTab === 'reports' ? undefined : (hasFinancePermission ? (
           <div className="flex items-center gap-2 flex-wrap">
             <Button
               variant="secondary"
@@ -139,160 +145,186 @@ export default function FinanceClient() {
           </div>
         ) : (
           <ExportButton data={transactions} definition={FinanceExportDef} />
-        )}
+        ))}
       />
 
-      {/* 2. Time Range Strip */}
-      <FinanceTimeRangeStrip onRangeChange={setDateRange} />
+      {/* Sub-nav Tab Switcher */}
+      <div className={clientStyles.tabNav}>
+        <button
+          type="button"
+          className={`${clientStyles.tabBtn} ${activeTab === 'transactions' ? clientStyles.activeTabBtn : ''}`}
+          onClick={() => router.push('/finance')}
+        >
+          <span className="material-icons-round">receipt_long</span>
+          Sổ Quỹ Giao Dịch
+        </button>
+        <button
+          type="button"
+          className={`${clientStyles.tabBtn} ${activeTab === 'reports' ? clientStyles.activeTabBtn : ''}`}
+          onClick={() => router.push('/finance?tab=reports')}
+        >
+          <span className="material-icons-round">analytics</span>
+          Báo Cáo Lãi - Lỗ & Phân Tích (P&L)
+        </button>
+      </div>
 
-      {/* 3. Secondary Filters Bar */}
-      <FinanceFiltersBar
-        venues={venues}
-        selectedVenue={selectedVenue}
-        onVenueChange={setSelectedVenue}
-        selectedType={selectedType}
-        onTypeChange={setSelectedType}
-        selectedPaymentMethod={selectedPaymentMethod}
-        onPaymentMethodChange={setSelectedPaymentMethod}
-      />
-
-      {isLoading ? (
-        <FinanceSkeleton />
+      {activeTab === 'reports' ? (
+        <FinanceReportsClient organizationId={organizationId} />
       ) : (
         <>
-          {/* 4. Bento KPI Grid */}
-          <FinanceKpiGrid summary={summary} />
+          {/* 2. Time Range Strip */}
+          <FinanceTimeRangeStrip onRangeChange={setDateRange} />
 
-          {/* 5. Charts Grid */}
-          <FinanceCharts 
-            trends={cashflowTrends} 
-            expenseDistribution={expenseDistribution} 
+          {/* 3. Secondary Filters Bar */}
+          <FinanceFiltersBar
+            venues={venues}
+            selectedVenue={selectedVenue}
+            onVenueChange={setSelectedVenue}
+            selectedType={selectedType}
+            onTypeChange={setSelectedType}
+            selectedPaymentMethod={selectedPaymentMethod}
+            onPaymentMethodChange={setSelectedPaymentMethod}
           />
 
-          {/* 6. Transactions Table List */}
-          <div className={pageStyles.listContainer}>
-            <div className={pageStyles.sectionHeader}>
-              <h3 className={pageStyles.sectionTitle}>
-                <span className="material-icons-round text-primary" style={{ fontSize: '20px' }}>receipt_long</span>
-                Danh Sách Giao Dịch
-              </h3>
-              <span className={pageStyles.sectionCount}>
-                Hiển thị {transactions.length} / {rawTransactions.length} giao dịch
-              </span>
-            </div>
+          {isLoading ? (
+            <FinanceSkeleton />
+          ) : (
+            <>
+              {/* 4. Bento KPI Grid */}
+              <FinanceKpiGrid summary={summary} />
 
-            {transactions.length === 0 ? (
-              <EmptyState 
-                title={rawTransactions.length === 0 ? "Chưa có giao dịch trong kỳ" : "Không tìm thấy giao dịch phù hợp"} 
-                description={rawTransactions.length === 0 
-                  ? "Hệ thống chưa ghi nhận dòng tiền nào trong khoảng thời gian đã chọn."
-                  : "Vui lòng điều chỉnh lại bộ lọc Loại hoặc Phương thức thanh toán."}
-                icon="receipt_long"
-                compact
+              {/* 5. Charts Grid */}
+              <FinanceCharts 
+                trends={cashflowTrends} 
+                expenseDistribution={expenseDistribution} 
               />
-            ) : (
-              <Card>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <Thead>
-                      <Tr>
-                        <Th style={{ minWidth: '105px' }}>Ngày</Th>
-                        <Th style={{ minWidth: '180px' }}>Danh mục</Th>
-                        <Th style={{ minWidth: '150px' }}>Cơ sở</Th>
-                        <Th style={{ minWidth: '130px' }}>Phương thức</Th>
-                        <Th style={{ minWidth: '220px' }}>Mô tả</Th>
-                        <Th className="text-right" style={{ minWidth: '140px' }}>Số tiền</Th>
-                        {hasFinancePermission && <Th className="text-right" style={{ minWidth: '80px' }}>Thao tác</Th>}
-                      </Tr>
-                    </Thead>
-                    <Tbody>
-                      {transactions.map(t => {
-                        const isIncome = t.type === 'income';
-                        const parentName = t.parent_category || (isIncome ? 'Khoản thu' : 'Chi phí');
-                        const subName = t.sub_category || t.category || 'Chung';
-                        const venueName = t.venues?.name || '🏢 Chung toàn trung tâm';
-                        const isSystem = t.source_type && t.source_type !== 'MANUAL';
 
-                        return (
-                          <Tr key={t.id}>
-                            {/* 1. Date */}
-                            <Td className="whitespace-nowrap text-secondary font-medium">
-                              {t.date}
-                            </Td>
-
-                            {/* 2. Category */}
-                            <Td>
-                              <div className={clientStyles.categoryCell}>
-                                <span className={`${clientStyles.parentBadge} ${!isIncome ? clientStyles.parentBadgeExpense : ''}`}>
-                                  {parentName}
-                                </span>
-                                <span className={clientStyles.subCategoryText}>
-                                  {subName}
-                                </span>
-                              </div>
-                            </Td>
-
-                            {/* 3. Venue */}
-                            <Td className="whitespace-nowrap">
-                              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-surface-hover text-secondary border border-border-light">
-                                <span className="material-icons-round text-xs" style={{ fontSize: '13px' }}>
-                                  {t.venue_id ? 'location_on' : 'domain'}
-                                </span>
-                                {venueName}
-                              </span>
-                            </Td>
-
-                            {/* 4. Payment Method */}
-                            <Td className="whitespace-nowrap">
-                              <span className="text-xs font-medium text-main inline-flex items-center gap-1">
-                                {t.payment_method === 'bank_transfer' ? '🏦 Ngân hàng' : '💵 Tiền mặt'}
-                              </span>
-                            </Td>
-
-                            {/* 5. Description */}
-                            <Td className="max-w-[260px] truncate" title={t.description || ''}>
-                              <span className="text-secondary text-sm">
-                                {t.description || <span className="italic text-xs opacity-60">Không có ghi chú</span>}
-                              </span>
-                            </Td>
-
-                            {/* 6. Amount */}
-                            <Td className={`text-right font-bold text-sm whitespace-nowrap ${isIncome ? 'text-success' : 'text-danger'}`}>
-                              {isIncome ? '+' : '-'}{Number(t.amount).toLocaleString('vi-VN')} đ
-                            </Td>
-
-                            {/* 7. Action */}
-                            {hasFinancePermission && (
-                              <Td className="text-right whitespace-nowrap">
-                                {!isSystem ? (
-                                  <Button 
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-danger hover:bg-danger-bg"
-                                    onClick={() => handleDelete(t.id)}
-                                    disabled={actionLoading}
-                                  >
-                                    Xóa
-                                  </Button>
-                                ) : (
-                                  <span 
-                                    className="text-[11px] text-secondary italic px-2 py-0.5 rounded bg-surface-hover"
-                                    title="Giao dịch sinh tự động từ hệ thống (Học phí / Lương), không thể xóa trực tiếp"
-                                  >
-                                    Hệ thống
-                                  </span>
-                                )}
-                              </Td>
-                            )}
-                          </Tr>
-                        );
-                      })}
-                    </Tbody>
-                  </Table>
+              {/* 6. Transactions Table List */}
+              <div className={pageStyles.listContainer}>
+                <div className={pageStyles.sectionHeader}>
+                  <h3 className={pageStyles.sectionTitle}>
+                    <span className="material-icons-round text-primary" style={{ fontSize: '20px' }}>receipt_long</span>
+                    Danh Sách Giao Dịch
+                  </h3>
+                  <span className={pageStyles.sectionCount}>
+                    Hiển thị {transactions.length} / {rawTransactions.length} giao dịch
+                  </span>
                 </div>
-              </Card>
-            )}
-          </div>
+
+                {transactions.length === 0 ? (
+                  <EmptyState 
+                    title={rawTransactions.length === 0 ? "Chưa có giao dịch trong kỳ" : "Không tìm thấy giao dịch phù hợp"} 
+                    description={rawTransactions.length === 0 
+                      ? "Hệ thống chưa ghi nhận dòng tiền nào trong khoảng thời gian đã chọn."
+                      : "Vui lòng điều chỉnh lại bộ lọc Loại hoặc Phương thức thanh toán."}
+                    icon="receipt_long"
+                    compact
+                  />
+                ) : (
+                  <Card>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <Thead>
+                          <Tr>
+                            <Th style={{ minWidth: '105px' }}>Ngày</Th>
+                            <Th style={{ minWidth: '180px' }}>Danh mục</Th>
+                            <Th style={{ minWidth: '150px' }}>Cơ sở</Th>
+                            <Th style={{ minWidth: '130px' }}>Phương thức</Th>
+                            <Th style={{ minWidth: '220px' }}>Mô tả</Th>
+                            <Th className="text-right" style={{ minWidth: '140px' }}>Số tiền</Th>
+                            {hasFinancePermission && <Th className="text-right" style={{ minWidth: '80px' }}>Thao tác</Th>}
+                          </Tr>
+                        </Thead>
+                        <Tbody>
+                          {transactions.map(t => {
+                            const isIncome = t.type === 'income';
+                            const parentName = t.parent_category || (isIncome ? 'Khoản thu' : 'Chi phí');
+                            const subName = t.sub_category || t.category || 'Chung';
+                            const venueName = t.venues?.name || '🏢 Chung toàn trung tâm';
+                            const isSystem = t.source_type && t.source_type !== 'MANUAL';
+
+                            return (
+                              <Tr key={t.id}>
+                                {/* 1. Date */}
+                                <Td className="whitespace-nowrap text-secondary font-medium">
+                                  {t.date}
+                                </Td>
+
+                                {/* 2. Category */}
+                                <Td>
+                                  <div className={clientStyles.categoryCell}>
+                                    <span className={`${clientStyles.parentBadge} ${!isIncome ? clientStyles.parentBadgeExpense : ''}`}>
+                                      {parentName}
+                                    </span>
+                                    <span className={clientStyles.subCategoryText}>
+                                      {subName}
+                                    </span>
+                                  </div>
+                                </Td>
+
+                                {/* 3. Venue */}
+                                <Td className="whitespace-nowrap">
+                                  <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-surface-hover text-secondary border border-border-light">
+                                    <span className="material-icons-round text-xs" style={{ fontSize: '13px' }}>
+                                      {t.venue_id ? 'location_on' : 'domain'}
+                                    </span>
+                                    {venueName}
+                                  </span>
+                                </Td>
+
+                                {/* 4. Payment Method */}
+                                <Td className="whitespace-nowrap">
+                                  <span className="text-xs font-medium text-main inline-flex items-center gap-1">
+                                    {t.payment_method === 'bank_transfer' ? '🏦 Ngân hàng' : '💵 Tiền mặt'}
+                                  </span>
+                                </Td>
+
+                                {/* 5. Description */}
+                                <Td className="max-w-[260px] truncate" title={t.description || ''}>
+                                  <span className="text-secondary text-sm">
+                                    {t.description || <span className="italic text-xs opacity-60">Không có ghi chú</span>}
+                                  </span>
+                                </Td>
+
+                                {/* 6. Amount */}
+                                <Td className={`text-right font-bold text-sm whitespace-nowrap ${isIncome ? 'text-success' : 'text-danger'}`}>
+                                  {isIncome ? '+' : '-'}{Number(t.amount).toLocaleString('vi-VN')} đ
+                                </Td>
+
+                                {/* 7. Action */}
+                                {hasFinancePermission && (
+                                  <Td className="text-right whitespace-nowrap">
+                                    {!isSystem ? (
+                                      <Button 
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-danger hover:bg-danger-bg"
+                                        onClick={() => handleDelete(t.id)}
+                                        disabled={actionLoading}
+                                      >
+                                        Xóa
+                                      </Button>
+                                    ) : (
+                                      <span 
+                                        className="text-[11px] text-secondary italic px-2 py-0.5 rounded bg-surface-hover"
+                                        title="Giao dịch sinh tự động từ hệ thống (Học phí / Lương), không thể xóa trực tiếp"
+                                      >
+                                        Hệ thống
+                                      </span>
+                                    )}
+                                  </Td>
+                                )}
+                              </Tr>
+                            );
+                          })}
+                        </Tbody>
+                      </Table>
+                    </div>
+                  </Card>
+                )}
+              </div>
+            </>
+          )}
         </>
       )}
 

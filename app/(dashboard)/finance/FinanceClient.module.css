@@ -7,6 +7,60 @@
   width: 100%;
 }
 
+/* --- SUB-NAV TAB SWITCHER --- */
+.tabNav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-full, 9999px);
+  box-shadow: var(--shadow-sm);
+  width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.tabBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  border-radius: var(--radius-full, 9999px);
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.tabBtn:hover {
+  color: var(--text-main);
+  background: var(--surface-hover);
+}
+
+.tabBtn span {
+  display: inline-flex;
+  align-items: center;
+}
+
+.activeTabBtn {
+  background: var(--primary) !important;
+  color: #ffffff !important;
+  font-weight: 700;
+  box-shadow: var(--shadow-teal-glow);
+  border-color: var(--primary);
+}
+
+.activeTabBtn span {
+  color: #ffffff !important;
+}
+
 /* --- TIME RANGE STRIP --- */
 .timeStripCard {
   background: var(--surface);
