@@ -1,0 +1,468 @@
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 1024px) {
+  .kpiGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .kpiGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.kpiCard {
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justifyContent: space-between;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kpiCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+}
+
+.kpiLabel {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.kpiValue {
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--text-main);
+  letter-spacing: -0.02em;
+}
+
+.kpiCaption {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+.kpiWatermark {
+  position: absolute;
+  right: -8px;
+  bottom: -8px;
+  font-size: 80px !important;
+  opacity: 0.05;
+  pointer-events: none;
+}
+
+/* Card Themes */
+.cardPrimary {
+  border-left: 4px solid var(--primary);
+}
+.cardSuccess {
+  border-left: 4px solid var(--success);
+}
+.cardDanger {
+  border-left: 4px solid var(--danger);
+}
+.cardInfo {
+  border-left: 4px solid #3B82F6;
+}
+
+/* Filter Strip */
+.filterStrip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.filterControls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.filterPills {
+  display: flex;
+  align-items: center;
+  background: var(--surface-hover);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-full);
+  padding: 4px;
+  gap: 4px;
+}
+
+.filterPill {
+  border: none;
+  background: transparent;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filterPill:hover {
+  color: var(--text-main);
+}
+
+.filterPillActive {
+  background: var(--surface);
+  color: var(--primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Table Enhancements */
+.studentCell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.studentAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: var(--primary-light);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.studentAvatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.studentName {
+  font-weight: 600;
+  color: var(--text-main);
+  line-height: 1.3;
+}
+
+.studentSub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.actionButtonGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btnAction {
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: var(--surface-hover);
+  color: var(--text-main);
+}
+
+.btnAction:hover {
+  border-color: var(--border-medium);
+  background: var(--surface);
+}
+
+.btnVietQR {
+  background: rgba(20, 184, 166, 0.1);
+  color: var(--primary);
+  border-color: rgba(20, 184, 166, 0.3);
+}
+
+.btnVietQR:hover {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.btnPay {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--success);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.btnPay:hover {
+  background: var(--success);
+  color: #ffffff;
+}
+
+.btnReceipt {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3B82F6;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.btnReceipt:hover {
+  background: #3B82F6;
+  color: #ffffff;
+}
+
+.btnDelete {
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--danger);
+}
+
+.btnDelete:hover {
+  background: var(--danger);
+  color: #ffffff;
+}
+
+/* Batch Modal */
+.batchTableContainer {
+  max-height: 380px;
+  overflow-y: auto;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  margin-top: 16px;
+}
+
+.batchSummaryFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: var(--surface-hover);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  margin-top: 16px;
+  font-weight: 600;
+}
+
+/* VietQR Modal */
+.qrCardWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  background: linear-gradient(135deg, #042f2e 0%, #115e59 100%);
+  border-radius: var(--radius-xl);
+  color: #ffffff;
+  box-shadow: 0 10px 25px rgba(20, 184, 166, 0.25);
+  margin-bottom: 20px;
+}
+
+.qrBankHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.qrBankLogo {
+  height: 28px;
+  background: #ffffff;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.qrImageContainer {
+  background: #ffffff;
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qrImage {
+  width: 240px;
+  height: 240px;
+  object-fit: contain;
+}
+
+.qrDetailsList {
+  width: 100%;
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.qrDetailRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.qrCopyBtn {
+  background: transparent;
+  border: none;
+  color: var(--primary-light);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.qrCopyBtn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Receipt Print Modal & Isolated Print Sheet */
+.receiptContainer {
+  background: #ffffff;
+  color: #1e293b;
+  padding: 32px;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-light);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  max-width: 580px;
+  margin: 0 auto;
+  font-family: inherit;
+}
+
+.receiptHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px dashed #cbd5e1;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+}
+
+.receiptOrgName {
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: #0f172a;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.receiptTitle {
+  font-size: 1.375rem;
+  font-weight: 800;
+  text-align: center;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+
+.receiptNumber {
+  text-align: center;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 24px;
+}
+
+.receiptTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+}
+
+.receiptTable td {
+  padding: 10px 0;
+  font-size: 0.875rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.receiptTable td:last-child {
+  text-align: right;
+  font-weight: 600;
+}
+
+.receiptTotalRow td {
+  border-top: 2px solid #0f172a;
+  border-bottom: 2px solid #0f172a;
+  font-size: 1.0625rem;
+  font-weight: 800 !important;
+  color: #0f172a;
+  padding: 14px 0;
+}
+
+.receiptSignatures {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  text-align: center;
+  margin-top: 40px;
+  padding-top: 20px;
+}
+
+.signatureTitle {
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: #0f172a;
+  margin-bottom: 60px;
+}
+
+.signatureSub {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+/* Receipt Print Isolation */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  .receiptContainer, .receiptContainer * {
+    visibility: visible !important;
+  }
+  .receiptContainer {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    padding: 32px !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    border: none !important;
+    z-index: 999999 !important;
+  }
+  .noPrint {
+    display: none !important;
+  }
+}
