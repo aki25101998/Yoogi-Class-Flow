@@ -18,11 +18,11 @@
   - Chưa có bảng tổng hợp công nợ 4 ô KPI (Tổng phải thu, Đã thu, Còn nợ, Số học viên nợ) và bộ lọc theo kỳ/lớp.
 
 ### 1.2 Mục tiêu sau khi nâng cấp
-1. **Mức học phí mặc định theo lớp (`default_tuition_fee`):** Mỗi lớp có mức học phí riêng (ví dụ: Lớp Boxing 600.000đ/tháng, Lớp Taekwondo 500.000đ/tháng).
+1. **Mức học phí mặc định theo lớp (`default_tuition_fee`):** Mỗi lớp có mức học phí riêng (ví dụ: Lớp Boxing 600.000đ/tháng, Lớp Taekwondo 500.000đ/tháng). Quản lý cấu hình trong modal lớp học tại `/training/[venueId]` hoặc ngay tại popup tạo học phí.
 2. **Tạo học phí cả lớp hàng loạt (Batch Invoicing):** 1-chạm chọn Lớp & Tháng thu phí → Hiện danh sách xem trước tất cả học viên trong lớp kèm học phí mặc định → Tùy chỉnh giảm giá/tích chọn → Sinh toàn bộ khoản thu trong 2 giây.
 3. **Mã VietQR động chuẩn Napas 247:** Bấm nút `[VietQR]` trên bất kỳ khoản thu nào sẽ sinh mã QR tự điền đúng STK trung tâm, số tiền nợ còn lại và nội dung `HP <Tên_Học_Viên> <Kỳ_Học>`, phụ huynh quét là chuyển khoản chính xác 100%.
 4. **Cấu hình ngân hàng trung tâm:** Cài đặt 1 lần trong `/settings` để toàn bộ mã VietQR dùng chung.
-5. **Phiếu thu điện tử thể thao (E-Receipt):** Xem, in và tải ảnh biên lai thu tiền đẹp mắt gửi phụ huynh qua Zalo.
+5. **Phiếu thu điện tử thể thao (E-Receipt):** Xem, in và tải ảnh biên lai thu tiền đẹp mắt gửi phụ huynh qua Zalo (hỗ trợ in chuẩn CSS `@media print` qua `window.print()`).
 6. **Đồng bộ tự động sang Sổ Quỹ (`finance_transactions`):** Khi học viên đóng tiền (tiền mặt hoặc chuyển khoản), tự động cập nhật sổ quỹ với đầy đủ danh mục "Học phí", cơ sở của lớp học và phương thức thanh toán.
 
 ---
@@ -78,9 +78,19 @@ DECLARE
   v_count INT := 0;
   v_receipt_prefix TEXT;
   v_receipt_number TEXT;
+  v_has_perm BOOLEAN := false;
 BEGIN
-  -- Kiểm tra quyền
-  IF NOT public.is_org_admin(p_organization_id) THEN
+  -- Kiểm tra quyền Admin/Owner hoặc có permission manage_tuition
+  SELECT (
+    public.is_org_admin(p_organization_id) OR EXISTS (
+      SELECT 1 FROM public.organization_members om
+      WHERE om.organization_id = p_organization_id 
+        AND om.user_id = auth.uid() 
+        AND (om.role IN ('owner', 'admin') OR om.permissions ? 'manage_tuition')
+    )
+  ) INTO v_has_perm;
+
+  IF NOT v_has_perm THEN
     RETURN jsonb_build_object('success', false, 'error', 'Bạn không có quyền quản lý học phí.');
   END IF;
 
@@ -133,17 +143,115 @@ $$;
 ```
 
 ### 2.5 Nâng Cấp RPC `record_tuition_payment` (Đồng Bộ Sang Sổ Quỹ `/finance`)
-Khi ghi nhận thanh toán học phí:
-- Cập nhật số tiền `paid_amount` và trạng thái `paid` (nếu đủ) hoặc `partial` (nếu thiếu).
-- Tự động tạo giao dịch `income` trong `finance_transactions`:
-  - `type = 'income'`
-  - `category = 'Thu học phí'`
-  - `parent_category = 'Học phí'`
-  - `sub_category = 'Học phí lớp thường'`
-  - `venue_id = venue_classes.venue_id` (kế thừa theo chi nhánh của lớp học)
-  - `payment_method = p_payment_method` (`cash` hoặc `bank_transfer`)
-  - `source_type = 'TUITION_PAYMENT'`
-  - `reference_id = p_tuition_id`
+Drop overload cũ nếu cần và tạo phiên bản có thêm tham số `p_payment_method`:
+
+```sql
+DROP FUNCTION IF EXISTS public.record_tuition_payment(UUID, NUMERIC, UUID, UUID);
+
+CREATE OR REPLACE FUNCTION public.record_tuition_payment(
+  p_tuition_id UUID,
+  p_amount NUMERIC,
+  p_organization_id UUID,
+  p_created_by UUID,
+  p_payment_method TEXT DEFAULT 'cash'
+)
+RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_tuition RECORD;
+  v_class RECORD;
+  v_new_paid NUMERIC;
+  v_new_status TEXT;
+  v_txn_id UUID;
+  v_student_name TEXT;
+  v_venue_id UUID := NULL;
+  v_method TEXT := COALESCE(p_payment_method, 'cash');
+BEGIN
+  -- 1. Validate amount
+  IF p_amount <= 0 THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Số tiền thanh toán phải lớn hơn 0.');
+  END IF;
+
+  -- 2. Lock tuition row FOR UPDATE
+  SELECT * INTO v_tuition
+  FROM public.tuition
+  WHERE id = p_tuition_id AND organization_id = p_organization_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Không tìm thấy khoản học phí.');
+  END IF;
+
+  -- 3. Check overpayment
+  IF v_tuition.paid_amount + p_amount > v_tuition.amount THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Số tiền thanh toán vượt quá số nợ còn lại.');
+  END IF;
+
+  -- 4. Calculate new status
+  v_new_paid := v_tuition.paid_amount + p_amount;
+  IF v_new_paid >= v_tuition.amount THEN
+    v_new_status := 'paid';
+  ELSE
+    v_new_status := 'partial';
+  END IF;
+
+  -- 5. Lấy venue_id của lớp học
+  IF v_tuition.class_id IS NOT NULL THEN
+    SELECT venue_id INTO v_venue_id 
+    FROM public.venue_classes 
+    WHERE id = v_tuition.class_id AND organization_id = p_organization_id;
+  END IF;
+
+  -- 6. Lấy tên học viên để mô tả
+  SELECT name INTO v_student_name 
+  FROM public.students 
+  WHERE id = v_tuition.student_id;
+
+  -- 7. Update tuition
+  UPDATE public.tuition
+  SET paid_amount = v_new_paid,
+      status = v_new_status,
+      payment_method = v_method,
+      updated_at = NOW()
+  WHERE id = p_tuition_id;
+
+  -- 8. Tự động insert Sổ Quỹ finance_transactions với category 2 cấp & venue
+  INSERT INTO public.finance_transactions (
+    organization_id,
+    type,
+    category,
+    parent_category,
+    sub_category,
+    amount,
+    date,
+    description,
+    venue_id,
+    payment_method,
+    source_type,
+    reference_id
+  ) VALUES (
+    p_organization_id,
+    'income',
+    'Thu học phí',
+    'Học phí',
+    'Học phí lớp thường',
+    p_amount,
+    to_char(now() at time zone 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD'),
+    'Thu học phí - ' || COALESCE(v_student_name, 'Học viên') || ' (Kỳ ' || COALESCE(v_tuition.due_date, '') || ')',
+    v_venue_id,
+    v_method,
+    'TUITION_PAYMENT',
+    p_tuition_id
+  ) RETURNING id INTO v_txn_id;
+
+  RETURN jsonb_build_object(
+    'success', true, 
+    'paid_amount', v_new_paid, 
+    'status', v_new_status, 
+    'transaction_id', v_txn_id
+  );
+END;
+$$;
+```
 
 ---
 
@@ -154,8 +262,8 @@ Khi ghi nhận thanh toán học phí:
    - Tiêu đề: *Quản lý Học phí*.
    - Mô tả: *Theo dõi các khoản thu học phí, tạo học phí hàng loạt, VietQR và biên lai*.
    - Cụm Action Buttons:
-     - `[Tạo Học Phí Cả Lớp]` (Nút viền bo tròn màu Teal với icon `playlist_add`, mở modal tạo hàng loạt).
-     - `[+ Thêm Khoản Thu]` (Nút chính Pill màu Teal nổi bật cho trường hợp thêm lẻ).
+     - `[Tạo Học Phí Cả Lớp]`: Nút viền bo tròn màu Teal với icon `playlist_add`, mở modal tạo hàng loạt.
+     - `[+ Thêm Khoản Thu]`: Nút chính Pill màu Teal nổi bật cho trường hợp thêm lẻ.
 
 2. **Lưới 4 Thẻ Bento KPI Học Phí Cân Đối (`TuitionKpiGrid`):**
    - **Thẻ 1 (Teal - Primary):** *Tổng Phải Thu Trong Kỳ* (`25.000.000 đ`) + Watermark icon `receipt_long`.
@@ -164,14 +272,22 @@ Khi ghi nhận thanh toán học phí:
    - **Thẻ 4 (Xanh dương):** *Học Viên Còn Nợ* (`8 võ sinh`) + Caption *Chưa đóng hoặc đóng thiếu* + Watermark `people_outline`.
 
 3. **Thanh Bộ Lọc & Tìm Kiếm Đa Chiều (`TuitionFiltersBar`):**
-   - **Kỳ thu phí (Tháng):** Dropdown chọn tháng (mặc định: Tháng này `YYYY-MM`, Tháng trước, Tất cả).
+   - **Kỳ thu phí (Tháng):** Dropdown chọn tháng (mặc định: Tháng hiện tại `YYYY-MM`, Tháng trước, Tất cả).
    - **Lớp học:** Dropdown chọn Lớp (Tất cả lớp | Lớp Taekwondo 2-4-6 | Lớp Boxing...).
    - **Trạng thái:** Segmented pills `Tất cả` | `Chưa đóng` | `Đóng 1 phần` | `Đã đóng đủ`.
    - **Tìm kiếm:** Input tìm kiếm tức thì theo tên học viên.
 
-4. **Modal Tạo Học Phí Hàng Loạt Cho Lớp (`BatchTuitionModal`):**
+4. **Bảng Danh Sách Khoản Thu Nâng Cấp:**
+   - Cột: Học viên, Lớp học, Kỳ đóng, Phải đóng, Đã đóng, Còn nợ, Trạng thái (Badge màu bo tròn).
+   - Cột Thao tác:
+     - `[VietQR]`: Luôn có trên mọi khoản thu còn nợ (`remaining > 0`), bấm mở popup VietQR.
+     - `[Thu tiền]`: Hiện khi `remaining > 0`, bấm mở Modal ghi nhận thanh toán.
+     - `[Biên lai]`: Hiện khi `paid_amount > 0` (đã nộp tiền), bấm mở Phiếu thu điện tử để xem/in.
+     - `[Xóa]`: Nút xóa chỉ hiện khi `paid_amount === 0` (chưa phát sinh thanh toán).
+
+5. **Modal Tạo Học Phí Hàng Loạt Cho Lớp (`BatchTuitionModal`):**
    - Bước 1: Chọn Lớp học & Tháng thu phí (`YYYY-MM`).
-   - Bước 2: Bảng danh sách học viên trong lớp lấy từ `class_students`:
+   - Bước 2: Bảng danh sách học viên trong lớp lấy từ `class_students` (kết hợp thông tin học sinh active):
      - Cột Checkbox (chọn tất cả / bỏ chọn).
      - Cột Học viên (Avatar + Tên).
      - Cột Số tiền: Tự động điền theo `default_tuition_fee` của lớp, cho phép sửa trực tiếp ô input.
@@ -179,7 +295,7 @@ Khi ghi nhận thanh toán học phí:
      - Thanh tổng kết: *Đã chọn XX/YY học viên • Tổng tiền: ZZZ.000 đ*.
    - Bước 3: Nút bấm `[Xác Nhận Tạo Cho XX Học Viên]`.
 
-5. **Popup VietQR Động Chuẩn Ngân Hàng (`VietQRModal`):**
+6. **Popup VietQR Động Chuẩn Ngân Hàng (`VietQRModal`):**
    - Khi bấm nút `[VietQR]` trên bất kỳ dòng khoản thu nào:
      - Hiển thị thẻ ngân hàng thể thao với logo ngân hàng trung tâm (MB, Vietcombank...).
      - Sinh mã QR VietQR Napas 247 chính xác số tiền nợ còn lại và cú pháp: `HP <Tên_HocVien> <Ky_Hoc>`.
@@ -187,22 +303,26 @@ Khi ghi nhận thanh toán học phí:
      - Nút `[Sao chép STK]`, `[Sao chép Cú pháp]`, `[Tải ảnh QR về máy]`.
      - Nếu chưa cài đặt STK: Hiển thị thông báo hướng dẫn và nút dẫn sang Cài đặt.
 
-6. **Modal Ghi Nhận Thanh Toán (`RecordPaymentModal`):**
+7. **Modal Ghi Nhận Thanh Toán (`RecordPaymentModal`):**
    - Hiển thị số tiền nợ còn lại.
    - Nhập số tiền đóng.
    - Chọn phương thức: `[💵 Tiền mặt]` hoặc `[🏦 Chuyển khoản]`.
    - Ghi chú thanh toán.
    - Khi lưu: Tự động cập nhật trạng thái học phí và đẩy ngay sang Sổ Quỹ `/finance`.
 
-7. **Modal Phiếu Thu Điện Tử (`TuitionReceiptModal`):**
+8. **Modal Phiếu Thu Điện Tử (`TuitionReceiptModal`):**
    - Thiết kế chuẩn mẫu Phiếu Thu Thể Thao: Logo trung tâm, Mã phiếu thu (`PT-YYYYMM-XXXX`), Tên học viên, Lớp học, Kỳ học, Số tiền đã nộp, Phương thức (Tiền mặt/Chuyển khoản), Ngày giờ nộp.
-   - Nút `[In Phiếu Thu]` / `[Tải Ảnh Phiếu Thu]`.
+   - Tối ưu hóa in ấn với CSS `@media print` chuẩn mực: Bấm `[In Phiếu Thu]` gọi `window.print()` trực tiếp mở trình xem trước in hoặc lưu PDF cực kỳ sắc nét mà không cần cài thêm thư viện bên ngoài gây nặng app.
 
-8. **Khu Vực Cài Đặt Ngân Hàng Trong `/settings`:**
+9. **Khu Vực Cài Đặt Ngân Hàng Trong `/settings`:**
    - Thêm khối **Tài Khoản Ngân Hàng Nhận Học Phí (VietQR)** trong Cài đặt trung tâm:
      - Dropdown chọn Ngân hàng (danh mục hơn 50 ngân hàng Việt Nam).
      - Số tài khoản & Tên chủ tài khoản.
      - Nút [Lưu cấu hình ngân hàng].
+
+10. **Cấu Hình Mức Học Phí Mặc Định Của Lớp Học:**
+   - Trong Modal Thêm / Chỉnh sửa Lớp học tại Chi tiết Cơ sở (`/training/[venueId]`), bổ sung trường `Học phí mặc định (VNĐ/tháng)` (input số có format hàng nghìn).
+   - Tự động lưu vào cột `default_tuition_fee` của bảng `venue_classes`.
 
 ---
 
@@ -258,12 +378,14 @@ export function generateVietQRUrl(params: {
    - Mở rộng `types/tuition.ts` và `types/organization.ts`.
 3. **Server Actions:**
    - Viết `createBatchTuitionAction`, `updateOrgBankSettingsAction`, nâng cấp `recordPaymentAction`.
+   - Cập nhật `addTuitionAction` tự sinh `receipt_number`.
 4. **UI Components:**
    - Xây dựng `TuitionKpiGrid.tsx`, `TuitionFiltersBar.tsx`.
    - Xây dựng `BatchTuitionModal.tsx`.
    - Xây dựng `VietQRModal.tsx`.
    - Xây dựng `TuitionReceiptModal.tsx`.
    - Thêm khối cấu hình Ngân hàng trong `/settings`.
+   - Thêm ô nhập học phí mặc định trong Modal Lớp học tại `/training/[venueId]`.
 5. **Tích Hợp `TuitionClient.tsx` & Kiểm Thử:**
    - Ráp nối toàn bộ giao diện học phí mới.
    - Chạy `npm run build` kiểm tra toàn diện.
