@@ -1,11 +1,33 @@
 import { useQuery } from '@tanstack/react-query';
+import { useCallback } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { TuitionItem, TuitionSummary } from '@/types/tuition';
+
+export interface TuitionStudentSummaryItem {
+  id: string;
+  name: string;
+  avatar_url?: string | null;
+  phone?: string | null;
+}
+
+export interface TuitionClassSummaryItem {
+  id: string;
+  name: string;
+  venue_id?: string | null;
+  default_tuition_fee?: number | null;
+  status: string;
+}
 
 export function useTuition(organizationId: string | undefined) {
   const supabase = createClient();
 
-  const { data: tuitionList = [], isLoading: isTuitionLoading, refetch } = useQuery<TuitionItem[]>({
+  const {
+    data: tuitionList = [],
+    isLoading: isTuitionLoading,
+    isError: isTuitionError,
+    error: tuitionError,
+    refetch: refetchTuition,
+  } = useQuery<TuitionItem[]>({
     queryKey: ['tuition', organizationId],
     queryFn: async () => {
       if (!organizationId) return [];
@@ -25,7 +47,13 @@ export function useTuition(organizationId: string | undefined) {
     enabled: !!organizationId,
   });
 
-  const { data: students = [], isLoading: isStudentsLoading } = useQuery({
+  const {
+    data: students = [],
+    isLoading: isStudentsLoading,
+    isError: isStudentsError,
+    error: studentsError,
+    refetch: refetchStudents,
+  } = useQuery<TuitionStudentSummaryItem[]>({
     queryKey: ['activeStudents', organizationId],
     queryFn: async () => {
       if (!organizationId) return [];
@@ -35,12 +63,18 @@ export function useTuition(organizationId: string | undefined) {
         .eq('organization_id', organizationId)
         .eq('status', 'active');
       if (error) throw error;
-      return data || [];
+      return (data || []) as TuitionStudentSummaryItem[];
     },
     enabled: !!organizationId,
   });
 
-  const { data: classes = [], isLoading: isClassesLoading } = useQuery({
+  const {
+    data: classes = [],
+    isLoading: isClassesLoading,
+    isError: isClassesError,
+    error: classesError,
+    refetch: refetchClasses,
+  } = useQuery<TuitionClassSummaryItem[]>({
     queryKey: ['activeClasses', organizationId],
     queryFn: async () => {
       if (!organizationId) return [];
@@ -50,13 +84,24 @@ export function useTuition(organizationId: string | undefined) {
         .eq('organization_id', organizationId)
         .eq('status', 'active');
       if (error) throw error;
-      return data || [];
+      return (data || []) as TuitionClassSummaryItem[];
     },
     enabled: !!organizationId,
   });
 
-  // Calculate summary based on filtered list
-  const calculateSummary = (items: TuitionItem[]): TuitionSummary => {
+  // Calculate summary based on filtered list (memoized & safe against empty/null inputs)
+  const calculateSummary = useCallback((items?: TuitionItem[] | null): TuitionSummary => {
+    if (!Array.isArray(items) || items.length === 0) {
+      return {
+        totalExpected: 0,
+        totalCollected: 0,
+        totalRemaining: 0,
+        collectionRate: 0,
+        totalStudents: 0,
+        debtStudentsCount: 0,
+      };
+    }
+
     let totalExpected = 0;
     let totalCollected = 0;
     const uniqueStudents = new Set<string>();
@@ -86,7 +131,11 @@ export function useTuition(organizationId: string | undefined) {
       totalStudents: uniqueStudents.size,
       debtStudentsCount: debtStudents.size,
     };
-  };
+  }, []);
+
+  const refetch = useCallback(async () => {
+    await Promise.all([refetchTuition(), refetchStudents(), refetchClasses()]);
+  }, [refetchTuition, refetchStudents, refetchClasses]);
 
   return {
     tuitionList,
@@ -95,5 +144,7 @@ export function useTuition(organizationId: string | undefined) {
     calculateSummary,
     refetch,
     isLoading: isTuitionLoading || isStudentsLoading || isClassesLoading,
+    isError: isTuitionError || isStudentsError || isClassesError,
+    error: tuitionError || studentsError || classesError,
   };
 }

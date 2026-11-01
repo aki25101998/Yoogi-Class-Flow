@@ -32,13 +32,21 @@ export function useClassStudents(classId: string | undefined, organizationId: st
       if (error) throw error;
 
       return (data || [])
-        .filter((row: any) => row.students && row.students.status === 'active')
-        .map((row: any) => ({
-          id: row.id,
-          student_id: row.student_id,
-          name: row.students.name,
-          avatar_url: row.students.avatar_url,
-          phone: row.students.phone,
+        .map((row: any) => {
+          const student = Array.isArray(row.students) ? row.students[0] : row.students;
+          return {
+            id: row.id,
+            student_id: row.student_id,
+            student,
+          };
+        })
+        .filter((item: any) => item.student && item.student.status === 'active')
+        .map((item: any) => ({
+          id: item.id,
+          student_id: item.student_id,
+          name: item.student.name || 'Học viên',
+          avatar_url: item.student.avatar_url || null,
+          phone: item.student.phone || null,
         }));
     },
     enabled: !!classId && !!organizationId,
