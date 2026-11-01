@@ -78,6 +78,14 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error', 'Bạn không có quyền quản lý học phí.');
   END IF;
 
+  -- Kiểm tra lớp học hợp lệ nếu được truyền vào
+  IF p_class_id IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM public.venue_classes 
+    WHERE id = p_class_id AND organization_id = p_organization_id
+  ) THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Lớp học không tồn tại hoặc không thuộc tổ chức.');
+  END IF;
+
   -- 1. Duyệt danh sách học viên và insert an toàn (bỏ qua nếu đã tồn tại)
   FOR v_item IN SELECT * FROM jsonb_array_elements(p_students)
   LOOP
@@ -171,11 +179,13 @@ DECLARE
   v_has_permission BOOLEAN;
 BEGIN
   -- 0. Kiểm tra quyền của người thực hiện
-  SELECT p.id INTO v_actor_profile_id
-  FROM public.profiles p
-  WHERE p.auth_user_id = auth.uid();
-
-  v_actor_profile_id := COALESCE(v_actor_profile_id, p_created_by);
+  IF auth.uid() IS NOT NULL THEN
+    SELECT p.id INTO v_actor_profile_id
+    FROM public.profiles p
+    WHERE p.auth_user_id = auth.uid();
+  ELSE
+    v_actor_profile_id := p_created_by;
+  END IF;
 
   IF v_actor_profile_id IS NULL THEN
     RETURN jsonb_build_object('success', false, 'error', 'Không xác định được danh tính người dùng.');
@@ -250,6 +260,7 @@ BEGIN
   FROM public.finance_categories 
   WHERE organization_id = p_organization_id 
     AND name = 'Học phí lớp thường'
+    AND type = 'income'
   LIMIT 1;
 
   -- 7. Lấy tên học viên để mô tả
@@ -257,14 +268,15 @@ BEGIN
   FROM public.students 
   WHERE id = v_tuition.student_id;
 
-  -- 8. Cập nhật bảng tuition
+  -- 8. Cập nhật bảng tuition (tuân thủ Constitution §5.3: filter rõ ràng theo organization_id)
   UPDATE public.tuition
   SET paid_amount = v_new_paid,
       status = v_new_status,
       payment_method = v_method,
       paid_at = NOW(),
       updated_at = NOW()
-  WHERE id = p_tuition_id;
+  WHERE id = p_tuition_id
+    AND organization_id = p_organization_id;
 
   -- 9. Tự động insert Sổ Quỹ finance_transactions với category 2 cấp, venue và song hành source_id + reference_id
   INSERT INTO public.finance_transactions (
@@ -302,8 +314,11 @@ BEGIN
   RETURN jsonb_build_object(
     'success', true, 
     'paid_amount', v_new_paid, 
+    'new_paid_amount', v_new_paid,
     'status', v_new_status, 
-    'transaction_id', v_txn_id
+    'new_status', v_new_status,
+    'transaction_id', v_txn_id,
+    'finance_transaction_id', v_txn_id
   );
 END;
 $$;
@@ -314,3 +329,6 @@ GRANT EXECUTE ON FUNCTION public.create_batch_tuition(UUID, UUID, TEXT, JSONB) T
 
 REVOKE EXECUTE ON FUNCTION public.record_tuition_payment(UUID, NUMERIC, UUID, TEXT, UUID) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.record_tuition_payment(UUID, NUMERIC, UUID, TEXT, UUID) TO authenticated;
+
+-- Tải lại PostgREST schema cache để nhận diện các cột và RPC mới ngay lập tức
+NOTIFY pgrst, 'reload schema';
