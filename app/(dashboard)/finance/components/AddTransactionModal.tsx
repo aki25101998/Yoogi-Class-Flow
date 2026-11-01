@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/app/components/ui/Modal';
 import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
@@ -192,16 +193,15 @@ export function AddTransactionModal({
                 <label className="block text-xs font-semibold text-secondary uppercase">
                   Nhóm danh mục *
                 </label>
-                {onOpenManageCategories && (
-                  <button
-                    type="button"
-                    onClick={onOpenManageCategories}
-                    className="text-[11px] text-primary hover:underline flex items-center gap-0.5"
-                  >
-                    <span className="material-icons-round text-[12px]">settings</span>
-                    Quản lý
-                  </button>
-                )}
+                <Link
+                  href="/settings/finance-categories"
+                  target="_blank"
+                  className="text-[11px] text-primary hover:underline flex items-center gap-0.5"
+                  title="Mở cài đặt danh mục thu chi"
+                >
+                  <span className="material-icons-round text-[12px]">settings</span>
+                  Cài đặt danh mục
+                </Link>
               </div>
               <select
                 className="w-full bg-background border border-border-light rounded-xl px-3 py-2 text-sm text-main outline-none focus:border-primary"

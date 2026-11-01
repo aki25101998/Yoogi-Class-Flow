@@ -14,6 +14,7 @@ const SETTINGS_TABS: TabItem[] = [
   { label: 'Thông tin trung tâm', icon: 'apartment', route: '/settings', exact: true },
   { label: 'Thành viên & Đội ngũ', icon: 'manage_accounts', route: '/settings/members' },
   { label: 'Vai trò & Phân quyền', icon: 'admin_panel_settings', route: '/settings/roles' },
+  { label: 'Danh mục Thu - Chi', icon: 'category', route: '/settings/finance-categories' },
   { label: 'Hệ thống cấp đai', icon: 'military_tech', route: '/settings/belts' },
   { label: 'Lịch sử phiên bản', icon: 'history', route: '/settings/version-history' },
 ];

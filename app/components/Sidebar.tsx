@@ -34,6 +34,7 @@ const ADMIN_NAV = [
         { label: 'Thông tin trung tâm', route: '/settings', permission: 'manage_settings', exact: true },
         { label: 'Thành viên', route: '/settings/members', permission: 'manage_members' },
         { label: 'Vai trò & Phân quyền', route: '/settings/roles', permission: 'manage_settings' },
+        { label: 'Danh mục Thu - Chi', route: '/settings/finance-categories', permission: 'manage_settings' },
         { label: 'Cấp đai', route: '/settings/belts', permission: 'manage_settings' },
         { label: 'Lịch sử phiên bản', route: '/settings/version-history', permission: 'manage_settings' }
     ]}

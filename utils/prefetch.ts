@@ -409,6 +409,22 @@ export const prefetchRouteData = (
       break;
     }
 
+    case '/settings/finance-categories':
+      queryClient.prefetchQuery({
+        queryKey: ['financeCategories', organizationId],
+        queryFn: async () => {
+          const { data, error } = await supabase
+            .from('finance_categories')
+            .select('*')
+            .eq('organization_id', organizationId)
+            .order('display_order', { ascending: true })
+            .order('created_at', { ascending: true });
+          if (error) return [];
+          return data || [];
+        }
+      });
+      break;
+
     default:
       break;
   }

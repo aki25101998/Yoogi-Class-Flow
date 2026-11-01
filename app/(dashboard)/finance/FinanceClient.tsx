@@ -28,7 +28,6 @@ import { FinanceFiltersBar } from './components/FinanceFiltersBar';
 import { FinanceKpiGrid } from './components/FinanceKpiGrid';
 import { FinanceCharts } from './components/FinanceCharts';
 import { AddTransactionModal } from './components/AddTransactionModal';
-import { ManageCategoriesModal } from './components/ManageCategoriesModal';
 
 import pageStyles from '@/app/styles/page-standard.module.css';
 import clientStyles from './FinanceClient.module.css';
@@ -82,7 +81,6 @@ export default function FinanceClient() {
 
   // 3. Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isManageCategoriesOpen, setIsManageCategoriesOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
   // 4. Data Fetching
@@ -127,13 +125,6 @@ export default function FinanceClient() {
         description={activeTab === 'reports' ? "Báo cáo kết quả hoạt động kinh doanh (P&L), phân tích chi phí và hiệu quả từng cơ sở" : "Theo dõi dòng tiền thu chi, phân bổ chi phí và lợi nhuận trung tâm"}
         primaryAction={activeTab === 'reports' ? undefined : (hasFinancePermission ? (
           <div className="flex items-center gap-2 flex-wrap">
-            <Button
-              variant="secondary"
-              onClick={() => setIsManageCategoriesOpen(true)}
-              leftIcon={<span className="material-icons-round">folder_special</span>}
-            >
-              Danh Mục
-            </Button>
             <ExportButton data={transactions} definition={FinanceExportDef} />
             <Button 
               onClick={() => setIsAddModalOpen(true)}
@@ -334,18 +325,6 @@ export default function FinanceClient() {
         onClose={() => setIsAddModalOpen(false)}
         onSuccess={handleTransactionSuccess}
         venues={venues}
-        incomeCategories={incomeCategories}
-        expenseCategories={expenseCategories}
-        onOpenManageCategories={() => {
-          setIsAddModalOpen(false);
-          setIsManageCategoriesOpen(true);
-        }}
-      />
-
-      <ManageCategoriesModal
-        isOpen={isManageCategoriesOpen}
-        onClose={() => setIsManageCategoriesOpen(false)}
-        organizationId={organizationId}
         incomeCategories={incomeCategories}
         expenseCategories={expenseCategories}
       />

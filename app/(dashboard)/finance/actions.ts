@@ -151,7 +151,7 @@ export async function deleteTransactionAction(id: string) {
 }
 
 export async function addCategoryAction(data: {
-  parent_id: string;
+  parent_id?: string | null;
   name: string;
   type: FinanceTransactionType;
   icon?: string;
@@ -160,17 +160,16 @@ export async function addCategoryAction(data: {
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
   const isAdminOrOwner = context.membership?.role === 'admin' || context.membership?.role === 'owner';
-  const hasPermission = isAdminOrOwner || (context.permissions && context.permissions.includes('manage_finance'));
+  const hasPermission = isAdminOrOwner || (context.permissions && (
+    context.permissions.includes('manage_finance') || 
+    context.permissions.includes('manage_settings')
+  ));
   if (!hasPermission) {
-    return { success: false, error: 'Bạn không có quyền thêm danh mục tài chính.' };
+    return { success: false, error: 'Bạn không có quyền quản lý danh mục tài chính.' };
   }
 
   if (!data.name || data.name.trim().length === 0) {
     return { success: false, error: 'Tên danh mục không được để trống.' };
-  }
-
-  if (!data.parent_id) {
-    return { success: false, error: 'Vui lòng chọn danh mục cha.' };
   }
 
   const supabase = await createClient();
@@ -178,10 +177,10 @@ export async function addCategoryAction(data: {
 
   const { error } = await supabase.from('finance_categories').insert({
     organization_id: orgId,
-    parent_id: data.parent_id,
+    parent_id: data.parent_id || null,
     name: data.name.trim(),
     type: data.type,
-    icon: data.icon || 'category',
+    icon: data.icon || (data.parent_id ? 'category' : 'folder'),
     is_system: false,
     display_order: 99,
   });
@@ -189,6 +188,7 @@ export async function addCategoryAction(data: {
   if (error) return { success: false, error: error.message };
 
   revalidatePath('/finance');
+  revalidatePath('/settings/finance-categories');
   return { success: true };
 }
 
@@ -197,7 +197,10 @@ export async function deleteCategoryAction(id: string) {
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
 
   const isAdminOrOwner = context.membership?.role === 'admin' || context.membership?.role === 'owner';
-  const hasPermission = isAdminOrOwner || (context.permissions && context.permissions.includes('manage_finance'));
+  const hasPermission = isAdminOrOwner || (context.permissions && (
+    context.permissions.includes('manage_finance') || 
+    context.permissions.includes('manage_settings')
+  ));
   if (!hasPermission) {
     return { success: false, error: 'Bạn không có quyền xóa danh mục tài chính.' };
   }
@@ -230,5 +233,6 @@ export async function deleteCategoryAction(id: string) {
   if (error) return { success: false, error: error.message };
 
   revalidatePath('/finance');
+  revalidatePath('/settings/finance-categories');
   return { success: true };
 }
