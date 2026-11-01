@@ -93,6 +93,7 @@ function NavItemComponent({ item, pathname, checkIsActive, setIsSidebarOpen, pre
                 <Link
                   key={idx}
                   href={sub.route}
+                  prefetch={true}
                   className="submenu-item"
                   onClick={() => setIsSidebarOpen(false)}
                   onMouseEnter={() => prefetch(sub.route)}
@@ -132,6 +133,7 @@ function NavItemComponent({ item, pathname, checkIsActive, setIsSidebarOpen, pre
   return (
     <Link 
       href={item.route} 
+      prefetch={true}
       className={`nav-item ${isActive ? 'active' : ''}`}
       onClick={() => setIsSidebarOpen(false)}
       onMouseEnter={() => prefetch(item.route)}
@@ -199,6 +201,20 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen }: SidebarProp
   const prefetch = (route: string) => {
     prefetchRouteData(queryClient, route, context?.organization?.id, isAdminOrOwner, context?.coach?.id);
   };
+
+  // Silently warm common route caches during idle time after initial dashboard load
+  useEffect(() => {
+    if (!context?.organization?.id) return;
+    const orgId = context.organization.id;
+    const coachId = context?.coach?.id;
+    const timer = setTimeout(() => {
+      const keyRoutes = ['/coaches', '/training', '/students', '/schedule', '/tuition', '/finance'];
+      keyRoutes.forEach((route) => {
+        prefetchRouteData(queryClient, route, orgId, isAdminOrOwner, coachId);
+      });
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [context?.organization?.id, context?.coach?.id, isAdminOrOwner, queryClient]);
 
   const navSections = [
     ADMIN_NAV[0],

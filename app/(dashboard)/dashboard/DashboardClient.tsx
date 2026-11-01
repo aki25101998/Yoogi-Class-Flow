@@ -7,7 +7,7 @@ import { useDashboardContext } from '../DashboardProvider';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useTodaySessions } from '@/hooks/useTodaySessions';
 import { cancelSessionAction, overrideCoachAction, checkInSessionAction } from './actions';
-import { useClasses } from '@/hooks/useClasses';
+import { createClient } from '@/utils/supabase/client';
 import { getBusinessDate, getBusinessDateString, calculateDuration } from '@/utils/date';
 import styles from '@/app/styles/page-standard.module.css';
 
@@ -19,7 +19,7 @@ import { Button } from '@/app/components/ui/Button';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/app/components/ui/Modal';
 import { Select } from '@/app/components/ui/Input';
 import { Badge } from '@/app/components/ui/Badge';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 function StatSkeleton() {
   return (
@@ -33,7 +33,25 @@ export default function DashboardClient() {
   const organizationId = context?.organization?.id;
   
   const { stats, isLoading: statsLoading, isAdminOrOwner } = useDashboardStats(context);
-  const { availableCoaches } = useClasses(organizationId);
+  const supabase = createClient();
+  const { data: availableCoaches = [] } = useQuery({
+    queryKey: ['activeCoaches', organizationId],
+    queryFn: async () => {
+      if (!organizationId) return [];
+      const { data, error } = await supabase
+        .from('coaches')
+        .select('id, role, organization_members(profiles(name))')
+        .eq('organization_id', organizationId)
+        .eq('status', 'active');
+      if (error) throw error;
+      return (data || []).map((coach: any) => ({
+        id: coach.id,
+        role: coach.role,
+        name: coach.organization_members?.profiles?.name || 'Unknown'
+      }));
+    },
+    enabled: !!organizationId,
+  });
 
   // We format date as YYYY-MM-DD for the backend
   const todayObj = getBusinessDate();

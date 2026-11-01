@@ -78,18 +78,22 @@ export function useStudents(organizationId: string | undefined) {
       const unpaidStudentIds = new Set(tData?.map(t => t.student_id));
       const unpaidTuition = unpaidStudentIds.size;
 
-      // 3. Attendance Rate
-      const { data: attData, error: attErr } = await supabase
-        .from('student_session_attendance')
-        .select('status')
-        .eq('organization_id', organizationId);
+      // 3. Attendance Rate (Optimized: 0-byte payload count directly on database)
+      const [totalAttRes, presentAttRes] = await Promise.all([
+        supabase
+          .from('student_session_attendance')
+          .select('*', { count: 'exact', head: true })
+          .eq('organization_id', organizationId),
+        supabase
+          .from('student_session_attendance')
+          .select('*', { count: 'exact', head: true })
+          .eq('organization_id', organizationId)
+          .eq('status', 'present')
+      ]);
 
-      if (attErr) console.error('Error fetching attendance stats:', attErr);
-      let attendanceRate = 100;
-      if (attData && attData.length > 0) {
-        const presentCount = attData.filter(a => a.status === 'present').length;
-        attendanceRate = Math.round((presentCount / attData.length) * 100);
-      }
+      const totalAtt = totalAttRes.count || 0;
+      const presentAtt = presentAttRes.count || 0;
+      const attendanceRate = totalAtt > 0 ? Math.round((presentAtt / totalAtt) * 100) : 100;
 
       return {
         total,
