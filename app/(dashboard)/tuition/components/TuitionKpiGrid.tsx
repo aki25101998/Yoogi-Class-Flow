@@ -9,9 +9,16 @@ interface TuitionKpiGridProps {
 }
 
 export function TuitionKpiGrid({ summary }: TuitionKpiGridProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN').format(amount) + ' đ';
+  const formatCurrency = (amount?: number) => {
+    return new Intl.NumberFormat('vi-VN').format(amount || 0) + ' đ';
   };
+
+  const totalExpected = summary?.totalExpected || 0;
+  const totalCollected = summary?.totalCollected || 0;
+  const totalRemaining = summary?.totalRemaining || 0;
+  const collectionRate = summary?.collectionRate || 0;
+  const totalStudents = summary?.totalStudents || 0;
+  const debtStudentsCount = summary?.debtStudentsCount || 0;
 
   return (
     <div className={styles.kpiGrid}>
@@ -19,19 +26,19 @@ export function TuitionKpiGrid({ summary }: TuitionKpiGridProps) {
       <div className={`${styles.kpiCard} ${styles.cardPrimary}`}>
         <div>
           <div className={styles.kpiLabel}>
-            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--primary)' }}>
+            <span className="material-icons-round" style={{ fontSize: '18px', color: 'var(--primary)' }}>
               receipt_long
             </span>
             Tổng Phải Thu Trong Kỳ
           </div>
           <div className={styles.kpiValue} style={{ color: 'var(--primary)' }}>
-            {formatCurrency(summary.totalExpected)}
+            {formatCurrency(totalExpected)}
           </div>
         </div>
         <div className={styles.kpiCaption}>
-          Tổng {summary.totalStudents} học viên trong kỳ
+          Tổng {totalStudents} học viên trong kỳ
         </div>
-        <span className={`material-symbols-outlined ${styles.kpiWatermark}`}>
+        <span className={`material-icons-round ${styles.kpiWatermark}`}>
           receipt_long
         </span>
       </div>
@@ -40,19 +47,19 @@ export function TuitionKpiGrid({ summary }: TuitionKpiGridProps) {
       <div className={`${styles.kpiCard} ${styles.cardSuccess}`}>
         <div>
           <div className={styles.kpiLabel}>
-            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--success)' }}>
+            <span className="material-icons-round" style={{ fontSize: '18px', color: 'var(--success)' }}>
               paid
             </span>
             Đã Thu Thực Tế
           </div>
           <div className={styles.kpiValue} style={{ color: 'var(--success)' }}>
-            {formatCurrency(summary.totalCollected)}
+            {formatCurrency(totalCollected)}
           </div>
         </div>
         <div className={styles.kpiCaption}>
-          Hoàn thành: <strong>{summary.collectionRate}%</strong> chỉ tiêu
+          Hoàn thành: <strong>{collectionRate}%</strong> chỉ tiêu
         </div>
-        <span className={`material-symbols-outlined ${styles.kpiWatermark}`}>
+        <span className={`material-icons-round ${styles.kpiWatermark}`}>
           paid
         </span>
       </div>
@@ -61,19 +68,19 @@ export function TuitionKpiGrid({ summary }: TuitionKpiGridProps) {
       <div className={`${styles.kpiCard} ${styles.cardDanger}`}>
         <div>
           <div className={styles.kpiLabel}>
-            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--danger)' }}>
+            <span className="material-icons-round" style={{ fontSize: '18px', color: 'var(--danger)' }}>
               pending_actions
             </span>
             Còn Nợ (Chưa Thu)
           </div>
           <div className={styles.kpiValue} style={{ color: 'var(--danger)' }}>
-            {formatCurrency(summary.totalRemaining)}
+            {formatCurrency(totalRemaining)}
           </div>
         </div>
         <div className={styles.kpiCaption}>
           Cần thu hồi bổ sung
         </div>
-        <span className={`material-symbols-outlined ${styles.kpiWatermark}`}>
+        <span className={`material-icons-round ${styles.kpiWatermark}`}>
           pending_actions
         </span>
       </div>
@@ -82,23 +89,22 @@ export function TuitionKpiGrid({ summary }: TuitionKpiGridProps) {
       <div className={`${styles.kpiCard} ${styles.cardInfo}`}>
         <div>
           <div className={styles.kpiLabel}>
-            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#3B82F6' }}>
+            <span className="material-icons-round" style={{ fontSize: '18px', color: 'var(--info, #3B82F6)' }}>
               people_outline
             </span>
             Học Viên Còn Nợ
           </div>
-          <div className={styles.kpiValue} style={{ color: '#3B82F6' }}>
-            {summary.debtStudentsCount} <span style={{ fontSize: '1rem', fontWeight: 600 }}>võ sinh</span>
+          <div className={styles.kpiValue} style={{ color: 'var(--info, #3B82F6)' }}>
+            {debtStudentsCount} <span style={{ fontSize: '1rem', fontWeight: 600 }}>võ sinh</span>
           </div>
         </div>
         <div className={styles.kpiCaption}>
           Chưa nộp hoặc nộp thiếu
         </div>
-        <span className={`material-symbols-outlined ${styles.kpiWatermark}`}>
+        <span className={`material-icons-round ${styles.kpiWatermark}`}>
           people_outline
         </span>
       </div>
     </div>
   );
 }
-

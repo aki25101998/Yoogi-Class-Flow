@@ -55,7 +55,7 @@ export function VietQRModal({
     : '';
 
   const copyToClipboard = (text: string, key: string) => {
-    navigator.clipboard.writeText(text);
+    navigator.clipboard.writeText(text).catch(() => {});
     setCopiedKey(key);
     setTimeout(() => setCopiedKey(null), 2000);
   };
@@ -87,7 +87,7 @@ export function VietQRModal({
         {!isBankConfigured ? (
           <div style={{ padding: '24px', textAlign: 'center' }}>
             <span
-              className="material-symbols-outlined"
+              className="material-icons-round"
               style={{ fontSize: '48px', color: 'var(--warning)', marginBottom: '12px' }}
             >
               account_balance
@@ -146,7 +146,7 @@ export function VietQRModal({
                       className={styles.qrCopyBtn}
                       onClick={() => copyToClipboard(accountNumber!, 'account')}
                     >
-                      <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>
+                      <span className="material-icons-round" style={{ fontSize: '14px' }}>
                         {copiedKey === 'account' ? 'check' : 'content_copy'}
                       </span>
                       {copiedKey === 'account' ? 'Đã chép' : 'Sao chép'}
@@ -165,7 +165,7 @@ export function VietQRModal({
                       className={styles.qrCopyBtn}
                       onClick={() => copyToClipboard(remainingAmount.toString(), 'amount')}
                     >
-                      <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>
+                      <span className="material-icons-round" style={{ fontSize: '14px' }}>
                         {copiedKey === 'amount' ? 'check' : 'content_copy'}
                       </span>
                       {copiedKey === 'amount' ? 'Đã chép' : 'Sao chép'}
@@ -184,7 +184,7 @@ export function VietQRModal({
                       className={styles.qrCopyBtn}
                       onClick={() => copyToClipboard(memo, 'memo')}
                     >
-                      <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>
+                      <span className="material-icons-round" style={{ fontSize: '14px' }}>
                         {copiedKey === 'memo' ? 'check' : 'content_copy'}
                       </span>
                       {copiedKey === 'memo' ? 'Đã chép' : 'Sao chép'}
@@ -212,7 +212,7 @@ export function VietQRModal({
             onClick={handleDownloadQR}
             style={{ borderRadius: 'var(--radius-full)' }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '18px', marginRight: '6px' }}>
+            <span className="material-icons-round" style={{ fontSize: '18px', marginRight: '6px' }}>
               download
             </span>
             Tải Ảnh QR
@@ -222,4 +222,3 @@ export function VietQRModal({
     </Modal>
   );
 }
-

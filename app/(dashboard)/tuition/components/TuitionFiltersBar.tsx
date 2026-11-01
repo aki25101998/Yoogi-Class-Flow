@@ -30,6 +30,8 @@ export function TuitionFiltersBar({
     { label: 'Đã đóng đủ', value: 'paid' },
   ];
 
+  const classList = classes || [];
+
   return (
     <div className={styles.filterStrip}>
       <div className={styles.filterControls}>
@@ -50,7 +52,7 @@ export function TuitionFiltersBar({
             onChange={(e) => onFilterChange({ ...filters, classId: e.target.value })}
             options={[
               { value: 'all', label: 'Tất cả lớp học' },
-              ...classes.map((cls) => ({ value: cls.id, label: cls.name })),
+              ...classList.map((cls) => ({ value: cls.id, label: cls.name })),
             ]}
           />
         </div>
@@ -89,7 +91,7 @@ export function TuitionFiltersBar({
             onClick={onOpenBatchModal}
             style={{ borderRadius: 'var(--radius-full)', borderColor: 'var(--primary)', color: 'var(--primary)' }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '18px', marginRight: '6px' }}>
+            <span className="material-icons-round" style={{ fontSize: '18px', marginRight: '6px' }}>
               playlist_add
             </span>
             Tạo Học Phí Cả Lớp
@@ -101,7 +103,7 @@ export function TuitionFiltersBar({
             onClick={onOpenAddModal}
             style={{ borderRadius: 'var(--radius-full)' }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '18px', marginRight: '6px' }}>
+            <span className="material-icons-round" style={{ fontSize: '18px', marginRight: '6px' }}>
               add
             </span>
             Thêm Khoản Thu
@@ -111,4 +113,3 @@ export function TuitionFiltersBar({
     </div>
   );
 }
-

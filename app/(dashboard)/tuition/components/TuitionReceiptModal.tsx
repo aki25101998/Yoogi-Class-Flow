@@ -148,17 +148,17 @@ export function TuitionReceiptModal({
       </ModalBody>
 
       <ModalFooter>
-        <Button type="button" variant="ghost" onClick={onClose} className="noPrint">
+        <Button type="button" variant="ghost" onClick={onClose} className={styles.noPrint}>
           Đóng
         </Button>
         <Button
           type="button"
           variant="primary"
           onClick={handlePrint}
-          className="noPrint"
+          className={styles.noPrint}
           style={{ borderRadius: 'var(--radius-full)' }}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: '18px', marginRight: '6px' }}>
+          <span className="material-icons-round" style={{ fontSize: '18px', marginRight: '6px' }}>
             print
           </span>
           In Phiếu Thu
@@ -167,4 +167,3 @@ export function TuitionReceiptModal({
     </Modal>
   );
 }
-

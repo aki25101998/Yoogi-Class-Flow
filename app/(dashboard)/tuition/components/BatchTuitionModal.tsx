@@ -22,7 +22,7 @@ export function BatchTuitionModal({
   isOpen,
   onClose,
   organizationId,
-  classes,
+  classes = [],
   currentMonth,
   onSuccess,
 }: BatchTuitionModalProps) {
@@ -32,6 +32,15 @@ export function BatchTuitionModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string>('');
 
+  // Sync selectedClassId when modal opens and classes is loaded
+  useEffect(() => {
+    if (isOpen && (!selectedClassId || !classes.some((c) => c.id === selectedClassId))) {
+      if (classes.length > 0) {
+        setSelectedClassId(classes[0].id);
+      }
+    }
+  }, [isOpen, classes, selectedClassId]);
+
   // Fetch enrolled students in the selected class
   const { data: enrolledStudents = [], isLoading: isLoadingStudents } = useClassStudents(
     selectedClassId,
@@ -40,7 +49,7 @@ export function BatchTuitionModal({
 
   // Find default fee for selected class
   const selectedClass = useMemo(
-    () => classes.find((c) => c.id === selectedClassId),
+    () => (classes || []).find((c) => c.id === selectedClassId),
     [classes, selectedClassId]
   );
   const defaultFee = Number(selectedClass?.default_tuition_fee) || 0;
@@ -161,7 +170,7 @@ export function BatchTuitionModal({
             <Select
               value={selectedClassId}
               onChange={(e) => setSelectedClassId(e.target.value)}
-              options={classes.map((cls) => ({
+              options={(classes || []).map((cls) => ({
                 value: cls.id,
                 label: `${cls.name} ${cls.default_tuition_fee ? `(${formatCurrency(cls.default_tuition_fee)}/tháng)` : ''}`,
               }))}
@@ -321,4 +330,3 @@ export function BatchTuitionModal({
     </Modal>
   );
 }
-
