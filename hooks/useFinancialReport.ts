@@ -2,14 +2,14 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@/utils/supabase/client';
-import {
+import type {
   FinancialReportFilters,
   FinancialReportData,
   PnLCategoryGroup,
   PnLSubCategoryItem,
   VenuePnlSummary,
 } from '@/types/financeReport';
-import { TimeRangePreset } from '@/types/finance';
+import type { TimeRangePreset } from '@/types/finance';
 
 /**
  * Calculates current and previous period date ranges based on preset.
@@ -87,6 +87,11 @@ export function calculatePeriodRanges(
         const [y2, m2, d2] = customEnd.split('-').map(Number);
         curStart = new Date(y1, m1 - 1, d1);
         curEnd = new Date(y2, m2 - 1, d2);
+        if (curStart > curEnd) {
+          const temp = curStart;
+          curStart = curEnd;
+          curEnd = temp;
+        }
         const diffDays = Math.round((curEnd.getTime() - curStart.getTime()) / (1000 * 60 * 60 * 24));
         prevEnd = new Date(curStart.getFullYear(), curStart.getMonth(), curStart.getDate() - 1);
         prevStart = new Date(prevEnd.getFullYear(), prevEnd.getMonth(), prevEnd.getDate() - diffDays);
@@ -117,6 +122,14 @@ export function calculateGrowthRate(current: number, prev: number): number | nul
   return Number((((current - prev) / Math.abs(prev)) * 100).toFixed(1));
 }
 
+/**
+ * Custom TanStack React Query hook for aggregating financial transactions into a
+ * hierarchical Profit & Loss (P&L) statement and multi-venue analytics model.
+ *
+ * @param organizationId - Active organization UUID.
+ * @param filters - Selected time range preset, custom dates, and venue filter.
+ * @returns React Query result carrying `FinancialReportData`.
+ */
 export function useFinancialReport(
   organizationId: string | undefined,
   filters: FinancialReportFilters
@@ -133,27 +146,27 @@ export function useFinancialReport(
     queryFn: async (): Promise<FinancialReportData> => {
       if (!organizationId) throw new Error('Organization ID is required');
 
-      // 1. Fetch active venues
-      const { data: venuesData, error: venuesError } = await supabase
-        .from('venues')
-        .select('id, name')
-        .eq('organization_id', organizationId)
-        .order('name');
+      // 1. Parallel fetch: active venues & all transactions spanning both periods
+      const [venuesRes, txnsRes] = await Promise.all([
+        supabase
+          .from('venues')
+          .select('id, name')
+          .eq('organization_id', organizationId)
+          .order('name'),
+        supabase
+          .from('finance_transactions')
+          .select('id, type, amount, date, venue_id, parent_category, sub_category, category')
+          .eq('organization_id', organizationId)
+          .gte('date', previousPeriod.startDate)
+          .lte('date', currentPeriod.endDate),
+      ]);
 
-      if (venuesError) throw venuesError;
-      const venues = venuesData || [];
+      if (venuesRes.error) throw venuesRes.error;
+      if (txnsRes.error) throw txnsRes.error;
+
+      const venues = venuesRes.data || [];
       const venueIdSet = new Set(venues.map((v) => v.id));
-
-      // 2. Fetch all transactions spanning previousPeriod.startDate to currentPeriod.endDate
-      const { data: txnsData, error: txnsError } = await supabase
-        .from('finance_transactions')
-        .select('id, type, amount, date, venue_id, parent_category, sub_category, category')
-        .eq('organization_id', organizationId)
-        .gte('date', previousPeriod.startDate)
-        .lte('date', currentPeriod.endDate);
-
-      if (txnsError) throw txnsError;
-      const allTxns = txnsData || [];
+      const allTxns = txnsRes.data || [];
 
       // Split into current and previous
       const curTxns = allTxns.filter(
