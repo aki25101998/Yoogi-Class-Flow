@@ -100,6 +100,7 @@ export default function TuitionClient() {
   const [paymentTuition, setPaymentTuition] = useState<TuitionItem | null>(null);
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
   const [paymentMethod, setPaymentMethod] = useState<TuitionPaymentMethod>('cash');
+  const [paymentNotes, setPaymentNotes] = useState<string>('');
 
   // Status feedback
   const [actionError, setActionError] = useState<string>('');
@@ -232,10 +233,11 @@ export default function TuitionClient() {
     setActionError('');
     setIsSubmitting(true);
     try {
-      const res = await recordPaymentAction(paymentTuition.id, paymentAmount, paymentMethod);
+      const res = await recordPaymentAction(paymentTuition.id, paymentAmount, paymentMethod, paymentNotes);
       if (res.success) {
         setPaymentTuition(null);
         setPaymentAmount(0);
+        setPaymentNotes('');
         setActionSuccess('Đã ghi nhận thanh toán & đồng bộ Sổ Quỹ thành công!');
         setTimeout(() => setActionSuccess(''), 4000);
         await handleRefresh();
@@ -451,6 +453,7 @@ export default function TuitionClient() {
                                 setPaymentTuition(t);
                                 setPaymentAmount(remaining);
                                 setPaymentMethod('cash');
+                                setPaymentNotes(t.notes || '');
                                 setActionError('');
                               }}
                               title="Ghi nhận thanh toán"
@@ -629,6 +632,13 @@ export default function TuitionClient() {
                     { value: 'other', label: 'Khác' },
                   ]}
                   helperText="Khoản thu này sẽ tự động ghi sổ nhật ký Thu Chi trong Sổ Quỹ"
+                />
+
+                <Input
+                  label="Ghi Chú Thu Tiền"
+                  placeholder="Nộp đợt 1, phụ huynh chuyển hộ..."
+                  value={paymentNotes}
+                  onChange={(e) => setPaymentNotes(e.target.value)}
                 />
               </form>
             </div>

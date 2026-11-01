@@ -170,7 +170,8 @@ export async function deleteTuitionAction(id: string) {
 export async function recordPaymentAction(
   id: string, 
   paymentAmount: number, 
-  paymentMethod: TuitionPaymentMethod = 'cash'
+  paymentMethod: TuitionPaymentMethod = 'cash',
+  notes?: string
 ) {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
@@ -201,6 +202,14 @@ export async function recordPaymentAction(
 
   if (data && data.success === false) {
     return { success: false, error: data.error || 'Lỗi khi xử lý thanh toán.' };
+  }
+
+  if (notes && notes.trim()) {
+    await supabase
+      .from('tuition')
+      .update({ notes: notes.trim() })
+      .eq('id', id)
+      .eq('organization_id', context.organization.id);
   }
 
   revalidatePath('/tuition');
