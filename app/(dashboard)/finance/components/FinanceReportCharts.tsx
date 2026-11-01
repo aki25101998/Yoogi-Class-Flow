@@ -102,6 +102,7 @@ export function FinanceReportCharts({ data }: FinanceReportChartsProps) {
             <div className={styles.venueChartWrapper}>
               <svg
                 className={styles.venueChartSvg}
+                style={{ minWidth: `${totalChartWidth}px` }}
                 viewBox={`0 0 ${totalChartWidth} ${chartHeight}`}
                 preserveAspectRatio="xMidYMid meet"
               >
@@ -164,8 +165,7 @@ export function FinanceReportCharts({ data }: FinanceReportChartsProps) {
                     <g
                       key={venue.venueId}
                       style={{ cursor: 'pointer' }}
-                      onMouseEnter={(e) => {
-                        const rect = e.currentTarget.getBoundingClientRect();
+                      onMouseEnter={() => {
                         setHoveredVenue({
                           summary: venue,
                           x: Math.min(groupX + 30, totalChartWidth - 190),
