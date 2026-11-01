@@ -1,16 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import { updateOrganizationAction, seedSampleDataAction, resetOrganizationDataAction } from './actions';
+import { updateOrganizationAction, seedSampleDataAction, resetOrganizationDataAction, updateOrgBankSettingsAction } from './actions';
 import { useDashboardContext } from '../DashboardProvider';
+import { VIETNAM_BANKS, getBankByBin } from '@/constants/banks';
 
 // UI Components
 import { PageHeader } from '@/app/components/ui/PageHeader';
 import { SettingsNavTabs } from './components/SettingsNavTabs';
 import { Button } from '@/app/components/ui/Button';
-import { Input } from '@/app/components/ui/Input';
+import { Input, Select } from '@/app/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
 import { Badge } from '@/app/components/ui/Badge';
 import { formatBusinessDateVN } from '@/utils/date';
@@ -30,6 +31,28 @@ export default function SettingsClient() {
   const [success, setSuccess] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
+
+  // Central Bank Configuration state
+  const [bankData, setBankData] = useState({
+    bank_bin: organization?.bank_bin || '970422', // default MBBank
+    bank_account_number: organization?.bank_account_number || '',
+    bank_account_name: organization?.bank_account_name || '',
+    bank_name: organization?.bank_name || 'MBBank',
+  });
+  const [bankError, setBankError] = useState('');
+  const [bankSuccess, setBankSuccess] = useState('');
+  const [isSavingBank, setIsSavingBank] = useState(false);
+
+  useEffect(() => {
+    if (organization) {
+      setBankData({
+        bank_bin: organization.bank_bin || '970422',
+        bank_account_number: organization.bank_account_number || '',
+        bank_account_name: organization.bank_account_name || '',
+        bank_name: organization.bank_name || 'MBBank',
+      });
+    }
+  }, [organization]);
 
   // Seed sample data state
   const [seedLoading, setSeedLoading] = useState(false);
@@ -68,6 +91,35 @@ export default function SettingsClient() {
     }
     
     setIsSubmitting(false);
+  };
+
+  const handleSaveBank = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isAdminOrOwner) return;
+
+    if (!bankData.bank_account_number.trim()) {
+      setBankError('Vui lòng nhập số tài khoản ngân hàng');
+      return;
+    }
+    if (!bankData.bank_account_name.trim()) {
+      setBankError('Vui lòng nhập tên chủ tài khoản');
+      return;
+    }
+
+    setBankError('');
+    setBankSuccess('');
+    setIsSavingBank(true);
+
+    const res = await updateOrgBankSettingsAction(bankData);
+    setIsSavingBank(false);
+
+    if (res.success) {
+      setBankSuccess('Đã lưu cấu hình tài khoản ngân hàng nhận học phí!');
+      setTimeout(() => setBankSuccess(''), 4000);
+      router.refresh();
+    } else {
+      setBankError(res.error || 'Lỗi khi lưu thông tin ngân hàng');
+    }
   };
 
   const handleSeedData = async () => {
@@ -459,6 +511,193 @@ export default function SettingsClient() {
           </CardContent>
         </Card>
       </div>
+
+      {/* CARD 3: CẤU HÌNH TÀI KHOẢN NGÂN HÀNG & VIETQR (NAPAS 247) */}
+      <Card style={{ 
+        background: 'var(--surface)', 
+        border: '1px solid var(--border-light)', 
+        borderRadius: 'var(--radius-2xl)', 
+        overflow: 'hidden' 
+      }}>
+        <CardHeader style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-light)', background: 'var(--surface-hover)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+            <CardTitle style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)' }}>
+              <div style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: 'var(--radius-lg)',
+                background: 'rgba(20, 184, 166, 0.12)',
+                color: 'var(--primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <span className="material-icons-round" style={{ fontSize: '20px' }}>account_balance</span>
+              </div>
+              Tài Khoản Ngân Hàng Nhận Học Phí (VietQR Napas 247)
+            </CardTitle>
+            <Badge variant={bankData.bank_account_number ? 'success' : 'warning'}>
+              {bankData.bank_account_number ? 'Đã kích hoạt VietQR' : 'Chưa cấu hình'}
+            </Badge>
+          </div>
+        </CardHeader>
+        
+        <CardContent style={{ padding: '24px' }}>
+          {bankError && (
+            <div style={{ 
+              color: 'var(--danger)', 
+              background: 'var(--danger-bg)', 
+              border: '1px solid rgba(239, 68, 68, 0.2)', 
+              padding: '12px 16px', 
+              borderRadius: 'var(--radius-lg)', 
+              fontSize: '0.875rem', 
+              marginBottom: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <span className="material-icons-round" style={{ fontSize: '18px' }}>error_outline</span>
+              {bankError}
+            </div>
+          )}
+
+          {bankSuccess && (
+            <div style={{ 
+              color: 'var(--success)', 
+              background: 'var(--success-bg)', 
+              border: '1px solid rgba(34, 197, 94, 0.2)', 
+              padding: '12px 16px', 
+              borderRadius: 'var(--radius-lg)', 
+              fontSize: '0.875rem', 
+              marginBottom: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <span className="material-icons-round" style={{ fontSize: '18px' }}>check_circle</span>
+              {bankSuccess}
+            </div>
+          )}
+
+          <form onSubmit={handleSaveBank} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+              <div>
+                <Select
+                  label="Ngân Hàng Nhận Thanh Toán *"
+                  value={bankData.bank_bin}
+                  disabled={!isAdminOrOwner || isSavingBank}
+                  onChange={(e) => {
+                    const selectedBin = e.target.value;
+                    const bDef = getBankByBin(selectedBin);
+                    setBankData({
+                      ...bankData,
+                      bank_bin: selectedBin,
+                      bank_name: bDef?.shortName || bDef?.name || '',
+                    });
+                  }}
+                  options={VIETNAM_BANKS.map((b) => ({
+                    value: b.bin,
+                    label: `${b.shortName} - ${b.name}`,
+                  }))}
+                  helperText="Hỗ trợ chuyển nhanh Napas 247 qua mã QR tự động"
+                />
+              </div>
+
+              <div>
+                <Input
+                  label="Số Tài Khoản Ngân Hàng *"
+                  placeholder="Ví dụ: 0388889999"
+                  value={bankData.bank_account_number}
+                  disabled={!isAdminOrOwner || isSavingBank}
+                  onChange={(e) =>
+                    setBankData({
+                      ...bankData,
+                      bank_account_number: e.target.value.replace(/[\s-]+/g, ''),
+                    })
+                  }
+                  helperText="Viết liền không dấu cách hoặc gạch ngang"
+                />
+              </div>
+
+              <div>
+                <Input
+                  label="Tên Chủ Tài Khoản (Viết hoa không dấu) *"
+                  placeholder="Ví dụ: NGUYEN VAN A"
+                  value={bankData.bank_account_name}
+                  disabled={!isAdminOrOwner || isSavingBank}
+                  onChange={(e) =>
+                    setBankData({
+                      ...bankData,
+                      bank_account_name: e.target.value.toUpperCase(),
+                    })
+                  }
+                  helperText="Tên người thụ hưởng in trên thẻ hoặc ứng dụng"
+                />
+              </div>
+            </div>
+
+            {/* Preview Capsule */}
+            <div style={{
+              padding: '16px 20px',
+              background: 'var(--surface-hover)',
+              border: '1px solid var(--border-light)',
+              borderRadius: 'var(--radius-xl)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '16px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                {getBankByBin(bankData.bank_bin)?.logo ? (
+                  <img
+                    src={getBankByBin(bankData.bank_bin)?.logo}
+                    alt="Bank Logo"
+                    style={{ height: '32px', background: '#ffffff', padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--border-light)' }}
+                  />
+                ) : (
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: 'var(--radius-lg)',
+                    background: 'var(--primary-light)',
+                    color: 'var(--primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 700
+                  }}>
+                    QR
+                  </div>
+                )}
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--text-main)' }}>
+                    {getBankByBin(bankData.bank_bin)?.shortName || bankData.bank_name || 'Chưa chọn ngân hàng'}
+                    {bankData.bank_account_number && ` • ${bankData.bank_account_number}`}
+                  </div>
+                  <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                    Chủ TK: <strong>{bankData.bank_account_name || 'CHƯA NHẬP TÊN'}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {isAdminOrOwner && (
+                <Button
+                  type="submit"
+                  variant="primary"
+                  isLoading={isSavingBank}
+                  style={{ borderRadius: 'var(--radius-full)' }}
+                >
+                  <span className="material-icons-round" style={{ fontSize: '18px', marginRight: '6px' }}>
+                    save
+                  </span>
+                  Lưu Cấu Hình Ngân Hàng
+                </Button>
+              )}
+            </div>
+          </form>
+        </CardContent>
+      </Card>
 
       {/* 5. PHÂN VÙNG 2: QUẢN TRỊ DỮ LIỆU & KIỂM THỬ (CHỈ ADMIN/OWNER) */}
       {isAdminOrOwner && (

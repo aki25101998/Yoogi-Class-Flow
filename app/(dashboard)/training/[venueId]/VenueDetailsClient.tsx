@@ -29,7 +29,7 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
   // Class Modal State
   const [isClassModalOpen, setIsClassModalOpen] = useState(false);
   const [editingClassId, setEditingClassId] = useState<string | null>(null);
-  const [classForm, setClassForm] = useState({ name: '', status: 'active' });
+  const [classForm, setClassForm] = useState({ name: '', status: 'active', default_tuition_fee: 0 });
 
   // Student Modal State
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
@@ -40,7 +40,7 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
   const [loading, setLoading] = useState(false);
 
   const resetForms = () => {
-    setClassForm({ name: '', status: 'active' });
+    setClassForm({ name: '', status: 'active', default_tuition_fee: 0 });
     setStudentForm({ name: '', phone: '', parent_name: '', parent_phone: '', dob: '', current_belt_id: '', class_id: '' });
     setIsClassModalOpen(false);
     setIsStudentModalOpen(false);
@@ -91,7 +91,8 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
     setEditingClassId(cls.id);
     setClassForm({
       name: cls.name,
-      status: cls.status || 'active'
+      status: cls.status || 'active',
+      default_tuition_fee: Number(cls.default_tuition_fee) || 0
     });
     setIsClassModalOpen(true);
   };
@@ -387,6 +388,15 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
                       <span className="material-icons-round" style={{ fontSize: 15, color: 'var(--accent-energy)' }}>groups</span>
                       <span><strong>{cls.studentsCount}</strong> học viên</span>
                     </div>
+                    {Number(cls.default_tuition_fee) > 0 && (
+                      <>
+                        <div className={styles.classStatDivider} />
+                        <div className={styles.classStatChip} title="Học phí mặc định hàng tháng">
+                          <span className="material-icons-round" style={{ fontSize: 15, color: 'var(--success)' }}>payments</span>
+                          <span><strong>{new Intl.NumberFormat('vi-VN').format(cls.default_tuition_fee)}</strong> đ</span>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* Actions Footer */}
@@ -510,7 +520,17 @@ export default function VenueDetailsClient({ venueId }: { venueId: string }) {
               value={classForm.name} 
               onChange={e => setClassForm({...classForm, name: e.target.value})} 
             />
-            
+
+            <Input 
+              label="Học phí mặc định (VNĐ/tháng)" 
+              type="number"
+              min={0}
+              step={10000}
+              placeholder="Ví dụ: 500000"
+              value={classForm.default_tuition_fee || ''} 
+              onChange={e => setClassForm({...classForm, default_tuition_fee: Number(e.target.value) || 0})}
+              helperText="Tự động áp dụng khi tạo học phí hàng loạt cho lớp này"
+            />
 
             <Select 
               label="Trạng thái"
