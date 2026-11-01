@@ -1,0 +1,749 @@
+/* app/styles/FinanceReports.module.css */
+/* Vibrant Athletic & Martial Arts Design System */
+
+.reportsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+}
+
+/* ==========================================================================
+   1. FILTERS BAR & PRESET STRIP
+   ========================================================================== */
+
+.filtersBar {
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-2xl, 24px);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.filtersTopRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.presetsRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.presetBtn {
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+  border-radius: var(--radius-full, 9999px);
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.presetBtn:hover {
+  background: var(--surface-active, rgba(20, 184, 166, 0.08));
+  color: var(--text-main);
+}
+
+.presetBtnActive {
+  background: var(--primary) !important;
+  color: #ffffff !important;
+  font-weight: 600;
+  box-shadow: var(--shadow-teal-glow);
+  border-color: var(--primary);
+}
+
+.filtersRightGroup {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.venueSelectGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.venueSelectLabel {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.selectInput {
+  background: var(--background);
+  color: var(--text-main);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-full, 9999px);
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.selectInput:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-glow);
+}
+
+.actionsGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.actionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--radius-full, 9999px);
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.printBtn {
+  background: var(--surface-hover);
+  color: var(--text-main);
+  border-color: var(--border-light);
+}
+
+.printBtn:hover {
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.exportBtn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}
+
+.exportBtn:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+  transform: translateY(-1px);
+}
+
+.customDateRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border-light);
+}
+
+.dateFieldGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.dateInput {
+  background: var(--background);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-full, 9999px);
+  padding: 6px 14px;
+  font-size: 0.875rem;
+  color: var(--text-main);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.dateInput:focus {
+  border-color: var(--primary);
+}
+
+/* ==========================================================================
+   2. KPI BENTO CARDS GRID
+   ========================================================================== */
+
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 16px;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .kpiGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .kpiGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.kpiCard {
+  position: relative;
+  overflow: hidden;
+  padding: 20px 22px;
+  border-radius: var(--radius-xl, 20px);
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-left: 4px solid transparent;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 140px;
+}
+
+.kpiCard:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border);
+}
+
+.kpiPrimary {
+  border-left-color: var(--primary);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 8%, var(--surface)) 0%, var(--surface) 100%);
+}
+
+.kpiSuccess {
+  border-left-color: var(--success);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--success) 8%, var(--surface)) 0%, var(--surface) 100%);
+}
+
+.kpiDanger {
+  border-left-color: var(--danger);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--danger) 8%, var(--surface)) 0%, var(--surface) 100%);
+}
+
+.kpiWarning {
+  border-left-color: var(--accent-energy);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent-energy) 8%, var(--surface)) 0%, var(--surface) 100%);
+}
+
+.kpiHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.kpiLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
+.kpiDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.kpiPrimary .kpiDot { color: var(--primary); }
+.kpiSuccess .kpiDot { color: var(--success); }
+.kpiDanger .kpiDot { color: var(--danger); }
+.kpiWarning .kpiDot { color: var(--accent-energy); }
+
+.kpiValue {
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
+  margin-bottom: 6px;
+  line-height: 1.2;
+}
+
+.kpiCaption {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  line-height: 1.3;
+}
+
+.kpiWatermark {
+  position: absolute;
+  right: 14px;
+  bottom: 8px;
+  font-size: 44px;
+  line-height: 1;
+  opacity: 0.10;
+  pointer-events: none;
+  user-select: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.kpiCard:hover .kpiWatermark {
+  opacity: 0.18;
+  transform: scale(1.08);
+}
+
+/* Delta Badges */
+.badgePositive {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full, 9999px);
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--success-bg, rgba(16, 185, 129, 0.15));
+  color: var(--success-text, #059669);
+  white-space: nowrap;
+}
+
+.badgeNegative {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full, 9999px);
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--danger-bg, rgba(239, 68, 68, 0.15));
+  color: var(--danger-text, #dc2626);
+  white-space: nowrap;
+}
+
+.badgeNeutral {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full, 9999px);
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.topVenueCapsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: var(--radius-full, 9999px);
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: var(--accent-energy-light, rgba(255, 107, 53, 0.12));
+  color: var(--accent-energy, #ff6b35);
+  border: 1px solid rgba(255, 107, 53, 0.25);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   3. CHARTS GRID & VISUAL ANALYTICS
+   ========================================================================== */
+
+.chartsGrid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 20px;
+  width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .chartsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.chartCard {
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-2xl, 24px);
+  padding: 20px 24px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+  position: relative;
+}
+
+.chartHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.chartTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chartSubtitle {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.chartLegend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.legendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.chartBody {
+  position: relative;
+  width: 100%;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Venue Comparison Chart */
+.venueChartWrapper {
+  position: relative;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.venueChartSvg {
+  width: 100%;
+  height: 220px;
+  display: block;
+}
+
+.chartTooltip {
+  position: absolute;
+  z-index: 20;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 12px);
+  padding: 10px 14px;
+  box-shadow: var(--shadow-lg);
+  font-size: 0.75rem;
+  pointer-events: none;
+  min-width: 180px;
+}
+
+.tooltipTitle {
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 6px;
+  font-size: 0.8125rem;
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 4px;
+}
+
+.tooltipRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+/* Cost Structure Horizontal Stacked Bar */
+.stackedBarContainer {
+  width: 100%;
+  height: 26px;
+  border-radius: var(--radius-full, 9999px);
+  overflow: hidden;
+  display: flex;
+  background: var(--surface-hover);
+  border: 1px solid var(--border-light);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+  margin: 8px 0 16px 0;
+}
+
+.stackedSegment {
+  height: 100%;
+  transition: width 0.3s ease, opacity 0.2s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+.stackedSegment:hover {
+  opacity: 0.85;
+}
+
+.costLegendGrid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 10px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+@media (min-width: 480px) {
+  .costLegendGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.costLegendCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: var(--radius-lg, 12px);
+  background: var(--surface-hover);
+  border: 1px solid var(--border-light);
+  font-size: 0.8125rem;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.costLegendCard:hover {
+  background: var(--surface-active, rgba(20, 184, 166, 0.06));
+  border-color: var(--border);
+}
+
+.costLegendInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.costLegendName {
+  font-weight: 600;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.costLegendValues {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.costLegendAmount {
+  font-weight: 600;
+  color: var(--text-main);
+  font-size: 0.8125rem;
+}
+
+.costLegendPct {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.emptyChart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 180px;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  gap: 8px;
+  text-align: center;
+}
+
+/* ==========================================================================
+   4. HIERARCHICAL MATRIX TABLE (FOR DOWNSTREAM TASK 5)
+   ========================================================================== */
+
+.tableCard {
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-2xl, 24px);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  margin-top: 8px;
+}
+
+.tableCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--surface-hover);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.tableCardTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tableScrollContainer {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.pnlTable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+.th {
+  padding: 12px 16px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--surface-hover);
+  border-bottom: 1px solid var(--border-light);
+  white-space: nowrap;
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-main);
+  white-space: nowrap;
+}
+
+.sectionHeaderRow {
+  background: rgba(20, 184, 166, 0.08);
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.categoryGroupRow {
+  cursor: pointer;
+  font-weight: 600;
+  background: var(--surface);
+  transition: background 0.15s ease;
+}
+
+.categoryGroupRow:hover {
+  background: var(--surface-hover);
+}
+
+.subCategoryRow {
+  background: var(--surface);
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.totalHighlightRow {
+  background: var(--surface-hover);
+  font-weight: 700;
+  border-top: 2px solid var(--border);
+}
+
+.printOnly {
+  display: none;
+}
+
+.noPrint {
+  display: block;
+}
+
+/* ==========================================================================
+   5. PRINT ISOLATION (@media print)
+   ========================================================================== */
+
+@media print {
+  .noPrint {
+    display: none !important;
+  }
+
+  .printOnly {
+    display: block !important;
+  }
+
+  .reportsContainer {
+    gap: 16px !important;
+  }
+
+  .filtersBar {
+    display: none !important;
+  }
+
+  .kpiCard,
+  .chartCard,
+  .tableCard {
+    box-shadow: none !important;
+    border: 1px solid #d4d4d8 !important;
+    page-break-inside: avoid !important;
+  }
+
+  .kpiWatermark {
+    display: none !important;
+  }
+
+  .chartsGrid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .costLegendGrid {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
