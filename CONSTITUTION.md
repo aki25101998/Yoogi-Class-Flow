@@ -1,6 +1,6 @@
 # 📜 HIẾN PHÁP DỰ ÁN — YOOGI CLASS FLOW
 
-> **Phiên bản:** 1.9.3  
+> **Phiên bản:** 1.9.4  
 > **Cập nhật lần cuối:** 2026-11-01  
 > **Mục đích:** Đây là tài liệu gốc, bất khả xâm phạm. Mọi thay đổi code PHẢI tuân thủ các quy tắc trong file này. Khi có tính năng mới, file này PHẢI được cập nhật đồng thời.
 
@@ -858,6 +858,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-11-01 | 1.9.1 | Nâng cấp toàn diện Quản lý Học Phí & VietQR Động (/tuition): Học phí mặc định lớp học (default_tuition_fee trên venue_classes); tạo học phí hàng loạt cho lớp học (RPC create_batch_tuition & BatchTuitionModal); cấu hình tài khoản ngân hàng trung tâm trong Cài đặt (/settings) và tạo mã VietQR Napas 247 động với cú pháp chuẩn hóa (VietQRModal); in biên lai thu tiền điện tử chuẩn A5/A4 (TuitionReceiptModal) với print isolation; ghi nhận thanh toán nguyên tử (RPC record_tuition_payment atomic) kèm ghi chú và tự động đồng bộ sang Sổ quỹ (/finance) với danh mục 2 cấp; bổ sung migration 045_tuition_enhancements_and_vietqr.sql |
 | 2026-11-01 | 1.9.2 | Nâng cấp toàn diện Báo Cáo Tài Chính Đa Chiều & Phân Tích Lợi Nhuận P&L Theo Cơ Sở (/finance?tab=reports): Tích hợp tab P&L với URL query param persistence và Suspense; Single-source aggregator engine (useFinancialReport) tổng hợp dòng tiền từ finance_transactions; ma trận P&L phân tầng chuẩn kế toán quản trị (Doanh thu, Chi phí, Lợi nhuận ròng, Tỷ suất %); bóc tách đa cơ sở và minh bạch chi phí chung (venue_id IS NULL); so sánh tăng trưởng MoM/QoQ chống lỗi chia cho 0; 4 thẻ Bento KPI, biểu đồ cột SVG so sánh cơ sở & cơ cấu chi phí; bảng ma trận accordion 2 cấp; xuất file Excel (.xlsx) chuẩn kế toán quản trị và in ấn cách ly @media print |
 | 2026-11-01 | 1.9.3 | Tối ưu hóa toàn diện hiệu năng và tốc độ chuyển tab Sidebar (Instant Navigation): Bổ sung Fast-path JWT Session check trong middleware.ts loại bỏ round-trip mạng thừa đến Supabase Auth trên từng lượt chuyển tab; kích hoạt prefetch={true} trên Next.js Link; mở rộng utils/prefetch.ts phủ kín 100% các tab chính (/dashboard, /coaches, /training, /schedule, /students, /tuition, /payroll, /finance, /attendance); bổ sung cơ chế Idle Background Cache Warming tự động tải ngầm cache sau 1.5s; tối ưu DashboardClient chỉ query activeCoaches thay vì kéo toàn bộ lớp/địa điểm/học viên; tối ưu useStudents chuyển truy vấn điểm danh sang PostgreSQL count: 'exact', head: true giúp giảm 99% payload mạng |
+| 2026-11-01 | 1.9.4 | Chuẩn hóa toàn diện giao diện Quản lý Học phí (/tuition) theo phong cách nhỏ gọn chuẩn Quản lý Học viên (/students - Ảnh 1): Tái cấu trúc khối KPI sang container overviewCard với header bar 'TỔNG QUAN HỌC PHÍ' & 'Số liệu cập nhật thời gian thực'; chuyển 4 thẻ KPI sang kpiItem chuẩn page-standard.module.css (kpiPrimary, kpiSuccess, kpiWarning, kpiInfo); thu gọn cỡ chữ số từ 1.75rem về 1.35rem semibold, nhãn uppercase nhỏ gọn kèm kpiDot 8px, watermark 38px thanh thoát; đưa các nút tác vụ [Tạo Học Phí Cả Lớp] và [+ Thêm Khoản Thu] lên PageHeader primaryAction góc trên bên phải đồng bộ tuyệt đối với trang Học viên, giúp thanh bộ lọc & tìm kiếm rộng rãi, thanh thoát và không còn bị thô |
 
 ---
 

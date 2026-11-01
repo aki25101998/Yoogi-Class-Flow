@@ -10,18 +10,15 @@ interface TuitionFiltersBarProps {
   filters: TuitionFilters;
   onFilterChange: (filters: TuitionFilters) => void;
   classes: { id: string; name: string }[];
-  onOpenBatchModal: () => void;
-  onOpenAddModal: () => void;
-  canManage: boolean;
+  onOpenBatchModal?: () => void;
+  onOpenAddModal?: () => void;
+  canManage?: boolean;
 }
 
 export function TuitionFiltersBar({
   filters,
   onFilterChange,
   classes,
-  onOpenBatchModal,
-  onOpenAddModal,
-  canManage,
 }: TuitionFiltersBarProps) {
   const statusOptions: { label: string; value: 'all' | TuitionStatus }[] = [
     { label: 'Tất cả', value: 'all' },
@@ -72,7 +69,7 @@ export function TuitionFiltersBar({
         </div>
 
         {/* Search Input */}
-        <div style={{ minWidth: '200px', flex: 1, maxWidth: '320px' }}>
+        <div style={{ minWidth: '220px', flex: 1, maxWidth: '360px' }}>
           <Input
             type="text"
             placeholder="Tìm theo tên học viên..."
@@ -81,35 +78,6 @@ export function TuitionFiltersBar({
           />
         </div>
       </div>
-
-      {/* Action Buttons for privileged users */}
-      {canManage && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onOpenBatchModal}
-            style={{ borderRadius: 'var(--radius-full)', borderColor: 'var(--primary)', color: 'var(--primary)' }}
-          >
-            <span className="material-icons-round" style={{ fontSize: '18px', marginRight: '6px' }}>
-              playlist_add
-            </span>
-            Tạo Học Phí Cả Lớp
-          </Button>
-
-          <Button
-            type="button"
-            variant="primary"
-            onClick={onOpenAddModal}
-            style={{ borderRadius: 'var(--radius-full)' }}
-          >
-            <span className="material-icons-round" style={{ fontSize: '18px', marginRight: '6px' }}>
-              add
-            </span>
-            Thêm Khoản Thu
-          </Button>
-        </div>
-      )}
     </div>
   );
 }

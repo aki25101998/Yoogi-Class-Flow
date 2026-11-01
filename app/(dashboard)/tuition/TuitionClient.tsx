@@ -281,10 +281,33 @@ export default function TuitionClient() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
-      {/* 1. Header */}
+      {/* 1. Header (Matches Students Page Action Layout) */}
       <PageHeader
         title="Quản lý Học phí"
         description="Theo dõi các khoản thu học phí, tạo học phí hàng loạt cho lớp, mã VietQR động và xuất biên lai điện tử"
+        primaryAction={canManage ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsBatchModalOpen(true)}
+              leftIcon={<span className="material-icons-round">playlist_add</span>}
+              style={{ borderRadius: 'var(--radius-full)' }}
+            >
+              Tạo Học Phí Cả Lớp
+            </Button>
+
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => setIsAddModalOpen(true)}
+              leftIcon={<span className="material-icons-round">add</span>}
+              style={{ borderRadius: 'var(--radius-full)' }}
+            >
+              Thêm Khoản Thu
+            </Button>
+          </div>
+        ) : undefined}
       />
 
       {/* 2. Success Alert Banner */}
@@ -312,14 +335,11 @@ export default function TuitionClient() {
       {/* 3. 4-KPI Bento Grid */}
       <TuitionKpiGrid summary={summary} />
 
-      {/* 4. Filters & Action Bar */}
+      {/* 4. Filters Bar */}
       <TuitionFiltersBar
         filters={filters}
         onFilterChange={setFilters}
         classes={classes}
-        canManage={canManage}
-        onOpenBatchModal={() => setIsBatchModalOpen(true)}
-        onOpenAddModal={() => setIsAddModalOpen(true)}
       />
 
       {/* 5. Main Tuition Table */}
