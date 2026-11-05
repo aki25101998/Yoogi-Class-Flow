@@ -69,7 +69,9 @@ Cập nhật và bổ sung trong `app/(dashboard)/finance/actions.ts`:
   - Validate tên danh mục không được để trống.
   - Cập nhật `name`, `icon` (nếu có), `parent_id` (hỗ trợ chuyển mục con sang nhóm cha khác nếu cần).
   - Cập nhật `updated_at = NOW()`.
-  - Bắt lỗi trùng lặp `uq_finance_categories_org_name_parent` và trả thông báo tiếng Việt thân thiện: *"Tên danh mục này đã tồn tại trong nhóm."*.
+  - Bắt lỗi trùng lặp:
+    - Bắt constraint `uq_finance_categories_parent_null`: Thông báo *"Tên nhóm danh mục này đã tồn tại."* (cho nhóm cha).
+    - Bắt constraint `uq_finance_categories_org_name_parent`: Thông báo *"Tên mục con này đã tồn tại trong nhóm."* (cho mục con).
   - `revalidatePath('/finance')` và `revalidatePath('/settings/finance-categories')`.
 
 ### 3.2 `deleteCategoryAction(id: string)` (Cập nhật)
@@ -84,10 +86,9 @@ Cập nhật và bổ sung trong `app/(dashboard)/finance/actions.ts`:
 - **Mục đích:** Đặt lại toàn bộ danh mục Thu - Chi về template mẫu mặc định của hệ thống.
 - **Xử lý:**
   - Kiểm tra quyền quản trị.
-  - Xóa toàn bộ danh mục hiện có của tổ chức:
-    `DELETE FROM finance_categories WHERE organization_id = orgId;`
-  - Gọi Stored Procedure nạp lại mẫu chuẩn:
-    `SELECT public.seed_default_finance_categories_for_org(orgId);`
+  - Xóa các mục con trước (`parent_id IS NOT NULL`), sau đó xóa nhóm cha (`parent_id IS NULL`) để đảm bảo tính an toàn FK trên mọi môi trường DB.
+  - Gọi RPC:
+    `await supabase.rpc('seed_default_finance_categories_for_org', { p_org_id: orgId });`
   - Revalidate các đường dẫn liên quan.
 
 ---
@@ -120,6 +121,7 @@ Tệp triển khai chính: `app/(dashboard)/settings/finance-categories/FinanceC
 ### 4.4 Modal Chỉnh Sửa Danh Mục (`EditCategoryModal`)
 - Áp dụng chung cho cả nhóm cha và mục con:
   - Nếu là nhóm cha: Cho phép sửa **Tên nhóm cha** và chọn **Biểu tượng (Icon)**.
+  - Bảng chọn icon `PARENT_ICON_OPTIONS` được bổ sung đầy đủ các icon từ seed mặc định: `school` (Học phí), `badge` (Nhân sự), `sports_martial_arts` (Võ phục/dụng cụ), `emoji_events` (Sự kiện/khác), `apartment`, `shopping_bag`, `campaign`, `payments`, v.v.
   - Nếu là mục con: Cho phép sửa **Tên mục con** và chọn lại **Nhóm cha trực thuộc** (dropdown danh sách các nhóm cha cùng loại Thu/Chi).
 
 ### 4.5 Modal Xác Nhận Khôi Phục Mẫu (`ResetTemplateModal`)
@@ -150,3 +152,4 @@ Tệp triển khai chính: `app/(dashboard)/settings/finance-categories/FinanceC
    - Quay lại `/finance` và kiểm tra giao dịch vẫn hiển thị đúng tên lịch sử, không phát sinh lỗi crash.
 6. **Kiểm tra Build & Linter:**
    - Chạy `npm run build` đảm bảo không có lỗi type hoặc compile.
+
