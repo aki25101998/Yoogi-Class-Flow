@@ -192,6 +192,63 @@ export async function addCategoryAction(data: {
   return { success: true };
 }
 
+export async function updateCategoryAction(
+  id: string,
+  data: { name: string; icon?: string; parent_id?: string | null }
+) {
+  const context = await getCurrentOrganizationContext();
+  if (!context || !context.organization) return { success: false, error: 'Access Denied' };
+
+  const isAdminOrOwner = context.membership?.role === 'admin' || context.membership?.role === 'owner';
+  const hasPermission = isAdminOrOwner || (context.permissions && (
+    context.permissions.includes('manage_finance') || 
+    context.permissions.includes('manage_settings')
+  ));
+  if (!hasPermission) {
+    return { success: false, error: 'Bạn không có quyền chỉnh sửa danh mục tài chính.' };
+  }
+
+  if (!data.name || data.name.trim().length === 0) {
+    return { success: false, error: 'Tên danh mục không được để trống.' };
+  }
+
+  const supabase = await createClient();
+  const orgId = context.organization.id;
+
+  const updatePayload: Record<string, any> = {
+    name: data.name.trim(),
+    updated_at: new Date().toISOString(),
+  };
+
+  if (data.icon !== undefined) {
+    updatePayload.icon = data.icon;
+  }
+
+  if (data.parent_id !== undefined) {
+    updatePayload.parent_id = data.parent_id || null;
+  }
+
+  const { error } = await supabase
+    .from('finance_categories')
+    .update(updatePayload)
+    .eq('id', id)
+    .eq('organization_id', orgId);
+
+  if (error) {
+    if (error.code === '23505' || error.message?.includes('duplicate key') || error.message?.includes('uq_finance_categories')) {
+      if (error.message?.includes('parent_null')) {
+        return { success: false, error: 'Tên nhóm danh mục này đã tồn tại.' };
+      }
+      return { success: false, error: 'Tên danh mục này đã tồn tại trong nhóm.' };
+    }
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/finance');
+  revalidatePath('/settings/finance-categories');
+  return { success: true };
+}
+
 export async function deleteCategoryAction(id: string) {
   const context = await getCurrentOrganizationContext();
   if (!context || !context.organization) return { success: false, error: 'Access Denied' };
@@ -208,20 +265,16 @@ export async function deleteCategoryAction(id: string) {
   const supabase = await createClient();
   const orgId = context.organization.id;
 
-  // Check if system category
+  // Check if category exists
   const { data: cat } = await supabase
     .from('finance_categories')
-    .select('id, is_system')
+    .select('id, name')
     .eq('id', id)
     .eq('organization_id', orgId)
     .single();
 
   if (!cat) {
     return { success: false, error: 'Không tìm thấy danh mục.' };
-  }
-
-  if (cat.is_system) {
-    return { success: false, error: 'Không thể xóa danh mục mặc định của hệ thống.' };
   }
 
   const { error } = await supabase
@@ -231,6 +284,56 @@ export async function deleteCategoryAction(id: string) {
     .eq('organization_id', orgId);
 
   if (error) return { success: false, error: error.message };
+
+  revalidatePath('/finance');
+  revalidatePath('/settings/finance-categories');
+  return { success: true };
+}
+
+export async function resetDefaultFinanceCategoriesAction() {
+  const context = await getCurrentOrganizationContext();
+  if (!context || !context.organization) return { success: false, error: 'Access Denied' };
+
+  const isAdminOrOwner = context.membership?.role === 'admin' || context.membership?.role === 'owner';
+  const hasPermission = isAdminOrOwner || (context.permissions && (
+    context.permissions.includes('manage_finance') || 
+    context.permissions.includes('manage_settings')
+  ));
+  if (!hasPermission) {
+    return { success: false, error: 'Bạn không có quyền đặt lại danh mục tài chính.' };
+  }
+
+  const supabase = await createClient();
+  const orgId = context.organization.id;
+
+  // Xóa mục con trước, sau đó xóa nhóm cha để tránh lỗi ràng buộc
+  const { error: childDeleteError } = await supabase
+    .from('finance_categories')
+    .delete()
+    .eq('organization_id', orgId)
+    .not('parent_id', 'is', null);
+
+  if (childDeleteError) {
+    return { success: false, error: `Lỗi khi dọn dẹp mục con: ${childDeleteError.message}` };
+  }
+
+  const { error: deleteError } = await supabase
+    .from('finance_categories')
+    .delete()
+    .eq('organization_id', orgId);
+
+  if (deleteError) {
+    return { success: false, error: `Lỗi khi dọn dẹp danh mục cũ: ${deleteError.message}` };
+  }
+
+  // Gọi RPC nạp lại mẫu chuẩn hệ thống
+  const { error: seedError } = await supabase.rpc('seed_default_finance_categories_for_org', {
+    p_org_id: orgId,
+  });
+
+  if (seedError) {
+    return { success: false, error: `Lỗi khi nạp danh mục mẫu: ${seedError.message}` };
+  }
 
   revalidatePath('/finance');
   revalidatePath('/settings/finance-categories');
