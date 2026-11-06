@@ -4,7 +4,12 @@ import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useDashboardContext } from '@/app/(dashboard)/DashboardProvider';
 import { useFinanceCategories } from '@/hooks/useFinanceCategories';
-import { addCategoryAction, deleteCategoryAction } from '@/app/(dashboard)/finance/actions';
+import {
+  addCategoryAction,
+  deleteCategoryAction,
+  updateCategoryAction,
+  resetDefaultFinanceCategoriesAction,
+} from '@/app/(dashboard)/finance/actions';
 import type { FinanceCategory, FinanceTransactionType } from '@/types/finance';
 
 // UI Primitives
@@ -17,18 +22,31 @@ import { EmptyState } from '@/app/components/ui/EmptyState';
 import styles from '@/app/styles/page-standard.module.css';
 
 const PARENT_ICON_OPTIONS = [
+  { label: 'Học phí / Giáo dục', value: 'school' },
+  { label: 'Nhân sự / Đội ngũ', value: 'badge' },
+  { label: 'Đội ngũ / Nhóm', value: 'groups' },
+  { label: 'Võ phục & Trang phục', value: 'sports_martial_arts' },
+  { label: 'Võ phục / Đồng phục', value: 'checkroom' },
+  { label: 'Huy chương / Thi đai', value: 'emoji_events' },
+  { label: 'Huy chương / Cấp đai', value: 'military_tech' },
   { label: 'Tòa nhà / Mặt bằng', value: 'apartment' },
   { label: 'Cửa hàng / Văn phòng', value: 'storefront' },
-  { label: 'Nhân sự / Đội ngũ', value: 'groups' },
+  { label: 'Cửa hàng / Mặt bằng', value: 'store' },
   { label: 'Giỏ hàng / Mua sắm', value: 'shopping_bag' },
   { label: 'Tiếp thị / Marketing', value: 'campaign' },
   { label: 'Tiền mặt / Thanh toán', value: 'payments' },
-  { label: 'Huy chương / Cấp đai', value: 'military_tech' },
-  { label: 'Võ phục / Trang phục', value: 'checkroom' },
-  { label: 'Từ thiện / Tài trợ', value: 'volunteer_activism' },
+  { label: 'Dụng cụ tập luyện', value: 'fitness_center' },
+  { label: 'Kho bãi / Nhập hàng', value: 'inventory_2' },
+  { label: 'Điện & Năng lượng', value: 'bolt' },
+  { label: 'Nước & Tiện ích', value: 'water_drop' },
+  { label: 'Internet & Mạng', value: 'wifi' },
+  { label: 'Sửa chữa & Bảo trì', value: 'build' },
+  { label: 'Quảng cáo & Digital', value: 'ads_click' },
+  { label: 'In ấn & Thiết kế', value: 'print' },
+  { label: 'Tiếp khách & Nước uống', value: 'local_cafe' },
+  { label: 'Ngôi sao / Đặc biệt', value: 'stars' },
+  { label: 'Thư mục chung', value: 'folder' },
   { label: 'Danh mục chung', value: 'category' },
-  { label: 'Thư mục', value: 'folder' },
-  { label: 'Đặc biệt / Ngôi sao', value: 'star' },
 ];
 
 export default function FinanceCategoriesClient() {
@@ -58,6 +76,21 @@ export default function FinanceCategoriesClient() {
   const [parentIcon, setParentIcon] = useState('category');
   const [parentSubmitting, setParentSubmitting] = useState(false);
 
+  // Edit category modal state (supports both parent and subcategory)
+  const [editModalItem, setEditModalItem] = useState<FinanceCategory | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editIcon, setEditIcon] = useState('category');
+  const [editParentId, setEditParentId] = useState<string | null>(null);
+  const [editSubmitting, setEditSubmitting] = useState(false);
+
+  // Delete parent confirmation modal state
+  const [deleteParentItem, setDeleteParentItem] = useState<FinanceCategory | null>(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+
+  // Reset default template confirmation modal state
+  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+  const [resetSubmitting, setResetSubmitting] = useState(false);
+
   // Notification state
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -68,10 +101,7 @@ export default function FinanceCategoriesClient() {
   const totalParents = categoriesTree.length;
   const totalExpenseSubs = expenseCategories.reduce((acc, p) => acc + (p.subcategories?.length || 0), 0);
   const totalIncomeSubs = incomeCategories.reduce((acc, p) => acc + (p.subcategories?.length || 0), 0);
-  const totalCustomSubs = categoriesTree.reduce(
-    (acc, p) => acc + (p.subcategories?.filter(s => !s.is_system).length || 0),
-    0
-  );
+  const totalAllSubs = totalExpenseSubs + totalIncomeSubs;
 
   const showSuccess = (msg: string) => {
     setSuccessMessage(msg);
@@ -82,6 +112,14 @@ export default function FinanceCategoriesClient() {
   const showError = (msg: string) => {
     setErrorMessage(msg);
     setSuccessMessage('');
+  };
+
+  // Open edit modal for parent or subcategory
+  const openEditModal = (cat: FinanceCategory) => {
+    setEditModalItem(cat);
+    setEditName(cat.name);
+    setEditIcon(cat.icon || 'category');
+    setEditParentId(cat.parent_id || null);
   };
 
   // Add subcategory to specific parent directly
@@ -131,10 +169,36 @@ export default function FinanceCategoriesClient() {
       setIsAddParentModalOpen(false);
       queryClient.invalidateQueries({ queryKey: ['financeCategories', organizationId] });
       showSuccess(`Đã tạo nhóm danh mục cha "${parentName.trim()}".`);
-      // Auto switch to that type
       setActiveType(parentType);
     } else {
       showError(res.error || 'Lỗi khi tạo nhóm danh mục cha.');
+    }
+  };
+
+  // Handle edit category form submit
+  const handleUpdateCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editModalItem) return;
+    if (!editName.trim()) {
+      showError('Tên danh mục không được để trống.');
+      return;
+    }
+
+    setEditSubmitting(true);
+    const isParent = editModalItem.parent_id === null;
+    const res = await updateCategoryAction(editModalItem.id, {
+      name: editName.trim(),
+      icon: isParent ? editIcon : undefined,
+      parent_id: !isParent ? editParentId : undefined,
+    });
+    setEditSubmitting(false);
+
+    if (res.success) {
+      setEditModalItem(null);
+      queryClient.invalidateQueries({ queryKey: ['financeCategories', organizationId] });
+      showSuccess(`Đã cập nhật danh mục "${editName.trim()}".`);
+    } else {
+      showError(res.error || 'Lỗi khi cập nhật danh mục.');
     }
   };
 
@@ -151,6 +215,38 @@ export default function FinanceCategoriesClient() {
     }
   };
 
+  // Confirm delete parent group (with child warning)
+  const handleConfirmDeleteParent = async () => {
+    if (!deleteParentItem) return;
+
+    setDeleteSubmitting(true);
+    const res = await deleteCategoryAction(deleteParentItem.id);
+    setDeleteSubmitting(false);
+
+    if (res.success) {
+      setDeleteParentItem(null);
+      queryClient.invalidateQueries({ queryKey: ['financeCategories', organizationId] });
+      showSuccess(`Đã xóa nhóm danh mục "${deleteParentItem.name}".`);
+    } else {
+      showError(res.error || 'Lỗi khi xóa nhóm danh mục.');
+    }
+  };
+
+  // Confirm reset default finance categories template
+  const handleConfirmResetTemplate = async () => {
+    setResetSubmitting(true);
+    const res = await resetDefaultFinanceCategoriesAction();
+    setResetSubmitting(false);
+
+    if (res.success) {
+      setIsResetConfirmOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['financeCategories', organizationId] });
+      showSuccess('Đã khôi phục toàn bộ danh mục Thu - Chi về mẫu mặc định thành công.');
+    } else {
+      showError(res.error || 'Lỗi khi khôi phục danh mục mẫu.');
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
       {/* 1. Header */}
@@ -159,17 +255,27 @@ export default function FinanceCategoriesClient() {
         description="Cấu hình cây danh mục 2 cấp cho sổ quỹ tài chính và phân tích doanh thu - chi phí"
         primaryAction={
           hasSettingsPerm ? (
-            <Button
-              variant="primary"
-              onClick={() => {
-                setParentType(activeType);
-                setIsAddParentModalOpen(true);
-              }}
-              leftIcon={<span className="material-icons-round">create_new_folder</span>}
-              style={{ borderRadius: 'var(--radius-full)' }}
-            >
-              Thêm Nhóm Cha
-            </Button>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <Button
+                variant="secondary"
+                onClick={() => setIsResetConfirmOpen(true)}
+                leftIcon={<span className="material-icons-round">restart_alt</span>}
+                style={{ borderRadius: 'var(--radius-full)' }}
+              >
+                Khôi Phục Mẫu Mặc Định
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setParentType(activeType);
+                  setIsAddParentModalOpen(true);
+                }}
+                leftIcon={<span className="material-icons-round">create_new_folder</span>}
+                style={{ borderRadius: 'var(--radius-full)' }}
+              >
+                Thêm Nhóm Cha
+              </Button>
+            </div>
           ) : undefined
         }
       />
@@ -278,17 +384,17 @@ export default function FinanceCategoriesClient() {
             </span>
           </div>
 
-          {/* 4. Mục Tùy Chỉnh */}
+          {/* 4. Tổng Mục Con */}
           <div className={`${styles.kpiItem} ${styles.kpiInfo}`}>
             <div className={styles.kpiLabel}>
               <div className={styles.kpiDot}></div>
-              Mục Con Tùy Chỉnh
+              Tổng Hạng Mục Con
             </div>
             <div className={styles.kpiValue}>
-              {totalCustomSubs} <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>mục</span>
+              {totalAllSubs} <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>mục</span>
             </div>
             <div className={styles.kpiCaption}>
-              Tự định nghĩa theo thực tế trung tâm
+              Đầy đủ các khoản thu & chi chi tiết
             </div>
             <span className={`material-icons-round ${styles.kpiWatermark}`} style={{ color: 'var(--info)' }}>
               tune
@@ -413,7 +519,6 @@ export default function FinanceCategoriesClient() {
         }}>
           {activeParents.map(parent => {
             const subs = parent.subcategories || [];
-            const isParentSystem = parent.is_system;
 
             return (
               <div
@@ -439,7 +544,7 @@ export default function FinanceCategoriesClient() {
                   justifyContent: 'space-between',
                   gap: '12px'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
                     <div style={{
                       width: '40px',
                       height: '40px',
@@ -456,54 +561,80 @@ export default function FinanceCategoriesClient() {
                       </span>
                     </div>
 
-                    <div>
+                    <div style={{ minWidth: 0 }}>
                       <div style={{
                         fontSize: '1rem',
                         fontWeight: 700,
                         color: 'var(--text-main)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
                       }}>
                         {parent.name}
-                        {isParentSystem && (
-                          <span
-                            className="material-icons-round"
-                            style={{ fontSize: '15px', color: 'var(--text-muted)' }}
-                            title="Nhóm mặc định hệ thống"
-                          >
-                            verified
-                          </span>
-                        )}
                       </div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
-                        {subs.length} danh mục con • {isParentSystem ? 'Mặc định hệ thống' : 'Tùy chỉnh trung tâm'}
+                        {subs.length} danh mục con
                       </div>
                     </div>
                   </div>
 
-                  {!isParentSystem && hasSettingsPerm && (
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteCategory(parent.id, parent.name)}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--text-muted)',
-                        cursor: 'pointer',
-                        padding: '6px',
-                        borderRadius: 'var(--radius-md)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'color 0.2s',
-                      }}
-                      onMouseOver={e => e.currentTarget.style.color = 'var(--danger)'}
-                      onMouseOut={e => e.currentTarget.style.color = 'var(--text-muted)'}
-                      title="Xóa nhóm danh mục tùy chỉnh này"
-                    >
-                      <span className="material-icons-round" style={{ fontSize: '18px' }}>delete_outline</span>
-                    </button>
+                  {hasSettingsPerm && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                      <button
+                        type="button"
+                        onClick={() => openEditModal(parent)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--text-secondary)',
+                          cursor: 'pointer',
+                          padding: '6px',
+                          borderRadius: 'var(--radius-md)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'color 0.2s, background-color 0.2s',
+                        }}
+                        onMouseOver={e => {
+                          e.currentTarget.style.color = 'var(--primary)';
+                          e.currentTarget.style.backgroundColor = 'var(--primary-light)';
+                        }}
+                        onMouseOut={e => {
+                          e.currentTarget.style.color = 'var(--text-secondary)';
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                        }}
+                        title="Chỉnh sửa nhóm danh mục này"
+                      >
+                        <span className="material-icons-round" style={{ fontSize: '18px' }}>edit</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeleteParentItem(parent)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--text-secondary)',
+                          cursor: 'pointer',
+                          padding: '6px',
+                          borderRadius: 'var(--radius-md)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'color 0.2s, background-color 0.2s',
+                        }}
+                        onMouseOver={e => {
+                          e.currentTarget.style.color = 'var(--danger)';
+                          e.currentTarget.style.backgroundColor = 'var(--danger-bg)';
+                        }}
+                        onMouseOut={e => {
+                          e.currentTarget.style.color = 'var(--text-secondary)';
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                        }}
+                        title="Xóa nhóm danh mục này"
+                      >
+                        <span className="material-icons-round" style={{ fontSize: '18px' }}>delete_outline</span>
+                      </button>
+                    </div>
                   )}
                 </div>
 
@@ -542,16 +673,27 @@ export default function FinanceCategoriesClient() {
                         >
                           <span>{sub.name}</span>
 
-                          {sub.is_system ? (
-                            <span
-                              className="material-icons-round"
-                              style={{ fontSize: '13px', color: 'var(--text-muted)', opacity: 0.6 }}
-                              title="Mục chuẩn hệ thống"
-                            >
-                              lock
-                            </span>
-                          ) : (
-                            hasSettingsPerm && (
+                          {hasSettingsPerm && (
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              <button
+                                type="button"
+                                onClick={() => openEditModal(sub)}
+                                style={{
+                                  background: 'transparent',
+                                  border: 'none',
+                                  padding: 0,
+                                  cursor: 'pointer',
+                                  color: 'var(--text-muted)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  transition: 'color 0.2s'
+                                }}
+                                onMouseOver={e => e.currentTarget.style.color = 'var(--primary)'}
+                                onMouseOut={e => e.currentTarget.style.color = 'var(--text-muted)'}
+                                title="Chỉnh sửa mục con này"
+                              >
+                                <span className="material-icons-round" style={{ fontSize: '14px' }}>edit</span>
+                              </button>
                               <button
                                 type="button"
                                 onClick={() => handleDeleteCategory(sub.id, sub.name)}
@@ -567,11 +709,11 @@ export default function FinanceCategoriesClient() {
                                 }}
                                 onMouseOver={e => e.currentTarget.style.color = 'var(--danger)'}
                                 onMouseOut={e => e.currentTarget.style.color = 'var(--text-muted)'}
-                                title="Xóa mục tùy chỉnh này"
+                                title="Xóa mục con này"
                               >
-                                <span className="material-icons-round" style={{ fontSize: '14px' }}>close</span>
+                                <span className="material-icons-round" style={{ fontSize: '15px' }}>close</span>
                               </button>
-                            )
+                            </div>
                           )}
                         </div>
                       ))}
@@ -751,7 +893,211 @@ export default function FinanceCategoriesClient() {
           </ModalFooter>
         </form>
       </Modal>
+
+      {/* 8. Modal Chỉnh Sửa Danh Mục (Nhóm Cha hoặc Mục Con) */}
+      <Modal isOpen={editModalItem !== null} onClose={() => setEditModalItem(null)}>
+        <ModalHeader
+          title={
+            editModalItem?.parent_id === null
+              ? `Chỉnh Sửa Nhóm Danh Mục Cha (${editModalItem?.type === 'expense' ? 'Chi Phí' : 'Khoản Thu'})`
+              : `Chỉnh Sửa Mục Con`
+          }
+          onClose={() => setEditModalItem(null)}
+        />
+        <form onSubmit={handleUpdateCategory}>
+          <ModalBody>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  color: 'var(--text-secondary)',
+                  marginBottom: '6px'
+                }}>
+                  Tên Danh Mục *
+                </label>
+                <Input
+                  type="text"
+                  required
+                  placeholder="Nhập tên danh mục..."
+                  value={editName}
+                  onChange={e => setEditName(e.target.value)}
+                />
+              </div>
+
+              {editModalItem?.parent_id === null ? (
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    color: 'var(--text-secondary)',
+                    marginBottom: '6px'
+                  }}>
+                    Biểu Tượng (Icon)
+                  </label>
+                  <Select
+                    value={editIcon}
+                    onChange={e => setEditIcon(e.target.value)}
+                    options={PARENT_ICON_OPTIONS}
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    color: 'var(--text-secondary)',
+                    marginBottom: '6px'
+                  }}>
+                    Thuộc Nhóm Cha *
+                  </label>
+                  <Select
+                    value={editParentId || ''}
+                    onChange={e => setEditParentId(e.target.value || null)}
+                    options={
+                      (editModalItem?.type === 'income' ? incomeCategories : expenseCategories).map(p => ({
+                        label: p.name,
+                        value: p.id,
+                      }))
+                    }
+                  />
+                </div>
+              )}
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setEditModalItem(null)}
+            >
+              Hủy
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              isLoading={editSubmitting}
+            >
+              Lưu Thay Đổi
+            </Button>
+          </ModalFooter>
+        </form>
+      </Modal>
+
+      {/* 9. Modal Xác Nhận Xóa Nhóm Cha */}
+      <Modal isOpen={deleteParentItem !== null} onClose={() => setDeleteParentItem(null)}>
+        <ModalHeader
+          title="Xác Nhận Xóa Nhóm Danh Mục"
+          onClose={() => setDeleteParentItem(null)}
+        />
+        <ModalBody>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-main)' }}>
+              Bạn có chắc chắn muốn xóa nhóm danh mục <strong>&ldquo;{deleteParentItem?.name}&rdquo;</strong>?
+            </p>
+
+            {(deleteParentItem?.subcategories?.length || 0) > 0 && (
+              <div style={{
+                padding: '12px 16px',
+                borderRadius: 'var(--radius-lg)',
+                backgroundColor: 'var(--danger-bg)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                color: 'var(--danger)',
+                fontSize: '0.8125rem',
+                display: 'flex',
+                gap: '8px',
+                alignItems: 'flex-start',
+              }}>
+                <span className="material-icons-round" style={{ fontSize: '18px', flexShrink: 0, marginTop: '2px' }}>
+                  warning
+                </span>
+                <div>
+                  <strong>Cảnh báo quan trọng:</strong> Nhóm này đang chứa{' '}
+                  <strong>{deleteParentItem?.subcategories?.length} mục con</strong>. Khi xóa nhóm cha, toàn bộ các mục con bên trong cũng sẽ bị xóa vĩnh viễn.
+                </div>
+              </div>
+            )}
+
+            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+              Các giao dịch tài chính trong quá khứ vẫn giữ nguyên vẹn thông tin lịch sử của nhóm và mục con.
+            </p>
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setDeleteParentItem(null)}
+          >
+            Hủy Bỏ
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            isLoading={deleteSubmitting}
+            onClick={handleConfirmDeleteParent}
+          >
+            Xác Nhận Xóa Nhóm
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* 10. Modal Xác Nhận Khôi Phục Mẫu Mặc Định */}
+      <Modal isOpen={isResetConfirmOpen} onClose={() => setIsResetConfirmOpen(false)}>
+        <ModalHeader
+          title="Khôi Phục Danh Mục Mẫu Mặc Định"
+          onClose={() => setIsResetConfirmOpen(false)}
+        />
+        <ModalBody>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-main)', lineHeight: 1.5 }}>
+              Thao tác này sẽ đặt lại toàn bộ danh mục Thu - Chi của trung tâm về bộ danh mục mẫu tiêu chuẩn ban đầu (Võ thuật & Thể thao). Mọi danh mục tự tạo sẽ bị thay thế.
+            </p>
+
+            <div style={{
+              padding: '12px 16px',
+              borderRadius: 'var(--radius-lg)',
+              backgroundColor: 'var(--warning-bg, rgba(234, 179, 8, 0.12))',
+              border: '1px solid rgba(234, 179, 8, 0.3)',
+              color: 'var(--warning, #eab308)',
+              fontSize: '0.8125rem',
+              display: 'flex',
+              gap: '8px',
+              alignItems: 'flex-start',
+            }}>
+              <span className="material-icons-round" style={{ fontSize: '18px', flexShrink: 0, marginTop: '2px' }}>
+                info
+              </span>
+              <div>
+                <strong>Lưu ý về lịch sử:</strong> Các giao dịch tài chính đã ghi nhận trước đây vẫn giữ nguyên vẹn tên lịch sử và số liệu báo cáo, không bị gián đoạn hay mất dữ liệu.
+              </div>
+            </div>
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setIsResetConfirmOpen(false)}
+          >
+            Hủy Bỏ
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            isLoading={resetSubmitting}
+            onClick={handleConfirmResetTemplate}
+          >
+            Xác Nhận Khôi Phục
+          </Button>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 }
-
