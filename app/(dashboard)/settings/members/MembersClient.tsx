@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Ca
 import { Badge } from '@/app/components/ui/Badge';
 import { EmptyState } from '@/app/components/ui/EmptyState';
 import styles from '@/app/styles/page-standard.module.css';
+import localStyles from './MembersClient.module.css';
 
 export default function MembersClient({ initialMembers, initialInvitations, currentUserRole, currentUserId }: any) {
   const router = useRouter();
@@ -368,7 +369,15 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
           ) : undefined}
         />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {/* List Column Header (desktop/tablet) */}
+          <div className={localStyles.listHeader}>
+            <div>Thành viên</div>
+            <div>Vai trò</div>
+            <div>Trạng thái</div>
+            <div style={{ textAlign: 'right' }}>Thao tác</div>
+          </div>
+
           {/* Active Members */}
           {filteredMembers.map((m: any) => {
             const memberName = m.profiles?.name || 'Thành viên';
@@ -378,64 +387,48 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
             const isOwner = m.role === 'owner';
 
             return (
-              <div 
-                key={m.id} 
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '14px 20px',
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border-light)',
-                  borderRadius: 'var(--radius-xl)',
-                  gap: '16px',
-                  flexWrap: 'wrap',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                {/* Left: Avatar + Info */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: '220px' }}>
-                  <div style={{
-                    width: '42px',
-                    height: '42px',
-                    borderRadius: '50%',
-                    background: isOwner ? 'rgba(255, 107, 53, 0.12)' : 'var(--primary-light)',
-                    color: isOwner ? 'var(--accent-energy)' : 'var(--primary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 700,
-                    fontSize: '1rem',
-                    flexShrink: 0
-                  }}>
+              <div key={m.id} className={localStyles.memberCard}>
+                {/* 1. Member Info: Avatar + Name + Email */}
+                <div className={localStyles.colMember}>
+                  <div 
+                    className={localStyles.memberAvatar}
+                    style={{
+                      background: isOwner ? 'rgba(255, 107, 53, 0.12)' : 'var(--primary-light)',
+                      color: isOwner ? 'var(--accent-energy)' : 'var(--primary)'
+                    }}
+                  >
                     {initialLetter}
                   </div>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--text-main)' }}>
+                  <div className={localStyles.memberInfo}>
+                    <div className={localStyles.memberNameRow}>
+                      <span className={localStyles.memberName}>
                         {memberName}
                       </span>
                       {isSelf && (
                         <Badge variant="info">Bạn</Badge>
                       )}
                     </div>
-                    <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                    <div className={localStyles.memberEmail}>
                       {memberEmail}
                     </div>
                   </div>
                 </div>
 
-                {/* Center: Role + Status */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                {/* 2. Role Column */}
+                <div className={localStyles.colRole}>
                   <RoleBadge 
                     role={m.role} 
                     customTitle={m.custom_role_title || (m.permissions?.find((p: string) => typeof p === 'string' && p.startsWith('title:'))?.replace('title:', ''))} 
                   />
+                </div>
+
+                {/* 3. Status Column */}
+                <div className={localStyles.colStatus}>
                   <Badge variant="success">Hoạt động</Badge>
                 </div>
 
-                {/* Right: Actions */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {/* 4. Actions Column */}
+                <div className={localStyles.colActions}>
                   {isAdminOrOwner && !isSelf && !(currentUserRole === 'admin' && isOwner) && (
                     <>
                       <Button
@@ -474,56 +467,43 @@ export default function MembersClient({ initialMembers, initialInvitations, curr
 
           {/* Pending Invitations */}
           {filteredInvitations.map((inv: any) => (
-            <div 
-              key={inv.id} 
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '14px 20px',
-                background: 'var(--surface-hover)',
-                border: '1px dashed var(--border-light)',
-                borderRadius: 'var(--radius-xl)',
-                gap: '16px',
-                flexWrap: 'wrap'
-              }}
-            >
-              {/* Left: Email + Note */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: '220px' }}>
-                <div style={{
-                  width: '42px',
-                  height: '42px',
-                  borderRadius: '50%',
-                  background: 'rgba(255, 179, 0, 0.12)',
-                  color: 'var(--warning)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}>
+            <div key={inv.id} className={localStyles.invitationCard}>
+              {/* 1. Member Info: Email + Note */}
+              <div className={localStyles.colMember}>
+                <div 
+                  className={localStyles.memberAvatar}
+                  style={{
+                    background: 'rgba(255, 179, 0, 0.12)',
+                    color: 'var(--warning)'
+                  }}
+                >
                   <span className="material-icons-round" style={{ fontSize: '20px' }}>mail_outline</span>
                 </div>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--text-main)' }}>
+                <div className={localStyles.memberInfo}>
+                  <div className={localStyles.memberName}>
                     {inv.email}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                  <div className={localStyles.memberEmail}>
                     Đã gửi lời mời • Chờ người dùng kích hoạt
                   </div>
                 </div>
               </div>
 
-              {/* Center: Role + Status */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {/* 2. Role Column */}
+              <div className={localStyles.colRole}>
                 <RoleBadge 
                   role={inv.role} 
                   customTitle={inv.custom_role_title || (inv.permissions?.find((p: string) => typeof p === 'string' && p.startsWith('title:'))?.replace('title:', ''))} 
                 />
+              </div>
+
+              {/* 3. Status Column */}
+              <div className={localStyles.colStatus}>
                 <Badge variant="warning">Chờ chấp thuận</Badge>
               </div>
 
-              {/* Right: Actions */}
-              <div>
+              {/* 4. Actions Column */}
+              <div className={localStyles.colActions}>
                 {isAdminOrOwner && (
                   <Button
                     type="button"

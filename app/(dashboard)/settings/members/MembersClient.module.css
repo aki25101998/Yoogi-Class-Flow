@@ -1,0 +1,172 @@
+/* Members Client Specific Styles */
+
+.listHeader {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.4fr) 170px 140px minmax(180px, auto);
+  padding: 8px 20px;
+  gap: 16px;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.memberCard {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.4fr) 170px 140px minmax(180px, auto);
+  align-items: center;
+  padding: 14px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  gap: 16px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-xs);
+}
+
+.memberCard:hover {
+  border-color: rgba(20, 184, 166, 0.4);
+  background: var(--surface-hover);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.invitationCard {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.4fr) 170px 140px minmax(180px, auto);
+  align-items: center;
+  padding: 14px 20px;
+  background: var(--surface-hover);
+  border: 1px dashed var(--border-light);
+  border-radius: var(--radius-xl);
+  gap: 16px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.invitationCard:hover {
+  border-color: var(--warning);
+  background: var(--surface);
+  transform: translateY(-1px);
+}
+
+.colMember {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.memberAvatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.memberInfo {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.memberNameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.memberName {
+  font-weight: 700;
+  font-size: 0.9375rem;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.memberEmail {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.colRole {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.colStatus {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.colActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* Tablet responsiveness (641px - 960px) */
+@media (max-width: 960px) and (min-width: 641px) {
+  .listHeader,
+  .memberCard,
+  .invitationCard {
+    grid-template-columns: minmax(200px, 1fr) 150px 125px auto;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+}
+
+/* Mobile responsiveness (<= 640px) */
+@media (max-width: 640px) {
+  .listHeader {
+    display: none;
+  }
+
+  .memberCard,
+  .invitationCard {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas: 
+      "member member"
+      "role status"
+      "actions actions";
+    gap: 10px;
+    padding: 14px 16px;
+  }
+
+  .colMember {
+    grid-area: member;
+  }
+
+  .colRole {
+    grid-area: role;
+  }
+
+  .colStatus {
+    grid-area: status;
+    justify-content: flex-end;
+  }
+
+  .colActions {
+    grid-area: actions;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-light);
+  }
+}

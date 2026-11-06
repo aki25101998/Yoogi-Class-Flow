@@ -1,6 +1,6 @@
 # 📜 HIẾN PHÁP DỰ ÁN — YOOGI CLASS FLOW
 
-> **Phiên bản:** 1.9.6  
+> **Phiên bản:** 1.9.7  
 > **Cập nhật lần cuối:** 2026-11-06  
 > **Mục đích:** Đây là tài liệu gốc, bất khả xâm phạm. Mọi thay đổi code PHẢI tuân thủ các quy tắc trong file này. Khi có tính năng mới, file này PHẢI được cập nhật đồng thời.
 
@@ -862,6 +862,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-11-01 | 1.9.4 | Chuẩn hóa toàn diện giao diện Quản lý Học phí (/tuition) theo phong cách nhỏ gọn chuẩn Quản lý Học viên (/students - Ảnh 1): Tái cấu trúc khối KPI sang container overviewCard với header bar 'TỔNG QUAN HỌC PHÍ' & 'Số liệu cập nhật thời gian thực'; chuyển 4 thẻ KPI sang kpiItem chuẩn page-standard.module.css (kpiPrimary, kpiSuccess, kpiWarning, kpiInfo); thu gọn cỡ chữ số từ 1.75rem về 1.35rem semibold, nhãn uppercase nhỏ gọn kèm kpiDot 8px, watermark 38px thanh thoát; đưa các nút tác vụ [Tạo Học Phí Cả Lớp] và [+ Thêm Khoản Thu] lên PageHeader primaryAction góc trên bên phải đồng bộ tuyệt đối với trang Học viên, giúp thanh bộ lọc & tìm kiếm rộng rãi, thanh thoát và không còn bị thô |
 | 2026-11-01 | 1.9.5 | Tích hợp toàn diện Quản lý Cây Danh Mục Thu - Chi sang phân hệ Cài đặt (/settings/finance-categories): Loại bỏ triệt để modal ManageCategoriesModal rối mắt và nút popup khỏi Sổ quỹ (/finance); bổ sung tab 'Danh mục Thu - Chi' vào thanh điều hướng Sub-Nav Tabs (SettingsNavTabs) và Sidebar; tái cấu trúc giao diện Danh mục theo chuẩn Vibrant Athletic Design: 4 thẻ Bento KPI tổng quan, bộ chuyển đổi phân loại Chi phí (Expense) vs Khoản thu (Income), lưới thẻ nhóm danh mục với icon circle màu sắc, danh sách chip mục con bo tròn hiển thị icon lock hệ thống, nút xóa mục tùy chỉnh an toàn và form thêm nhanh mục con inline 1-chạm trực tiếp trong từng thẻ; bổ sung Modal tạo Nhóm cha mới |
 | 2026-11-06 | 1.9.6 | Mở khóa toàn diện Quản lý Danh mục Thu - Chi (/settings/finance-categories) & Khôi phục Template Mẫu mặc định: Gỡ bỏ hoàn toàn ổ khóa is_system; trao toàn quyền cho Admin/Owner Sửa (tên nhóm cha, icon biểu tượng, tên mục con, đổi nhóm cha), Xóa (nhóm cha kèm cảnh báo mục con, mục con) và Thêm mới; bảo toàn dữ liệu lịch sử và báo cáo P&L qua text snapshot; bổ sung Server Action updateCategoryAction, unlocked deleteCategoryAction và resetDefaultFinanceCategoriesAction; bổ sung nút và Modal Khôi phục Mẫu Mặc Định an toàn; chuẩn hóa bảng chọn 25 icon hệ thống và đồng bộ Bento KPI Tổng Hạng Mục Con |
+| 2026-11-06 | 1.9.7 | Chuẩn hóa và căn đều bố cục danh sách Thành viên & Lời mời (/settings/members): Khắc phục triệt để tình trạng các huy hiệu Vai trò (RoleBadge: HLV Trưởng, HLV Phụ, Quản trị viên) và Trạng thái (Hoạt động, Chờ chấp thuận) bị lệch cột, xô lệch và lộn xộn do flexbox space-between; tái cấu trúc sang CSS Grid 4 cột chuẩn (.listHeader, .memberCard, .invitationCard trong MembersClient.module.css): Cột 1 Thành viên (Avatar + Tên + Email), Cột 2 Vai trò (RoleBadge căn đều 170px), Cột 3 Trạng thái (Badge căn đều 140px), Cột 4 Thao tác (căn phải). Bổ sung thanh tiêu đề cột cho desktop/tablet và responsive grid thích ứng trên mobile |
 
 ---
 
