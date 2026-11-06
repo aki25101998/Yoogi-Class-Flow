@@ -111,11 +111,15 @@ export async function resetDefaultFinanceCategoriesAction() {
   const orgId = context.organization.id;
 
   // Xóa mục con trước, sau đó xóa nhóm cha để tránh lỗi ràng buộc
-  await supabase
+  const { error: childDeleteError } = await supabase
     .from('finance_categories')
     .delete()
     .eq('organization_id', orgId)
     .not('parent_id', 'is', null);
+
+  if (childDeleteError) {
+    return { success: false, error: `Lỗi khi dọn dẹp mục con: ${childDeleteError.message}` };
+  }
 
   const { error: deleteError } = await supabase
     .from('finance_categories')
@@ -164,10 +168,11 @@ git commit -m "feat(finance): add updateCategoryAction, unlocked deleteCategoryA
 
 Bổ sung các icon: `school` (Học phí / Giáo dục), `badge` (Nhân sự), `sports_martial_arts` (Võ phục / Dụng cụ võ), `emoji_events` (Sự kiện / Giải đấu), `local_cafe` (Tiếp khách / Vận hành), `fitness_center` (Dụng cụ tập), `inventory_2` (Nhập hàng).
 
-- [ ] **Step 2: Thêm các state quản lý Sửa danh mục & Khôi phục mẫu**
+- [ ] **Step 2: Thêm các state quản lý Sửa danh mục, Khôi phục mẫu & Đồng bộ Bento KPI**
 
 Trong `FinanceCategoriesClient.tsx`:
 - Import `updateCategoryAction`, `resetDefaultFinanceCategoriesAction`.
+- Cập nhật Bento KPI ô số 4 thành "Tổng Hạng Mục Con" (`totalExpenseSubs + totalIncomeSubs` mục) để phản ánh trạng thái mở khóa toàn diện.
 - Thêm state cho Edit Modal:
   - `editModalItem: FinanceCategory | null`
   - `editName: string`
@@ -293,3 +298,4 @@ Kỳ vọng: Toàn bộ commit được đồng bộ lên remote GitHub `origin/
 - [ ] **Step 3: Xác minh deploy**
 
 Kiểm tra workflow Next.js / Vercel deploy hoàn tất.
+
