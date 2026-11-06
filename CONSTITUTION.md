@@ -1,7 +1,7 @@
 # 📜 HIẾN PHÁP DỰ ÁN — YOOGI CLASS FLOW
 
-> **Phiên bản:** 1.9.5  
-> **Cập nhật lần cuối:** 2026-11-01  
+> **Phiên bản:** 1.9.6  
+> **Cập nhật lần cuối:** 2026-11-06  
 > **Mục đích:** Đây là tài liệu gốc, bất khả xâm phạm. Mọi thay đổi code PHẢI tuân thủ các quy tắc trong file này. Khi có tính năng mới, file này PHẢI được cập nhật đồng thời.
 
 ---
@@ -537,13 +537,14 @@ scheduled → checked_in → approved → paid
 - **Cấu trúc Danh mục 2 cấp (`finance_categories`):**
   - Quản lý phân cấp: Nhóm cha (`parent_id IS NULL`) → Hạng mục con chi tiết (Võ phục, Tiền điện, v.v.).
   - Phân loại rõ `type`: `income` (Thu) hoặc `expense` (Chi).
-  - Có danh mục hệ thống mặc định (`is_system = true`) bảo vệ chống xóa, hỗ trợ Admin tự thêm/xóa danh mục con tùy chỉnh.
+  - Mở khóa toàn diện (Full CRUD): Admin & Owner có toàn quyền Thêm mới, Sửa (tên nhóm cha, biểu tượng icon, tên mục con, chuyển nhóm cha), và Xóa bất kỳ nhóm cha hoặc mục con nào; gỡ bỏ hoàn toàn ổ khóa cấm sửa/xóa đối với danh mục hệ thống mặc định.
+  - Hỗ trợ "Khôi phục Mẫu Mặc Định" (Default Template Reset) thông qua Server Action `resetDefaultFinanceCategoriesAction` và RPC `seed_default_finance_categories_for_org` (kèm hộp thoại cảnh báo an toàn).
   - Tự động nạp sẵn (seed) cho mọi tổ chức mới qua trigger `SECURITY DEFINER`.
 - **Bảng `finance_transactions`:**
   - Type: `income` hoặc `expense`
   - `source_type`: `MANUAL`, `TUITION_PAYMENT`, `PAYROLL_PAYMENT`
   - `venue_id`: Khóa ngoại composite tới `venues(organization_id, id)` — cho phép `NULL` = Chung toàn trung tâm.
-  - `category_id`: Khóa ngoại composite tới `finance_categories(organization_id, id)` kèm snapshot tên `parent_category` và `sub_category`.
+  - `category_id`: Khóa ngoại composite tới `finance_categories(organization_id, id)` kèm snapshot tên `parent_category` và `sub_category`. Khi xóa danh mục, khóa ngoại tự động chuyển `SET NULL` nhưng 2 cột text snapshot vẫn bảo lưu nguyên vẹn số liệu và lịch sử cho báo cáo P&L.
   - `payment_method`: `cash` (Tiền mặt) hoặc `bank_transfer` (Chuyển khoản).
 - **Bộ lọc thời gian & Phân tích trực quan:**
   - Hỗ trợ dải chọn nhanh: Hôm nay, Tuần này, Tháng này (mặc định), Tháng trước, Quý này, Năm nay, Tùy chọn ngày.
@@ -860,6 +861,7 @@ useDashboardStats.ts — Dashboard statistics
 | 2026-11-01 | 1.9.3 | Tối ưu hóa toàn diện hiệu năng và tốc độ chuyển tab Sidebar (Instant Navigation): Bổ sung Fast-path JWT Session check trong middleware.ts loại bỏ round-trip mạng thừa đến Supabase Auth trên từng lượt chuyển tab; kích hoạt prefetch={true} trên Next.js Link; mở rộng utils/prefetch.ts phủ kín 100% các tab chính (/dashboard, /coaches, /training, /schedule, /students, /tuition, /payroll, /finance, /attendance); bổ sung cơ chế Idle Background Cache Warming tự động tải ngầm cache sau 1.5s; tối ưu DashboardClient chỉ query activeCoaches thay vì kéo toàn bộ lớp/địa điểm/học viên; tối ưu useStudents chuyển truy vấn điểm danh sang PostgreSQL count: 'exact', head: true giúp giảm 99% payload mạng |
 | 2026-11-01 | 1.9.4 | Chuẩn hóa toàn diện giao diện Quản lý Học phí (/tuition) theo phong cách nhỏ gọn chuẩn Quản lý Học viên (/students - Ảnh 1): Tái cấu trúc khối KPI sang container overviewCard với header bar 'TỔNG QUAN HỌC PHÍ' & 'Số liệu cập nhật thời gian thực'; chuyển 4 thẻ KPI sang kpiItem chuẩn page-standard.module.css (kpiPrimary, kpiSuccess, kpiWarning, kpiInfo); thu gọn cỡ chữ số từ 1.75rem về 1.35rem semibold, nhãn uppercase nhỏ gọn kèm kpiDot 8px, watermark 38px thanh thoát; đưa các nút tác vụ [Tạo Học Phí Cả Lớp] và [+ Thêm Khoản Thu] lên PageHeader primaryAction góc trên bên phải đồng bộ tuyệt đối với trang Học viên, giúp thanh bộ lọc & tìm kiếm rộng rãi, thanh thoát và không còn bị thô |
 | 2026-11-01 | 1.9.5 | Tích hợp toàn diện Quản lý Cây Danh Mục Thu - Chi sang phân hệ Cài đặt (/settings/finance-categories): Loại bỏ triệt để modal ManageCategoriesModal rối mắt và nút popup khỏi Sổ quỹ (/finance); bổ sung tab 'Danh mục Thu - Chi' vào thanh điều hướng Sub-Nav Tabs (SettingsNavTabs) và Sidebar; tái cấu trúc giao diện Danh mục theo chuẩn Vibrant Athletic Design: 4 thẻ Bento KPI tổng quan, bộ chuyển đổi phân loại Chi phí (Expense) vs Khoản thu (Income), lưới thẻ nhóm danh mục với icon circle màu sắc, danh sách chip mục con bo tròn hiển thị icon lock hệ thống, nút xóa mục tùy chỉnh an toàn và form thêm nhanh mục con inline 1-chạm trực tiếp trong từng thẻ; bổ sung Modal tạo Nhóm cha mới |
+| 2026-11-06 | 1.9.6 | Mở khóa toàn diện Quản lý Danh mục Thu - Chi (/settings/finance-categories) & Khôi phục Template Mẫu mặc định: Gỡ bỏ hoàn toàn ổ khóa is_system; trao toàn quyền cho Admin/Owner Sửa (tên nhóm cha, icon biểu tượng, tên mục con, đổi nhóm cha), Xóa (nhóm cha kèm cảnh báo mục con, mục con) và Thêm mới; bảo toàn dữ liệu lịch sử và báo cáo P&L qua text snapshot; bổ sung Server Action updateCategoryAction, unlocked deleteCategoryAction và resetDefaultFinanceCategoriesAction; bổ sung nút và Modal Khôi phục Mẫu Mặc Định an toàn; chuẩn hóa bảng chọn 25 icon hệ thống và đồng bộ Bento KPI Tổng Hạng Mục Con |
 
 ---
 
